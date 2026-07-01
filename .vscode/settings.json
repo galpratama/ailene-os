@@ -1,0 +1,14 @@
+{
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "prettier.trailingComma": "es5" // Use old format instead
+}

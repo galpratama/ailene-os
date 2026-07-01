@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Mirrors docs/db/ailene-os-ddl.sql.
+
+////////////////////
+// Enumerations   //
+////////////////////
+
+enum StatusEnum {
+  ACTIVE   @map("active")
+  INACTIVE @map("inactive")
+
+  @@map("status_enum")
+}
+
+// Enumeration for the User model
+
+enum OccupationEnum {
+  EMPLOYEE     @map("employee")
+  ENTREPRENEUR @map("entrepreneur")
+  STUDENT      @map("student")
+  FREELANCE    @map("freelance")
+  MILITARY     @map("military")
+  UNEMPLOYED   @map("unemployed")
+
+  @@map("occupation_enum")
+}
+
+// Enumeration for the B2BPipeline model (b2b_*)
+
+enum B2BProductEnum {
+  SPONSORSHIP           @map("sponsorship")
+  CORPORATE_TRAINING    @map("corporate_training")
+  CORPORATE_AI_TRAINING @map("corporate_ai_training")
+
+  @@map("b2b_product_enum")
+}
+
+enum B2BSourceEnum {
+  SOCIAL_MEDIA     @map("social_media")
+  FOUNDER_NETWORK  @map("founder_network")
+  EVENT_CONFERENCE @map("event_conference")
+  REFERRAL_PARTNER @map("referral_partner")
+  REFERRAL_CLIENT  @map("referral_client")
+  WEBSITE          @map("website")
+
+  @@map("b2b_source_enum")
+}
+
+enum B2BStageEnum {
+  LEAD_IDENTIFIED @map("lead_identified")
+  CONTACTED       @map("contacted")
+  NEGOTIATION     @map("negotiation")
+  VERBAL_COMMIT   @map("verbal_commit")
+  CLOSED_WON      @map("closed_won")
+  CLOSED_LOST     @map("closed_lost")
+  ON_HOLD         @map("on_hold")
+
+  @@map("b2b_stage_enum")
+}
+
+enum B2BProbabilityStatusEnum {
+  COLD @map("cold")
+  WARM @map("warm")
+  HOT  @map("hot")
+
+  @@map("b2b_probability_status_enum")
+}
+
+// Enumeration for the B2BAction model (b2ba_*)
+
+enum B2BActionStatusEnum {
+  TO_DO       @map("to_do")
+  IN_PROGRESS @map("in_progress")
+  REVIEW      @map("review")
+  DONE        @map("done")
+
+  @@map("b2ba_status_enum")
+}
+
+enum B2BActionPriorityEnum {
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+  URGENT @map("urgent")
+
+  @@map("b2ba_priority_enum")
+}
+
+////////////
+// Models //
+////////////
+
+// Lookup tables
+
+model Industry {
+  id            Int          @id @default(autoincrement()) @db.SmallInt
+  industry_name String       @unique @db.VarChar()
+  created_at    DateTime     @default(now()) @db.Timestamptz()
+  b2b_companies B2BCompany[]
+
+  @@map("industries")
+}
+
+model Role {
+  id         Int      @id @default(autoincrement()) @db.SmallInt
+  name       String   @unique @db.VarChar()
+  permission Int      @db.SmallInt
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz()
+  users      User[]
+
+  @@map("roles")
+}
+
+model PhoneCountryCode {
+  id           Int     @id @default(autoincrement()) @db.SmallInt
+  country_name String  @db.VarChar()
+  phone_code   String  @unique @db.VarChar()
+  emoji        String  @db.VarChar()
+  icon         String? @db.VarChar()
+  users        User[]
+
+  @@map("phone_country_codes")
+}
+
+// User data
+
+model User {
+  id               String           @id @default(uuid()) @db.Uuid
+  full_name        String           @db.VarChar()
+  email            String           @unique @db.VarChar()
+  phone_country    PhoneCountryCode? @relation(fields: [phone_country_id], references: [id])
+  phone_country_id Int?             @db.SmallInt
+  phone_number     String?          @db.VarChar()
+  avatar           String?          @db.VarChar()
+  role             Role             @relation(fields: [role_id], references: [id])
+  role_id          Int              @default(3) @db.SmallInt // General User
+  status           StatusEnum       @default(ACTIVE)
+  date_of_birth    DateTime?        @db.Date
+  occupation       OccupationEnum?
+  created_at       DateTime         @default(now()) @db.Timestamptz()
+  updated_at       DateTime         @default(now()) @updatedAt @db.Timestamptz()
+  last_login       DateTime         @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at       DateTime?        @db.Timestamptz()
+  tokens           Token[]
+  b2b_pipelines    B2BPipeline[]
+  b2b_actions      B2BAction[]
+
+  @@map("users")
+}
+
+model Token {
+  id         Int      @id @default(autoincrement()) @db.Integer
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String   @db.Uuid
+  is_active  Boolean  @default(false) @db.Boolean
+  token      String   @unique @db.Text
+  created_at DateTime @default(now()) @db.Timestamptz()
+
+  @@map("tokens")
+}
+
+// B2B Sales Pipeline
+
+model B2BCompany {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar()
+  industry      Industry      @relation(fields: [industry_id], references: [id])
+  industry_id   Int           @db.SmallInt
+  pic_name      String?       @db.VarChar()
+  pic_job_title String?       @db.VarChar()
+  pic_wa        String?       @db.VarChar()
+  pic_email     String?       @db.VarChar()
+  created_at    DateTime      @default(now()) @db.Timestamptz()
+  updated_at    DateTime      @default(now()) @updatedAt @db.Timestamptz()
+  pipelines     B2BPipeline[]
+
+  @@map("b2b_company")
+}
+
+model B2BPipeline {
+  id                  Int                      @id @default(autoincrement())
+  name                String                   @db.VarChar()
+  company             B2BCompany               @relation(fields: [company_id], references: [id])
+  company_id          Int
+  product             B2BProductEnum
+  source              B2BSourceEnum?
+  stage               B2BStageEnum             @default(LEAD_IDENTIFIED)
+  probability         Int                      @default(0) @db.SmallInt
+  probability_status  B2BProbabilityStatusEnum @default(COLD)
+  project_value       Decimal                  @default(0) @db.Decimal(15, 2)
+  project_start_month DateTime?                @db.Date
+  project_end_month   DateTime?                @db.Date
+  owner               User                     @relation(fields: [owner_id], references: [id])
+  owner_id            String                   @db.Uuid
+  created_at          DateTime                 @default(now()) @db.Timestamptz()
+  updated_at          DateTime                 @default(now()) @updatedAt @db.Timestamptz()
+  actions             B2BAction[]
+
+  @@map("b2b_pipeline")
+}
+
+model B2BAction {
+  id          Int                   @id @default(autoincrement())
+  pipeline    B2BPipeline           @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline_id Int
+  name        String                @db.VarChar()
+  summary     String?               @db.Text
+  status      B2BActionStatusEnum   @default(TO_DO)
+  priority    B2BActionPriorityEnum @default(MEDIUM)
+  due_date    DateTime?             @db.Date
+  assignee    User?                 @relation(fields: [assignee_id], references: [id], onDelete: SetNull)
+  assignee_id String?               @db.Uuid
+  created_at  DateTime              @default(now()) @db.Timestamptz()
+  updated_at  DateTime              @default(now()) @updatedAt @db.Timestamptz()
+
+  @@map("b2b_actions")
+}
