@@ -1,4 +1,7 @@
-import { AlertCircle, CheckSquare, Clock, Zap } from "lucide-react";
+"use client";
+
+import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import { AlertCircle, CheckSquare, Clock, Plus, Zap } from "lucide-react";
 
 const stats = [
   {
@@ -36,10 +39,12 @@ const aiActivities = [
 ];
 
 export default function HomePageOS() {
+  useHeaderAction({ label: "New Task", icon: Plus });
+
   return (
     <div className="flex flex-col min-h-full">
       {/* Greeting */}
-      <div className="bg-neutral-50 border-b border-gray-100 px-8 py-6">
+      <div className="bg-neutral-50 border-b border-gray-200 px-8 py-6">
         <p className="text-xs text-neutral-400 uppercase tracking-wider font-medium mb-1">
           {new Date().toLocaleDateString("id-ID", {
             weekday: "long",
@@ -58,7 +63,7 @@ export default function HomePageOS() {
           {stats.map((s) => (
             <div
               key={s.label}
-              className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col gap-3"
+              className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3"
             >
               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
                 <s.icon size={16} className={s.color} />
@@ -73,7 +78,7 @@ export default function HomePageOS() {
 
         <div className="grid grid-cols-2 gap-6">
           {/* AI activity */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                 24 Jam Terakhir
@@ -93,7 +98,7 @@ export default function HomePageOS() {
           </div>
 
           {/* Needs attention */}
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
               Needs Your Attention
             </p>

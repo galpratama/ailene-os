@@ -81,19 +81,19 @@ export default function CalendarPageOS() {
           <div className="flex items-center gap-1">
             <button
               onClick={prev}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
             >
               <ChevronLeft size={14} />
             </button>
             <button
               onClick={next}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
             >
               <ChevronRight size={14} />
             </button>
           </div>
 
-          <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
+          <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden">
             {VIEW_OPTIONS.map((v) => (
               <button
                 key={v}
@@ -122,9 +122,9 @@ export default function CalendarPageOS() {
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white rounded-xl border border-gray-300 overflow-hidden flex flex-col">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-200">
+        <div className="grid grid-cols-7 border-b border-gray-300">
           {DAYS.map((d) => (
             <div
               key={d}

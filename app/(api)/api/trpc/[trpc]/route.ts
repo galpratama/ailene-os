@@ -3,23 +3,33 @@ import { appRouter } from "@/trpc/routers/_app";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { NextRequest, NextResponse } from "next/server";
 
-function getAllowedOriginHeader(origin: string | null): string | null {
+const isOriginAllowed = (origin: string | null) => {
   if (!origin) {
-    // No Origin header = same-origin or non-browser request; allow, no ACAO header needed.
     return null;
   }
 
-  const allowedOrigins =
-    process.env.DOMAIN_MODE === "local"
-      ? ["https://os.example.com:3000"]
-      : ["https://os.ailene.id"];
+  const domainMode = process.env.DOMAIN_MODE;
+  let baseURL = "ailene.id";
+  if (domainMode === "local") {
+    baseURL = "example.com:3000";
+  }
 
-  return allowedOrigins.includes(origin) ? origin : "";
-}
+  const allowedOrigins = [
+    `https://os.${baseURL}`,
+    `https://api.${baseURL}`,
+    `https://biz.${baseURL}`,
+    `https://${baseURL}`,
+  ];
+
+  if (allowedOrigins.includes(origin)) {
+    return origin;
+  }
+  return false;
+};
 
 // Preflight for cross-origin clients.
 export async function OPTIONS(req: NextRequest) {
-  const allowedOrigin = getAllowedOriginHeader(req.headers.get("origin"));
+  const allowedOrigin = isOriginAllowed(req.headers.get("origin"));
   if (allowedOrigin === "") {
     return new NextResponse(null, { status: 404 });
   }
@@ -36,22 +46,27 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 const handler = (req: Request) => {
-  const allowedOrigin = getAllowedOriginHeader(req.headers.get("origin"));
-
-  // Explicit wrong origin → reject.
-  if (allowedOrigin === "") {
-    return new NextResponse(null, { status: 404 });
+  const isAllowed = isOriginAllowed(req.headers.get("origin"));
+  // isAllowed is `false` only when an Origin header is present and not on the
+  // allowlist. `null` means no Origin header at all (same-origin requests
+  // usually omit it), which must be allowed through.
+  if (isAllowed === false) {
+    return new NextResponse(null, {
+      status: 404, // Not Found
+    });
   }
 
   return fetchRequestHandler({
-    endpoint: "/api/trpc",
+    endpoint: "/trpc",
     req,
     router: appRouter,
     createContext: () => createTRPCContext(),
     responseMeta({}) {
-      return allowedOrigin
-        ? { headers: { "Access-Control-Allow-Origin": allowedOrigin } }
-        : {};
+      return {
+        headers: {
+          ...(isAllowed && { "Access-Control-Allow-Origin": isAllowed }),
+        },
+      };
     },
   });
 };

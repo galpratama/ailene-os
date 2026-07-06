@@ -1,3 +1,4 @@
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { trpc } from "@/trpc/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     process.env.DOMAIN_MODE === "local" ? "example.com" : "ailene.id";
 
   const cookieStore = await cookies();
-  cookieStore.set("session_token", sessionToken, {
+  cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
     domain,
     httpOnly: true,
     secure: true,

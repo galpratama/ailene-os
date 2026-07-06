@@ -1,7 +1,10 @@
-export default function Page() {
-  return (
-    <div className="px-8 py-6">
-      <h2 className="text-lg font-bold text-gray-900">Leads · B2B</h2>
-    </div>
-  );
+import LeadsPageOS from "@/components/pages/LeadsPageOS";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { cookies } from "next/headers";
+
+export default async function Page() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
+
+  return <LeadsPageOS sessionToken={sessionToken} />;
 }

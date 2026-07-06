@@ -19,7 +19,7 @@ export default function TasksPageOS() {
   return (
     <div className="flex flex-col h-full">
       {/* Filter bar */}
-      <div className="px-6 py-3 border-b border-gray-100 flex items-center gap-3">
+      <div className="px-6 py-3 border-b border-gray-200 flex items-center gap-3">
         <div className="flex items-center gap-1 text-xs">
           <span className="font-semibold text-gray-500 mr-1">SHOW</span>
           {SHOW_OPTIONS.map((opt) => (
@@ -74,7 +74,7 @@ export default function TasksPageOS() {
               </div>
 
               {/* Empty column */}
-              <div className="flex-1 min-h-32 rounded-xl border-2 border-dashed border-gray-100 flex items-center justify-center">
+              <div className="flex-1 min-h-32 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center">
                 <p className="text-xs text-gray-300">No tasks</p>
               </div>
             </div>

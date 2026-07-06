@@ -21,8 +21,8 @@ export const metadata: Metadata = {
 
 const trpcBaseURL =
   process.env.DOMAIN_MODE === "local"
-    ? "https://os.example.com:3000/api/trpc"
-    : "https://os.ailene.id/api/trpc";
+    ? "https://api.example.com:3000/trpc"
+    : "https://api.ailene.id/trpc";
 
 export default function RootLayout({
   children,

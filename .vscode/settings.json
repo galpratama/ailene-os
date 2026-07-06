@@ -10,5 +10,6 @@
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
   },
-  "prettier.trailingComma": "es5" // Use old format instead
+  "prettier.trailingComma": "es5", // Use old format instead
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore"
 }

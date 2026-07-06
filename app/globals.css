@@ -3,6 +3,27 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ailene www pastel palette — keep every marketing section on these tokens */
+  --kuning: #f2c94c;
+  --kuning-t: #fcf3d6;
+  --merah: #e85842;
+  --merah-t: #faddd8;
+  --pink: #f5a9d0;
+  --pink-t: #fce4f1;
+  --biru: #7ea8f0;
+  --biru-t: #e1ebfb;
+  --hijau: #8fc55a;
+  --hijau-t: #e6f1d8;
+  --oranye: #f85149;
+  --oranye-t: #fedcdb;
+  --ink: #17171a;
+  --ink-soft: #5a5a63;
+  --ink-line: rgba(23, 23, 26, 0.1);
+  --off: #fafaf8;
+
+  /* ailene os primary accent — Claude's brand orange */
+  --claude: #f85149;
 }
 
 @theme inline {
@@ -10,6 +31,25 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-jakarta: var(--font-plus-jakarta-sans);
+
+  --color-kuning: var(--kuning);
+  --color-kuning-t: var(--kuning-t);
+  --color-merah: var(--merah);
+  --color-merah-t: var(--merah-t);
+  --color-pink: var(--pink);
+  --color-pink-t: var(--pink-t);
+  --color-biru: var(--biru);
+  --color-biru-t: var(--biru-t);
+  --color-hijau: var(--hijau);
+  --color-hijau-t: var(--hijau-t);
+  --color-oranye: var(--oranye);
+  --color-oranye-t: var(--oranye-t);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-line: var(--ink-line);
+  --color-off: var(--off);
+  --color-claude: var(--claude);
 }
 
 @media (prefers-color-scheme: dark) {

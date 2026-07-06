@@ -14,7 +14,7 @@ export default function ApprovalsPageOS() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-100 mb-6">
+      <div className="flex gap-1 border-b border-gray-200 mb-6">
         {["Pending", "Approved", "Rejected", "All"].map((tab, i) => (
           <button
             key={tab}

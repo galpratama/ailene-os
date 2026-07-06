@@ -1,6 +1,7 @@
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import GetPrismaClient from "@/lib/prisma";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export type createTRPCContextOptions = {
   sessionToken?: string;
@@ -11,13 +12,17 @@ export async function createTRPCContext(
 ) {
   const prisma = GetPrismaClient();
 
-  async function getSessionTokenFromHeader() {
+  async function getSessionTokenFromRequest() {
     const heads = await headers();
     const authHeader = heads.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return null;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      return authHeader.substring(7);
     }
-    return authHeader.substring(7);
+
+    // Login happens on a different subdomain (biz), so the token usually
+    // isn't in memory on the current page — fall back to the shared cookie.
+    const cookieStore = await cookies();
+    return cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
   }
 
   async function getUserFromSessionToken(sessionToken: string) {
@@ -40,7 +45,7 @@ export async function createTRPCContext(
   }
 
   const sessionToken =
-    opts?.sessionToken || (await getSessionTokenFromHeader());
+    opts?.sessionToken || (await getSessionTokenFromRequest());
   let user;
   if (sessionToken !== null) {
     user = await getUserFromSessionToken(sessionToken);
