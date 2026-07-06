@@ -121,7 +121,7 @@ export default function CreateActionFormOS({
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
           {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
               {error}
             </p>
           )}
@@ -182,7 +182,7 @@ export default function CreateActionFormOS({
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4">
+        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
           <AppButton
             type="button"
             variant="outline"

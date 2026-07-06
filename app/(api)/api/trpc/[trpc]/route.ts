@@ -30,7 +30,7 @@ const isOriginAllowed = (origin: string | null) => {
 // Preflight for cross-origin clients.
 export async function OPTIONS(req: NextRequest) {
   const allowedOrigin = isOriginAllowed(req.headers.get("origin"));
-  if (allowedOrigin === "") {
+  if (allowedOrigin === false) {
     return new NextResponse(null, { status: 404 });
   }
 

@@ -10,7 +10,9 @@ import {
   ChevronsRight,
   LucideIcon,
   Moon,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,8 +45,8 @@ function NavItem({
         collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
         active
-          ? "bg-claude/10 text-claude font-medium"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          ? "bg-sb-item-active-bg text-sb-item-active-text font-medium"
+          : "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong"
       }`}
     >
       {active && !collapsed && (
@@ -67,6 +69,29 @@ function initialsOf(fullName: string) {
     .join("");
 }
 
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative flex shrink-0 items-center rounded-full bg-sb-item-hover p-1 transition-colors"
+      aria-label="Toggle dark mode"
+      suppressHydrationWarning
+    >
+      <div className="absolute left-1 size-6 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-in-out dark:translate-x-6 dark:bg-white/10 dark:shadow-none" />
+      <span className="relative flex size-6 items-center justify-center">
+        <Sun size={12} className="text-sb-text" />
+      </span>
+      <span className="relative flex size-6 items-center justify-center">
+        <Moon size={12} className="text-sb-text" />
+      </span>
+    </button>
+  );
+}
+
 function UserFooter({
   sessionToken,
   collapsed,
@@ -85,7 +110,7 @@ function UserFooter({
 
   return (
     <div
-      className={`mt-auto border-t border-gray-200 flex items-center gap-2.5 ${
+      className={`mt-auto border-t border-sb-border-soft flex items-center gap-2.5 ${
         collapsed ? "justify-center px-2 py-3" : "px-3 py-3"
       }`}
     >
@@ -105,16 +130,14 @@ function UserFooter({
       {!collapsed && (
         <>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-medium text-sb-text-strong truncate">
               {isLoading ? "Loading..." : (user?.full_name ?? "Not signed in")}
             </p>
-            <p className="text-xs text-gray-400 truncate lowercase">
+            <p className="text-xs text-sb-text truncate">
               {user?.role_name ?? ""}
             </p>
           </div>
-          <AppButton variant="ghost" size="icon">
-            <Moon size={14} />
-          </AppButton>
+          <ThemeToggle />
         </>
       )}
     </div>
@@ -126,7 +149,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
 
   return (
     <aside
-      className={`shrink-0 bg-white flex flex-col h-screen sticky top-0 border-r border-gray-300 transition-[width] duration-150 ${
+      className={`shrink-0 bg-sb-bg flex flex-col h-screen sticky top-0 border-r border-sb-border transition-[width] duration-150 ${
         isCollapsed ? "w-16" : "w-64"
       }`}
     >
@@ -148,12 +171,12 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
 
       {/* Logo */}
       <div
-        className={`flex items-center pt-5 pb-4 mb-3 border-b border-gray-200 ${
+        className={`flex items-center pt-5 pb-4 mb-3 border-b border-sb-border-soft ${
           isCollapsed ? "justify-center px-2" : "px-4"
         }`}
       >
         {isCollapsed ? (
-          <div className="w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="w-9 h-9 rounded-lg border border-sb-border flex items-center justify-center shrink-0 overflow-hidden">
             <LogoAileneIcon className="w-6 h-6" />
           </div>
         ) : (
@@ -171,7 +194,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           <span className="flex items-center gap-2 min-w-0">
             <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
             {!isCollapsed && (
-              <span className="text-left font-medium text-gray-800 truncate">
+              <span className="text-left font-medium text-sb-text-strong truncate">
                 Operating System
               </span>
             )}
@@ -191,7 +214,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
       {/* Tools */}
       <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
         {!isCollapsed && (
-          <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <p className="px-3 py-1 text-xs font-semibold text-sb-text uppercase tracking-wider">
             Tools
           </p>
         )}

@@ -35,19 +35,19 @@ export default function SheetOS({
       onClick={onClose}
     >
       <div
-        className="relative flex h-full w-full max-w-md flex-col bg-white border-l border-gray-300 shadow-xl"
+        className="relative flex h-full w-full max-w-md flex-col bg-white border-l border-gray-300 shadow-xl dark:bg-zinc-900 dark:border-zinc-700"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-6 py-4 dark:border-zinc-800">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">{title}</h2>
             {description && (
-              <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+              <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
           >
             <X size={16} />
           </button>

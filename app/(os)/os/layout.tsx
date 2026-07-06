@@ -3,6 +3,7 @@ import SidebarOS from "@/components/navigations/SidebarOS";
 import { HeaderActionProvider } from "@/contexts/HeaderActionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { ThemeProvider } from "next-themes";
 import { Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
@@ -17,20 +18,22 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
 
   return (
-    <SidebarProvider>
-      <HeaderActionProvider>
-        <div
-          className={`flex h-screen overflow-hidden ${spaceGrotesk.className}`}
-        >
-          <SidebarOS sessionToken={sessionToken} />
-          <div className="flex-1 flex flex-col min-w-0 bg-neutral-50">
-            <HeaderOS sessionToken={sessionToken} />
-            <main className="flex-1 overflow-auto bg-neutral-50">
-              {children}
-            </main>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <SidebarProvider>
+        <HeaderActionProvider>
+          <div
+            className={`flex h-screen overflow-hidden bg-dashboard-bg ${spaceGrotesk.className}`}
+          >
+            <SidebarOS sessionToken={sessionToken} />
+            <div className="flex-1 flex flex-col min-w-0 bg-dashboard-bg">
+              <HeaderOS sessionToken={sessionToken} />
+              <main className="flex-1 overflow-auto bg-dashboard-bg">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-      </HeaderActionProvider>
-    </SidebarProvider>
+        </HeaderActionProvider>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 }

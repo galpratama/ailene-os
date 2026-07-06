@@ -91,8 +91,8 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   return (
     <div className="px-8 py-6 flex flex-col gap-5 h-full">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Tasks</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tasks</h2>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
           Every action across every client, in one board
         </p>
       </div>
@@ -120,13 +120,15 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                 }}
                 onDrop={handleDrop(col.value)}
                 className={`flex flex-col min-w-0 h-full min-h-0 gap-2 rounded-xl border p-3 transition-colors ${
-                  isOver ? "border-claude bg-claude/5" : "border-gray-200 bg-gray-50"
+                  isOver
+                    ? "border-claude bg-claude/5"
+                    : "border-dashboard-border bg-dashboard-bg"
                 }`}
               >
                 <div className="flex items-center justify-between px-1 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />
-                    <span className="text-xs font-bold uppercase tracking-wide text-gray-700">
+                    <span className="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-zinc-300">
                       {col.label}
                     </span>
                   </div>
@@ -146,14 +148,14 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                         draggable
                         onDragStart={() => setDraggedId(action.id)}
                         onDragEnd={() => setDraggedId(null)}
-                        className={`rounded-lg border border-gray-200 bg-white p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity ${
+                        className={`rounded-lg border border-dashboard-border bg-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity ${
                           draggedId === action.id ? "opacity-50" : ""
                         }`}
                       >
-                        <p className="text-sm font-semibold text-gray-900 line-clamp-3">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100 line-clamp-3">
                           {action.name}
                         </p>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-zinc-500">
                           <Building2 size={11} />
                           {action.company_name}
                         </span>
@@ -163,7 +165,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                             {due && (
                               <span
                                 className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                                  due.late ? "text-red-500" : "text-gray-400"
+                                  due.late ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
                                 }`}
                               >
                                 <CalendarClock size={11} />
@@ -171,7 +173,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                               </span>
                             )}
                           </div>
-                          <div className="flex size-5.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-[10px] font-semibold text-gray-500">
+                          <div className="flex size-5.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
                             {action.assignee_avatar ? (
                               <Image
                                 src={action.assignee_avatar}
@@ -190,7 +192,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                   })}
 
                   {!isLoading && items.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-6">No tasks</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">No tasks</p>
                   )}
                 </div>
               </div>

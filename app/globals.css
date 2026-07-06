@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -24,6 +26,36 @@
 
   /* ailene os primary accent — Claude's brand orange */
   --claude: #f85149;
+
+  /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark */
+  --dashboard-bg: #fafafa;
+  --dashboard-border: #e5e7eb;
+  --card-bg: #ffffff;
+  --sb-bg: #ffffff;
+  --sb-border: #d1d5db;
+  --sb-border-soft: #e5e7eb;
+  --sb-text: #4b5563;
+  --sb-text-strong: #111827;
+  --sb-item-hover: #f3f4f6;
+  --sb-item-active-bg: rgba(248, 81, 73, 0.1);
+  --sb-item-active-text: #f85149;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+
+  --dashboard-bg: #0a0a0a;
+  --dashboard-border: #27272a;
+  --card-bg: #18181b;
+  --sb-bg: #18181b;
+  --sb-border: #27272a;
+  --sb-border-soft: #27272a;
+  --sb-text: #a1a1aa;
+  --sb-text-strong: #f4f4f5;
+  --sb-item-hover: #27272a;
+  --sb-item-active-bg: rgba(248, 81, 73, 0.15);
+  --sb-item-active-text: #f85149;
 }
 
 @theme inline {
@@ -49,13 +81,18 @@
   --color-ink-line: var(--ink-line);
   --color-off: var(--off);
   --color-claude: var(--claude);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-dashboard-bg: var(--dashboard-bg);
+  --color-dashboard-border: var(--dashboard-border);
+  --color-card-bg: var(--card-bg);
+  --color-sb-bg: var(--sb-bg);
+  --color-sb-border: var(--sb-border);
+  --color-sb-border-soft: var(--sb-border-soft);
+  --color-sb-text: var(--sb-text);
+  --color-sb-text-strong: var(--sb-text-strong);
+  --color-sb-item-hover: var(--sb-item-hover);
+  --color-sb-item-active-bg: var(--sb-item-active-bg);
+  --color-sb-item-active-text: var(--sb-item-active-text);
 }
 
 body {

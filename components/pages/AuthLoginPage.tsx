@@ -2,27 +2,24 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import { LogoAilene } from "@/components/svg/LogoAilene";
-import { isValidRedirectUrl } from "@/lib/valid-redirect";
 import { useGoogleLogin } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 
 const dots = [
   { size: 70, color: "bg-kuning", className: "left-[10%] top-16 opacity-90" },
   { size: 46, color: "bg-pink", className: "right-[14%] top-40" },
   { size: 34, color: "bg-biru", className: "bottom-36 left-[18%]" },
-  { size: 58, color: "bg-hijau", className: "bottom-24 right-[16%] opacity-85" },
+  {
+    size: 58,
+    color: "bg-hijau",
+    className: "bottom-24 right-[16%] opacity-85",
+  },
   { size: 26, color: "bg-oranye", className: "left-[28%] top-32" },
 ];
 
 function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo");
-  const safeRedirect =
-    redirectTo && isValidRedirectUrl(redirectTo) ? redirectTo : "/";
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +27,10 @@ function LoginForm() {
     process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
       ? "biz.example.com:3000"
       : "biz.ailene.id";
+  const osRoute =
+    process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
+      ? "https://os.example.com:3000"
+      : "https://os.ailene.id";
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -51,8 +52,7 @@ function LoginForm() {
 
         const result = await response.json();
         if (result.status === 200) {
-          router.push(safeRedirect);
-          router.refresh();
+          window.location.assign(osRoute);
         } else {
           setError("Login failed. Please try again.");
         }
@@ -135,17 +135,15 @@ export default function AuthLoginPage() {
             .
           </p>
           <p className="text-sm leading-relaxed text-ink-soft">
-            Kurikulum runtut, komunitas ribuan orang, dan sertifikat tiap
-            kelar level.
+            Kurikulum runtut, komunitas ribuan orang, dan sertifikat tiap kelar
+            level.
           </p>
         </div>
       </div>
 
       {/* Form panel */}
       <div className="flex flex-1 items-center justify-center px-6">
-        <Suspense fallback={null}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm />
       </div>
     </div>
   );

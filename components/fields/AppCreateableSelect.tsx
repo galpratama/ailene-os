@@ -27,7 +27,7 @@ function MenuListWithLoader(props: MenuListProps<AppCreateableOption, false>) {
     <SelectComponents.MenuList {...props}>
       {props.children}
       {isLoadingMore && (
-        <div className="flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-400">
+        <div className="flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-400 dark:text-zinc-500">
           <Loader2 className="size-4 animate-spin" />
           Loading...
         </div>
@@ -148,7 +148,7 @@ export default function AppCreateableSelect({
       <IsLoadingMoreContext.Provider value={isLoadingMore}>
         <div className="relative">
           {icon && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3 text-gray-400">
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3 text-gray-400 dark:text-zinc-500">
               {icon}
             </div>
           )}
@@ -194,7 +194,7 @@ export default function AppCreateableSelect({
 
               return (
                 <div className="flex items-center gap-2">
-                  <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                  <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700">
                     {option.image ? (
                       <Image
                         className="h-full w-full object-cover"
@@ -204,7 +204,7 @@ export default function AppCreateableSelect({
                         height={24}
                       />
                     ) : (
-                      <Building2 className="size-3.5 text-gray-400" />
+                      <Building2 className="size-3.5 text-gray-400 dark:text-zinc-500" />
                     )}
                   </span>
                   <span className="truncate">{option.label}</span>
@@ -215,27 +215,29 @@ export default function AppCreateableSelect({
             unstyled
             classNames={{
               control: ({ isFocused }) =>
-                `cursor-pointer rounded-lg border bg-gray-50 px-2 py-1 text-sm transition ${
-                  isFocused ? "border-claude ring-2 ring-claude/30" : "border-gray-300"
+                `cursor-pointer rounded-lg border bg-gray-50 px-2 py-1 text-sm transition dark:bg-zinc-800 ${
+                  isFocused
+                    ? "border-claude ring-2 ring-claude/30"
+                    : "border-gray-300 dark:border-zinc-700"
                 } ${icon ? "pl-7" : ""}`,
               valueContainer: () => "cursor-pointer px-1 py-0.5",
-              placeholder: () => "cursor-pointer px-1 text-sm text-gray-400",
-              input: () => "cursor-pointer px-1 text-sm text-gray-900",
-              singleValue: () => "cursor-pointer px-1 text-sm text-gray-900",
-              indicatorsContainer: () => "cursor-pointer text-gray-400",
+              placeholder: () => "cursor-pointer px-1 text-sm text-gray-400 dark:text-zinc-500",
+              input: () => "cursor-pointer px-1 text-sm text-gray-900 dark:text-zinc-100",
+              singleValue: () => "cursor-pointer px-1 text-sm text-gray-900 dark:text-zinc-100",
+              indicatorsContainer: () => "cursor-pointer text-gray-400 dark:text-zinc-500",
               indicatorSeparator: () => "hidden",
               dropdownIndicator: () => "cursor-pointer px-1",
               clearIndicator: () => "cursor-pointer px-1 hover:text-red-600",
               menuPortal: () => "z-50",
               menu: () =>
-                "z-30 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md",
+                "z-30 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-800",
               menuList: () => "max-h-60 overflow-y-auto p-1",
               option: ({ isFocused }) =>
                 `cursor-pointer rounded-md px-3 py-2 text-sm ${
-                  isFocused ? "bg-claude/10 text-claude" : "text-gray-900"
+                  isFocused ? "bg-claude/10 text-claude" : "text-gray-900 dark:text-zinc-100"
                 }`,
-              noOptionsMessage: () => "p-2 text-sm text-gray-400",
-              loadingMessage: () => "p-2 text-sm text-gray-400",
+              noOptionsMessage: () => "p-2 text-sm text-gray-400 dark:text-zinc-500",
+              loadingMessage: () => "p-2 text-sm text-gray-400 dark:text-zinc-500",
             }}
           />
         </div>

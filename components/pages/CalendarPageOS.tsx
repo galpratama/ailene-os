@@ -1,166 +1,324 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import AppButton from "@/components/buttons/AppButton";
+import CalendarActionModalOS, {
+  CalendarActionModalEvent,
+} from "@/components/modals/CalendarActionModalOS";
+import { setSessionToken, trpc } from "@/trpc/client";
+import type { B2BActionPriorityEnum } from "@prisma/client";
+import {
+  CalendarClock,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-// Week starts on Monday (Indonesian convention)
-const DAYS = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"];
+const DAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
-const MONTHS_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
+const priorityStyles: Record<
+  B2BActionPriorityEnum,
+  { label: string; dot: string; chip: string }
+> = {
+  LOW: {
+    label: "Low",
+    dot: "bg-gray-400",
+    chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+  },
+  MEDIUM: {
+    label: "Medium",
+    dot: "bg-biru",
+    chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
+  },
+  HIGH: {
+    label: "High",
+    dot: "bg-oranye",
+    chip: "bg-oranye-t text-oranye hover:bg-oranye-t/80 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20",
+  },
+  URGENT: {
+    label: "Urgent",
+    dot: "bg-merah",
+    chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
+  },
+};
 
-const PRIORITY_LEGEND = [
-  { label: "Urgent", color: "bg-red-500" },
-  { label: "High", color: "bg-orange-500" },
-  { label: "Medium", color: "bg-yellow-600" },
-  { label: "Training", color: "bg-green-600" },
-  { label: "Prep reminder", color: "bg-orange-300" },
-];
-
-const VIEW_OPTIONS = ["Deadline", "Start date", "Range", "Month", "Timeline"];
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
+function pad(value: number) {
+  return String(value).padStart(2, "0");
 }
 
-// Returns 0=Mon, 1=Tue, ..., 6=Sun
-function getFirstDayMondayBased(year: number, month: number) {
-  const dayOfWeek = new Date(year, month, 1).getDay(); // 0=Sun
-  return (dayOfWeek + 6) % 7;
+function addDays(date: Date, days: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
-export default function CalendarPageOS() {
-  const today = new Date();
+function getMonthStart(year: number, month: number) {
+  return new Date(year, month, 1);
+}
+
+function getVisibleStart(year: number, month: number) {
+  const firstDay = getMonthStart(year, month);
+  const mondayBasedDay = (firstDay.getDay() + 6) % 7;
+  return addDays(firstDay, -mondayBasedDay);
+}
+
+function dateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function dateKeyFromValue(value: string | Date | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+function formatDate(value: Date) {
+  return value.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatMonth(value: Date) {
+  return value.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export default function CalendarPageOS({
+  sessionToken,
+}: {
+  sessionToken: string;
+}) {
+  useEffect(() => {
+    if (sessionToken) setSessionToken(sessionToken);
+  }, [sessionToken]);
+
+  const today = useMemo(() => new Date(), []);
   const [current, setCurrent] = useState({
     year: today.getFullYear(),
     month: today.getMonth(),
   });
-  const [activeView, setActiveView] = useState("Month");
+  const [selectedEvent, setSelectedEvent] =
+    useState<CalendarActionModalEvent | null>(null);
 
-  const daysInMonth = getDaysInMonth(current.year, current.month);
-  const firstDay = getFirstDayMondayBased(current.year, current.month);
+  const visibleStart = useMemo(
+    () => getVisibleStart(current.year, current.month),
+    [current.month, current.year]
+  );
+  const visibleDays = useMemo(
+    () => Array.from({ length: 42 }, (_, i) => addDays(visibleStart, i)),
+    [visibleStart]
+  );
+  const visibleEnd = visibleDays[visibleDays.length - 1];
 
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
+  const { data, isLoading, isError } = trpc.list.b2b.calendar.useQuery(
+    {
+      start_date: dateKey(visibleStart),
+      end_date: dateKey(visibleEnd),
+    },
+    { enabled: !!sessionToken }
+  );
 
-  // Pad to complete last row
-  while (cells.length % 7 !== 0) cells.push(null);
+  const eventsByDate = useMemo(() => {
+    const grouped = new Map<string, CalendarActionModalEvent[]>();
+    for (const event of data?.list ?? []) {
+      const key = dateKeyFromValue(event.due_date);
+      if (!key) continue;
+      grouped.set(key, [...(grouped.get(key) ?? []), event]);
+    }
+    return grouped;
+  }, [data?.list]);
 
-  const prev = () =>
-    setCurrent((c) => {
-      const m = c.month === 0 ? 11 : c.month - 1;
-      const y = c.month === 0 ? c.year - 1 : c.year;
-      return { year: y, month: m };
+  const goToPreviousMonth = () =>
+    setCurrent((value) => {
+      const month = value.month === 0 ? 11 : value.month - 1;
+      const year = value.month === 0 ? value.year - 1 : value.year;
+      return { year, month };
     });
 
-  const next = () =>
-    setCurrent((c) => {
-      const m = c.month === 11 ? 0 : c.month + 1;
-      const y = c.month === 11 ? c.year + 1 : c.year;
-      return { year: y, month: m };
+  const goToNextMonth = () =>
+    setCurrent((value) => {
+      const month = value.month === 11 ? 0 : value.month + 1;
+      const year = value.month === 11 ? value.year + 1 : value.year;
+      return { year, month };
     });
+
+  const goToToday = () =>
+    setCurrent({ year: today.getFullYear(), month: today.getMonth() });
+
+  const currentMonth = getMonthStart(current.year, current.month);
+  const todayKey = dateKey(today);
 
   return (
-    <div className="flex flex-col h-full px-8 py-6 gap-4">
-      {/* Page header */}
-      <div className="flex items-start justify-between">
+    <div className="min-h-full px-8 py-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Tasks &amp; Training</p>
-          <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {MONTHS_ID[current.month]} {current.year}
+          <p className="mb-1 text-xs font-medium text-gray-400 dark:text-zinc-500">
+            Tasks &amp; Training
+          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-zinc-100">
+            Calendar
+          </h1>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
+            {formatDate(visibleStart)} - {formatDate(visibleEnd)}
           </p>
         </div>
 
-        {/* View switcher + nav */}
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <AppButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+          >
+            <CalendarDays size={13} />
+            Today
+          </AppButton>
           <div className="flex items-center gap-1">
-            <button
-              onClick={prev}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+            <AppButton
+              type="button"
+              variant="outline"
+              size="iconSm"
+              onClick={goToPreviousMonth}
+              aria-label="Previous month"
             >
               <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={next}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+            </AppButton>
+            <AppButton
+              type="button"
+              variant="outline"
+              size="iconSm"
+              onClick={goToNextMonth}
+              aria-label="Next month"
             >
               <ChevronRight size={14} />
-            </button>
+            </AppButton>
           </div>
-
-          <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden">
-            {VIEW_OPTIONS.map((v) => (
-              <button
-                key={v}
-                onClick={() => setActiveView(v)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeView === v
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-500 hover:bg-gray-50"
-                }`}
-              >
-                {v}
-              </button>
-            ))}
+          <div className="flex h-8 items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-xs font-semibold text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            Month
           </div>
         </div>
       </div>
 
-      {/* Priority legend */}
-      <div className="flex items-center gap-4">
-        {PRIORITY_LEGEND.map((p) => (
-          <div key={p.label} className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-sm ${p.color}`} />
-            <span className="text-xs text-gray-600">{p.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar grid */}
-      <div className="flex-1 bg-white rounded-xl border border-gray-300 overflow-hidden flex flex-col">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-300">
-          {DAYS.map((d) => (
-            <div
-              key={d}
-              className="py-2.5 text-center text-xs font-semibold text-gray-400 tracking-wider"
-            >
-              {d}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100">
+          {formatMonth(currentMonth)}
+        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          {Object.entries(priorityStyles).map(([priority, style]) => (
+            <div key={priority} className="flex items-center gap-1.5">
+              <span className={`size-2 rounded-full ${style.dot}`} />
+              <span className="text-xs text-gray-600 dark:text-zinc-400">
+                {style.label}
+              </span>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Date rows */}
-        <div className="flex-1 grid grid-cols-7 divide-x divide-y divide-gray-100">
-          {cells.map((day, i) => {
-            const isToday =
-              day === today.getDate() &&
-              current.month === today.getMonth() &&
-              current.year === today.getFullYear();
+      {isError && (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+          Failed to load calendar actions. You may not have access to this data.
+        </p>
+      )}
 
-            return (
-              <div key={i} className="p-1.5 flex flex-col gap-1 min-h-28">
-                {day && (
-                  <span
-                    className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${
-                      isToday
-                        ? "bg-gray-900 text-white font-bold"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {day}
-                  </span>
-                )}
+      <div className="overflow-x-auto rounded-xl border border-dashboard-border bg-card-bg">
+        <div className="min-w-220">
+          <div className="grid grid-cols-7 border-b border-dashboard-border bg-dashboard-bg">
+            {DAYS.map((day) => (
+              <div
+                key={day}
+                className="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500"
+              >
+                {day}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7">
+            {visibleDays.map((day, index) => {
+              const key = dateKey(day);
+              const isCurrentMonth = day.getMonth() === current.month;
+              const isToday = key === todayKey;
+              const events = eventsByDate.get(key) ?? [];
+              const isLastColumn = index % 7 === 6;
+              const isLastRow = index >= 35;
+
+              return (
+                <div
+                  key={key}
+                  className={[
+                    "min-h-36 border-gray-200 p-2 dark:border-zinc-800",
+                    isLastColumn ? "" : "border-r",
+                    isLastRow ? "" : "border-b",
+                    isCurrentMonth ? "bg-card-bg" : "bg-dashboard-bg/70",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={[
+                        "flex size-6 items-center justify-center rounded-full text-xs font-semibold",
+                        isToday
+                          ? "bg-claude text-white"
+                          : isCurrentMonth
+                            ? "text-gray-700 dark:text-zinc-300"
+                            : "text-gray-400 dark:text-zinc-600",
+                      ].join(" ")}
+                    >
+                      {day.getDate()}
+                    </span>
+                    {events.length > 0 && (
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-zinc-500">
+                        <CalendarClock size={11} />
+                        {events.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    {events.map((event) => {
+                      const style = priorityStyles[event.priority];
+                      return (
+                        <AppButton
+                          key={event.id}
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className={`h-auto min-h-7 w-full justify-start rounded-md px-1.5 py-1 ${style.chip}`}
+                          onClick={() => setSelectedEvent(event)}
+                        >
+                          <span
+                            className={`mt-1 size-1.5 shrink-0 rounded-full ${style.dot}`}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-left text-xs font-semibold">
+                            {event.title}
+                          </span>
+                        </AppButton>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {isLoading && (
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-400 dark:text-zinc-500">
+          <Loader2 size={15} className="animate-spin" />
+          Loading calendar actions...
+        </div>
+      )}
+
+      <CalendarActionModalOS
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </div>
   );
 }

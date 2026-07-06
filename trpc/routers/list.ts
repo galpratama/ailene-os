@@ -20,6 +20,7 @@ export const listRouter = createTRPCRouter({
     pipelines: listB2B.pipelines,
     actions: listB2B.actions,
     allActions: listB2B.allActions,
+    calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,
   },
 });

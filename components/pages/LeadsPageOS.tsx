@@ -60,8 +60,8 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
   return (
     <div className="px-8 py-6 flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Leads · B2B</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Leads · B2B</h2>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
           Track and manage every lead across the B2B sales pipeline
         </p>
       </div>
@@ -71,16 +71,16 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
         {scorecards.map((sc) => (
           <div
             key={sc.key}
-            className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3"
+            className="bg-card-bg rounded-xl border border-dashboard-border p-5 flex flex-col gap-3"
           >
             <div className="w-8 h-8 rounded-lg bg-claude/10 flex items-center justify-center">
               <Wallet size={16} className="text-claude" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
                 {getShortRupiahCurrency(data?.scorecards[sc.key] ?? 0)}
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">{sc.label}</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{sc.label}</p>
             </div>
           </div>
         ))}
@@ -97,7 +97,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
         />
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400 py-8 text-center">Loading leads...</p>}
+      {isLoading && <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">Loading leads...</p>}
       {isError && (
         <p className="text-sm text-red-500 py-8 text-center">
           Failed to load leads. You may not have access to this data.
@@ -105,10 +105,10 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       {pipelineList && !isLoading && !isError && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-card-bg rounded-xl border border-dashboard-border overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-dashboard-border text-left text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
                 <th className="px-5 py-3">Company</th>
                 <th className="px-5 py-3">Industry</th>
                 <th className="px-5 py-3">Program</th>
@@ -119,27 +119,27 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
             </thead>
             <tbody>
               {pipelineList.map((post) => (
-                <tr key={post.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <tr key={post.id} className="border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
                   <td className="px-5 py-3.5">
                     <Link
                       href={`/leads/${post.id}`}
-                      className="flex items-center gap-1.5 font-semibold text-gray-900 hover:text-claude"
+                      className="flex items-center gap-1.5 font-semibold text-gray-900 dark:text-zinc-100 hover:text-claude"
                     >
                       {post.company_name}
                       <SquareArrowOutUpRight size={12} />
                     </Link>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-500">{post.industry_name}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{post.name}</td>
+                  <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">{post.industry_name}</td>
+                  <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{post.name}</td>
                   <td className="px-5 py-3.5">
                     <StageLabel stage={post.stage} />
                   </td>
-                  <td className="px-5 py-3.5 font-semibold text-gray-900 whitespace-nowrap">
+                  <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100 whitespace-nowrap">
                     {getRupiahCurrency(Number(post.project_value))}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                      <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 dark:bg-zinc-700 shrink-0">
                         {post.owner_avatar && (
                           <Image
                             src={post.owner_avatar}
@@ -150,7 +150,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
                           />
                         )}
                       </div>
-                      <span className="text-gray-700">{post.owner_name}</span>
+                      <span className="text-gray-700 dark:text-zinc-300">{post.owner_name}</span>
                     </div>
                   </td>
                 </tr>
@@ -159,7 +159,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
           </table>
 
           {pipelineList.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-10">
+            <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
               {debouncedKeyword
                 ? `No leads found for "${debouncedKeyword}"`
                 : "No leads yet."}
@@ -173,17 +173,17 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="p-1.5 rounded-lg border border-gray-300 text-gray-500 disabled:opacity-40 hover:bg-gray-50"
+            className="p-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-zinc-800"
           >
             <ChevronLeft size={14} />
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 dark:text-zinc-400">
             Page {page} of {totalPage}
           </span>
           <button
             disabled={page >= totalPage}
             onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
-            className="p-1.5 rounded-lg border border-gray-300 text-gray-500 disabled:opacity-40 hover:bg-gray-50"
+            className="p-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-zinc-800"
           >
             <ChevronRight size={14} />
           </button>

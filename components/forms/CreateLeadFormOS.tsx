@@ -50,7 +50,7 @@ const probabilityStatusOptions: AppSelectOption[] = [
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
-    active ? "bg-claude text-white" : "text-gray-500 hover:text-gray-700"
+    active ? "bg-claude text-white" : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
   }`;
 }
 
@@ -190,7 +190,7 @@ export default function CreateLeadFormOS({
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
           {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
               {error}
             </p>
           )}
@@ -205,13 +205,13 @@ export default function CreateLeadFormOS({
           />
 
           {/* Company */}
-          <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-gray-800">Company</p>
-                <p className="text-xs text-gray-500">Create a new company or pick an existing one.</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-400">Create a new company or pick an existing one.</p>
               </div>
-              <div className="flex rounded-lg border border-gray-300 bg-white p-0.5">
+              <div className="flex rounded-lg border border-gray-300 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => setUseExistingCompany(false)}
@@ -376,7 +376,7 @@ export default function CreateLeadFormOS({
           />
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4">
+        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
           <AppButton
             type="button"
             variant="outline"

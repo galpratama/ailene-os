@@ -79,7 +79,7 @@ export default function AppNumberInput({
 
       <div className="relative">
         {icon && (
-          <div className="pointer-events-none absolute left-0 flex h-full items-center pl-3 text-gray-400">
+          <div className="pointer-events-none absolute left-0 flex h-full items-center pl-3 text-gray-400 dark:text-zinc-500">
             {icon}
           </div>
         )}

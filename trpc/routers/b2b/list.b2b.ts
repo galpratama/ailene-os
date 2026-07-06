@@ -1,5 +1,5 @@
 import { Optional } from "@/lib/optional-type";
-import { STATUS_OK } from "@/lib/status_code";
+import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
 import {
@@ -9,6 +9,7 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
+  B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BProbabilityStatusEnum,
   B2BProductEnum,
@@ -16,6 +17,7 @@ import {
   B2BStageEnum,
   Prisma,
 } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 
 export const listB2B = {
@@ -346,6 +348,89 @@ export const listB2B = {
           updated_at: entry.updated_at,
         })),
         metapaging: paging.metapaging,
+      };
+    }),
+
+  calendar: administratorProcedure
+    .input(
+      z.object({
+        start_date: z.iso.date(),
+        end_date: z.iso.date(),
+        status: z.enum(B2BActionStatusEnum).optional(),
+        priority: z.enum(B2BActionPriorityEnum).optional(),
+        assignee_id: stringIsUUID().optional(),
+        company_id: numberIsID().optional(),
+        pipeline_id: numberIsID().optional(),
+      })
+    )
+    .query(async (opts) => {
+      const startDate = new Date(`${opts.input.start_date}T00:00:00.000Z`);
+      const endDate = new Date(`${opts.input.end_date}T00:00:00.000Z`);
+
+      if (endDate < startDate) {
+        throw new TRPCError({
+          code: STATUS_BAD_REQUEST,
+          message: "end_date must be on or after start_date.",
+        });
+      }
+
+      const whereClause: Prisma.B2BActionWhereInput = {
+        due_date: { gte: startDate, lte: endDate },
+        status: opts.input.status,
+        priority: opts.input.priority,
+        assignee_id: opts.input.assignee_id,
+        pipeline_id: opts.input.pipeline_id,
+        pipeline: opts.input.company_id
+          ? { company_id: opts.input.company_id }
+          : undefined,
+      };
+
+      const actionList = await opts.ctx.prisma.b2BAction.findMany({
+        include: {
+          assignee: { select: { id: true, full_name: true, avatar: true } },
+          pipeline: {
+            select: {
+              id: true,
+              name: true,
+              company: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: [
+          { due_date: "asc" },
+          { priority: "desc" },
+          { created_at: "asc" },
+        ],
+        where: whereClause,
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        list: actionList.map((entry) => ({
+          id: entry.id,
+          type: "b2b_action" as const,
+          title: entry.name,
+          pipeline_id: entry.pipeline_id,
+          pipeline_name: entry.pipeline.name,
+          company_id: entry.pipeline.company.id,
+          company_name: entry.pipeline.company.name,
+          name: entry.name,
+          summary: entry.summary,
+          status: entry.status,
+          priority: entry.priority,
+          due_date: entry.due_date,
+          assignee_id: entry.assignee_id,
+          assignee_name: entry.assignee?.full_name ?? null,
+          assignee_avatar: entry.assignee?.avatar ?? null,
+          created_at: entry.created_at,
+          updated_at: entry.updated_at,
+        })),
+        meta: {
+          start_date: opts.input.start_date,
+          end_date: opts.input.end_date,
+          total_data: actionList.length,
+        },
       };
     }),
 
