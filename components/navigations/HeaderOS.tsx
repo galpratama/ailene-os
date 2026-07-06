@@ -2,10 +2,15 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import { useHeaderActionContext } from "@/contexts/HeaderActionContext";
+import { osMainNav, osToolsNav } from "@/lib/os-nav";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { Bell, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+
+const breadcrumbNav = [...osMainNav, ...osToolsNav];
 
 function initialsOf(fullName: string) {
   return fullName
@@ -27,14 +32,25 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
   const user = data?.user;
   const { action } = useHeaderActionContext();
 
+  const pathname = usePathname();
+  const currentNavItem = breadcrumbNav.find((item) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href)
+  );
+
   return (
     <header className="h-12 shrink-0 bg-white border-b border-gray-300 flex items-center justify-between px-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
-        <span className="text-gray-800">Ailene Group</span>
-        <ChevronRight size={12} className="text-gray-400" />
-        <span className="text-gray-800">Workspace</span>
+        <Link href="/" className="text-gray-800 hover:text-claude transition-colors">
+          Ailene OS
+        </Link>
+        {currentNavItem && !currentNavItem.exact && (
+          <>
+            <ChevronRight size={12} className="text-gray-400" />
+            <span className="text-gray-800">{currentNavItem.label}</span>
+          </>
+        )}
       </div>
 
       {/* Actions */}

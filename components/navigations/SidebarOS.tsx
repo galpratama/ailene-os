@@ -1,55 +1,34 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { LogoAilene, LogoAileneIcon } from "@/components/svg/LogoAilene";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { osMainNav, osToolsNav } from "@/lib/os-nav";
 import { trpc, setSessionToken } from "@/trpc/client";
 import {
-  Calendar,
-  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
-  GraduationCap,
-  LayoutGrid,
   LucideIcon,
   Moon,
-  Search,
-  Settings,
-  Sparkles,
-  SquareCheckBig,
-  Users,
-  Wallet,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-const mainNav: { href: string; label: string; icon: LucideIcon; badge?: number; exact?: boolean }[] = [
-  { href: "/", label: "Home", icon: LayoutGrid, exact: true },
-  { href: "/leads", label: "Leads · B2B", icon: Users, badge: 11 },
-  { href: "/tasks", label: "Tasks", icon: SquareCheckBig, badge: 35 },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/trainers", label: "Trainers", icon: GraduationCap, badge: 6 },
-  { href: "/module", label: "Module", icon: GraduationCap },
-  { href: "/revenue", label: "Revenue", icon: Wallet },
-];
-
-const toolsNav: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+const mainNav = osMainNav;
+const toolsNav = osToolsNav;
 
 function NavItem({
   href,
   label,
   icon: Icon,
-  badge,
   exact,
   collapsed,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
-  badge?: number;
   exact?: boolean;
   collapsed: boolean;
 }) {
@@ -61,7 +40,7 @@ function NavItem({
       href={href}
       title={collapsed ? label : undefined}
       className={`relative flex items-center rounded-lg text-sm transition-colors ${
-        collapsed ? "justify-center px-2 py-2" : "justify-between px-3 py-1.5"
+        collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
         active
           ? "bg-claude/10 text-claude font-medium"
@@ -75,11 +54,6 @@ function NavItem({
         <Icon size={15} className="shrink-0" />
         {!collapsed && <span className="truncate">{label}</span>}
       </div>
-      {!collapsed && badge != null && (
-        <span className="text-xs text-gray-400 font-medium tabular-nums">
-          {badge}
-        </span>
-      )}
     </Link>
   );
 }
@@ -156,24 +130,34 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         isCollapsed ? "w-16" : "w-64"
       }`}
     >
+      {/* Collapse toggle */}
+      <div className="absolute -right-5 top-5 z-10">
+        <AppButton
+          variant="outline"
+          size="iconSm"
+          className="rounded-full shadow-sm"
+          onClick={toggleSidebar}
+        >
+          {isCollapsed ? (
+            <ChevronsRight size={13} />
+          ) : (
+            <ChevronsLeft size={13} />
+          )}
+        </AppButton>
+      </div>
+
       {/* Logo */}
       <div
-        className={`flex items-center gap-2.5 pt-5 pb-4 ${
+        className={`flex items-center pt-5 pb-4 mb-3 border-b border-gray-200 ${
           isCollapsed ? "justify-center px-2" : "px-4"
         }`}
       >
-        <div className="w-8 h-8 rounded-lg bg-claude flex items-center justify-center shrink-0">
-          <Sparkles size={15} className="text-white" />
-        </div>
-        {!isCollapsed && (
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-gray-900 leading-none truncate">
-              Ailene OS
-            </span>
-            <span className="text-xs text-gray-400 mt-0.5 leading-none">
-              INTERNAL HQ
-            </span>
+        {isCollapsed ? (
+          <div className="w-9 h-9 rounded-lg border border-gray-300 flex items-center justify-center shrink-0 overflow-hidden">
+            <LogoAileneIcon className="w-6 h-6" />
           </div>
+        ) : (
+          <LogoAilene className="h-6 w-auto" />
         )}
       </div>
 
@@ -188,35 +172,17 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
             {!isCollapsed && (
               <span className="text-left font-medium text-gray-800 truncate">
-                Ailene Group
+                Operating System
               </span>
             )}
           </span>
-          {!isCollapsed && (
-            <ChevronDown size={13} className="text-gray-400 shrink-0" />
-          )}
-        </AppButton>
-      </div>
-
-      {/* Search */}
-      <div className={isCollapsed ? "px-2 pb-2" : "px-3 pb-2"}>
-        <AppButton
-          variant="outline"
-          size="md"
-          className={`w-full text-gray-400 ${
-            isCollapsed ? "justify-center px-0" : "justify-between"
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <Search size={13} />
-            {!isCollapsed && <span className="text-left">Search...</span>}
-          </span>
-          {!isCollapsed && <span className="text-xs text-gray-400">⌘K</span>}
         </AppButton>
       </div>
 
       {/* Main nav */}
-      <nav className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}>
+      <nav
+        className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
+      >
         {mainNav.map((item) => (
           <NavItem key={item.href} {...item} collapsed={isCollapsed} />
         ))}
@@ -234,19 +200,6 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             <NavItem key={item.href} {...item} collapsed={isCollapsed} />
           ))}
         </div>
-      </div>
-
-      {/* Collapse toggle */}
-      <div className={`mt-2 ${isCollapsed ? "px-2" : "px-2"}`}>
-        <AppButton
-          variant="ghost"
-          size={isCollapsed ? "icon" : "md"}
-          className={`w-full ${isCollapsed ? "" : "justify-start"}`}
-          onClick={toggleSidebar}
-        >
-          {isCollapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
-          {!isCollapsed && "Collapse"}
-        </AppButton>
       </div>
 
       <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />

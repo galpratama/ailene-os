@@ -1,4 +1,3 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
 import HeaderBIZ from "../navigations/HeaderBIZ";
 import FooterBIZ from "../navigations/FooterBIZ";
 import HeroHomeBIZ from "../heroes/HeroHomeBIZ";
@@ -13,15 +12,9 @@ import TestimonialsHomeBIZ from "../static-sections/TestimonialsHomeBIZ";
 import HackathonHomeBIZ from "../static-sections/HackathonHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
-
 export default function HomePageBIZ() {
   return (
-    <div className={`${jakarta.variable} font-jakarta`}>
+    <div>
       <HeaderBIZ />
       <HeroHomeBIZ />
       <PainHomeBIZ />

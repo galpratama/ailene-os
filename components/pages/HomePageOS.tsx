@@ -1,45 +1,63 @@
 "use client";
 
+import PriorityLabel from "@/components/labels/PriorityLabel";
 import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import { setSessionToken, trpc } from "@/trpc/client";
 import { AlertCircle, CheckSquare, Clock, Plus, Zap } from "lucide-react";
+import { useEffect } from "react";
 
-const stats = [
-  {
-    label: "Pending Approvals",
-    value: 0,
-    icon: AlertCircle,
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-  },
-  {
-    label: "My Tasks Today",
-    value: 0,
-    icon: CheckSquare,
-    color: "text-blue-500",
-    bg: "bg-blue-50",
-  },
-  {
-    label: "Team Overdue",
-    value: 0,
-    icon: Clock,
-    color: "text-red-500",
-    bg: "bg-red-50",
-  },
-  {
-    label: "Active Tasks",
-    value: 0,
-    icon: Zap,
-    color: "text-green-500",
-    bg: "bg-green-50",
-  },
-];
+function formatDueDate(dueDate: string | Date | null) {
+  if (!dueDate) return null;
+  return new Date(dueDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
 
-const aiActivities = [
-  "No AI activity recorded in the last 24 hours.",
-];
-
-export default function HomePageOS() {
+export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   useHeaderAction({ label: "New Task", icon: Plus });
+
+  useEffect(() => {
+    if (sessionToken) setSessionToken(sessionToken);
+  }, [sessionToken]);
+
+  const { data, isLoading } = trpc.list.b2b.homeSummary.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+
+  const stats = [
+    {
+      label: "Pending Approvals",
+      value: data?.stats.pending_approvals ?? 0,
+      icon: AlertCircle,
+      color: "text-amber-500",
+      bg: "bg-amber-50",
+    },
+    {
+      label: "My Tasks Today",
+      value: data?.stats.my_tasks_today ?? 0,
+      icon: CheckSquare,
+      color: "text-blue-500",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Team Overdue",
+      value: data?.stats.team_overdue ?? 0,
+      icon: Clock,
+      color: "text-red-500",
+      bg: "bg-red-50",
+    },
+    {
+      label: "Active Tasks",
+      value: data?.stats.active_tasks ?? 0,
+      icon: Zap,
+      color: "text-green-500",
+      bg: "bg-green-50",
+    },
+  ];
+
+  const approvalsWaiting = data?.approvals_waiting ?? [];
+  const myTasks = data?.my_tasks ?? [];
 
   return (
     <div className="flex flex-col min-h-full">
@@ -54,7 +72,11 @@ export default function HomePageOS() {
           })}
         </p>
         <h1 className="text-2xl font-bold text-gray-900">Good morning, Akmal 👋</h1>
-        <p className="text-sm text-gray-500 mt-1">You have no tasks due today.</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {data?.stats.my_tasks_today
+            ? `You have ${data.stats.my_tasks_today} task${data.stats.my_tasks_today > 1 ? "s" : ""} due today.`
+            : "You have no tasks due today."}
+        </p>
       </div>
 
       <div className="flex-1 px-8 py-6 flex flex-col gap-6">
@@ -69,7 +91,9 @@ export default function HomePageOS() {
                 <s.icon size={16} className={s.color} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {isLoading ? "—" : s.value}
+                </p>
                 <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
               </div>
             </div>
@@ -88,12 +112,10 @@ export default function HomePageOS() {
               </span>
             </div>
             <ul className="flex flex-col gap-2">
-              {aiActivities.map((a, i) => (
-                <li key={i} className="flex gap-2 text-sm text-gray-600">
-                  <span className="w-1 h-1 rounded-full bg-gray-300 mt-2 shrink-0" />
-                  {a}
-                </li>
-              ))}
+              <li className="flex gap-2 text-sm text-gray-600">
+                <span className="w-1 h-1 rounded-full bg-gray-300 mt-2 shrink-0" />
+                No AI activity recorded in the last 24 hours.
+              </li>
             </ul>
           </div>
 
@@ -107,11 +129,60 @@ export default function HomePageOS() {
                 <p className="text-xs font-medium text-gray-700 mb-2">
                   Approvals waiting on you
                 </p>
-                <p className="text-sm text-gray-400 italic">No pending approvals.</p>
+                {approvalsWaiting.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    {isLoading ? "Loading…" : "No pending approvals."}
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {approvalsWaiting.map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="text-gray-700 truncate">
+                          {action.name}
+                          <span className="text-gray-400"> · {action.pipeline_name}</span>
+                        </span>
+                        {action.due_date && (
+                          <span className="text-xs text-gray-400 shrink-0">
+                            {formatDueDate(action.due_date)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-700 mb-2">Your tasks</p>
-                <p className="text-sm text-gray-400 italic">No overdue or due-today tasks.</p>
+                {myTasks.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">
+                    {isLoading ? "Loading…" : "No overdue or due-today tasks."}
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {myTasks.map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="text-gray-700 truncate">
+                          {action.name}
+                          <span className="text-gray-400"> · {action.pipeline_name}</span>
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <PriorityLabel priority={action.priority} />
+                          {action.due_date && (
+                            <span className="text-xs text-gray-400">
+                              {formatDueDate(action.due_date)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

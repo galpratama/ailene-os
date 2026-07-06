@@ -9,6 +9,7 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
+  B2BActionStatusEnum,
   B2BProbabilityStatusEnum,
   B2BProductEnum,
   B2BSourceEnum,
@@ -277,4 +278,154 @@ export const listB2B = {
         metapaging: paging.metapaging,
       };
     }),
+
+  // Same b2b_actions data as `actions`, but across every pipeline/company
+  // instead of one — for the global Tasks board.
+  allActions: administratorProcedure
+    .input(
+      z.object({
+        status: z.enum(B2BActionStatusEnum).optional(),
+        assignee_id: stringIsUUID().optional(),
+        company_id: numberIsID().optional(),
+        page: numberIsPosInt().optional(),
+        page_size: numberIsPosInt().optional(),
+      })
+    )
+    .query(async (opts) => {
+      const whereClause: Prisma.B2BActionWhereInput = {
+        status: opts.input.status,
+        assignee_id: opts.input.assignee_id,
+        pipeline: opts.input.company_id
+          ? { company_id: opts.input.company_id }
+          : undefined,
+      };
+
+      const paging = calculatePage(
+        opts.input,
+        await opts.ctx.prisma.b2BAction.aggregate({
+          _count: true,
+          where: whereClause,
+        })
+      );
+
+      const actionList = await opts.ctx.prisma.b2BAction.findMany({
+        include: {
+          assignee: { select: { id: true, full_name: true, avatar: true } },
+          pipeline: {
+            select: {
+              id: true,
+              name: true,
+              company: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: [{ due_date: "asc" }, { created_at: "asc" }],
+        where: whereClause,
+        skip: paging.prisma.skip,
+        take: paging.prisma.take,
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        list: actionList.map((entry) => ({
+          id: entry.id,
+          pipeline_id: entry.pipeline_id,
+          pipeline_name: entry.pipeline.name,
+          company_id: entry.pipeline.company.id,
+          company_name: entry.pipeline.company.name,
+          name: entry.name,
+          summary: entry.summary,
+          status: entry.status,
+          priority: entry.priority,
+          due_date: entry.due_date,
+          assignee_id: entry.assignee_id,
+          assignee_name: entry.assignee?.full_name ?? null,
+          assignee_avatar: entry.assignee?.avatar ?? null,
+          created_at: entry.created_at,
+          updated_at: entry.updated_at,
+        })),
+        metapaging: paging.metapaging,
+      };
+    }),
+
+  // Cross-pipeline action counts + shortlists for the OS home dashboard.
+  homeSummary: administratorProcedure.query(async (opts) => {
+    const userId = opts.ctx.user.id;
+    const now = new Date();
+    const today = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    );
+
+    const [
+      pendingApprovals,
+      myTasksToday,
+      teamOverdue,
+      activeTasks,
+      approvalsWaiting,
+      myTasks,
+    ] = await Promise.all([
+      opts.ctx.prisma.b2BAction.count({
+        where: { status: B2BActionStatusEnum.REVIEW },
+      }),
+      opts.ctx.prisma.b2BAction.count({
+        where: {
+          assignee_id: userId,
+          due_date: today,
+          status: { not: B2BActionStatusEnum.DONE },
+        },
+      }),
+      opts.ctx.prisma.b2BAction.count({
+        where: {
+          due_date: { lt: today },
+          status: { not: B2BActionStatusEnum.DONE },
+        },
+      }),
+      opts.ctx.prisma.b2BAction.count({
+        where: { status: B2BActionStatusEnum.IN_PROGRESS },
+      }),
+      opts.ctx.prisma.b2BAction.findMany({
+        where: { assignee_id: userId, status: B2BActionStatusEnum.REVIEW },
+        include: { pipeline: { select: { id: true, name: true } } },
+        orderBy: [{ due_date: "asc" }],
+        take: 5,
+      }),
+      opts.ctx.prisma.b2BAction.findMany({
+        where: {
+          assignee_id: userId,
+          status: { not: B2BActionStatusEnum.DONE },
+          due_date: { lte: today },
+        },
+        include: { pipeline: { select: { id: true, name: true } } },
+        orderBy: [{ due_date: "asc" }],
+        take: 5,
+      }),
+    ]);
+
+    return {
+      code: STATUS_OK,
+      message: "Success",
+      stats: {
+        pending_approvals: pendingApprovals,
+        my_tasks_today: myTasksToday,
+        team_overdue: teamOverdue,
+        active_tasks: activeTasks,
+      },
+      approvals_waiting: approvalsWaiting.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        pipeline_id: entry.pipeline_id,
+        pipeline_name: entry.pipeline.name,
+        due_date: entry.due_date,
+      })),
+      my_tasks: myTasks.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        pipeline_id: entry.pipeline_id,
+        pipeline_name: entry.pipeline.name,
+        due_date: entry.due_date,
+        priority: entry.priority,
+      })),
+    };
+  }),
 };

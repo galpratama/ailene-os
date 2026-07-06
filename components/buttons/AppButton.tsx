@@ -15,7 +15,7 @@ export type AppButtonVariant =
   | "white"
   | "orange"
   | "discord";
-export type AppButtonSize = "sm" | "md" | "icon" | "cta";
+export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "cta";
 
 interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -40,6 +40,7 @@ const sizeClasses: Record<AppButtonSize, string> = {
   sm: "h-8 px-3 text-xs gap-1.5 rounded-lg font-semibold transition-colors",
   md: "h-9 px-3.5 text-sm gap-2 rounded-lg font-semibold transition-colors",
   icon: "size-8 justify-center p-0 rounded-lg font-semibold transition-colors",
+  iconSm: "size-7 justify-center p-0 rounded-lg font-semibold transition-colors",
   cta: "px-6 py-3.5 gap-1.5 text-[15px] rounded-xl font-bold transition-transform hover:-translate-y-0.5",
 };
 
