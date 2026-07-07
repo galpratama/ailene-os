@@ -10,14 +10,14 @@ import { B2BActionPriorityEnum, B2BActionStatusEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
-const statusOptions: AppSelectOption[] = [
+export const statusOptions: AppSelectOption[] = [
   { value: "TO_DO", label: "To Do" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "REVIEW", label: "Review" },
   { value: "DONE", label: "Done" },
 ];
 
-const priorityOptions: AppSelectOption[] = [
+export const priorityOptions: AppSelectOption[] = [
   { value: "LOW", label: "Low" },
   { value: "MEDIUM", label: "Medium" },
   { value: "HIGH", label: "High" },

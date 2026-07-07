@@ -36,11 +36,13 @@ function NavItem({
 }) {
   const pathname = usePathname();
   const active = exact ? pathname === href : pathname.startsWith(href);
+  const { closeMobileSidebar } = useSidebar();
 
   return (
     <Link
       href={href}
       title={collapsed ? label : undefined}
+      onClick={closeMobileSidebar}
       className={`relative flex items-center rounded-lg text-sm transition-colors ${
         collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
@@ -145,87 +147,120 @@ function UserFooter({
 }
 
 export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, isMobileOpen, closeMobileSidebar } =
+    useSidebar();
+  const pathname = usePathname();
+
+  // Safety net: if navigation ever happens without going through a NavItem's
+  // onClick (e.g. browser back/forward), still close the mobile drawer.
+  useEffect(() => {
+    closeMobileSidebar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   return (
-    <aside
-      className={`shrink-0 bg-sb-bg flex flex-col h-screen sticky top-0 border-r border-sb-border transition-[width] duration-150 ${
-        isCollapsed ? "w-16" : "w-64"
-      }`}
-    >
-      {/* Collapse toggle */}
-      <div className="absolute -right-5 top-5 z-10">
-        <AppButton
-          variant="outline"
-          size="iconSm"
-          className="rounded-full shadow-sm"
-          onClick={toggleSidebar}
+    <>
+      {/* Mobile backdrop */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={closeMobileSidebar}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-sb-border bg-sb-bg transition-transform duration-200 md:sticky md:top-0 md:z-10 md:translate-x-0 md:transition-[width] md:duration-150 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        } ${isCollapsed ? "md:w-16" : "md:w-64"}`}
+      >
+        {/* Mobile close button */}
+        <div className="absolute right-3 top-5 z-10 md:hidden">
+          <AppButton
+            variant="outline"
+            size="iconSm"
+            className="rounded-full shadow-sm"
+            onClick={closeMobileSidebar}
+            aria-label="Close menu"
+          >
+            <ChevronsLeft size={13} />
+          </AppButton>
+        </div>
+
+        {/* Collapse toggle (desktop only) */}
+        <div className="absolute -right-5 top-5 z-10 hidden md:block">
+          <AppButton
+            variant="outline"
+            size="iconSm"
+            className="rounded-full shadow-sm"
+            onClick={toggleSidebar}
+          >
+            {isCollapsed ? (
+              <ChevronsRight size={13} />
+            ) : (
+              <ChevronsLeft size={13} />
+            )}
+          </AppButton>
+        </div>
+
+        {/* Logo */}
+        <div
+          className={`flex items-center pt-5 pb-4 mb-3 border-b border-sb-border-soft ${
+            isCollapsed ? "justify-center px-2" : "px-4"
+          }`}
         >
           {isCollapsed ? (
-            <ChevronsRight size={13} />
+            <div className="w-9 h-9 rounded-lg border border-sb-border flex items-center justify-center shrink-0 overflow-hidden">
+              <LogoAileneIcon className="w-6 h-6" />
+            </div>
           ) : (
-            <ChevronsLeft size={13} />
+            <LogoAilene className="h-6 w-auto" />
           )}
-        </AppButton>
-      </div>
+        </div>
 
-      {/* Logo */}
-      <div
-        className={`flex items-center pt-5 pb-4 mb-3 border-b border-sb-border-soft ${
-          isCollapsed ? "justify-center px-2" : "px-4"
-        }`}
-      >
-        {isCollapsed ? (
-          <div className="w-9 h-9 rounded-lg border border-sb-border flex items-center justify-center shrink-0 overflow-hidden">
-            <LogoAileneIcon className="w-6 h-6" />
-          </div>
-        ) : (
-          <LogoAilene className="h-6 w-auto" />
-        )}
-      </div>
+        {/* Org selector */}
+        <div className={isCollapsed ? "px-2 pb-3" : "px-3 pb-3"}>
+          <AppButton
+            variant="outline"
+            size="md"
+            className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-between"}`}
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
+              {!isCollapsed && (
+                <span className="text-left font-medium text-sb-text-strong truncate">
+                  Operating System
+                </span>
+              )}
+            </span>
+          </AppButton>
+        </div>
 
-      {/* Org selector */}
-      <div className={isCollapsed ? "px-2 pb-3" : "px-3 pb-3"}>
-        <AppButton
-          variant="outline"
-          size="md"
-          className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-between"}`}
+        {/* Main nav */}
+        <nav
+          className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
         >
-          <span className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
-            {!isCollapsed && (
-              <span className="text-left font-medium text-sb-text-strong truncate">
-                Operating System
-              </span>
-            )}
-          </span>
-        </AppButton>
-      </div>
-
-      {/* Main nav */}
-      <nav
-        className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
-      >
-        {mainNav.map((item) => (
-          <NavItem key={item.href} {...item} collapsed={isCollapsed} />
-        ))}
-      </nav>
-
-      {/* Tools */}
-      <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
-        {!isCollapsed && (
-          <p className="px-3 py-1 text-xs font-semibold text-sb-text uppercase tracking-wider">
-            Tools
-          </p>
-        )}
-        <div className="flex flex-col gap-0.5 mt-0.5">
-          {toolsNav.map((item) => (
+          {mainNav.map((item) => (
             <NavItem key={item.href} {...item} collapsed={isCollapsed} />
           ))}
-        </div>
-      </div>
+        </nav>
 
-      <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />
-    </aside>
+        {/* Tools */}
+        <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+          {!isCollapsed && (
+            <p className="px-3 py-1 text-xs font-semibold text-sb-text uppercase tracking-wider">
+              Tools
+            </p>
+          )}
+          <div className="flex flex-col gap-0.5 mt-0.5">
+            {toolsNav.map((item) => (
+              <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+            ))}
+          </div>
+        </div>
+
+        <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />
+      </aside>
+    </>
   );
 }

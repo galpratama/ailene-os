@@ -59,7 +59,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   return (
     <div className="flex flex-col min-h-full">
       {/* Greeting */}
-      <div className="bg-dashboard-bg border-b border-dashboard-border px-8 py-6">
+      <div className="bg-dashboard-bg border-b border-dashboard-border px-4 py-6 sm:px-8">
         <p className="text-xs text-neutral-400 dark:text-zinc-500 uppercase tracking-wider font-medium mb-1">
           {new Date().toLocaleDateString("id-ID", {
             weekday: "long",
@@ -76,9 +76,9 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
         </p>
       </div>
 
-      <div className="flex-1 px-8 py-6 flex flex-col gap-6">
+      <div className="flex-1 px-4 py-6 flex flex-col gap-6 sm:px-8">
         {/* Stat cards */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s) => (
             <div
               key={s.label}
@@ -97,7 +97,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* AI activity */}
           <div className="bg-card-bg rounded-xl border border-dashboard-border p-5">
             <div className="flex items-center gap-2 mb-4">

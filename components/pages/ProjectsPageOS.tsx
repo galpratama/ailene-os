@@ -2,8 +2,8 @@ import { FolderOpen } from "lucide-react";
 
 export default function ProjectsPageOS() {
   return (
-    <div className="px-8 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-6 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Projects</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Track progress across all projects</p>

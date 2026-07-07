@@ -2,8 +2,8 @@ import { ThumbsUp } from "lucide-react";
 
 export default function ApprovalsPageOS() {
   return (
-    <div className="px-8 py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-6 sm:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Approvals</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Requests waiting for your action</p>
@@ -14,7 +14,7 @@ export default function ApprovalsPageOS() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-zinc-800 mb-6">
+      <div className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-zinc-800 mb-6">
         {["Pending", "Approved", "Rejected", "All"].map((tab, i) => (
           <button
             key={tab}

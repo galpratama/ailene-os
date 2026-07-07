@@ -152,7 +152,7 @@ export default function CalendarPageOS({
   const todayKey = dateKey(today);
 
   return (
-    <div className="min-h-full px-8 py-6">
+    <div className="min-h-full px-4 py-6 sm:px-8">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="mb-1 text-xs font-medium text-gray-400 dark:text-zinc-500">

@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 
 export default function EmployeePageOS() {
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-6 sm:px-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Employee</h2>

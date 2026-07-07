@@ -2,9 +2,10 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import { useHeaderActionContext } from "@/contexts/HeaderActionContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 import { osMainNav, osToolsNav } from "@/lib/os-nav";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { Bell, ChevronRight, LogOut } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -116,6 +117,7 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
   });
   const user = data?.user;
   const { action } = useHeaderActionContext();
+  const { toggleMobileSidebar } = useSidebar();
 
   const pathname = usePathname();
   const currentNavItem = breadcrumbNav.find((item) =>
@@ -123,27 +125,42 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
   );
 
   return (
-    <header className="h-12 shrink-0 bg-sb-bg border-b border-sb-border flex items-center justify-between px-5">
+    <header className="h-12 shrink-0 bg-sb-bg border-b border-sb-border flex items-center justify-between gap-2 px-3 sm:px-5">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-sb-text uppercase tracking-wide">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-sb-text uppercase tracking-wide min-w-0">
+        <AppButton
+          variant="outline"
+          size="icon"
+          className="mr-1 shrink-0 md:hidden"
+          onClick={toggleMobileSidebar}
+          aria-label="Open menu"
+        >
+          <Menu size={15} />
+        </AppButton>
+
         <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
-        <Link href="/" className="text-sb-text-strong hover:text-claude transition-colors">
+        <Link
+          href="/"
+          className="shrink-0 text-sb-text-strong hover:text-claude transition-colors"
+        >
           Ailene OS
         </Link>
         {currentNavItem && !currentNavItem.exact && (
           <>
-            <ChevronRight size={12} className="text-sb-text" />
-            <span className="text-sb-text-strong">{currentNavItem.label}</span>
+            <ChevronRight size={12} className="shrink-0 text-sb-text" />
+            <span className="truncate text-sb-text-strong">
+              {currentNavItem.label}
+            </span>
           </>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {action && (
           <AppButton variant="primary" size="sm" onClick={action.onClick}>
             <action.icon size={13} />
-            {action.label}
+            <span className="hidden sm:inline">{action.label}</span>
           </AppButton>
         )}
 

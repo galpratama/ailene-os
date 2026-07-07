@@ -2,6 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
+import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import { useHeaderAction } from "@/contexts/HeaderActionContext";
 import { setSessionToken, trpc } from "@/trpc/client";
@@ -85,6 +86,7 @@ export default function PipelineKanbanOS({
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<B2BActionStatusEnum | null>(null);
+  const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   const moveTo = (id: number, status: B2BActionStatusEnum) => {
     const current = board.find((b) => b.id === id);
@@ -111,7 +113,7 @@ export default function PipelineKanbanOS({
   };
 
   return (
-    <div className="px-8 py-6 flex flex-col gap-5 h-full">
+    <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
       <div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
           {pipeline ? `${pipeline.company_name} · ${pipeline.name}` : "Loading..."}
@@ -128,7 +130,7 @@ export default function PipelineKanbanOS({
       )}
 
       {!isError && (
-        <div className="grid grid-cols-4 gap-4 flex-1 min-h-0">
+        <div className="flex flex-1 gap-4 min-h-0 overflow-x-auto pb-1 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {columns.map((col) => {
             const items = board.filter((b) => b.status === col.value);
             const isOver = dragOverStatus === col.value;
@@ -143,7 +145,7 @@ export default function PipelineKanbanOS({
                   if (e.currentTarget === e.target) setDragOverStatus(null);
                 }}
                 onDrop={handleDrop(col.value)}
-                className={`flex flex-col min-w-0 h-full min-h-0 gap-2 rounded-xl border p-3 transition-colors ${
+                className={`flex w-70 shrink-0 flex-col h-full min-h-0 gap-2 rounded-xl border p-3 transition-colors lg:w-auto lg:min-w-0 ${
                   isOver
                     ? "border-claude bg-claude/5"
                     : "border-dashboard-border bg-dashboard-bg"
@@ -172,7 +174,8 @@ export default function PipelineKanbanOS({
                         draggable
                         onDragStart={() => setDraggedId(action.id)}
                         onDragEnd={() => setDraggedId(null)}
-                        className={`rounded-lg border border-dashboard-border bg-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity ${
+                        onClick={() => setEditingActionId(action.id)}
+                        className={`rounded-lg border border-dashboard-border bg-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
                           draggedId === action.id ? "opacity-50" : ""
                         }`}
                       >
@@ -238,6 +241,13 @@ export default function PipelineKanbanOS({
         isOpen={createStatus !== null}
         defaultStatus={createStatus ?? "TO_DO"}
         onClose={() => setCreateStatus(null)}
+      />
+
+      <EditActionFormOS
+        sessionToken={sessionToken}
+        actionId={editingActionId}
+        isOpen={editingActionId !== null}
+        onClose={() => setEditingActionId(null)}
       />
     </div>
   );

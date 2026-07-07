@@ -12,6 +12,12 @@ type SidebarContextType = {
   isCollapsed: boolean;
   toggleSidebar: () => void;
   setCollapsed: (value: boolean) => void;
+  // Mobile off-canvas drawer state — independent of desktop collapse, since
+  // on mobile the sidebar is either fully hidden or fully shown as an overlay.
+  isMobileOpen: boolean;
+  openMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
+  toggleMobileSidebar: () => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | null>(null);
@@ -21,6 +27,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   // (which has no access to localStorage) — read the saved value after mount
   // instead of during the initial render to avoid a hydration mismatch.
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
     setIsCollapsed(localStorage.getItem("sidebar_collapsed") === "true");
@@ -34,7 +41,15 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   return (
     <SidebarContext.Provider
-      value={{ isCollapsed, toggleSidebar, setCollapsed: setIsCollapsed }}
+      value={{
+        isCollapsed,
+        toggleSidebar,
+        setCollapsed: setIsCollapsed,
+        isMobileOpen,
+        openMobileSidebar: () => setIsMobileOpen(true),
+        closeMobileSidebar: () => setIsMobileOpen(false),
+        toggleMobileSidebar: () => setIsMobileOpen((prev) => !prev),
+      }}
     >
       {children}
     </SidebarContext.Provider>

@@ -58,7 +58,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
   const totalPage = data?.metapaging.total_page ?? 1;
 
   return (
-    <div className="px-8 py-6 flex flex-col gap-5">
+    <div className="px-4 py-6 flex flex-col gap-5 sm:px-8">
       <div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Leads · B2B</h2>
         <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
@@ -67,7 +67,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
       </div>
 
       {/* Scorecards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {scorecards.map((sc) => (
           <div
             key={sc.key}
@@ -87,7 +87,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
       </div>
 
       {/* Search */}
-      <div className="max-w-sm">
+      <div className="max-w-full sm:max-w-sm">
         <AppInput
           inputId="leads-search"
           icon={<Search size={14} />}
@@ -105,8 +105,8 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       {pipelineList && !isLoading && !isError && (
-        <div className="bg-card-bg rounded-xl border border-dashboard-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-card-bg rounded-xl border border-dashboard-border overflow-x-auto">
+          <table className="w-full min-w-175 text-sm">
             <thead>
               <tr className="border-b border-dashboard-border text-left text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">
                 <th className="px-5 py-3">Company</th>
