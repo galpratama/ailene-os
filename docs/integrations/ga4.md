@@ -33,5 +33,9 @@ entire service-account JSON as a protected server-side environment variable:
 GA4_SERVICE_ACCOUNT_JSON="{...}"
 ```
 
+Prefer a one-line JSON value whose private key uses escaped `\n` sequences.
+The server also normalizes literal line breaks inside `private_key` for
+deployment dashboards that expand those escape sequences automatically.
+
 The dashboard route is administrator-only and is available at `/tracking` on
 the OS subdomain.
