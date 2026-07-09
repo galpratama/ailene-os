@@ -10,6 +10,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@google-analytics/data": "^6.1.0",
     "@prisma/client": "^6.19.3",
     "@react-oauth/google": "^0.13.5",
     "@tanstack/react-query": "^5.101.2",
@@ -22,6 +23,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-select": "^5.10.2",
+    "recharts": "^3.9.2",
     "server-only": "^0.0.1",
     "zod": "^4.4.3"
   },

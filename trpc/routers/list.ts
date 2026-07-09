@@ -1,4 +1,5 @@
 import { createTRPCRouter } from "@/trpc/init";
+import { listAnalytics } from "./analytics/list.analytics";
 import { listB2B } from "./b2b/list.b2b";
 import { listLookup } from "./lookup/list.lookup";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
@@ -33,5 +34,11 @@ export const listRouter = createTRPCRouter({
     assignments: listTrainerPool.assignments,
     evaluations: listTrainerPool.evaluations,
     specializations: listTrainerPool.specializations,
+  },
+
+  // Analytics //
+
+  analytics: {
+    ga4Dashboard: listAnalytics.ga4Dashboard,
   },
 });

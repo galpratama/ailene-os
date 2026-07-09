@@ -1,5 +1,6 @@
 import {
   Calendar,
+  ChartNoAxesCombined,
   GraduationCap,
   LayoutGrid,
   LucideIcon,
@@ -21,6 +22,7 @@ export type OSNavItem = {
 export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true },
   { href: "/leads", label: "Leads · B2B", icon: Users },
+  { href: "/tracking", label: "Tracking B2C", icon: ChartNoAxesCombined },
   { href: "/tasks", label: "Tasks", icon: SquareCheckBig },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/trainers", label: "Trainers", icon: GraduationCap },
