@@ -1,7 +1,10 @@
-export default function Page() {
-  return (
-    <div className="px-4 py-6 sm:px-8">
-      <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Trainers</h2>
-    </div>
-  );
+import TrainerPoolListOS from "@/components/pages/TrainerPoolListOS";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { cookies } from "next/headers";
+
+export default async function Page() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
+
+  return <TrainerPoolListOS sessionToken={sessionToken} />;
 }

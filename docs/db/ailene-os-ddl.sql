@@ -69,6 +69,76 @@ CREATE TYPE b2ba_priority_enum AS ENUM (
   'urgent'
 );
 
+-- Enumeration for the Trainer Pool tables
+
+CREATE TYPE trainer_level_enum AS ENUM (
+  'apprentice',
+  'certified',
+  'senior',
+  'lead'
+);
+
+CREATE TYPE trainer_status_enum AS ENUM (
+  'candidate',
+  'certified',
+  'active',
+  'remedial',
+  'inactive'
+);
+
+CREATE TYPE trainer_source_enum AS ENUM (
+  'ai_community',
+  'top_alumni',
+  'domain_practitioner',
+  'trainer_network',
+  'corporate_practitioner',
+  'internal_referral'
+);
+
+CREATE TYPE trnsc_step_enum AS ENUM (
+  'application_review',
+  'interview',
+  'teaching_demo',
+  'practical_test',
+  'reference_check'
+);
+
+CREATE TYPE trnsc_status_enum AS ENUM (
+  'pending',
+  'passed',
+  'failed',
+  'skipped'
+);
+
+CREATE TYPE trncert_step_enum AS ENUM (
+  'orientation',
+  'material_mastery',
+  'shadowing',
+  'co_training',
+  'solo_observed_delivery',
+  'certification_decision'
+);
+
+CREATE TYPE trncert_status_enum AS ENUM (
+  'not_started',
+  'in_progress',
+  'passed',
+  'failed'
+);
+
+CREATE TYPE trainer_availability_status_enum AS ENUM (
+  'available',
+  'limited',
+  'unavailable'
+);
+
+CREATE TYPE trna_role_enum AS ENUM (
+  'lead',
+  'assistant',
+  'co_trainer',
+  'specialist'
+);
+
 ------------
 -- Tables --
 ------------
@@ -95,6 +165,12 @@ CREATE TABLE phone_country_codes (
   phone_code    VARCHAR  NOT NULL  UNIQUE,
   emoji         VARCHAR  NOT NULL,
   icon          VARCHAR      NULL
+);
+
+CREATE TABLE trainer_specializations (
+  id                   SMALLSERIAL  PRIMARY KEY,
+  specialization_name  VARCHAR      NOT NULL  UNIQUE,
+  created_at           TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- User data
@@ -168,6 +244,108 @@ CREATE TABLE b2b_actions (
   updated_at   TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Trainer Pool
+
+CREATE TABLE trainers (
+  id                UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
+  full_name         VARCHAR               NOT NULL,
+  email             VARCHAR               NOT NULL     UNIQUE,
+  phone_country_id  SMALLINT                  NULL,
+  phone_number      VARCHAR                   NULL,
+  source            trainer_source_enum       NULL,
+  level             trainer_level_enum    NOT NULL     DEFAULT 'apprentice',
+  status            trainer_status_enum   NOT NULL     DEFAULT 'candidate',
+  user_id           UUID                      NULL,
+  referred_by       UUID                      NULL,
+  notes             TEXT                      NULL,
+  created_at        TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  deleted_at        TIMESTAMPTZ               NULL
+);
+
+CREATE TABLE trainer_specialization_map (
+  trainer_id        UUID      NOT NULL,
+  specialization_id SMALLINT  NOT NULL,
+  PRIMARY KEY (trainer_id, specialization_id)
+);
+
+CREATE TABLE trainer_screening_steps (
+  id            SERIAL              PRIMARY KEY,
+  trainer_id    UUID                NOT NULL,
+  step          trnsc_step_enum     NOT NULL,
+  status        trnsc_status_enum   NOT NULL  DEFAULT 'pending',
+  notes         TEXT                    NULL,
+  completed_at  TIMESTAMPTZ             NULL,
+  created_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (trainer_id, step)
+);
+
+CREATE TABLE trainer_screening_scores (
+  id                        SERIAL       PRIMARY KEY,
+  trainer_id                UUID         NOT NULL  UNIQUE,
+  ai_hands_on_score         SMALLINT     NOT NULL  DEFAULT 0,
+  facilitation_score        SMALLINT     NOT NULL  DEFAULT 0,
+  domain_credibility_score  SMALLINT     NOT NULL  DEFAULT 0,
+  communication_score       SMALLINT     NOT NULL  DEFAULT 0,
+  reliability_score         SMALLINT     NOT NULL  DEFAULT 0,
+  total_score               SMALLINT     NOT NULL  DEFAULT 0,
+  scored_by                 UUID             NULL,
+  scored_at                 TIMESTAMPTZ      NULL,
+  created_at                TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at                TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trainer_certification_steps (
+  id                  SERIAL               PRIMARY KEY,
+  trainer_id          UUID                 NOT NULL,
+  step                trncert_step_enum    NOT NULL,
+  status              trncert_status_enum  NOT NULL  DEFAULT 'not_started',
+  sessions_required   SMALLINT             NOT NULL  DEFAULT 1,
+  sessions_completed  SMALLINT             NOT NULL  DEFAULT 0,
+  evaluator_id        UUID                     NULL,
+  notes               TEXT                     NULL,
+  completed_at        TIMESTAMPTZ              NULL,
+  created_at          TIMESTAMPTZ          NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMPTZ          NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (trainer_id, step)
+);
+
+CREATE TABLE trainer_availabilities (
+  id          SERIAL                            PRIMARY KEY,
+  trainer_id  UUID                              NOT NULL,
+  period      DATE                              NOT NULL,
+  status      trainer_availability_status_enum  NOT NULL  DEFAULT 'available',
+  notes       VARCHAR                               NULL,
+  created_at  TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (trainer_id, period)
+);
+
+CREATE TABLE trainer_assignments (
+  id                 SERIAL          PRIMARY KEY,
+  pipeline_id        INTEGER         NOT NULL,
+  trainer_id         UUID            NOT NULL,
+  role               trna_role_enum  NOT NULL  DEFAULT 'lead',
+  session_date       DATE                NULL,
+  participant_count  SMALLINT            NULL,
+  notes              TEXT                NULL,
+  created_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trainer_evaluations (
+  id                      SERIAL        PRIMARY KEY,
+  assignment_id           INTEGER           NULL,
+  trainer_id              UUID          NOT NULL,
+  participant_rating_avg  DECIMAL(2,1)      NULL,
+  self_report_submitted   BOOLEAN       NOT NULL  DEFAULT FALSE,
+  reviewed_by             UUID              NULL,
+  review_notes            TEXT              NULL,
+  evaluation_date         DATE              NULL,
+  created_at              TIMESTAMPTZ   NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
 ----------------
 -- References --
 ----------------
@@ -193,6 +371,40 @@ ALTER TABLE b2b_pipeline
 ALTER TABLE b2b_actions
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (assignee_id) REFERENCES users (id)         ON DELETE SET NULL;
+
+-- Trainer Pool
+
+ALTER TABLE trainers
+  ADD FOREIGN KEY (phone_country_id) REFERENCES phone_country_codes (id),
+  ADD FOREIGN KEY (user_id)          REFERENCES users (id),
+  ADD FOREIGN KEY (referred_by)      REFERENCES users (id);
+
+ALTER TABLE trainer_specialization_map
+  ADD FOREIGN KEY (trainer_id)        REFERENCES trainers (id)                ON DELETE CASCADE,
+  ADD FOREIGN KEY (specialization_id) REFERENCES trainer_specializations (id) ON DELETE CASCADE;
+
+ALTER TABLE trainer_screening_steps
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
+
+ALTER TABLE trainer_screening_scores
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (scored_by)  REFERENCES users (id);
+
+ALTER TABLE trainer_certification_steps
+  ADD FOREIGN KEY (trainer_id)   REFERENCES trainers (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (evaluator_id) REFERENCES users (id);
+
+ALTER TABLE trainer_availabilities
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
+
+ALTER TABLE trainer_assignments
+  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id);
+
+ALTER TABLE trainer_evaluations
+  ADD FOREIGN KEY (assignment_id) REFERENCES trainer_assignments (id) ON DELETE SET NULL,
+  ADD FOREIGN KEY (trainer_id)    REFERENCES trainers (id),
+  ADD FOREIGN KEY (reviewed_by)   REFERENCES users (id);
 
 ---------------
 -- Functions --
@@ -238,5 +450,37 @@ CREATE TRIGGER update_b2b_pipeline_updated_at_trigger
 
 CREATE TRIGGER update_b2b_actions_updated_at_trigger
   BEFORE UPDATE ON b2b_actions
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+-- Trainer Pool
+
+CREATE TRIGGER update_trainers_updated_at_trigger
+  BEFORE UPDATE ON trainers
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_screening_steps_updated_at_trigger
+  BEFORE UPDATE ON trainer_screening_steps
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_screening_scores_updated_at_trigger
+  BEFORE UPDATE ON trainer_screening_scores
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_certification_steps_updated_at_trigger
+  BEFORE UPDATE ON trainer_certification_steps
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_availabilities_updated_at_trigger
+  BEFORE UPDATE ON trainer_availabilities
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_assignments_updated_at_trigger
+  BEFORE UPDATE ON trainer_assignments
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();

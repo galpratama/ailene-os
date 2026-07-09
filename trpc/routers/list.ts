@@ -1,6 +1,7 @@
 import { createTRPCRouter } from "@/trpc/init";
 import { listB2B } from "./b2b/list.b2b";
 import { listLookup } from "./lookup/list.lookup";
+import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
 import { listUserData } from "./userdata/list.userdata";
 
 export const listRouter = createTRPCRouter({
@@ -22,5 +23,15 @@ export const listRouter = createTRPCRouter({
     allActions: listB2B.allActions,
     calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,
+  },
+
+  // Trainer Pool //
+
+  trainerPool: {
+    applicationOptions: listTrainerPool.applicationOptions,
+    trainers: listTrainerPool.trainers,
+    assignments: listTrainerPool.assignments,
+    evaluations: listTrainerPool.evaluations,
+    specializations: listTrainerPool.specializations,
   },
 });

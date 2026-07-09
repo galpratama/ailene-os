@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-const navLinks = ["Kurikulum", "Komunitas", "Event"];
+const navLinks = [
+  { label: "Kurikulum", href: "/#kurikulum" },
+  { label: "Komunitas", href: "/#komunitas" },
+  { label: "Event", href: "/#event" },
+  { label: "Jadi trainer", href: "/join-trainer" },
+];
 
 export default function HeaderBIZ() {
   return (
@@ -15,12 +20,13 @@ export default function HeaderBIZ() {
 
         <div className="hidden gap-6 md:flex">
           {navLinks.map((link) => (
-            <a
-              key={link}
+            <Link
+              key={link.label}
+              href={link.href}
               className="cursor-pointer text-[14.5px] font-semibold text-ink-soft hover:text-ink"
             >
-              {link}
-            </a>
+              {link.label}
+            </Link>
           ))}
         </div>
 
