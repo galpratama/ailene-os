@@ -1,16 +1,27 @@
 "use client";
 
-import PriorityLabel from "@/components/labels/PriorityLabel";
+import HomeActivityOS from "@/components/static-sections/HomeActivityOS";
+import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { AlertCircle, CheckSquare, Clock, Zap } from "lucide-react";
 import { useEffect } from "react";
 
-function formatDueDate(dueDate: string | Date | null) {
-  if (!dueDate) return null;
-  return new Date(dueDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+function getJakartaHour() {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    hourCycle: "h23",
+  })
+    .formatToParts(new Date())
+    .find((part) => part.type === "hour")?.value;
+  return Number(hour ?? 0);
+}
+
+function greeting() {
+  const hour = getJakartaHour();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
@@ -18,171 +29,122 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data, isLoading } = trpc.list.b2b.homeSummary.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
+  const { data, isLoading, isError } =
+    trpc.list.b2b.homeSummary.useQuery(undefined, {
+      enabled: !!sessionToken,
+    });
 
   const stats = [
     {
-      label: "Pending Approvals",
+      label: "My Pending Approvals",
       value: data?.stats.pending_approvals ?? 0,
       icon: AlertCircle,
-      color: "text-amber-500",
-      bg: "bg-amber-50 dark:bg-amber-500/10",
+      color: "text-kuning",
+      bg: "bg-kuning-t",
     },
     {
       label: "My Tasks Today",
       value: data?.stats.my_tasks_today ?? 0,
       icon: CheckSquare,
-      color: "text-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-500/10",
+      color: "text-biru",
+      bg: "bg-biru-t",
     },
     {
       label: "Team Overdue",
       value: data?.stats.team_overdue ?? 0,
       icon: Clock,
-      color: "text-red-500",
-      bg: "bg-red-50 dark:bg-red-500/10",
+      color: "text-merah",
+      bg: "bg-merah-t",
     },
     {
       label: "Active Tasks",
       value: data?.stats.active_tasks ?? 0,
       icon: Zap,
-      color: "text-green-500",
-      bg: "bg-green-50 dark:bg-green-500/10",
+      color: "text-hijau",
+      bg: "bg-hijau-t",
     },
   ];
 
-  const approvalsWaiting = data?.approvals_waiting ?? [];
-  const myTasks = data?.my_tasks ?? [];
+  const firstName = data?.user.full_name.trim().split(/\s+/)[0] ?? "";
+  const attention = data?.attention ?? {
+    totals: {
+      approvals: 0,
+      overdue_tasks: 0,
+      due_today_tasks: 0,
+      stale_leads: 0,
+    },
+    approvals: [],
+    overdue_tasks: [],
+    due_today_tasks: [],
+    stale_leads: [],
+  };
 
   return (
-    <div className="flex flex-col min-h-full">
-      {/* Greeting */}
-      <div className="bg-dashboard-bg border-b border-dashboard-border px-4 py-6 sm:px-8">
-        <p className="text-xs text-neutral-400 dark:text-zinc-500 uppercase tracking-wider font-medium mb-1">
+    <div className="flex min-h-full flex-col">
+      <div className="border-b border-gray-300 bg-dashboard-bg px-4 py-6 sm:px-8">
+        <p className="mb-1 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-zinc-500">
           {new Date().toLocaleDateString("id-ID", {
             weekday: "long",
             day: "numeric",
             month: "long",
             year: "numeric",
+            timeZone: "Asia/Jakarta",
           })}
         </p>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">Good morning, Akmal 👋</h1>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
+          {greeting()}
+          {firstName ? `, ${firstName}` : ""}
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
           {data?.stats.my_tasks_today
-            ? `You have ${data.stats.my_tasks_today} task${data.stats.my_tasks_today > 1 ? "s" : ""} due today.`
+            ? `You have ${data.stats.my_tasks_today} task${
+                data.stats.my_tasks_today > 1 ? "s" : ""
+              } due today.`
             : "You have no tasks due today."}
         </p>
       </div>
 
-      <div className="flex-1 px-4 py-6 flex flex-col gap-6 sm:px-8">
-        {/* Stat cards */}
+      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
+        {isError && (
+          <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
+            Dashboard data could not be loaded. Please refresh the page.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((s) => (
+          {stats.map((stat) => (
             <div
-              key={s.label}
-              className="bg-card-bg rounded-xl border border-dashboard-border p-5 flex flex-col gap-3"
+              key={stat.label}
+              className="flex flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5"
             >
-              <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
-                <s.icon size={16} className={s.color} />
+              <div
+                className={`flex size-8 items-center justify-center rounded-lg ${stat.bg}`}
+              >
+                <stat.icon size={16} className={stat.color} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
-                  {isLoading ? "—" : s.value}
+                  {isLoading ? "—" : stat.value}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{s.label}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
+                  {stat.label}
+                </p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* AI activity */}
-          <div className="bg-card-bg rounded-xl border border-dashboard-border p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xs font-semibold text-neutral-500 dark:text-zinc-400 uppercase tracking-wider">
-                24 Jam Terakhir
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-xs bg-neutral-100 text-neutral-500 dark:bg-zinc-800 dark:text-zinc-400">
-                AI Summary
-              </span>
-            </div>
-            <ul className="flex flex-col gap-2">
-              <li className="flex gap-2 text-sm text-gray-600 dark:text-zinc-300">
-                <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-zinc-600 mt-2 shrink-0" />
-                No AI activity recorded in the last 24 hours.
-              </li>
-            </ul>
-          </div>
-
-          {/* Needs attention */}
-          <div className="bg-card-bg rounded-xl border border-dashboard-border p-5">
-            <p className="text-xs font-semibold text-neutral-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
-              Needs Your Attention
-            </p>
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="text-xs font-medium text-gray-700 dark:text-zinc-300 mb-2">
-                  Approvals waiting on you
-                </p>
-                {approvalsWaiting.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-zinc-500 italic">
-                    {isLoading ? "Loading…" : "No pending approvals."}
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {approvalsWaiting.map((action) => (
-                      <div
-                        key={action.id}
-                        className="flex items-center justify-between gap-2 text-sm"
-                      >
-                        <span className="text-gray-700 dark:text-zinc-300 truncate">
-                          {action.name}
-                          <span className="text-gray-400 dark:text-zinc-500"> · {action.pipeline_name}</span>
-                        </span>
-                        {action.due_date && (
-                          <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">
-                            {formatDueDate(action.due_date)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-700 dark:text-zinc-300 mb-2">Your tasks</p>
-                {myTasks.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-zinc-500 italic">
-                    {isLoading ? "Loading…" : "No overdue or due-today tasks."}
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {myTasks.map((action) => (
-                      <div
-                        key={action.id}
-                        className="flex items-center justify-between gap-2 text-sm"
-                      >
-                        <span className="text-gray-700 dark:text-zinc-300 truncate">
-                          {action.name}
-                          <span className="text-gray-400 dark:text-zinc-500"> · {action.pipeline_name}</span>
-                        </span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <PriorityLabel priority={action.priority} />
-                          {action.due_date && (
-                            <span className="text-xs text-gray-400 dark:text-zinc-500">
-                              {formatDueDate(action.due_date)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <HomeActivityOS
+            activity={data?.activity ?? []}
+            activityWindowDays={data?.meta.activity_window_days ?? 7}
+            isLoading={isLoading}
+          />
+          <HomeAttentionOS
+            attention={attention}
+            staleLeadDays={data?.meta.stale_lead_days ?? 14}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </div>

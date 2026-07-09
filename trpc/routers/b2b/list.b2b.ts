@@ -20,6 +20,25 @@ import {
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
+const DASHBOARD_TIME_ZONE = "Asia/Jakarta";
+const ACTIVITY_WINDOW_DAYS = 7;
+const STALE_LEAD_DAYS = 14;
+
+function getCalendarDateInTimeZone(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value])
+  );
+  return new Date(
+    `${values.year}-${values.month}-${values.day}T00:00:00.000Z`
+  );
+}
+
 export const listB2B = {
   companies: administratorProcedure
     .input(
@@ -434,13 +453,51 @@ export const listB2B = {
       };
     }),
 
-  // Cross-pipeline action counts + shortlists for the OS home dashboard.
+  // Actionable operational summary for the OS home dashboard.
   homeSummary: administratorProcedure.query(async (opts) => {
     const userId = opts.ctx.user.id;
     const now = new Date();
-    const today = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    const today = getCalendarDateInTimeZone(now, DASHBOARD_TIME_ZONE);
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const activitySince = new Date(
+      now.getTime() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000
     );
+    const staleSince = new Date(
+      now.getTime() - STALE_LEAD_DAYS * 24 * 60 * 60 * 1000
+    );
+    const approvalWhere: Prisma.B2BActionWhereInput = {
+      assignee_id: userId,
+      status: B2BActionStatusEnum.REVIEW,
+    };
+    const overdueTaskWhere: Prisma.B2BActionWhereInput = {
+      assignee_id: userId,
+      status: {
+        notIn: [B2BActionStatusEnum.DONE, B2BActionStatusEnum.REVIEW],
+      },
+      due_date: { lt: today },
+    };
+    const dueTodayTaskWhere: Prisma.B2BActionWhereInput = {
+      assignee_id: userId,
+      status: {
+        notIn: [B2BActionStatusEnum.DONE, B2BActionStatusEnum.REVIEW],
+      },
+      due_date: { gte: today, lt: tomorrow },
+    };
+    const staleLeadWhere: Prisma.B2BPipelineWhereInput = {
+      owner_id: userId,
+      updated_at: { lt: staleSince },
+      stage: {
+        notIn: [
+          B2BStageEnum.CLOSED_WON,
+          B2BStageEnum.CLOSED_LOST,
+          B2BStageEnum.ON_HOLD,
+        ],
+      },
+      actions: {
+        none: { updated_at: { gte: staleSince } },
+      },
+    };
 
     const [
       pendingApprovals,
@@ -448,15 +505,20 @@ export const listB2B = {
       teamOverdue,
       activeTasks,
       approvalsWaiting,
-      myTasks,
+      overdueTaskCount,
+      overdueTasks,
+      dueTodayTaskCount,
+      dueTodayTasks,
+      staleLeadCount,
+      staleLeads,
+      recentActions,
+      recentPipelines,
     ] = await Promise.all([
-      opts.ctx.prisma.b2BAction.count({
-        where: { status: B2BActionStatusEnum.REVIEW },
-      }),
+      opts.ctx.prisma.b2BAction.count({ where: approvalWhere }),
       opts.ctx.prisma.b2BAction.count({
         where: {
           assignee_id: userId,
-          due_date: today,
+          due_date: { gte: today, lt: tomorrow },
           status: { not: B2BActionStatusEnum.DONE },
         },
       }),
@@ -470,47 +532,167 @@ export const listB2B = {
         where: { status: B2BActionStatusEnum.IN_PROGRESS },
       }),
       opts.ctx.prisma.b2BAction.findMany({
-        where: { assignee_id: userId, status: B2BActionStatusEnum.REVIEW },
+        where: approvalWhere,
         include: { pipeline: { select: { id: true, name: true } } },
-        orderBy: [{ due_date: "asc" }],
+        orderBy: [
+          { due_date: { sort: "asc", nulls: "last" } },
+          { priority: "desc" },
+        ],
         take: 5,
+      }),
+      opts.ctx.prisma.b2BAction.count({ where: overdueTaskWhere }),
+      opts.ctx.prisma.b2BAction.findMany({
+        where: overdueTaskWhere,
+        include: { pipeline: { select: { id: true, name: true } } },
+        orderBy: [{ priority: "desc" }, { due_date: "asc" }],
+        take: 5,
+      }),
+      opts.ctx.prisma.b2BAction.count({ where: dueTodayTaskWhere }),
+      opts.ctx.prisma.b2BAction.findMany({
+        where: dueTodayTaskWhere,
+        include: { pipeline: { select: { id: true, name: true } } },
+        orderBy: [{ priority: "desc" }, { created_at: "asc" }],
+        take: 5,
+      }),
+      opts.ctx.prisma.b2BPipeline.count({ where: staleLeadWhere }),
+      opts.ctx.prisma.b2BPipeline.findMany({
+        where: staleLeadWhere,
+        include: {
+          company: { select: { name: true } },
+          actions: {
+            select: { updated_at: true },
+            orderBy: { updated_at: "desc" },
+            take: 1,
+          },
+        },
+        orderBy: [{ updated_at: "asc" }],
+        take: 20,
       }),
       opts.ctx.prisma.b2BAction.findMany({
         where: {
-          assignee_id: userId,
-          status: { not: B2BActionStatusEnum.DONE },
-          due_date: { lte: today },
+          OR: [
+            { created_at: { gte: activitySince } },
+            { updated_at: { gte: activitySince } },
+          ],
         },
-        include: { pipeline: { select: { id: true, name: true } } },
-        orderBy: [{ due_date: "asc" }],
-        take: 5,
+        include: {
+          pipeline: {
+            select: {
+              id: true,
+              name: true,
+              company: { select: { name: true } },
+            },
+          },
+        },
+        orderBy: [{ updated_at: "desc" }],
+        take: 12,
+      }),
+      opts.ctx.prisma.b2BPipeline.findMany({
+        where: {
+          OR: [
+            { created_at: { gte: activitySince } },
+            { updated_at: { gte: activitySince } },
+          ],
+        },
+        include: {
+          company: { select: { name: true } },
+        },
+        orderBy: [{ updated_at: "desc" }],
+        take: 12,
       }),
     ]);
+
+    const activity = [
+      ...recentActions.map((entry) => {
+        const isNew = entry.created_at >= activitySince;
+        return {
+          id: `action-${entry.id}`,
+          type: isNew ? ("action_created" as const) : ("action_updated" as const),
+          title: entry.name,
+          description: `${entry.pipeline.company.name} · ${entry.pipeline.name}`,
+          pipeline_id: entry.pipeline_id,
+          occurred_at: isNew ? entry.created_at : entry.updated_at,
+        };
+      }),
+      ...recentPipelines.map((entry) => {
+        const isNew = entry.created_at >= activitySince;
+        return {
+          id: `pipeline-${entry.id}`,
+          type: isNew ? ("lead_created" as const) : ("lead_updated" as const),
+          title: entry.company.name,
+          description: entry.name,
+          pipeline_id: entry.id,
+          occurred_at: isNew ? entry.created_at : entry.updated_at,
+        };
+      }),
+    ]
+      .sort(
+        (left, right) =>
+          right.occurred_at.getTime() - left.occurred_at.getTime()
+      )
+      .slice(0, 8);
+
+    const mapAction = (entry: (typeof approvalsWaiting)[number]) => ({
+      id: entry.id,
+      name: entry.name,
+      pipeline_id: entry.pipeline_id,
+      pipeline_name: entry.pipeline.name,
+      due_date: entry.due_date,
+      priority: entry.priority,
+    });
 
     return {
       code: STATUS_OK,
       message: "Success",
+      user: {
+        id: opts.ctx.user.id,
+        full_name: opts.ctx.user.full_name,
+      },
       stats: {
         pending_approvals: pendingApprovals,
         my_tasks_today: myTasksToday,
         team_overdue: teamOverdue,
         active_tasks: activeTasks,
       },
-      approvals_waiting: approvalsWaiting.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        pipeline_id: entry.pipeline_id,
-        pipeline_name: entry.pipeline.name,
-        due_date: entry.due_date,
-      })),
-      my_tasks: myTasks.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        pipeline_id: entry.pipeline_id,
-        pipeline_name: entry.pipeline.name,
-        due_date: entry.due_date,
-        priority: entry.priority,
-      })),
+      activity,
+      attention: {
+        totals: {
+          approvals: pendingApprovals,
+          overdue_tasks: overdueTaskCount,
+          due_today_tasks: dueTodayTaskCount,
+          stale_leads: staleLeadCount,
+        },
+        approvals: approvalsWaiting.map(mapAction),
+        overdue_tasks: overdueTasks.map(mapAction),
+        due_today_tasks: dueTodayTasks.map(mapAction),
+        stale_leads: staleLeads
+          .map((entry) => {
+            const lastActivityAt =
+              entry.actions[0]?.updated_at &&
+              entry.actions[0].updated_at > entry.updated_at
+                ? entry.actions[0].updated_at
+                : entry.updated_at;
+            return {
+              id: entry.id,
+              company_name: entry.company.name,
+              pipeline_name: entry.name,
+              stage: entry.stage,
+              last_activity_at: lastActivityAt,
+              inactive_days: Math.floor(
+                (now.getTime() - lastActivityAt.getTime()) / 86_400_000
+              ),
+            };
+          })
+          .sort((left, right) => right.inactive_days - left.inactive_days)
+          .slice(0, 5),
+      },
+      meta: {
+        generated_at: now,
+        time_zone: DASHBOARD_TIME_ZONE,
+        activity_since: activitySince,
+        activity_window_days: ACTIVITY_WINDOW_DAYS,
+        stale_lead_days: STALE_LEAD_DAYS,
+      },
     };
   }),
 };
