@@ -5,12 +5,13 @@ import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
+import ProgressBar from "@/components/labels/ProgressBar";
 import { trpc } from "@/trpc/client";
 import type {
   TrainerScreeningStatusEnum,
   TrainerScreeningStepEnum,
 } from "@prisma/client";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Clock, Loader2, Minus, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 const statusOptions: AppSelectOption[] = [
@@ -26,6 +27,34 @@ const stepLabels: Record<TrainerScreeningStepEnum, string> = {
   TEACHING_DEMO: "Teaching demo",
   PRACTICAL_TEST: "Practical test",
   REFERENCE_CHECK: "Reference check",
+};
+
+const CERTIFIED_BAR = 75;
+
+const stepStatusStyle: Record<
+  TrainerScreeningStatusEnum,
+  { border: string; icon: typeof Check; iconClass: string }
+> = {
+  PASSED: {
+    border: "border-l-4 border-l-hijau",
+    icon: Check,
+    iconClass: "text-hijau",
+  },
+  FAILED: {
+    border: "border-l-4 border-l-merah",
+    icon: X,
+    iconClass: "text-merah",
+  },
+  PENDING: {
+    border: "border-l-4 border-l-gray-300 dark:border-l-zinc-600",
+    icon: Clock,
+    iconClass: "text-gray-400",
+  },
+  SKIPPED: {
+    border: "border-l-4 border-l-gray-200 dark:border-l-zinc-700",
+    icon: Minus,
+    iconClass: "text-gray-300 dark:text-zinc-600",
+  },
 };
 
 type Score = {
@@ -93,6 +122,7 @@ function ScoreFormOS({
         </h4>
         <p className="mt-0.5 text-xs text-gray-500">
           Saving recalculates the total and applies the suggested initial level.
+          {" "}A total of {CERTIFIED_BAR}+ clears the bar for certified track.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -137,14 +167,33 @@ function ScoreFormOS({
           Save score
         </AppButton>
         {(result || initial) && (
-          <p className="text-xs font-semibold text-gray-600 dark:text-zinc-300">
-            {result ?? `Current total: ${
-              (initial?.ai_hands_on_score ?? 0) +
-              (initial?.facilitation_score ?? 0) +
-              (initial?.domain_credibility_score ?? 0) +
-              (initial?.communication_score ?? 0) +
-              (initial?.reliability_score ?? 0)
-            }/100`}
+          <p className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-zinc-300">
+            {result ??
+              `Current total: ${
+                (initial?.ai_hands_on_score ?? 0) +
+                (initial?.facilitation_score ?? 0) +
+                (initial?.domain_credibility_score ?? 0) +
+                (initial?.communication_score ?? 0) +
+                (initial?.reliability_score ?? 0)
+              }/100`}
+            {(() => {
+              const total =
+                initial?.total_score ??
+                (initial?.ai_hands_on_score ?? 0) +
+                  (initial?.facilitation_score ?? 0) +
+                  (initial?.domain_credibility_score ?? 0) +
+                  (initial?.communication_score ?? 0) +
+                  (initial?.reliability_score ?? 0);
+              return total >= CERTIFIED_BAR ? (
+                <span className="rounded-full bg-hijau-t px-2 py-0.5 text-[11px] font-bold text-hijau dark:bg-green-950/40 dark:text-green-300">
+                  Clears the bar
+                </span>
+              ) : (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
+                  Below bar
+                </span>
+              );
+            })()}
           </p>
         )}
         {mutation.error && (
@@ -169,40 +218,67 @@ export default function TrainerScreeningFormOS({
 }) {
   const utils = trpc.useUtils();
   const updateStep = trpc.update.trainerPool.screeningStep.useMutation({
-    onSuccess: () =>
-      utils.read.trainerPool.trainer.invalidate({ id: trainerId }),
+    onSuccess: () => {
+      utils.read.trainerPool.trainer.invalidate({ id: trainerId });
+      utils.list.trainerPool.trainers.invalidate();
+    },
   });
+
+  const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
 
   return (
     <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
-      <h3 className="font-bold text-gray-900 dark:text-zinc-100">Screening</h3>
-      <p className="mt-1 text-sm text-gray-500">
-        Five-step candidate review and the 100-point qualification rubric.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+            Screening
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Five-step candidate review and the 100-point qualification rubric.
+          </p>
+        </div>
+        <div className="w-full max-w-40 sm:w-40">
+          <p className="mb-1 text-right text-xs font-semibold text-gray-600 dark:text-zinc-300">
+            {passedCount} of {steps.length} passed
+          </p>
+          <ProgressBar
+            value={passedCount}
+            total={steps.length}
+            variant={passedCount === steps.length ? "hijau" : "claude"}
+          />
+        </div>
+      </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {steps.map((entry) => (
-          <div
-            key={entry.step}
-            className="rounded-xl border border-gray-200 p-3 dark:border-zinc-800"
-          >
-            <p className="mb-2 text-xs font-semibold text-gray-700 dark:text-zinc-300">
-              {stepLabels[entry.step]}
-            </p>
-            <AppSelect
-              selectId={`screening-${entry.step}`}
-              placeholder="Status"
-              value={entry.status}
-              options={statusOptions}
-              onChange={(value) =>
-                updateStep.mutate({
-                  trainer_id: trainerId,
-                  step: entry.step,
-                  status: value as TrainerScreeningStatusEnum,
-                })
-              }
-            />
-          </div>
-        ))}
+        {steps.map((entry) => {
+          const style = stepStatusStyle[entry.status];
+          const StepIcon = style.icon;
+          return (
+            <div
+              key={entry.step}
+              className={`rounded-xl border border-gray-200 bg-gray-50/50 p-3 dark:border-zinc-800 dark:bg-transparent ${style.border}`}
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
+                  {stepLabels[entry.step]}
+                </p>
+                <StepIcon size={13} className={style.iconClass} />
+              </div>
+              <AppSelect
+                selectId={`screening-${entry.step}`}
+                placeholder="Status"
+                value={entry.status}
+                options={statusOptions}
+                onChange={(value) =>
+                  updateStep.mutate({
+                    trainer_id: trainerId,
+                    step: entry.step,
+                    status: value as TrainerScreeningStatusEnum,
+                  })
+                }
+              />
+            </div>
+          );
+        })}
       </div>
       <ScoreFormOS
         key={`${trainerId}-${score?.ai_hands_on_score ?? "new"}-${score?.total_score ?? 0}`}

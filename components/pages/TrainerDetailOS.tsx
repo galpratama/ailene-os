@@ -7,9 +7,8 @@ import AppSelect, {
 import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
 import CreateTrainerEvaluationFormOS from "@/components/forms/CreateTrainerEvaluationFormOS";
 import TrainerAvailabilityFormOS from "@/components/forms/TrainerAvailabilityFormOS";
-import TrainerCertificationFormOS from "@/components/forms/TrainerCertificationFormOS";
-import TrainerScreeningFormOS from "@/components/forms/TrainerScreeningFormOS";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
+import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
@@ -17,6 +16,7 @@ import type {
   TrainerStatusEnum,
 } from "@prisma/client";
 import {
+  ArrowRight,
   BriefcaseBusiness,
   CalendarPlus,
   Mail,
@@ -81,6 +81,14 @@ export default function TrainerDetailOS({
   const averageRating = ratings.length
     ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
     : null;
+  const screeningPassed =
+    trainer?.screening_steps.filter((entry) => entry.status === "PASSED")
+      .length ?? 0;
+  const screeningTotal = trainer?.screening_steps.length ?? 0;
+  const certificationPassed =
+    trainer?.certification_steps.filter((entry) => entry.status === "PASSED")
+      .length ?? 0;
+  const certificationTotal = trainer?.certification_steps.length ?? 0;
 
   const updateTrainer = trpc.update.trainerPool.trainer.useMutation({
     onSuccess: () => {
@@ -209,15 +217,46 @@ export default function TrainerDetailOS({
         </div>
       </section>
 
-      <TrainerScreeningFormOS
-        trainerId={trainerId}
-        steps={trainer.screening_steps}
-        score={trainer.screening_score}
-      />
-      <TrainerCertificationFormOS
-        trainerId={trainerId}
-        steps={trainer.certification_steps}
-      />
+      <Link
+        href={`/trainers/${trainerId}/qualification`}
+        className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+              Screening &amp; Certification
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Review the qualification pipeline for this trainer.
+            </p>
+          </div>
+          <ArrowRight size={16} className="shrink-0 text-gray-400" />
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className="mb-1 text-xs font-semibold text-gray-600 dark:text-zinc-300">
+              Screening · {screeningPassed}/{screeningTotal} passed
+            </p>
+            <ProgressBar
+              value={screeningPassed}
+              total={screeningTotal}
+              variant={screeningPassed === screeningTotal ? "hijau" : "claude"}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-semibold text-gray-600 dark:text-zinc-300">
+              Certification · {certificationPassed}/{certificationTotal} complete
+            </p>
+            <ProgressBar
+              value={certificationPassed}
+              total={certificationTotal}
+              variant={
+                certificationPassed === certificationTotal ? "hijau" : "claude"
+              }
+            />
+          </div>
+        </div>
+      </Link>
 
       <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
         <div className="flex items-center justify-between gap-3">

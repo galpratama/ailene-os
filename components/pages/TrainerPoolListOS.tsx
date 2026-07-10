@@ -6,6 +6,7 @@ import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import CreateTrainerFormOS from "@/components/forms/CreateTrainerFormOS";
+import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { useHeaderAction } from "@/contexts/HeaderActionContext";
@@ -85,11 +86,22 @@ export default function TrainerPoolListOS({
       },
       { enabled: !!sessionToken }
     );
-  const summaryCards = [
+  const summaryCards: {
+    label: string;
+    value: number;
+    icon: typeof UserRoundSearch;
+    apply?: () => void;
+    isActive?: boolean;
+  }[] = [
     {
       label: "Candidate funnel",
       value: data?.summary.candidates ?? 0,
       icon: UserRoundSearch,
+      apply: () => {
+        setStatus((current) => (current === "CANDIDATE" ? "" : "CANDIDATE"));
+        setPage(1);
+      },
+      isActive: status === "CANDIDATE",
     },
     {
       label: "Certified pool",
@@ -100,11 +112,21 @@ export default function TrainerPoolListOS({
       label: "Active monthly",
       value: data?.summary.active ?? 0,
       icon: Sparkles,
+      apply: () => {
+        setStatus((current) => (current === "ACTIVE" ? "" : "ACTIVE"));
+        setPage(1);
+      },
+      isActive: status === "ACTIVE",
     },
     {
       label: "Lead specialist",
       value: data?.summary.leads ?? 0,
       icon: Crown,
+      apply: () => {
+        setLevel((current) => (current === "LEAD" ? "" : "LEAD"));
+        setPage(1);
+      },
+      isActive: level === "LEAD",
     },
   ];
   const totalPage = data?.metapaging.total_page ?? 1;
@@ -121,20 +143,38 @@ export default function TrainerPoolListOS({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-gray-300 bg-card-bg p-5"
-          >
-            <card.icon size={17} className="text-claude" />
-            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
-              {card.value}
-            </p>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-              {card.label}
-            </p>
-          </div>
-        ))}
+        {summaryCards.map((card) => {
+          const cardClassName = `rounded-xl border p-5 text-left transition-colors ${
+            card.isActive
+              ? "border-claude bg-claude/5"
+              : "border-gray-300 bg-card-bg"
+          } ${card.apply ? "cursor-pointer hover:border-claude/60" : ""}`;
+          const cardContent = (
+            <>
+              <card.icon size={17} className="text-claude" />
+              <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+                {card.value}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
+                {card.label}
+              </p>
+            </>
+          );
+          return card.apply ? (
+            <button
+              key={card.label}
+              type="button"
+              onClick={card.apply}
+              className={cardClassName}
+            >
+              {cardContent}
+            </button>
+          ) : (
+            <div key={card.label} className={cardClassName}>
+              {cardContent}
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
@@ -179,13 +219,14 @@ export default function TrainerPoolListOS({
       )}
       {data && !isLoading && !isError && (
         <div className="overflow-x-auto rounded-xl border border-gray-300 bg-card-bg">
-          <table className="w-full min-w-190 text-sm">
+          <table className="w-full min-w-230 text-sm">
             <thead>
               <tr className="border-b border-gray-300 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                 <th className="px-5 py-3">Trainer</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Level</th>
                 <th className="px-5 py-3">Specialization</th>
+                <th className="px-5 py-3">Progress</th>
                 <th className="px-5 py-3">Rating</th>
               </tr>
             </thead>
@@ -215,6 +256,48 @@ export default function TrainerPoolListOS({
                   <td className="max-w-70 px-5 py-3.5 text-gray-600 dark:text-zinc-300">
                     {trainer.specializations.map((entry) => entry.name).join(", ") ||
                       "—"}
+                  </td>
+                  <td className="min-w-32 px-5 py-3.5">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-14 shrink-0 text-[11px] text-gray-400">
+                          Screen
+                        </span>
+                        <ProgressBar
+                          value={trainer.screening_progress.passed}
+                          total={trainer.screening_progress.total}
+                          variant={
+                            trainer.screening_progress.passed ===
+                            trainer.screening_progress.total
+                              ? "hijau"
+                              : "claude"
+                          }
+                        />
+                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                          {trainer.screening_progress.passed}/
+                          {trainer.screening_progress.total}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-14 shrink-0 text-[11px] text-gray-400">
+                          Certify
+                        </span>
+                        <ProgressBar
+                          value={trainer.certification_progress.passed}
+                          total={trainer.certification_progress.total}
+                          variant={
+                            trainer.certification_progress.passed ===
+                            trainer.certification_progress.total
+                              ? "hijau"
+                              : "claude"
+                          }
+                        />
+                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                          {trainer.certification_progress.passed}/
+                          {trainer.certification_progress.total}
+                        </span>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 font-semibold text-gray-700 dark:text-zinc-200">
                     {trainer.average_rating?.toFixed(1) ?? "—"}

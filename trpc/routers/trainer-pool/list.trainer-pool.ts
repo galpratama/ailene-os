@@ -97,6 +97,8 @@ export const listTrainerPool = {
             where: { participant_rating_avg: { not: null } },
             select: { participant_rating_avg: true },
           },
+          screening_steps: { select: { status: true } },
+          certification_steps: { select: { status: true } },
         },
         orderBy: [{ created_at: "desc" }],
         skip: paging.prisma.skip,
@@ -129,6 +131,18 @@ export const listTrainerPool = {
               ? ratings.reduce((sum, rating) => sum + rating, 0) /
                 ratings.length
               : null,
+            screening_progress: {
+              passed: trainer.screening_steps.filter(
+                (entry) => entry.status === "PASSED"
+              ).length,
+              total: trainer.screening_steps.length,
+            },
+            certification_progress: {
+              passed: trainer.certification_steps.filter(
+                (entry) => entry.status === "PASSED"
+              ).length,
+              total: trainer.certification_steps.length,
+            },
             created_at: trainer.created_at,
           };
         }),
