@@ -8,6 +8,7 @@ import {
 } from "@/trpc/init";
 import {
   numberIsID,
+  numberIsNonNegInt,
   numberIsPosInt,
   stringIsUUID,
   stringNotBlank,
@@ -23,9 +24,11 @@ import {
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import {
+  assertTrainerAssignable,
   buildApplicationNotes,
   certificationSessionsRequired,
   certificationSteps,
+  MIN_AI_EXPERIENCE_YEARS,
   screeningSteps,
 } from "./trainer-pool.shared";
 
@@ -40,10 +43,18 @@ const candidateInput = z.object({
   teaching_experience: optionalText,
   portfolio_url: z.url().nullable().optional(),
   ai_use_case: optionalText,
+  ai_experience_years: numberIsNonNegInt().max(60),
   availability_notes: optionalText,
   notes: optionalText,
   website: z.string().max(200).optional(),
 });
+
+function insufficientAiExperienceError() {
+  return new TRPCError({
+    code: STATUS_BAD_REQUEST,
+    message: `Minimal ${MIN_AI_EXPERIENCE_YEARS} tahun pengalaman AI diperlukan untuk mendaftar.`,
+  });
+}
 
 function duplicateCandidateError() {
   return new TRPCError({
@@ -65,6 +76,7 @@ async function createTrainer(
       phone_country_id: input.phone_country_id ?? null,
       phone_number: input.phone_number ?? null,
       source: input.source ?? null,
+      ai_experience_years: input.ai_experience_years,
       notes: buildApplicationNotes(input) || null,
       specializations: {
         create: input.specialization_ids.map((specialization_id) => ({
@@ -103,6 +115,9 @@ export const createTrainerPool = {
           id: null,
         };
       }
+      if (input.ai_experience_years < MIN_AI_EXPERIENCE_YEARS) {
+        throw insufficientAiExperienceError();
+      }
 
       try {
         const created = await ctx.prisma.$transaction((tx) =>
@@ -131,6 +146,9 @@ export const createTrainerPool = {
       referred_by: stringIsUUID().nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (input.ai_experience_years < MIN_AI_EXPERIENCE_YEARS) {
+        throw insufficientAiExperienceError();
+      }
       try {
         const created = await ctx.prisma.$transaction(async (tx) => {
           const trainer = await createTrainer(tx, input, false);
@@ -180,27 +198,7 @@ export const createTrainerPool = {
           message: "Trainer is not available.",
         });
       }
-      if (
-        trainer.level === TrainerLevelEnum.APPRENTICE &&
-        (input.role === undefined ||
-          input.role === TrainerAssignmentRoleEnum.LEAD ||
-          input.role === TrainerAssignmentRoleEnum.SPECIALIST)
-      ) {
-        throw new TRPCError({
-          code: STATUS_BAD_REQUEST,
-          message:
-            "Apprentice trainers must be assigned as assistant or co-trainer.",
-        });
-      }
-      if (
-        trainer.status !== TrainerStatusEnum.CERTIFIED &&
-        trainer.status !== TrainerStatusEnum.ACTIVE
-      ) {
-        throw new TRPCError({
-          code: STATUS_BAD_REQUEST,
-          message: "Only certified or active trainers can be assigned.",
-        });
-      }
+      assertTrainerAssignable(trainer, input.role);
 
       const created = await ctx.prisma.$transaction(async (tx) => {
         const assignment = await tx.trainerAssignment.create({

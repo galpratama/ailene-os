@@ -1,8 +1,13 @@
+import { STATUS_BAD_REQUEST } from "@/lib/status_code";
 import {
+  TrainerAssignmentRoleEnum,
   TrainerCertificationStepEnum,
   TrainerLevelEnum,
+  TrainerLevelOverrideEnum,
   TrainerScreeningStepEnum,
+  TrainerStatusEnum,
 } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 export const screeningSteps = [
   TrainerScreeningStepEnum.APPLICATION_REVIEW,
@@ -35,6 +40,49 @@ export function levelFromScore(totalScore: number): TrainerLevelEnum {
   if (totalScore >= 85) return TrainerLevelEnum.SENIOR;
   if (totalScore >= 75) return TrainerLevelEnum.CERTIFIED;
   return TrainerLevelEnum.APPRENTICE;
+}
+
+// Minimum years of hands-on AI experience required to join the trainer pool.
+export const MIN_AI_EXPERIENCE_YEARS = 1;
+
+// Apprentice = Junior, everything above (Certified/Senior/Lead) = Senior,
+// unless an admin has set a manual override on the trainer record.
+export function isTrainerJunior(trainer: {
+  level: TrainerLevelEnum;
+  level_override: TrainerLevelOverrideEnum | null;
+}): boolean {
+  if (trainer.level_override) {
+    return trainer.level_override === TrainerLevelOverrideEnum.JUNIOR;
+  }
+  return trainer.level === TrainerLevelEnum.APPRENTICE;
+}
+
+// Shared assignability rule used both by direct trainer-pool assignment and
+// by selecting a trainer application into an assignment.
+export function assertTrainerAssignable(
+  trainer: { level: TrainerLevelEnum; status: TrainerStatusEnum },
+  role: TrainerAssignmentRoleEnum | undefined
+) {
+  if (
+    trainer.level === TrainerLevelEnum.APPRENTICE &&
+    (role === undefined ||
+      role === TrainerAssignmentRoleEnum.LEAD ||
+      role === TrainerAssignmentRoleEnum.SPECIALIST)
+  ) {
+    throw new TRPCError({
+      code: STATUS_BAD_REQUEST,
+      message: "Apprentice trainers must be assigned as assistant or co-trainer.",
+    });
+  }
+  if (
+    trainer.status !== TrainerStatusEnum.CERTIFIED &&
+    trainer.status !== TrainerStatusEnum.ACTIVE
+  ) {
+    throw new TRPCError({
+      code: STATUS_BAD_REQUEST,
+      message: "Only certified or active trainers can be assigned.",
+    });
+  }
 }
 
 export function buildApplicationNotes(input: {

@@ -2,6 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
@@ -48,6 +49,7 @@ export default function TrainerApplicationPageBIZ() {
   const [teachingExperience, setTeachingExperience] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [aiUseCase, setAiUseCase] = useState("");
+  const [aiExperienceYears, setAiExperienceYears] = useState("");
   const [availabilityNotes, setAvailabilityNotes] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -83,6 +85,9 @@ export default function TrainerApplicationPageBIZ() {
         "Ceritakan pengalaman mengajar dan satu contoh use case AI kamu."
       );
     }
+    if (!aiExperienceYears || Number(aiExperienceYears) < 1) {
+      return setError("Minimal 1 tahun pengalaman AI diperlukan untuk mendaftar.");
+    }
 
     apply.mutate({
       full_name: fullName.trim(),
@@ -94,6 +99,7 @@ export default function TrainerApplicationPageBIZ() {
       teaching_experience: teachingExperience.trim(),
       portfolio_url: portfolioUrl.trim() || null,
       ai_use_case: aiUseCase.trim(),
+      ai_experience_years: Number(aiExperienceYears),
       availability_notes: availabilityNotes.trim() || null,
       website,
     });
@@ -293,6 +299,14 @@ export default function TrainerApplicationPageBIZ() {
                   value={aiUseCase}
                   onChange={(event) => setAiUseCase(event.target.value)}
                   placeholder="Masalahnya apa, AI dipakai untuk apa, dan apa hasilnya?"
+                />
+                <AppNumberInput
+                  inputId="trainer-ai-experience-years"
+                  label="Lama pengalaman di bidang AI (tahun)"
+                  required
+                  value={aiExperienceYears}
+                  onValueChange={setAiExperienceYears}
+                  placeholder="Contoh: 2"
                 />
                 <AppTextArea
                   textAreaId="trainer-availability"

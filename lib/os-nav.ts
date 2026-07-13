@@ -3,6 +3,7 @@ import {
   ChartNoAxesCombined,
   GraduationCap,
   LayoutGrid,
+  Layers,
   LucideIcon,
   Settings,
   SquareCheckBig,
@@ -26,6 +27,7 @@ export const osMainNav: OSNavItem[] = [
   { href: "/tasks", label: "Tasks", icon: SquareCheckBig },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/trainers", label: "Trainers", icon: GraduationCap },
+  { href: "/classes", label: "B2B Classes", icon: Layers },
   { href: "/module", label: "Module", icon: GraduationCap },
   { href: "/revenue", label: "Revenue", icon: Wallet },
 ];

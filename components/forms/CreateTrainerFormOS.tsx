@@ -2,6 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
@@ -37,6 +38,7 @@ export default function CreateTrainerFormOS({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [source, setSource] = useState<TrainerSourceEnum | "">("");
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
+  const [aiExperienceYears, setAiExperienceYears] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,7 @@ export default function CreateTrainerFormOS({
     setPhoneNumber("");
     setSource("");
     setSpecializationIds([]);
+    setAiExperienceYears("");
     setNotes("");
     setError(null);
   }
@@ -86,6 +89,7 @@ export default function CreateTrainerFormOS({
       phone_number: phoneNumber.trim() || null,
       source: source || null,
       specialization_ids: specializationIds,
+      ai_experience_years: aiExperienceYears ? Number(aiExperienceYears) : 0,
       notes: notes.trim() || null,
     });
   }
@@ -146,6 +150,12 @@ export default function CreateTrainerFormOS({
               setSource((value as TrainerSourceEnum) ?? "")
             }
             options={sourceOptions}
+          />
+          <AppNumberInput
+            inputId="candidate-ai-experience"
+            label="AI Experience (years)"
+            value={aiExperienceYears}
+            onValueChange={setAiExperienceYears}
           />
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-gray-700 dark:text-zinc-300">

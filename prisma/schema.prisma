@@ -183,6 +183,46 @@ enum TrainerAssignmentRoleEnum {
   @@map("trna_role_enum")
 }
 
+// Enumeration for the B2B Class/Session models (b2bc_*)
+
+enum B2BClassDifficultyEnum {
+  BEGINNER @map("beginner")
+  ADVANCED @map("advanced")
+
+  @@map("b2bc_difficulty_enum")
+}
+
+enum B2BClassSessionStatusEnum {
+  DRAFT  @map("draft")
+  OPEN   @map("open")
+  CLOSED @map("closed")
+
+  @@map("b2bc_session_status_enum")
+}
+
+enum TrainerApplicationStatusEnum {
+  APPLIED     @map("applied")
+  SHORTLISTED @map("shortlisted")
+  REJECTED    @map("rejected")
+  SELECTED    @map("selected")
+
+  @@map("trainer_application_status_enum")
+}
+
+enum TrainerLevelOverrideEnum {
+  JUNIOR @map("junior")
+  SENIOR @map("senior")
+
+  @@map("trainer_level_override_enum")
+}
+
+enum TrainerSessionNotificationStatusEnum {
+  SENT   @map("sent")
+  FAILED @map("failed")
+
+  @@map("trainer_session_notification_status_enum")
+}
+
 ////////////
 // Models //
 ////////////
@@ -233,30 +273,33 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                     String                     @id @default(uuid()) @db.Uuid
-  full_name              String                     @db.VarChar()
-  email                  String                     @unique @db.VarChar()
-  phone_country          PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id       Int?                       @db.SmallInt
-  phone_number           String?                    @db.VarChar()
-  avatar                 String?                    @db.VarChar()
-  role                   Role                       @relation(fields: [role_id], references: [id])
-  role_id                Int                        @default(3) @db.SmallInt // General User
-  status                 StatusEnum                 @default(ACTIVE)
-  date_of_birth          DateTime?                  @db.Date
-  occupation             OccupationEnum?
-  created_at             DateTime                   @default(now()) @db.Timestamptz()
-  updated_at             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  last_login             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at             DateTime?                  @db.Timestamptz()
-  tokens                 Token[]
-  b2b_pipelines          B2BPipeline[]
-  b2b_actions            B2BAction[]
-  trainer_profiles       Trainer[]                  @relation("TrainerUser")
-  trainer_referrals      Trainer[]                  @relation("TrainerReferrer")
-  trainer_scores         TrainerScreeningScore[]    @relation("TrainerScreeningScorer")
-  trainer_certifications TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
-  trainer_evaluations    TrainerEvaluation[]        @relation("TrainerEvaluationReviewer")
+  id                            String                     @id @default(uuid()) @db.Uuid
+  full_name                     String                     @db.VarChar()
+  email                         String                     @unique @db.VarChar()
+  phone_country                 PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
+  phone_country_id              Int?                       @db.SmallInt
+  phone_number                  String?                    @db.VarChar()
+  avatar                        String?                    @db.VarChar()
+  role                          Role                       @relation(fields: [role_id], references: [id])
+  role_id                       Int                        @default(3) @db.SmallInt // General User
+  status                        StatusEnum                 @default(ACTIVE)
+  date_of_birth                 DateTime?                  @db.Date
+  occupation                    OccupationEnum?
+  created_at                    DateTime                   @default(now()) @db.Timestamptz()
+  updated_at                    DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  last_login                    DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at                    DateTime?                  @db.Timestamptz()
+  tokens                        Token[]
+  b2b_pipelines                 B2BPipeline[]
+  b2b_actions                   B2BAction[]
+  trainer_profiles              Trainer[]                  @relation("TrainerUser")
+  trainer_referrals             Trainer[]                  @relation("TrainerReferrer")
+  trainer_scores                TrainerScreeningScore[]    @relation("TrainerScreeningScorer")
+  trainer_certifications        TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
+  trainer_evaluations           TrainerEvaluation[]        @relation("TrainerEvaluationReviewer")
+  trainer_level_overrides_set   Trainer[]                  @relation("TrainerLevelOverrideSetter")
+  b2b_classes_created           B2BClass[]                 @relation("B2BClassCreator")
+  trainer_applications_reviewed TrainerApplication[]       @relation("TrainerApplicationReviewer")
 
   @@map("users")
 }
@@ -309,6 +352,7 @@ model B2BPipeline {
   updated_at          DateTime                 @default(now()) @updatedAt @db.Timestamptz()
   actions             B2BAction[]
   trainer_assignments TrainerAssignment[]
+  classes             B2BClass[]
 
   @@map("b2b_pipeline")
 }
@@ -333,30 +377,37 @@ model B2BAction {
 // Trainer Pool
 
 model Trainer {
-  id                  String                     @id @default(uuid()) @db.Uuid
-  full_name           String                     @db.VarChar()
-  email               String                     @unique @db.VarChar()
-  phone_country       PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id    Int?                       @db.SmallInt
-  phone_number        String?                    @db.VarChar()
-  source              TrainerSourceEnum?
-  level               TrainerLevelEnum           @default(APPRENTICE)
-  status              TrainerStatusEnum          @default(CANDIDATE)
-  user                User?                      @relation("TrainerUser", fields: [user_id], references: [id])
-  user_id             String?                    @db.Uuid
-  referrer            User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
-  referred_by         String?                    @db.Uuid
-  notes               String?                    @db.Text
-  created_at          DateTime                   @default(now()) @db.Timestamptz()
-  updated_at          DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at          DateTime?                  @db.Timestamptz()
-  specializations     TrainerSpecializationMap[]
-  screening_steps     TrainerScreeningStep[]
-  screening_score     TrainerScreeningScore?
-  certification_steps TrainerCertificationStep[]
-  availabilities      TrainerAvailability[]
-  assignments         TrainerAssignment[]
-  evaluations         TrainerEvaluation[]
+  id                    String                       @id @default(uuid()) @db.Uuid
+  full_name             String                       @db.VarChar()
+  email                 String                       @unique @db.VarChar()
+  phone_country         PhoneCountryCode?            @relation(fields: [phone_country_id], references: [id])
+  phone_country_id      Int?                         @db.SmallInt
+  phone_number          String?                      @db.VarChar()
+  source                TrainerSourceEnum?
+  level                 TrainerLevelEnum             @default(APPRENTICE)
+  status                TrainerStatusEnum            @default(CANDIDATE)
+  user                  User?                        @relation("TrainerUser", fields: [user_id], references: [id])
+  user_id               String?                      @db.Uuid
+  referrer              User?                        @relation("TrainerReferrer", fields: [referred_by], references: [id])
+  referred_by           String?                      @db.Uuid
+  notes                 String?                      @db.Text
+  ai_experience_years   Int                          @default(0) @db.SmallInt
+  level_override        TrainerLevelOverrideEnum?
+  level_override_setter User?                        @relation("TrainerLevelOverrideSetter", fields: [level_override_set_by], references: [id])
+  level_override_set_by String?                      @db.Uuid
+  level_override_set_at DateTime?                    @db.Timestamptz()
+  created_at            DateTime                     @default(now()) @db.Timestamptz()
+  updated_at            DateTime                     @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at            DateTime?                    @db.Timestamptz()
+  specializations       TrainerSpecializationMap[]
+  screening_steps       TrainerScreeningStep[]
+  screening_score       TrainerScreeningScore?
+  certification_steps   TrainerCertificationStep[]
+  availabilities        TrainerAvailability[]
+  assignments           TrainerAssignment[]
+  evaluations           TrainerEvaluation[]
+  applications          TrainerApplication[]
+  session_notifications TrainerSessionNotification[]
 
   @@map("trainers")
 }
@@ -444,6 +495,8 @@ model TrainerAssignment {
   pipeline_id       Int
   trainer           Trainer                   @relation(fields: [trainer_id], references: [id])
   trainer_id        String                    @db.Uuid
+  session           B2BClassSession?          @relation(fields: [session_id], references: [id], onDelete: SetNull)
+  session_id        Int?
   role              TrainerAssignmentRoleEnum @default(LEAD)
   session_date      DateTime?                 @db.Date
   participant_count Int?                      @db.SmallInt
@@ -470,4 +523,75 @@ model TrainerEvaluation {
   created_at             DateTime           @default(now()) @db.Timestamptz()
 
   @@map("trainer_evaluations")
+}
+
+// B2B Class/Session
+
+model B2BClass {
+  id          Int               @id @default(autoincrement())
+  name        String            @db.VarChar()
+  pipeline    B2BPipeline?      @relation(fields: [pipeline_id], references: [id], onDelete: SetNull)
+  pipeline_id Int?
+  description String?           @db.Text
+  creator     User?             @relation("B2BClassCreator", fields: [created_by], references: [id])
+  created_by  String?           @db.Uuid
+  created_at  DateTime          @default(now()) @db.Timestamptz()
+  updated_at  DateTime          @default(now()) @updatedAt @db.Timestamptz()
+  sessions    B2BClassSession[]
+
+  @@map("b2bc_classes")
+}
+
+model B2BClassSession {
+  id            Int                          @id @default(autoincrement())
+  class         B2BClass                     @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  class_id      Int
+  name          String                       @db.VarChar()
+  difficulty    B2BClassDifficultyEnum       @default(BEGINNER)
+  min_quorum    Int                          @default(2) @db.SmallInt
+  session_date  DateTime?                    @db.Date
+  status        B2BClassSessionStatusEnum    @default(DRAFT)
+  opened_at     DateTime?                    @db.Timestamptz()
+  closed_at     DateTime?                    @db.Timestamptz()
+  created_at    DateTime                     @default(now()) @db.Timestamptz()
+  updated_at    DateTime                     @default(now()) @updatedAt @db.Timestamptz()
+  applications  TrainerApplication[]
+  notifications TrainerSessionNotification[]
+  assignments   TrainerAssignment[]
+
+  @@map("b2bc_sessions")
+}
+
+model TrainerApplication {
+  id          Int                          @id @default(autoincrement())
+  session     B2BClassSession              @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  session_id  Int
+  trainer     Trainer                      @relation(fields: [trainer_id], references: [id])
+  trainer_id  String                       @db.Uuid
+  status      TrainerApplicationStatusEnum @default(APPLIED)
+  notes       String?                      @db.Text
+  reviewer    User?                        @relation("TrainerApplicationReviewer", fields: [reviewed_by], references: [id])
+  reviewed_by String?                      @db.Uuid
+  reviewed_at DateTime?                    @db.Timestamptz()
+  created_at  DateTime                     @default(now()) @db.Timestamptz()
+  updated_at  DateTime                     @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([session_id, trainer_id])
+  @@map("trainer_applications")
+}
+
+model TrainerSessionNotification {
+  id            Int                                  @id @default(autoincrement())
+  session       B2BClassSession                      @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  session_id    Int
+  trainer       Trainer                              @relation(fields: [trainer_id], references: [id])
+  trainer_id    String                               @db.Uuid
+  email         String                               @db.VarChar()
+  status        TrainerSessionNotificationStatusEnum @default(SENT)
+  error_message String?                              @db.Text
+  sent_at       DateTime?                            @db.Timestamptz()
+  created_at    DateTime                             @default(now()) @db.Timestamptz()
+
+  @@unique([session_id, trainer_id])
+  @@map("trainer_session_notifications")
 }

@@ -13,6 +13,7 @@ import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
   TrainerLevelEnum,
+  TrainerLevelOverrideEnum,
   TrainerStatusEnum,
 } from "@prisma/client";
 import {
@@ -39,6 +40,11 @@ const levelOptions: AppSelectOption[] = [
   { value: "CERTIFIED", label: "Certified Trainer" },
   { value: "SENIOR", label: "Senior / Specialist" },
   { value: "LEAD", label: "Lead Trainer" },
+];
+const levelOverrideOptions: AppSelectOption[] = [
+  { value: "", label: "Derived from level" },
+  { value: "JUNIOR", label: "Junior (manual override)" },
+  { value: "SENIOR", label: "Senior (manual override)" },
 ];
 
 export default function TrainerDetailOS({
@@ -142,7 +148,7 @@ export default function TrainerDetailOS({
         </div>
       </div>
 
-      <section className="grid gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div>
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
             Overview
@@ -210,6 +216,28 @@ export default function TrainerDetailOS({
               })
             }
           />
+          <AppSelect
+            selectId="trainer-detail-level-override"
+            label="Junior/Senior Override"
+            placeholder="Derived from level"
+            value={trainer.level_override ?? ""}
+            options={levelOverrideOptions}
+            onChange={(value) =>
+              updateTrainer.mutate({
+                id: trainerId,
+                level_override:
+                  (value as TrainerLevelOverrideEnum | "") || null,
+              })
+            }
+          />
+          {trainer.level_override && trainer.level_override_setter && (
+            <p className="text-xs text-gray-500">
+              Set by {trainer.level_override_setter.full_name}
+              {trainer.level_override_set_at
+                ? ` on ${new Date(trainer.level_override_set_at).toLocaleDateString("en-GB")}`
+                : ""}
+            </p>
+          )}
           <p className="text-xs leading-relaxed text-gray-500">
             QC evaluations may automatically move this trainer to remedial or
             inactive. Certification approval moves them to certified.
@@ -219,7 +247,7 @@ export default function TrainerDetailOS({
 
       <Link
         href={`/trainers/${trainerId}/qualification`}
-        className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60"
+        className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
       >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -258,7 +286,7 @@ export default function TrainerDetailOS({
         </div>
       </Link>
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -305,7 +333,7 @@ export default function TrainerDetailOS({
         </div>
       </section>
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">

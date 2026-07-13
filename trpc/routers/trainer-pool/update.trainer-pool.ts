@@ -12,6 +12,7 @@ import {
   TrainerCertificationStatusEnum,
   TrainerCertificationStepEnum,
   TrainerLevelEnum,
+  TrainerLevelOverrideEnum,
   TrainerScreeningStatusEnum,
   TrainerScreeningStepEnum,
   TrainerSourceEnum,
@@ -38,6 +39,8 @@ export const updateTrainerPool = {
         source: z.enum(TrainerSourceEnum).nullable().optional(),
         level: z.enum(TrainerLevelEnum).optional(),
         status: z.enum(TrainerStatusEnum).optional(),
+        ai_experience_years: numberIsNonNegInt().max(60).optional(),
+        level_override: z.enum(TrainerLevelOverrideEnum).nullable().optional(),
         notes: optionalText,
         specialization_ids: z.array(numberIsPosInt()).max(12).optional(),
       })
@@ -47,7 +50,14 @@ export const updateTrainerPool = {
       await ctx.prisma.$transaction(async (tx) => {
         const updated = await tx.trainer.updateMany({
           where: { id, deleted_at: null },
-          data,
+          data:
+            data.level_override !== undefined
+              ? {
+                  ...data,
+                  level_override_set_by: ctx.user.id,
+                  level_override_set_at: new Date(),
+                }
+              : data,
         });
         await checkUpdateResult(updated.count, "trainer", "trainers");
         if (specialization_ids) {

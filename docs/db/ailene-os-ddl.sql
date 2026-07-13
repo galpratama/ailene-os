@@ -139,6 +139,36 @@ CREATE TYPE trna_role_enum AS ENUM (
   'specialist'
 );
 
+-- Enumeration for the B2B Class/Session tables (b2bc_*)
+
+CREATE TYPE b2bc_difficulty_enum AS ENUM (
+  'beginner',
+  'advanced'
+);
+
+CREATE TYPE b2bc_session_status_enum AS ENUM (
+  'draft',
+  'open',
+  'closed'
+);
+
+CREATE TYPE trainer_application_status_enum AS ENUM (
+  'applied',
+  'shortlisted',
+  'rejected',
+  'selected'
+);
+
+CREATE TYPE trainer_level_override_enum AS ENUM (
+  'junior',
+  'senior'
+);
+
+CREATE TYPE trainer_session_notification_status_enum AS ENUM (
+  'sent',
+  'failed'
+);
+
 ------------
 -- Tables --
 ------------
@@ -247,20 +277,24 @@ CREATE TABLE b2b_actions (
 -- Trainer Pool
 
 CREATE TABLE trainers (
-  id                UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
-  full_name         VARCHAR               NOT NULL,
-  email             VARCHAR               NOT NULL     UNIQUE,
-  phone_country_id  SMALLINT                  NULL,
-  phone_number      VARCHAR                   NULL,
-  source            trainer_source_enum       NULL,
-  level             trainer_level_enum    NOT NULL     DEFAULT 'apprentice',
-  status            trainer_status_enum   NOT NULL     DEFAULT 'candidate',
-  user_id           UUID                      NULL,
-  referred_by       UUID                      NULL,
-  notes             TEXT                      NULL,
-  created_at        TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  updated_at        TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  deleted_at        TIMESTAMPTZ               NULL
+  id                     UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
+  full_name              VARCHAR               NOT NULL,
+  email                  VARCHAR               NOT NULL     UNIQUE,
+  phone_country_id       SMALLINT                  NULL,
+  phone_number           VARCHAR                   NULL,
+  source                 trainer_source_enum       NULL,
+  level                  trainer_level_enum    NOT NULL     DEFAULT 'apprentice',
+  status                 trainer_status_enum   NOT NULL     DEFAULT 'candidate',
+  user_id                UUID                      NULL,
+  referred_by            UUID                      NULL,
+  notes                  TEXT                      NULL,
+  ai_experience_years    SMALLINT              NOT NULL     DEFAULT 0,
+  level_override         trainer_level_override_enum  NULL,
+  level_override_set_by  UUID                      NULL,
+  level_override_set_at  TIMESTAMPTZ               NULL,
+  created_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  deleted_at             TIMESTAMPTZ               NULL
 );
 
 CREATE TABLE trainer_specialization_map (
@@ -326,6 +360,7 @@ CREATE TABLE trainer_assignments (
   id                 SERIAL          PRIMARY KEY,
   pipeline_id        INTEGER         NOT NULL,
   trainer_id         UUID            NOT NULL,
+  session_id         INTEGER             NULL,
   role               trna_role_enum  NOT NULL  DEFAULT 'lead',
   session_date       DATE                NULL,
   participant_count  SMALLINT            NULL,
@@ -344,6 +379,57 @@ CREATE TABLE trainer_evaluations (
   review_notes            TEXT              NULL,
   evaluation_date         DATE              NULL,
   created_at              TIMESTAMPTZ   NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- B2B Class/Session
+
+CREATE TABLE b2bc_classes (
+  id           SERIAL       PRIMARY KEY,
+  name         VARCHAR      NOT NULL,
+  pipeline_id  INTEGER          NULL,
+  description  TEXT             NULL,
+  created_by   UUID             NULL,
+  created_at   TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE b2bc_sessions (
+  id            SERIAL                     PRIMARY KEY,
+  class_id      INTEGER                    NOT NULL,
+  name          VARCHAR                    NOT NULL,
+  difficulty    b2bc_difficulty_enum       NOT NULL  DEFAULT 'beginner',
+  min_quorum    SMALLINT                   NOT NULL  DEFAULT 2,
+  session_date  DATE                           NULL,
+  status        b2bc_session_status_enum  NOT NULL  DEFAULT 'draft',
+  opened_at     TIMESTAMPTZ                    NULL,
+  closed_at     TIMESTAMPTZ                    NULL,
+  created_at    TIMESTAMPTZ                NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMPTZ                NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trainer_applications (
+  id           SERIAL                            PRIMARY KEY,
+  session_id   INTEGER                           NOT NULL,
+  trainer_id   UUID                              NOT NULL,
+  status       trainer_application_status_enum   NOT NULL  DEFAULT 'applied',
+  notes        TEXT                                  NULL,
+  reviewed_by  UUID                                  NULL,
+  reviewed_at  TIMESTAMPTZ                           NULL,
+  created_at   TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (session_id, trainer_id)
+);
+
+CREATE TABLE trainer_session_notifications (
+  id             SERIAL                                     PRIMARY KEY,
+  session_id     INTEGER                                    NOT NULL,
+  trainer_id     UUID                                       NOT NULL,
+  email          VARCHAR                                    NOT NULL,
+  status         trainer_session_notification_status_enum  NOT NULL  DEFAULT 'sent',
+  error_message  TEXT                                           NULL,
+  sent_at        TIMESTAMPTZ                                    NULL,
+  created_at     TIMESTAMPTZ                                NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (session_id, trainer_id)
 );
 
 ----------------
@@ -375,9 +461,10 @@ ALTER TABLE b2b_actions
 -- Trainer Pool
 
 ALTER TABLE trainers
-  ADD FOREIGN KEY (phone_country_id) REFERENCES phone_country_codes (id),
-  ADD FOREIGN KEY (user_id)          REFERENCES users (id),
-  ADD FOREIGN KEY (referred_by)      REFERENCES users (id);
+  ADD FOREIGN KEY (phone_country_id)      REFERENCES phone_country_codes (id),
+  ADD FOREIGN KEY (user_id)               REFERENCES users (id),
+  ADD FOREIGN KEY (referred_by)           REFERENCES users (id),
+  ADD FOREIGN KEY (level_override_set_by) REFERENCES users (id);
 
 ALTER TABLE trainer_specialization_map
   ADD FOREIGN KEY (trainer_id)        REFERENCES trainers (id)                ON DELETE CASCADE,
@@ -399,12 +486,31 @@ ALTER TABLE trainer_availabilities
 
 ALTER TABLE trainer_assignments
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id);
+  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id),
+  ADD FOREIGN KEY (session_id)  REFERENCES b2bc_sessions (id) ON DELETE SET NULL;
 
 ALTER TABLE trainer_evaluations
   ADD FOREIGN KEY (assignment_id) REFERENCES trainer_assignments (id) ON DELETE SET NULL,
   ADD FOREIGN KEY (trainer_id)    REFERENCES trainers (id),
   ADD FOREIGN KEY (reviewed_by)   REFERENCES users (id);
+
+-- B2B Class/Session
+
+ALTER TABLE b2bc_classes
+  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE SET NULL,
+  ADD FOREIGN KEY (created_by)  REFERENCES users (id);
+
+ALTER TABLE b2bc_sessions
+  ADD FOREIGN KEY (class_id) REFERENCES b2bc_classes (id) ON DELETE CASCADE;
+
+ALTER TABLE trainer_applications
+  ADD FOREIGN KEY (session_id)  REFERENCES b2bc_sessions (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id),
+  ADD FOREIGN KEY (reviewed_by) REFERENCES users (id);
+
+ALTER TABLE trainer_session_notifications
+  ADD FOREIGN KEY (session_id) REFERENCES b2bc_sessions (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id);
 
 ---------------
 -- Functions --
@@ -482,5 +588,22 @@ CREATE TRIGGER update_trainer_availabilities_updated_at_trigger
 
 CREATE TRIGGER update_trainer_assignments_updated_at_trigger
   BEFORE UPDATE ON trainer_assignments
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+-- B2B Class/Session
+
+CREATE TRIGGER update_b2bc_classes_updated_at_trigger
+  BEFORE UPDATE ON b2bc_classes
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_b2bc_sessions_updated_at_trigger
+  BEFORE UPDATE ON b2bc_sessions
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_trainer_applications_updated_at_trigger
+  BEFORE UPDATE ON trainer_applications
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
