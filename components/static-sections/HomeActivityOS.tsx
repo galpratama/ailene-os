@@ -79,7 +79,7 @@ export default function HomeActivityOS({
   isLoading: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">

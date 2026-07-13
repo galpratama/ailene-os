@@ -53,7 +53,7 @@ export default function TrainerAvailabilityFormOS({
   }
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <h3 className="font-bold text-gray-900 dark:text-zinc-100">
         Monthly availability
       </h3>

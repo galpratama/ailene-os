@@ -132,7 +132,7 @@ export default function HomeAttentionOS({
     attention.totals.stale_leads;
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
           Needs Your Attention

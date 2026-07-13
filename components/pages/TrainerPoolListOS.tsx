@@ -147,7 +147,7 @@ export default function TrainerPoolListOS({
           const cardClassName = `rounded-xl border p-5 text-left transition-colors ${
             card.isActive
               ? "border-claude bg-claude/5"
-              : "border-gray-300 bg-card-bg"
+              : "border-gray-300 bg-card-bg dark:border-zinc-700"
           } ${card.apply ? "cursor-pointer hover:border-claude/60" : ""}`;
           const cardContent = (
             <>
@@ -218,10 +218,10 @@ export default function TrainerPoolListOS({
         </p>
       )}
       {data && !isLoading && !isError && (
-        <div className="overflow-x-auto rounded-xl border border-gray-300 bg-card-bg">
+        <div className="overflow-x-auto rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
           <table className="w-full min-w-230 text-sm">
             <thead>
-              <tr className="border-b border-gray-300 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <tr className="border-b border-gray-300 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-700">
                 <th className="px-5 py-3">Trainer</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Level</th>

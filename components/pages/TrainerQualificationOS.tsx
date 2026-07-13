@@ -54,7 +54,7 @@ function TrainerJourney({
   const canGoNext = linearIndex !== -1 && linearIndex < journeyStages.length - 1;
 
   return (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <div className="flex items-center gap-3">
         <AppButton
           type="button"

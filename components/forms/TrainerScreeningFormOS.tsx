@@ -227,7 +227,7 @@ export default function TrainerScreeningFormOS({
   const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
