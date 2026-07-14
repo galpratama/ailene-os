@@ -1,4 +1,5 @@
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
+import { LogoAilene } from "@/components/svg/LogoAilene";
 import Link from "next/link";
 
 const navLinks = [
@@ -11,13 +12,8 @@ export default function HeaderHomeBIZ() {
   return (
     <nav aria-label="Navigasi utama" className="border-b-2 border-gray-200 bg-white">
       <div className="mx-auto flex min-h-19 w-[min(1180px,calc(100%-48px))] items-center justify-between gap-6">
-        <Link href="#top" className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-[7px] bg-ink text-sm text-white">
-            A
-          </span>
-          <span className="font-script text-[34px] leading-none font-bold">
-            ailene
-          </span>
+        <Link href="#top" className="flex items-center">
+          <LogoAilene className="h-7 w-auto text-ink" />
         </Link>
 
         <div className="hidden items-center gap-7 lg:flex">

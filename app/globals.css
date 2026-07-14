@@ -24,8 +24,9 @@
   --ink-line: rgba(23, 23, 26, 0.1);
   --off: #fafaf8;
 
-  /* ailene os primary accent — Claude's brand orange */
-  --claude: #f85149;
+  /* ailene os primary accent — friendly blue, styled after
+     campus.buildclub.ai's pastel-blue chrome (nav pills, links, buttons). */
+  --claude: #2563eb;
 
   /* B2B training landing palette (home page only) — distinct from the pastel
      tokens above so existing pages keep their exact colors unchanged. */
@@ -42,7 +43,7 @@
   --charcoal: #202020;
 
   /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark */
-  --dashboard-bg: #fafafa;
+  --dashboard-bg: #eaf1fd;
   --dashboard-border: #e5e7eb;
   --card-bg: #ffffff;
   --sb-bg: #ffffff;
@@ -51,8 +52,8 @@
   --sb-text: #4b5563;
   --sb-text-strong: #111827;
   --sb-item-hover: #f3f4f6;
-  --sb-item-active-bg: rgba(248, 81, 73, 0.1);
-  --sb-item-active-text: #f85149;
+  --sb-item-active-bg: #dce8fd;
+  --sb-item-active-text: #2563eb;
 }
 
 .dark {
@@ -68,8 +69,8 @@
   --sb-text: #a1a1aa;
   --sb-text-strong: #f4f4f5;
   --sb-item-hover: #27272a;
-  --sb-item-active-bg: rgba(248, 81, 73, 0.15);
-  --sb-item-active-text: #f85149;
+  --sb-item-active-bg: rgba(37, 99, 235, 0.2);
+  --sb-item-active-text: #60a5fa;
 }
 
 @theme inline {
@@ -109,6 +110,7 @@
   --color-charcoal: var(--charcoal);
 
   --font-script: var(--font-caveat);
+  --font-display: var(--font-jersey);
 
   --color-dashboard-bg: var(--dashboard-bg);
   --color-dashboard-border: var(--dashboard-border);
@@ -127,4 +129,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Subtle dot texture for the OS dashboard background, styled after
+   campus.buildclub.ai. Dots pick up the primary accent at low opacity. */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(37, 99, 235, 0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.dark .bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(96, 165, 250, 0.12) 1px, transparent 1px);
 }

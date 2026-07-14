@@ -1,6 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { LogoAilene } from "@/components/svg/LogoAilene";
 import { useHeaderActionContext } from "@/contexts/HeaderActionContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { osMainNav, osToolsNav } from "@/lib/os-nav";
@@ -125,7 +126,7 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
   );
 
   return (
-    <header className="h-12 shrink-0 bg-sb-bg border-b border-sb-border flex items-center justify-between gap-2 px-3 sm:px-5">
+    <header className="h-14 shrink-0 bg-sb-bg border-b border-sb-border flex items-center justify-between gap-2 px-3 sm:px-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs font-semibold text-sb-text uppercase tracking-wide min-w-0">
         <AppButton
@@ -138,12 +139,8 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
           <Menu size={15} />
         </AppButton>
 
-        <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
-        <Link
-          href="/"
-          className="shrink-0 text-sb-text-strong hover:text-claude transition-colors"
-        >
-          Ailene OS
+        <Link href="/" className="flex shrink-0 items-center">
+          <LogoAilene className="h-4.5 w-auto text-sb-text-strong hover:text-claude transition-colors" />
         </Link>
         {currentNavItem && !currentNavItem.exact && (
           <>

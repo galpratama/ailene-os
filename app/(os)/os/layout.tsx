@@ -5,13 +5,21 @@ import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Jersey_10, Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+// Chunky display font for chrome-level headings (sidebar section labels,
+// org selector) — the campus.buildclub.ai-inspired playful accent.
+const jersey10 = Jersey_10({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-jersey",
 });
 
 export const metadata: Metadata = {
@@ -37,7 +45,7 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
       <SidebarProvider>
         <HeaderActionProvider>
           <div
-            className={`flex h-screen overflow-hidden bg-dashboard-bg ${spaceGrotesk.className}`}
+            className={`flex h-screen overflow-hidden bg-dashboard-bg bg-dot-grid ${spaceGrotesk.className} ${jersey10.variable}`}
           >
             <SidebarOS sessionToken={sessionToken} />
             <div className="flex-1 flex flex-col min-w-0 bg-dashboard-bg">

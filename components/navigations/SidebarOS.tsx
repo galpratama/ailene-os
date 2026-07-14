@@ -1,7 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import { LogoAilene, LogoAileneIcon } from "@/components/svg/LogoAilene";
+import { LogoAilene } from "@/components/svg/LogoAilene";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { osMainNav, osToolsNav } from "@/lib/os-nav";
 import { trpc, setSessionToken } from "@/trpc/client";
@@ -43,7 +43,7 @@ function NavItem({
       href={href}
       title={collapsed ? label : undefined}
       onClick={closeMobileSidebar}
-      className={`relative flex items-center rounded-lg text-sm transition-colors ${
+      className={`flex items-center rounded-full text-sm transition-colors ${
         collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
         active
@@ -51,9 +51,6 @@ function NavItem({
           : "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong"
       }`}
     >
-      {active && !collapsed && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-claude rounded-full" />
-      )}
       <div className="flex items-center gap-2 min-w-0">
         <Icon size={15} className="shrink-0" />
         {!collapsed && <span className="truncate">{label}</span>}
@@ -203,19 +200,17 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           </AppButton>
         </div>
 
-        {/* Logo */}
+        {/* Logo — h-14 to line up with HeaderOS's border-b */}
         <div
-          className={`flex items-center pt-5 pb-4 mb-3 border-b border-sb-border-soft ${
+          className={`flex h-14 shrink-0 items-center mb-3 border-b border-sb-border ${
             isCollapsed ? "justify-center px-2" : "px-4"
           }`}
         >
-          {isCollapsed ? (
-            <div className="w-9 h-9 rounded-lg border border-sb-border flex items-center justify-center shrink-0 overflow-hidden">
-              <LogoAileneIcon className="w-6 h-6" />
-            </div>
-          ) : (
-            <LogoAilene className="h-6 w-auto" />
-          )}
+          <LogoAilene
+            className={`w-auto text-sb-text-strong shrink-0 ${
+              isCollapsed ? "h-4.5" : "h-7"
+            }`}
+          />
         </div>
 
         {/* Org selector */}
@@ -228,7 +223,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             <span className="flex items-center gap-2 min-w-0">
               <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
               {!isCollapsed && (
-                <span className="text-left font-medium text-sb-text-strong truncate">
+                <span className="font-bold text-left text-sm text-sb-text-strong truncate">
                   Operating System
                 </span>
               )}
@@ -248,7 +243,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         {/* Tools */}
         <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
           {!isCollapsed && (
-            <p className="px-3 py-1 text-xs font-semibold text-sb-text uppercase tracking-wider">
+            <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
               Tools
             </p>
           )}

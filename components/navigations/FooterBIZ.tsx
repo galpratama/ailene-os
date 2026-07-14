@@ -1,3 +1,5 @@
+import { LogoAilene } from "@/components/svg/LogoAilene";
+
 const footerColumns = [
   {
     heading: "Belajar",
@@ -19,12 +21,7 @@ export default function FooterBIZ() {
       <div className="mx-auto max-w-280 px-7">
         <div className="mb-7 grid grid-cols-2 gap-10 border-b border-white/10 pb-10 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
-            <div className="mb-2 flex items-center gap-1.5 text-[19px] font-extrabold">
-              <span className="flex size-5.5 items-center justify-center rounded-[7px] bg-white text-[13px] text-ink">
-                A
-              </span>
-              Ailene
-            </div>
+            <LogoAilene className="mb-2 h-6 w-auto" />
             <p className="text-[13px] leading-normal text-white/40">
               Mulai dari nol.
               <br />
