@@ -1,6 +1,6 @@
 import { createTRPCRouter } from "@/trpc/init";
-import { createB2BClass } from "./b2b-class/create.b2b-class";
 import { createB2B } from "./b2b/create.b2b";
+import { createLms } from "./lms/create.lms";
 import { createTrainerPool } from "./trainer-pool/create.trainer-pool";
 
 export const createRouter = createTRPCRouter({
@@ -16,9 +16,9 @@ export const createRouter = createTRPCRouter({
     evaluation: createTrainerPool.evaluation,
     specialization: createTrainerPool.specialization,
   },
-  b2bClass: {
-    class: createB2BClass.class,
-    session: createB2BClass.session,
-    publicApply: createB2BClass.publicApply,
+  lms: {
+    project: createLms.project,
+    level: createLms.level,
+    chapter: createLms.chapter,
   },
 });

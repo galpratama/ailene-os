@@ -1,7 +1,7 @@
 import { createTRPCRouter } from "@/trpc/init";
 import { listAnalytics } from "./analytics/list.analytics";
-import { listB2BClass } from "./b2b-class/list.b2b-class";
 import { listB2B } from "./b2b/list.b2b";
+import { listLms } from "./lms/list.lms";
 import { listLookup } from "./lookup/list.lookup";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
 import { listUserData } from "./userdata/list.userdata";
@@ -37,13 +37,12 @@ export const listRouter = createTRPCRouter({
     specializations: listTrainerPool.specializations,
   },
 
-  // B2B Class/Session //
+  // LMS //
 
-  b2bClass: {
-    classes: listB2BClass.classes,
-    sessions: listB2BClass.sessions,
-    applications: listB2BClass.applications,
-    openSessions: listB2BClass.openSessions,
+  lms: {
+    projects: listLms.projects,
+    levels: listLms.levels,
+    chapters: listLms.chapters,
   },
 
   // Analytics //

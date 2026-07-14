@@ -6,30 +6,9 @@ import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
-import {
-  B2BProbabilityStatusEnum,
-  B2BProductEnum,
-  B2BSourceEnum,
-  B2BStageEnum,
-} from "@prisma/client";
+import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
-
-const productOptions: AppSelectOption[] = [
-  { value: "SPONSORSHIP", label: "Sponsorship" },
-  { value: "CORPORATE_TRAINING", label: "Corporate Training" },
-  { value: "CORPORATE_AI_TRAINING", label: "Corporate AI Training" },
-];
-
-const sourceOptions: AppSelectOption[] = [
-  { value: "", label: "None" },
-  { value: "SOCIAL_MEDIA", label: "Social Media" },
-  { value: "FOUNDER_NETWORK", label: "Founder Network" },
-  { value: "EVENT_CONFERENCE", label: "Event / Conference" },
-  { value: "REFERRAL_PARTNER", label: "Referral (Partner)" },
-  { value: "REFERRAL_CLIENT", label: "Referral (Client)" },
-  { value: "WEBSITE", label: "Website" },
-];
 
 const stageOptions: AppSelectOption[] = [
   { value: "LEAD_IDENTIFIED", label: "Lead Identified" },
@@ -77,8 +56,6 @@ export default function CreateLeadFormOS({
   const [picEmail, setPicEmail] = useState("");
 
   const [name, setName] = useState("");
-  const [product, setProduct] = useState<B2BProductEnum | "">("");
-  const [source, setSource] = useState<B2BSourceEnum | "">("");
   const [stage, setStage] = useState<B2BStageEnum>("LEAD_IDENTIFIED");
   const [probability, setProbability] = useState("");
   const [probabilityStatus, setProbabilityStatus] = useState<B2BProbabilityStatusEnum | "">("");
@@ -118,8 +95,6 @@ export default function CreateLeadFormOS({
     setPicWa("");
     setPicEmail("");
     setName("");
-    setProduct("");
-    setSource("");
     setStage("LEAD_IDENTIFIED");
     setProbability("");
     setProbabilityStatus("");
@@ -149,7 +124,6 @@ export default function CreateLeadFormOS({
     setError(null);
 
     if (!name.trim()) return setError("Program name is required.");
-    if (!product) return setError("Product is required.");
     if (!ownerId) return setError("Owner is required.");
     if (useExistingCompany && !companyId) return setError("Pick an existing company.");
     if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
@@ -168,8 +142,6 @@ export default function CreateLeadFormOS({
             pic_wa: picWa.trim() || null,
             pic_email: picEmail.trim() || null,
           },
-      product,
-      source: source || undefined,
       stage,
       probability: probability ? Number(probability) : undefined,
       probability_status: probabilityStatus || undefined,
@@ -288,26 +260,6 @@ export default function CreateLeadFormOS({
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <AppSelect
-              selectId="lead-product"
-              label="Product"
-              required
-              placeholder="Pick a product"
-              value={product}
-              onChange={(v) => setProduct(v as B2BProductEnum)}
-              options={productOptions}
-            />
-            <AppSelect
-              selectId="lead-source"
-              label="Source"
-              placeholder="Pick a source"
-              value={source}
-              onChange={(v) => setSource(v as B2BSourceEnum | "")}
-              options={sourceOptions}
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

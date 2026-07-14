@@ -10,8 +10,6 @@ import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BProbabilityStatusEnum,
-  B2BProductEnum,
-  B2BSourceEnum,
   B2BStageEnum,
   Prisma,
 } from "@prisma/client";
@@ -60,8 +58,6 @@ export const createB2B = {
           // Provide an existing company_id, OR a new_company to create inline.
           company_id: numberIsID().optional(),
           new_company: newCompanyInput.optional(),
-          product: z.enum(B2BProductEnum),
-          source: z.enum(B2BSourceEnum).nullable().optional(),
           stage: z.enum(B2BStageEnum).optional(),
           probability: z.number().int().min(0).max(100).optional(),
           probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
@@ -106,8 +102,6 @@ export const createB2B = {
         data: {
           name: opts.input.name,
           company,
-          product: opts.input.product,
-          source: opts.input.source ?? null,
           stage: opts.input.stage,
           probability: opts.input.probability,
           probability_status: opts.input.probability_status,

@@ -12,8 +12,6 @@ import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BProbabilityStatusEnum,
-  B2BProductEnum,
-  B2BSourceEnum,
   B2BStageEnum,
   Prisma,
 } from "@prisma/client";
@@ -96,8 +94,6 @@ export const listB2B = {
   pipelines: administratorProcedure
     .input(
       z.object({
-        product: z.enum(B2BProductEnum).optional(),
-        source: z.enum(B2BSourceEnum).optional(),
         stage: z.enum(B2BStageEnum).optional(),
         probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
         owner_id: stringIsUUID().optional(),
@@ -109,8 +105,6 @@ export const listB2B = {
     )
     .query(async (opts) => {
       const whereClause: Prisma.B2BPipelineWhereInput = {
-        product: opts.input.product,
-        source: opts.input.source,
         stage: opts.input.stage,
         probability_status: opts.input.probability_status,
         owner_id: opts.input.owner_id,
@@ -204,7 +198,6 @@ export const listB2B = {
         company_name: entry.company.name,
         industry_id: entry.company.industry.id,
         industry_name: entry.company.industry.industry_name,
-        product: entry.product,
         stage: entry.stage,
         probability: entry.probability,
         probability_status: entry.probability_status,

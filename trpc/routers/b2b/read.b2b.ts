@@ -65,8 +65,6 @@ export const readB2B = {
           pic_job_title: thePipeline.company.pic_job_title,
           pic_wa: thePipeline.company.pic_wa,
           pic_email: thePipeline.company.pic_email,
-          product: thePipeline.product,
-          source: thePipeline.source,
           stage: thePipeline.stage,
           probability: thePipeline.probability,
           probability_status: thePipeline.probability_status,

@@ -11,8 +11,6 @@ import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BProbabilityStatusEnum,
-  B2BProductEnum,
-  B2BSourceEnum,
   B2BStageEnum,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -53,8 +51,6 @@ export const updateB2B = {
         id: numberIsID(),
         name: stringNotBlank().optional(),
         company_id: numberIsID().optional(),
-        product: z.enum(B2BProductEnum).optional(),
-        source: z.enum(B2BSourceEnum).nullable().optional(),
         stage: z.enum(B2BStageEnum).optional(),
         probability: z.number().int().min(0).max(100).optional(),
         probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
