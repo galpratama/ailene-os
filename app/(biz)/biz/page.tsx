@@ -2,9 +2,9 @@ import HomePageBIZ from "@/components/pages/HomePageBIZ";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ailene — Belajar AI dari Nol, Gratis",
+  title: "Ailene B2B | Corporate AI Training Menu",
   description:
-    "Komunitas belajar AI gratis di Indonesia. Kurikulum runtut dari nol, komunitas ribuan orang, dan sertifikat tiap kelar level.",
+    "Corporate AI training menu untuk tim kamu — Foundation, Intensive, atau Transformation Sprint. Konsultasikan program yang paling relevan dengan kebutuhan tim.",
 };
 
 export default function HomePage() {

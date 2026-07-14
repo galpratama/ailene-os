@@ -1,39 +1,24 @@
-import Link from "next/link";
-import AppButton from "../buttons/AppButton";
-
-const dots = [
-  { size: 60, color: "bg-pink", className: "left-[12%] top-15" },
-  { size: 44, color: "bg-biru", className: "bottom-17.5 right-[14%]" },
-  { size: 34, color: "bg-hijau", className: "right-[20%] top-25" },
-];
+import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 
 export default function CTAHomeBIZ() {
   return (
-    <section className="relative overflow-hidden bg-kuning-t py-24 text-center">
-      {dots.map((dot, i) => (
-        <span
-          key={i}
-          className={`absolute rounded-full ${dot.color} ${dot.className}`}
-          style={{ width: dot.size, height: dot.size }}
-        />
-      ))}
-
-      <div className="relative z-10 mx-auto max-w-280 px-7">
-        <h2 className="mx-auto mb-5 max-w-170 text-[34px] font-extrabold leading-tight md:text-[52px]">
-          Yaudah, mulai aja dulu.
-        </h2>
-        <p className="mx-auto mb-9 max-w-120 text-lg leading-[1.6] text-ink-soft">
-          Belajar fundamental AI gratis, komunitas gratis. Nggak ada alasan
-          buat nunggu.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/auth/login">
-            <AppButton variant="ink" size="cta">Mulai dari Foundation →</AppButton>
-          </Link>
-          <AppButton variant="white" size="cta">Gabung komunitas</AppButton>
+    <section id="contact" className="bg-coral py-24 text-center">
+      <div className="mx-auto w-[min(1180px,calc(100%-48px))]">
+        <div className="font-script mb-3 text-[34px] leading-none">
+          Mulai dari brief singkat
         </div>
-        <div className="mt-4 text-[13.5px] text-ink-soft/70">
-          No credit card. No komitmen. Tinggal mulai.
+        <h2 className="mx-auto max-w-225 text-[42px] leading-[1.05] font-light sm:text-[clamp(42px,6vw,78px)]">
+          Mulai dari kebutuhan tim. Kami bantu menentukan programnya.
+        </h2>
+        <p className="mx-auto mt-6 max-w-162.5 text-[19px] leading-relaxed">
+          Ceritakan jumlah peserta, role atau departemen, lokasi, serta
+          target yang ingin dicapai. Konsultan kami akan membantu
+          merekomendasikan format dan scope program yang paling relevan.
+        </p>
+        <div className="mt-9 flex justify-center">
+          <LinkButtonBIZ href="https://ailene.id" variant="dark">
+            Talk to a Consultant
+          </LinkButtonBIZ>
         </div>
       </div>
     </section>

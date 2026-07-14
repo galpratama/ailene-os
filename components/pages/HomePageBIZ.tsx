@@ -1,33 +1,27 @@
-import HeaderBIZ from "../navigations/HeaderBIZ";
-import FooterBIZ from "../navigations/FooterBIZ";
+import HeaderHomeBIZ from "../navigations/HeaderHomeBIZ";
+import FooterHomeBIZ from "../navigations/FooterHomeBIZ";
 import HeroHomeBIZ from "../heroes/HeroHomeBIZ";
-import PainHomeBIZ from "../static-sections/PainHomeBIZ";
-import AboutHomeBIZ from "../static-sections/AboutHomeBIZ";
-import ClassesHomeBIZ from "../static-sections/ClassesHomeBIZ";
-import SkillTreeHomeBIZ from "../static-sections/SkillTreeHomeBIZ";
-import PromptingHomeBIZ from "../static-sections/PromptingHomeBIZ";
-import BenefitHomeBIZ from "../static-sections/BenefitHomeBIZ";
-import CommunityHomeBIZ from "../static-sections/CommunityHomeBIZ";
-import TestimonialsHomeBIZ from "../static-sections/TestimonialsHomeBIZ";
-import HackathonHomeBIZ from "../static-sections/HackathonHomeBIZ";
+import StatsBandHomeBIZ from "../static-sections/StatsBandHomeBIZ";
+import PackagesHomeBIZ from "../static-sections/PackagesHomeBIZ";
+import CompareProgramsHomeBIZ from "../static-sections/CompareProgramsHomeBIZ";
+import ProcessHomeBIZ from "../static-sections/ProcessHomeBIZ";
+import TrainersHomeBIZ from "../static-sections/TrainersHomeBIZ";
+import NotesHomeBIZ from "../static-sections/NotesHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
 
 export default function HomePageBIZ() {
   return (
-    <div>
-      <HeaderBIZ />
+    <div id="top">
+      <HeaderHomeBIZ />
       <HeroHomeBIZ />
-      <PainHomeBIZ />
-      <AboutHomeBIZ />
-      <ClassesHomeBIZ />
-      <SkillTreeHomeBIZ />
-      <PromptingHomeBIZ />
-      <BenefitHomeBIZ />
-      <CommunityHomeBIZ />
-      <TestimonialsHomeBIZ />
-      <HackathonHomeBIZ />
+      <StatsBandHomeBIZ />
+      <PackagesHomeBIZ />
+      <CompareProgramsHomeBIZ />
+      <ProcessHomeBIZ />
+      <TrainersHomeBIZ />
+      <NotesHomeBIZ />
       <CTAHomeBIZ />
-      <FooterBIZ />
+      <FooterHomeBIZ />
     </div>
   );
 }

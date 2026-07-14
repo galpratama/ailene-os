@@ -1,10 +1,18 @@
 import { ThemeProvider } from "next-themes";
-import { Space_Grotesk } from "next/font/google";
+import { Caveat, Stack_Sans_Headline } from "next/font/google";
 import type { ReactNode } from "react";
 
-const spaceGrotesk = Space_Grotesk({
+const stackSansHeadline = Stack_Sans_Headline({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+// Script accent font used for "eyebrow" labels and handwritten-style
+// callouts on the B2B training landing page (font-script utility).
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-caveat",
 });
 
 // The marketing site stays on the pastel brand palette regardless of the
@@ -13,7 +21,9 @@ const spaceGrotesk = Space_Grotesk({
 export default function BizLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
-      <div className={spaceGrotesk.className}>{children}</div>
+      <div className={`${stackSansHeadline.className} ${caveat.variable}`}>
+        {children}
+      </div>
     </ThemeProvider>
   );
 }

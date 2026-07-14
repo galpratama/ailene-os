@@ -27,6 +27,20 @@
   /* ailene os primary accent — Claude's brand orange */
   --claude: #f85149;
 
+  /* B2B training landing palette (home page only) — distinct from the pastel
+     tokens above so existing pages keep their exact colors unchanged. */
+  --coral: #ff8556;
+  --coral-t: #ffdcd7;
+  --azure: #89b5fe;
+  --azure-t: #dfebfe;
+  --lime: #9ddb6e;
+  --lime-t: #e3f1d6;
+  --rose: #feb0e2;
+  --rose-t: #ffe3f2;
+  --amber: #f6d466;
+  --cyan: #00c8f6;
+  --charcoal: #202020;
+
   /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark */
   --dashboard-bg: #fafafa;
   --dashboard-border: #e5e7eb;
@@ -81,6 +95,20 @@
   --color-ink-line: var(--ink-line);
   --color-off: var(--off);
   --color-claude: var(--claude);
+
+  --color-coral: var(--coral);
+  --color-coral-t: var(--coral-t);
+  --color-azure: var(--azure);
+  --color-azure-t: var(--azure-t);
+  --color-lime: var(--lime);
+  --color-lime-t: var(--lime-t);
+  --color-rose: var(--rose);
+  --color-rose-t: var(--rose-t);
+  --color-amber: var(--amber);
+  --color-cyan: var(--cyan);
+  --color-charcoal: var(--charcoal);
+
+  --font-script: var(--font-caveat);
 
   --color-dashboard-bg: var(--dashboard-bg);
   --color-dashboard-border: var(--dashboard-border);
