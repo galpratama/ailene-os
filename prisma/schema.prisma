@@ -223,6 +223,130 @@ enum TrainerSessionNotificationStatusEnum {
   @@map("trainer_session_notification_status_enum")
 }
 
+// Enumeration for the LMS tables (lms_*) — migrated from the Sevenpreneur
+// AI-LMS database's ail_* schema (docs/db/ailene-ddl.sql in that repo).
+
+enum LmsRoleEnum {
+  STUDENT  @map("student")
+  CHAMPION @map("champion")
+  SPONSOR  @map("sponsor")
+
+  @@map("lms_role_enum")
+}
+
+enum LmsUseCaseFrequencyEnum {
+  DAILY        @map("daily")
+  WEEKLY       @map("weekly")
+  MONTHLY      @map("monthly")
+  OCCASIONALLY @map("occasionally")
+
+  @@map("lms_use_case_frequency_enum")
+}
+
+enum LmsUseCaseTypeEnum {
+  WORKFLOW_AUTOMATION @map("workflow_automation")
+  CONTENT_CREATION    @map("content_creation")
+  DATA_ANALYSIS       @map("data_analysis")
+  RESEARCH            @map("research")
+  COMMUNICATION       @map("communication")
+  DECISION_SUPPORT    @map("decision_support")
+  LEARNING            @map("learning")
+  OTHER               @map("other")
+
+  @@map("lms_use_case_type_enum")
+}
+
+enum LmsLearningTypeEnum {
+  QUIZ     @map("quiz")
+  VIDEO    @map("video")
+  MATERIAL @map("material")
+  USE_CASE @map("use_case")
+  PROMPT   @map("prompt")
+
+  @@map("lms_learning_type_enum")
+}
+
+// Pre-assessment single-choice enums (one per question)
+
+enum LmsPaAiUseFreqEnum {
+  NEVER     @map("never")
+  TRIED     @map("tried")
+  WEEKLY    @map("weekly")
+  DAILY     @map("daily")
+  INTENSIVE @map("intensive")
+
+  @@map("lms_pa_ai_use_freq_enum")
+}
+
+enum LmsPaFrequencyEnum {
+  NEVER     @map("never")
+  RARELY    @map("rarely")
+  SOMETIMES @map("sometimes")
+  OFTEN     @map("often")
+  ALWAYS    @map("always")
+
+  @@map("lms_pa_frequency_enum")
+}
+
+enum LmsPaRefineScenarioEnum {
+  TARGETED    @map("targeted")
+  SWITCH_TOOL @map("switch_tool")
+  MANUAL      @map("manual")
+  RESTART     @map("restart")
+
+  @@map("lms_pa_refine_scenario_enum")
+}
+
+enum LmsPaOutputReviewEnum {
+  NO_CHECK    @map("no_check")
+  SOMETIMES   @map("sometimes")
+  ALWAYS      @map("always")
+  CROSS_CHECK @map("cross_check")
+  NO_USE      @map("no_use")
+
+  @@map("lms_pa_output_review_enum")
+}
+
+enum LmsPaTeamAdoptionEnum {
+  NONE       @map("none")
+  PERSONAL   @map("personal")
+  PILOT      @map("pilot")
+  POLICY     @map("policy")
+  INTEGRATED @map("integrated")
+
+  @@map("lms_pa_team_adoption_enum")
+}
+
+enum LmsPaPromptSkillEnum {
+  NONE       @map("none")
+  BASIC      @map("basic")
+  DECENT     @map("decent")
+  STRUCTURED @map("structured")
+  EXPERT     @map("expert")
+
+  @@map("lms_pa_prompt_skill_enum")
+}
+
+enum LmsPaAttitudeEnum {
+  TOO_RISKY  @map("too_risky")
+  CAUTIOUS   @map("cautious")
+  NEUTRAL    @map("neutral")
+  SUPPORTIVE @map("supportive")
+  ESSENTIAL  @map("essential")
+
+  @@map("lms_pa_attitude_enum")
+}
+
+enum LmsPaMotivationEnum {
+  MANDATORY @map("mandatory")
+  CURIOUS   @map("curious")
+  TENTATIVE @map("tentative")
+  READY     @map("ready")
+  EAGER     @map("eager")
+
+  @@map("lms_pa_motivation_enum")
+}
+
 ////////////
 // Models //
 ////////////
@@ -329,6 +453,7 @@ model B2BCompany {
   created_at    DateTime      @default(now()) @db.Timestamptz()
   updated_at    DateTime      @default(now()) @updatedAt @db.Timestamptz()
   pipelines     B2BPipeline[]
+  lms_projects  LmsProject[]
 
   @@map("b2b_company")
 }
@@ -594,4 +719,420 @@ model TrainerSessionNotification {
 
   @@unique([session_id, trainer_id])
   @@map("trainer_session_notifications")
+}
+
+// LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*
+// schema. Only the pure content-catalog models carry migrated data; the
+// member/progress/submission tables are created empty (see migration note
+// in docs/db/ailene-os-ddl.sql).
+
+model LmsCategory {
+  id        Int                  @id @default(autoincrement()) @db.SmallInt
+  name      String               @unique @db.VarChar()
+  prompts   LmsPromptCategory[]
+  use_cases LmsUseCaseCategory[]
+
+  @@map("lms_categories")
+}
+
+model LmsMember {
+  id                            Int                     @id @default(autoincrement())
+  user_id                       String                  @unique @db.Uuid // Sevenpreneur user id, NOT an ailene-os users.id
+  role                          LmsRoleEnum
+  job_title                     String                  @db.VarChar()
+  group                         LmsGroup?               @relation("LmsMemberGroup", fields: [group_id], references: [id])
+  group_id                      Int?
+  current_level                 LmsLevel                @relation(fields: [current_level_id], references: [id])
+  current_level_id              Int                     @default(0)
+  level_history                 Json                    @default("[]")
+  last_active_at                DateTime?               @db.Timestamptz()
+  created_at                    DateTime                @default(now()) @db.Timestamptz()
+  champion_of_groups            LmsGroup[]              @relation("LmsGroupChampion")
+  coaching_notes_about          LmsCoachingNote[]       @relation("LmsCoachingNoteMember")
+  coaching_notes_written        LmsCoachingNote[]       @relation("LmsCoachingNoteChampion")
+  prompt_submissions            LmsPromptSubmission[]   @relation("LmsPromptSubmissionMember")
+  prompt_submissions_assigned   LmsPromptSubmission[]   @relation("LmsPromptSubmissionAssignedBy")
+  prompt_submissions_reviewed   LmsPromptSubmission[]   @relation("LmsPromptSubmissionReviewedBy")
+  use_case_submissions          LmsUseCaseSubmission[]  @relation("LmsUseCaseSubmissionMember")
+  use_case_submissions_assigned LmsUseCaseSubmission[]  @relation("LmsUseCaseSubmissionAssignedBy")
+  use_case_submissions_reviewed LmsUseCaseSubmission[]  @relation("LmsUseCaseSubmissionReviewedBy")
+  quiz_submissions              LmsQuizSubmission[]
+  video_completions             LmsVideoCompletion[]
+  material_completions          LmsMaterialCompletion[]
+  xp_earnings                   LmsXpEarning[]
+  pre_assessment                LmsPreAssessment?
+
+  @@map("lms_members")
+}
+
+model LmsGroup {
+  id          Int         @id @default(autoincrement())
+  name        String      @db.VarChar()
+  project     LmsProject  @relation(fields: [project_id], references: [id])
+  project_id  Int
+  champion    LmsMember   @relation("LmsGroupChampion", fields: [champion_id], references: [id])
+  champion_id Int
+  created_at  DateTime    @default(now()) @db.Timestamptz()
+  updated_at  DateTime    @default(now()) @updatedAt @db.Timestamptz()
+  members     LmsMember[] @relation("LmsMemberGroup")
+
+  @@map("lms_groups")
+}
+
+model LmsProject {
+  id         Int         @id @default(autoincrement())
+  name       String      @db.VarChar()
+  company    B2BCompany? @relation(fields: [company_id], references: [id])
+  company_id Int?
+  created_at DateTime    @default(now()) @db.Timestamptz()
+  updated_at DateTime    @default(now()) @updatedAt @db.Timestamptz()
+  groups     LmsGroup[]
+
+  @@map("lms_projects")
+}
+
+model LmsCoachingNote {
+  id          Int       @id @default(autoincrement())
+  member      LmsMember @relation("LmsCoachingNoteMember", fields: [member_id], references: [id])
+  member_id   Int
+  champion    LmsMember @relation("LmsCoachingNoteChampion", fields: [champion_id], references: [id])
+  champion_id Int
+  text        String    @db.Text
+  created_at  DateTime  @default(now()) @db.Timestamptz()
+
+  @@map("lms_coaching_notes")
+}
+
+model LmsLevel {
+  id           Int          @id @default(autoincrement())
+  level_number Int          @unique @db.SmallInt
+  name         String       @db.VarChar()
+  icon         String?      @db.VarChar()
+  min_xp       Int          @default(0)
+  status       StatusEnum   @default(ACTIVE)
+  created_at   DateTime     @default(now()) @db.Timestamptz()
+  updated_at   DateTime     @default(now()) @updatedAt @db.Timestamptz()
+  members      LmsMember[]
+  chapters     LmsChapter[]
+  prompts      LmsPrompt[]
+  use_cases    LmsUseCase[]
+
+  @@map("lms_levels")
+}
+
+model LmsChapter {
+  id           Int           @id @default(autoincrement())
+  level        LmsLevel      @relation(fields: [level_id], references: [id])
+  level_id     Int
+  name         String        @db.VarChar()
+  description  String?       @db.Text
+  session_date DateTime      @db.Timestamptz()
+  status       StatusEnum    @default(ACTIVE)
+  created_at   DateTime      @default(now()) @db.Timestamptz()
+  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz()
+  quizzes      LmsQuiz[]
+  videos       LmsVideo[]
+  materials    LmsMaterial[]
+
+  @@map("lms_chapters")
+}
+
+model LmsQuiz {
+  id          String              @id @default(dbgenerated("encode(gen_random_bytes(12), 'hex')")) @db.VarChar()
+  chapter     LmsChapter          @relation(fields: [chapter_id], references: [id])
+  chapter_id  Int
+  name        String              @db.VarChar()
+  description String?             @db.Text
+  order_index Int                 @default(0) @db.SmallInt
+  status      StatusEnum          @default(ACTIVE)
+  created_at  DateTime            @default(now()) @db.Timestamptz()
+  updated_at  DateTime            @default(now()) @updatedAt @db.Timestamptz()
+  questions   LmsQuizQuestion[]
+  submissions LmsQuizSubmission[]
+
+  @@map("lms_quizzes")
+}
+
+model LmsQuizQuestion {
+  id          Int             @id @default(autoincrement())
+  quiz        LmsQuiz         @relation(fields: [quiz_id], references: [id])
+  quiz_id     String          @db.VarChar()
+  question    String          @db.Text
+  explanation String?         @db.Text
+  order_index Int             @default(0) @db.SmallInt
+  xp_reward   Int             @default(0) @db.SmallInt
+  created_at  DateTime        @default(now()) @db.Timestamptz()
+  updated_at  DateTime        @default(now()) @updatedAt @db.Timestamptz()
+  options     LmsQuizOption[]
+
+  @@map("lms_quiz_questions")
+}
+
+model LmsQuizOption {
+  id          Int             @id @default(autoincrement())
+  question    LmsQuizQuestion @relation(fields: [question_id], references: [id])
+  question_id Int
+  option_code String          @db.VarChar()
+  text        String          @db.VarChar()
+  is_correct  Boolean         @default(false)
+
+  @@map("lms_quiz_options")
+}
+
+model LmsVideo {
+  id          Int                  @id @default(autoincrement())
+  chapter     LmsChapter           @relation(fields: [chapter_id], references: [id])
+  chapter_id  Int
+  title       String               @db.VarChar()
+  description String?              @db.Text
+  video_url   String               @db.Text
+  xp_reward   Int                  @default(0) @db.SmallInt
+  order_index Int                  @default(0) @db.SmallInt
+  status      StatusEnum           @default(ACTIVE)
+  created_at  DateTime             @default(now()) @db.Timestamptz()
+  updated_at  DateTime             @default(now()) @updatedAt @db.Timestamptz()
+  completions LmsVideoCompletion[]
+
+  @@map("lms_videos")
+}
+
+model LmsMaterial {
+  id          String                  @id @default(dbgenerated("encode(gen_random_bytes(12), 'hex')")) @db.VarChar()
+  chapter     LmsChapter              @relation(fields: [chapter_id], references: [id])
+  chapter_id  Int
+  title       String                  @db.VarChar()
+  description String?                 @db.Text
+  content     String?                 @db.Text
+  file_url    String?                 @db.Text
+  image_url   String?                 @db.Text
+  xp_reward   Int                     @default(0) @db.SmallInt
+  order_index Int                     @default(0) @db.SmallInt
+  status      StatusEnum              @default(ACTIVE)
+  created_at  DateTime                @default(now()) @db.Timestamptz()
+  updated_at  DateTime                @default(now()) @updatedAt @db.Timestamptz()
+  completions LmsMaterialCompletion[]
+
+  @@map("lms_materials")
+}
+
+model LmsPrompt {
+  id              Int                   @id @default(autoincrement())
+  level           LmsLevel              @relation(fields: [level_id], references: [id])
+  level_id        Int
+  name            String                @db.VarChar()
+  scenario        String                @db.Text
+  expected_output String                @db.Text
+  xp_reward       Int                   @default(70) @db.SmallInt
+  status          StatusEnum            @default(ACTIVE)
+  is_self_created Boolean               @default(false)
+  created_at      DateTime              @default(now()) @db.Timestamptz()
+  updated_at      DateTime              @default(now()) @updatedAt @db.Timestamptz()
+  categories      LmsPromptCategory[]
+  submissions     LmsPromptSubmission[]
+
+  @@map("lms_prompts")
+}
+
+model LmsPromptSubmission {
+  id                 Int        @id @default(autoincrement())
+  member             LmsMember  @relation("LmsPromptSubmissionMember", fields: [member_id], references: [id])
+  member_id          Int
+  prompt             LmsPrompt  @relation(fields: [prompt_id], references: [id])
+  prompt_id          Int
+  assigned_by        LmsMember? @relation("LmsPromptSubmissionAssignedBy", fields: [assigned_by_id], references: [id])
+  assigned_by_id     Int?
+  deadline           DateTime?  @db.Timestamptz()
+  message            String?    @db.Text
+  input              String?    @db.Text
+  output             String?    @db.Text
+  submitted_at       DateTime?  @db.Timestamptz()
+  reviewed_by        LmsMember? @relation("LmsPromptSubmissionReviewedBy", fields: [reviewed_by_id], references: [id])
+  reviewed_by_id     Int?
+  reviewed_at        DateTime?  @db.Timestamptz()
+  comment            String?    @db.Text
+  is_accepted        Boolean    @default(false)
+  rubric_specificity Int?       @db.SmallInt
+  rubric_context     Int?       @db.SmallInt
+  rubric_constraints Int?       @db.SmallInt
+  rubric_examples    Int?       @db.SmallInt
+  rubric_iteration   Int?       @db.SmallInt
+  created_at         DateTime   @default(now()) @db.Timestamptz()
+  updated_at         DateTime   @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([member_id, prompt_id])
+  @@map("lms_prompt_submissions")
+}
+
+model LmsUseCase {
+  id              Int                    @id @default(autoincrement())
+  level           LmsLevel               @relation(fields: [level_id], references: [id])
+  level_id        Int
+  name            String                 @db.VarChar()
+  description     String                 @db.Text
+  xp_reward       Int                    @default(70) @db.SmallInt
+  status          StatusEnum             @default(ACTIVE)
+  is_self_created Boolean                @default(false)
+  created_at      DateTime               @default(now()) @db.Timestamptz()
+  updated_at      DateTime               @default(now()) @updatedAt @db.Timestamptz()
+  categories      LmsUseCaseCategory[]
+  submissions     LmsUseCaseSubmission[]
+
+  @@map("lms_use_cases")
+}
+
+model LmsUseCaseSubmission {
+  id               Int                      @id @default(autoincrement())
+  member           LmsMember                @relation("LmsUseCaseSubmissionMember", fields: [member_id], references: [id])
+  member_id        Int
+  use_case         LmsUseCase               @relation(fields: [use_case_id], references: [id])
+  use_case_id      Int
+  assigned_by      LmsMember?               @relation("LmsUseCaseSubmissionAssignedBy", fields: [assigned_by_id], references: [id])
+  assigned_by_id   Int?
+  deadline         DateTime?                @db.Timestamptz()
+  message          String?                  @db.Text
+  outcome_proof    String?                  @db.VarChar()
+  hours_with_ai    Decimal?                 @db.Decimal(6, 2)
+  hours_without_ai Decimal?                 @db.Decimal(6, 2)
+  description      String?                  @db.Text
+  ai_tool          String?                  @db.VarChar()
+  frequency        LmsUseCaseFrequencyEnum?
+  type             LmsUseCaseTypeEnum?
+  submitted_at     DateTime?                @db.Timestamptz()
+  reviewed_by      LmsMember?               @relation("LmsUseCaseSubmissionReviewedBy", fields: [reviewed_by_id], references: [id])
+  reviewed_by_id   Int?
+  reviewed_at      DateTime?                @db.Timestamptz()
+  comment          String?                  @db.Text
+  is_accepted      Boolean                  @default(false)
+  created_at       DateTime                 @default(now()) @db.Timestamptz()
+  updated_at       DateTime                 @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([member_id, use_case_id])
+  @@map("lms_use_case_submissions")
+}
+
+model LmsPromptCategory {
+  prompt      LmsPrompt   @relation(fields: [prompt_id], references: [id])
+  prompt_id   Int
+  category    LmsCategory @relation(fields: [category_id], references: [id])
+  category_id Int         @db.SmallInt
+
+  @@id([prompt_id, category_id])
+  @@map("lms_prompt_categories")
+}
+
+model LmsUseCaseCategory {
+  use_case    LmsUseCase  @relation(fields: [use_case_id], references: [id])
+  use_case_id Int
+  category    LmsCategory @relation(fields: [category_id], references: [id])
+  category_id Int         @db.SmallInt
+
+  @@id([use_case_id, category_id])
+  @@map("lms_use_case_categories")
+}
+
+model LmsQuizSubmission {
+  id             Int       @id @default(autoincrement())
+  member         LmsMember @relation(fields: [member_id], references: [id])
+  member_id      Int
+  quiz           LmsQuiz   @relation(fields: [quiz_id], references: [id])
+  quiz_id        String    @db.VarChar()
+  attempt_number Int       @db.SmallInt
+  answers        Json
+  score          Int       @db.SmallInt
+  is_completed   Boolean   @default(false)
+  started_at     DateTime  @default(now()) @db.Timestamptz()
+  submitted_at   DateTime  @default(now()) @db.Timestamptz()
+
+  @@unique([member_id, quiz_id, attempt_number])
+  @@map("lms_quiz_submissions")
+}
+
+model LmsVideoCompletion {
+  member       LmsMember @relation(fields: [member_id], references: [id])
+  member_id    Int
+  video        LmsVideo  @relation(fields: [video_id], references: [id])
+  video_id     Int
+  completed_at DateTime  @default(now()) @db.Timestamptz()
+
+  @@id([member_id, video_id])
+  @@map("lms_video_completions")
+}
+
+model LmsMaterialCompletion {
+  member       LmsMember   @relation(fields: [member_id], references: [id])
+  member_id    Int
+  material     LmsMaterial @relation(fields: [material_id], references: [id])
+  material_id  String      @db.VarChar()
+  completed_at DateTime    @default(now()) @db.Timestamptz()
+
+  @@id([member_id, material_id])
+  @@map("lms_material_completions")
+}
+
+model LmsXpEarning {
+  id            Int                 @id @default(autoincrement())
+  member        LmsMember           @relation(fields: [member_id], references: [id])
+  member_id     Int
+  learning_type LmsLearningTypeEnum
+  learning_id   String              @db.VarChar()
+  xp_earned     Int                 @db.SmallInt
+  earned_at     DateTime            @default(now()) @db.Timestamptz()
+
+  @@unique([member_id, learning_type, learning_id])
+  @@map("lms_xp_earnings")
+}
+
+model LmsPreAssessment {
+  id                    Int                     @id @default(autoincrement())
+  member                LmsMember               @relation(fields: [member_id], references: [id])
+  member_id             Int                     @unique
+  ai_use_frequency      LmsPaAiUseFreqEnum
+  ai_tools_used         String[]                @default([])
+  ai_limitations        String[]                @default([])
+  output_review         LmsPaOutputReviewEnum
+  use_cases             String[]                @default([])
+  team_adoption         LmsPaTeamAdoptionEnum
+  concrete_example      String?                 @db.VarChar()
+  model_selection       LmsPaFrequencyEnum
+  multimodal_use        LmsPaFrequencyEnum
+  workflow_reuse        LmsPaFrequencyEnum
+  prompt_comfort        LmsPaPromptSkillEnum
+  prompt_iteration      LmsPaFrequencyEnum
+  refine_scenario       LmsPaRefineScenarioEnum
+  professional_attitude LmsPaAttitudeEnum
+  data_safety_check     LmsPaFrequencyEnum
+  publish_unchecked     LmsPaFrequencyEnum
+  biggest_challenge     String                  @db.Text
+  training_expectation  String                  @db.Text
+  motivation            LmsPaMotivationEnum
+  created_at            DateTime                @default(now()) @db.Timestamptz()
+  report                LmsPreAssessmentReport?
+
+  @@map("lms_pre_assessments")
+}
+
+model LmsPreAssessmentReport {
+  id                Int              @id @default(autoincrement())
+  pre_assessment    LmsPreAssessment @relation(fields: [pre_assessment_id], references: [id])
+  pre_assessment_id Int              @unique
+  status            String           @default("pending") @db.VarChar()
+  recommendations   Json?
+  error_message     String?          @db.Text
+  queued_at         DateTime         @default(now()) @db.Timestamptz()
+  generated_at      DateTime?        @db.Timestamptz()
+  updated_at        DateTime         @default(now()) @updatedAt @db.Timestamptz()
+
+  @@map("lms_pre_assessment_reports")
+}
+
+model LmsAnnouncement {
+  id         Int        @id @default(1)
+  title      String     @db.VarChar()
+  callout    String?    @db.VarChar()
+  status     StatusEnum
+  start_date DateTime   @db.Timestamptz()
+  end_date   DateTime   @db.Timestamptz()
+  updated_at DateTime   @default(now()) @updatedAt @db.Timestamptz()
+
+  @@map("lms_announcement")
 }
