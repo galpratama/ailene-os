@@ -1,4 +1,4 @@
-import HeaderOS from "@/components/navigations/HeaderOS";
+import PageActionOS from "@/components/navigations/PageActionOS";
 import SidebarOS from "@/components/navigations/SidebarOS";
 import { HeaderActionProvider } from "@/contexts/HeaderActionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
@@ -45,12 +45,12 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
       <SidebarProvider>
         <HeaderActionProvider>
           <div
-            className={`flex h-screen overflow-hidden bg-dashboard-bg bg-dot-grid ${spaceGrotesk.className} ${jersey10.variable}`}
+            className={`flex h-screen overflow-hidden bg-os-gradient ${spaceGrotesk.className} ${jersey10.variable}`}
           >
             <SidebarOS sessionToken={sessionToken} />
-            <div className="flex-1 flex flex-col min-w-0 bg-dashboard-bg">
-              <HeaderOS sessionToken={sessionToken} />
-              <main className="flex-1 overflow-auto bg-dashboard-bg">
+            <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
+              <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">
+                <PageActionOS />
                 {children}
               </main>
             </div>

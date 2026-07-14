@@ -1,25 +1,24 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import { LogoAilene } from "@/components/svg/LogoAilene";
+import ThemeToggleOS from "@/components/buttons/ThemeToggleOS";
+import { LogoAileneStroke } from "@/components/svg/LogoAileneStroke";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { osMainNav, osToolsNav } from "@/lib/os-nav";
 import { trpc, setSessionToken } from "@/trpc/client";
-import {
-  ChevronsLeft,
-  ChevronsRight,
-  LucideIcon,
-  Moon,
-  Sun,
-} from "lucide-react";
-import { useTheme } from "next-themes";
+import { LogOut, LucideIcon, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const mainNav = osMainNav;
 const toolsNav = osToolsNav;
+
+const bizLoginURL =
+  process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
+    ? "https://biz.example.com:3000/auth/login"
+    : "https://biz.ailene.id/auth/login";
 
 function NavItem({
   href,
@@ -68,29 +67,6 @@ function initialsOf(fullName: string) {
     .join("");
 }
 
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative flex shrink-0 items-center rounded-full bg-sb-item-hover p-1 transition-colors"
-      aria-label="Toggle dark mode"
-      suppressHydrationWarning
-    >
-      <div className="absolute left-1 size-6 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-in-out dark:translate-x-6 dark:bg-white/10 dark:shadow-none" />
-      <span className="relative flex size-6 items-center justify-center">
-        <Sun size={12} className="text-sb-text" />
-      </span>
-      <span className="relative flex size-6 items-center justify-center">
-        <Moon size={12} className="text-sb-text" />
-      </span>
-    </button>
-  );
-}
-
 function UserFooter({
   sessionToken,
   collapsed,
@@ -106,6 +82,16 @@ function UserFooter({
     enabled: !!sessionToken,
   });
   const user = data?.user;
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.href = bizLoginURL;
+    }
+  }
 
   return (
     <div
@@ -136,7 +122,18 @@ function UserFooter({
               {user?.role_name ?? ""}
             </p>
           </div>
-          <ThemeToggle />
+          <ThemeToggleOS />
+          <AppButton
+            variant="ghost"
+            size="iconSm"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="rounded-full hover:text-red-600"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut size={14} />
+          </AppButton>
         </>
       )}
     </div>
@@ -144,8 +141,13 @@ function UserFooter({
 }
 
 export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
-  const { isCollapsed, toggleSidebar, isMobileOpen, closeMobileSidebar } =
-    useSidebar();
+  const {
+    isCollapsed,
+    toggleSidebar,
+    isMobileOpen,
+    closeMobileSidebar,
+    toggleMobileSidebar,
+  } = useSidebar();
   const pathname = usePathname();
 
   // Safety net: if navigation ever happens without going through a NavItem's
@@ -166,51 +168,55 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         />
       )}
 
+      {/* Mobile menu trigger — lives outside the aside so it's still
+          clickable while the drawer is closed/off-screen. */}
+      {!isMobileOpen && (
+        <AppButton
+          variant="outline"
+          size="icon"
+          onClick={toggleMobileSidebar}
+          className="fixed left-4 top-4 z-40 rounded-full shadow-sm md:hidden"
+          aria-label="Open menu"
+        >
+          <Menu size={16} />
+        </AppButton>
+      )}
+
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-sb-border bg-sb-bg transition-transform duration-200 md:sticky md:top-0 md:z-10 md:translate-x-0 md:transition-[width] md:duration-150 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${isCollapsed ? "md:w-16" : "md:w-64"}`}
       >
-        {/* Mobile close button */}
-        <div className="absolute right-3 top-5 z-10 md:hidden">
-          <AppButton
-            variant="outline"
-            size="iconSm"
-            className="rounded-full shadow-sm"
-            onClick={closeMobileSidebar}
-            aria-label="Close menu"
-          >
-            <ChevronsLeft size={13} />
-          </AppButton>
-        </div>
-
-        {/* Collapse toggle (desktop only) */}
-        <div className="absolute -right-5 top-5 z-10 hidden md:block">
-          <AppButton
-            variant="outline"
-            size="iconSm"
-            className="rounded-full shadow-sm"
-            onClick={toggleSidebar}
-          >
-            {isCollapsed ? (
-              <ChevronsRight size={13} />
-            ) : (
-              <ChevronsLeft size={13} />
-            )}
-          </AppButton>
-        </div>
-
-        {/* Logo — h-14 to line up with HeaderOS's border-b */}
+        {/* Logo + menu toggle — logo hidden when collapsed, toggle sits to
+            its right. Toggle closes the drawer on mobile, collapses/expands
+            on desktop. */}
         <div
-          className={`flex h-14 shrink-0 items-center mb-3 border-b border-sb-border ${
-            isCollapsed ? "justify-center px-2" : "px-4"
+          className={`flex shrink-0 items-center py-5 pb-7 ${
+            isCollapsed ? "justify-center px-2" : "justify-between px-4"
           }`}
         >
-          <LogoAilene
-            className={`w-auto text-sb-text-strong shrink-0 ${
-              isCollapsed ? "h-4.5" : "h-7"
-            }`}
-          />
+          {!isCollapsed && (
+            <LogoAileneStroke className="h-12 w-auto shrink-0 -rotate-3 drop-shadow-[1px_1px_0_white]" />
+          )}
+
+          <AppButton
+            variant="outline"
+            size="icon"
+            onClick={closeMobileSidebar}
+            className="rounded-full md:hidden"
+            aria-label="Close menu"
+          >
+            <Menu size={18} />
+          </AppButton>
+          <AppButton
+            variant="outline"
+            size="icon"
+            onClick={toggleSidebar}
+            className="hidden rounded-full md:flex"
+            aria-label="Toggle sidebar"
+          >
+            <Menu size={18} />
+          </AppButton>
         </div>
 
         {/* Org selector */}
@@ -223,7 +229,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             <span className="flex items-center gap-2 min-w-0">
               <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
               {!isCollapsed && (
-                <span className="font-bold text-left text-sm text-sb-text-strong truncate">
+                <span className="font-bold text-left text-sm text-sb-text-strong uppercase truncate">
                   Operating System
                 </span>
               )}
@@ -241,18 +247,20 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         </nav>
 
         {/* Tools */}
-        <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
-          {!isCollapsed && (
-            <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
-              Tools
-            </p>
-          )}
-          <div className="flex flex-col gap-0.5 mt-0.5">
-            {toolsNav.map((item) => (
-              <NavItem key={item.href} {...item} collapsed={isCollapsed} />
-            ))}
+        {toolsNav.length > 0 && (
+          <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+            {!isCollapsed && (
+              <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
+                Tools
+              </p>
+            )}
+            <div className="flex flex-col gap-0.5 mt-0.5">
+              {toolsNav.map((item) => (
+                <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />
       </aside>

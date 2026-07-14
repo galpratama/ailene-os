@@ -43,9 +43,9 @@ export function useHeaderActionContext() {
   return context;
 }
 
-// Pages call this to tell the persistent HeaderOS what its action button
-// should say and do — it registers on mount and clears itself on unmount so
-// navigating away never leaves a stale button behind.
+// Pages call this to tell PageActionOS what its action button should say and
+// do — it registers on mount and clears itself on unmount so navigating away
+// never leaves a stale button behind.
 export function useHeaderAction(action: HeaderAction) {
   const { setAction } = useHeaderActionContext();
 

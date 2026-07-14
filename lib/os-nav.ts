@@ -5,10 +5,8 @@ import {
   GraduationCap,
   LayoutGrid,
   LucideIcon,
-  Settings,
   SquareCheckBig,
   Users,
-  Wallet,
 } from "lucide-react";
 
 export type OSNavItem = {
@@ -18,20 +16,15 @@ export type OSNavItem = {
   exact?: boolean;
 };
 
-// Shared between SidebarOS (nav links) and HeaderOS (breadcrumb) so the two
-// never drift on route -> label mapping.
+// Nav links rendered in SidebarOS.
 export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true },
-  { href: "/leads", label: "Leads · B2B", icon: Users },
-  { href: "/tracking", label: "Tracking B2C", icon: ChartNoAxesCombined },
+  { href: "/leads", label: "Leads", icon: Users },
+  { href: "/tracking", label: "Tracking", icon: ChartNoAxesCombined },
   { href: "/tasks", label: "Tasks", icon: SquareCheckBig },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/trainers", label: "Trainers", icon: GraduationCap },
   { href: "/lms/projects", label: "LMS Projects", icon: FolderKanban },
-  { href: "/module", label: "Module", icon: GraduationCap },
-  { href: "/revenue", label: "Revenue", icon: Wallet },
 ];
 
-export const osToolsNav: OSNavItem[] = [
-  { href: "/settings", label: "Settings", icon: Settings },
-];
+export const osToolsNav: OSNavItem[] = [];
