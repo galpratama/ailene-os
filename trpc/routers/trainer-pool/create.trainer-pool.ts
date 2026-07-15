@@ -229,34 +229,17 @@ export const createTrainerPool = {
       }
       assertTrainerAssignable(trainer, input.role);
 
-      const created = await ctx.prisma.$transaction(async (tx) => {
-        const assignment = await tx.trainerAssignment.create({
-          data: {
-            pipeline_id: input.pipeline_id,
-            trainer_id: input.trainer_id,
-            role: input.role,
-            session_date: input.session_date
-              ? new Date(input.session_date)
-              : null,
-            participant_count: input.participant_count ?? null,
-            notes: input.notes ?? null,
-          },
-        });
-        const sessionDate = input.session_date
-          ? new Date(input.session_date)
-          : null;
-        const now = new Date();
-        if (
-          sessionDate &&
-          sessionDate.getUTCFullYear() === now.getUTCFullYear() &&
-          sessionDate.getUTCMonth() === now.getUTCMonth()
-        ) {
-          await tx.trainer.update({
-            where: { id: input.trainer_id },
-            data: { status: TrainerStatusEnum.ACTIVE },
-          });
-        }
-        return assignment;
+      const created = await ctx.prisma.trainerAssignment.create({
+        data: {
+          pipeline_id: input.pipeline_id,
+          trainer_id: input.trainer_id,
+          role: input.role,
+          session_date: input.session_date
+            ? new Date(input.session_date)
+            : null,
+          participant_count: input.participant_count ?? null,
+          notes: input.notes ?? null,
+        },
       });
 
       return {

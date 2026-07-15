@@ -8,106 +8,86 @@ import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssig
 import TrainerAvailabilityFormOS from "@/components/forms/TrainerAvailabilityFormOS";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import ProgressBar from "@/components/labels/ProgressBar";
+import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
-import type { TrainerLevelEnum, TrainerStatusEnum } from "@prisma/client";
+import type { TrainerLevelEnum, TrainerStageEnum } from "@prisma/client";
 import {
   AlertTriangle,
   ArrowRight,
   BriefcaseBusiness,
   CalendarPlus,
   Check,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
   Mail,
   MessageCircle,
-  PauseCircle,
   Plus,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const statusOptions: AppSelectOption[] = [
-  { value: "CANDIDATE", label: "Candidate" },
-  { value: "CERTIFIED", label: "Certified" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "REMEDIAL", label: "Remedial" },
-  { value: "INACTIVE", label: "Inactive" },
-];
 const levelOptions: AppSelectOption[] = [
   { value: "JUNIOR", label: "Junior" },
   { value: "SENIOR", label: "Senior" },
 ];
 
-const journeyStages: {
-  status: TrainerStatusEnum;
-  label: string;
-  caption: string;
-}[] = [
-  {
-    status: "CANDIDATE",
-    label: "Candidate",
-    caption: "Screening & rubric",
-  },
-  {
-    status: "CERTIFIED",
-    label: "Certified",
-    caption: "Certification pathway done",
-  },
-  { status: "ACTIVE", label: "Active", caption: "Delivering live projects" },
+// The pipeline is a straight line with two decision forks. Stage is always
+// derived server-side (see deriveTrainerStage), so this is read-only.
+const journeySteps = [
+  { label: "Candidate", caption: "Screening & rubric" },
+  { label: "Qualified", caption: "Certification pathway" },
+  { label: "Certified", caption: "Ready for assignments" },
 ];
 
-function TrainerJourney({
-  status,
-  isPending,
-  onNavigate,
-}: {
-  status: TrainerStatusEnum;
-  isPending: boolean;
-  onNavigate: (direction: "prev" | "next") => void;
-}) {
-  const isDetour = status === "REMEDIAL" || status === "INACTIVE";
-  const currentIndex = isDetour
-    ? journeyStages.length - 1
-    : journeyStages.findIndex((stage) => stage.status === status);
-  const linearIndex = journeyStages.findIndex((stage) => stage.status === status);
-  const canGoPrev = linearIndex > 0;
-  const canGoNext = linearIndex !== -1 && linearIndex < journeyStages.length - 1;
+function journeyStepIndex(stage: TrainerStageEnum) {
+  switch (stage) {
+    case "CANDIDATE":
+      return 0;
+    case "QUALIFIED":
+    case "NOT_QUALIFIED":
+      return 1;
+    case "CERTIFIED":
+    case "NOT_ELIGIBLE":
+      return 2;
+  }
+}
+
+function TrainerJourney({ stage }: { stage: TrainerStageEnum }) {
+  const currentIndex = journeyStepIndex(stage);
+  const isRejected = stage === "NOT_QUALIFIED" || stage === "NOT_ELIGIBLE";
 
   return (
     <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-      <div className="flex items-center gap-3">
-        <AppButton
-          type="button"
-          variant="outline"
-          size="iconSm"
-          disabled={!canGoPrev || isPending}
-          onClick={() => onNavigate("prev")}
-        >
-          {isPending ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <ChevronLeft size={14} />
-          )}
-        </AppButton>
-        <div className="flex flex-1 items-center">
-        {journeyStages.map((stage, index) => {
-          const isCurrent = !isDetour && index === currentIndex;
-          const isComplete = index < currentIndex;
+      <div className="flex items-center">
+        {journeySteps.map((step, index) => {
+          const isCurrent = index === currentIndex;
+          const isFailed = isCurrent && isRejected;
+          const isComplete =
+            index < currentIndex || (isCurrent && !isRejected && index > 0);
           return (
-            <div key={stage.status} className="flex flex-1 items-center last:flex-none">
+            <div
+              key={step.label}
+              className="flex flex-1 items-center last:flex-none"
+            >
               <div className="flex flex-col items-center gap-1.5 text-center">
                 <span
                   className={`flex size-8 items-center justify-center rounded-full border-2 text-xs font-bold ${
-                    isComplete
-                      ? "border-hijau bg-hijau text-white"
-                      : isCurrent
-                        ? "border-claude bg-claude/10 text-claude"
-                        : "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+                    isFailed
+                      ? "border-merah bg-merah text-white"
+                      : isComplete
+                        ? "border-hijau bg-hijau text-white"
+                        : isCurrent
+                          ? "border-claude bg-claude/10 text-claude"
+                          : "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
                   }`}
                 >
-                  {isComplete ? <Check size={15} /> : index + 1}
+                  {isFailed ? (
+                    <X size={15} />
+                  ) : isComplete ? (
+                    <Check size={15} />
+                  ) : (
+                    index + 1
+                  )}
                 </span>
                 <div>
                   <p
@@ -117,12 +97,16 @@ function TrainerJourney({
                         : "text-gray-400 dark:text-zinc-500"
                     }`}
                   >
-                    {stage.label}
+                    {isFailed
+                      ? stage === "NOT_QUALIFIED"
+                        ? "Not qualified"
+                        : "Not eligible"
+                      : step.label}
                   </p>
-                  <p className="text-[11px] text-gray-400">{stage.caption}</p>
+                  <p className="text-[11px] text-gray-400">{step.caption}</p>
                 </div>
               </div>
-              {index < journeyStages.length - 1 && (
+              {index < journeySteps.length - 1 && (
                 <div
                   className={`mx-2 h-0.5 flex-1 rounded-full ${
                     index < currentIndex
@@ -134,31 +118,18 @@ function TrainerJourney({
             </div>
           );
         })}
-        </div>
-        <AppButton
-          type="button"
-          variant="outline"
-          size="iconSm"
-          disabled={!canGoNext || isPending}
-          onClick={() => onNavigate("next")}
-        >
-          {isPending ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <ChevronRight size={14} />
-          )}
-        </AppButton>
       </div>
-      {status === "REMEDIAL" && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-kuning-t px-3 py-2 text-xs font-semibold text-[#9a7a1a] dark:bg-yellow-950/40 dark:text-yellow-300">
+      {stage === "NOT_QUALIFIED" && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-merah-t px-3 py-2 text-xs font-semibold text-merah dark:bg-red-950/40 dark:text-red-300">
           <AlertTriangle size={14} />
-          Off track — under remedial review after evaluations flagged quality issues.
+          Did not qualify — screening steps or rubric score didn&apos;t clear
+          the bar.
         </div>
       )}
-      {status === "INACTIVE" && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
-          <PauseCircle size={14} />
-          Paused — not currently eligible for new assignments.
+      {stage === "NOT_ELIGIBLE" && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-merah-t px-3 py-2 text-xs font-semibold text-merah dark:bg-red-950/40 dark:text-red-300">
+          <AlertTriangle size={14} />
+          Not eligible — certification review did not pass.
         </div>
       )}
     </div>
@@ -234,8 +205,11 @@ export default function TrainerDetailOS({
             {trainer.full_name}
           </h2>
           <div className="mt-2 flex flex-wrap gap-2">
-            <TrainerStatusLabel status={trainer.status} />
+            <TrainerStageLabel stage={trainer.stage} />
             <TrainerLevelLabel level={trainer.level} />
+            {trainer.status === "INACTIVE" && (
+              <TrainerStatusLabel status={trainer.status} />
+            )}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -246,21 +220,7 @@ export default function TrainerDetailOS({
         </div>
       </div>
 
-      <TrainerJourney
-        status={trainer.status}
-        isPending={updateTrainer.isPending}
-        onNavigate={(direction) => {
-          const currentIndex = journeyStages.findIndex(
-            (stage) => stage.status === trainer.status
-          );
-          if (currentIndex === -1) return;
-          const targetIndex =
-            direction === "next" ? currentIndex + 1 : currentIndex - 1;
-          const target = journeyStages[targetIndex];
-          if (!target) return;
-          updateTrainer.mutate({ id: trainerId, status: target.status });
-        }}
-      />
+      <TrainerJourney stage={trainer.stage} />
 
       <section className="grid gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div>
@@ -300,19 +260,6 @@ export default function TrainerDetailOS({
           )}
         </div>
         <div className="grid content-start gap-3 rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
-          <AppSelect
-            selectId="trainer-detail-status"
-            label="Pool Status"
-            placeholder="Status"
-            value={trainer.status}
-            options={statusOptions}
-            onChange={(value) =>
-              updateTrainer.mutate({
-                id: trainerId,
-                status: value as TrainerStatusEnum,
-              })
-            }
-          />
           <AppSelect
             selectId="trainer-detail-level"
             label="Trainer Level"

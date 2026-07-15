@@ -52,10 +52,7 @@ export default function CreateTrainerAssignmentFormOS({
   );
   const trainerOptions: AppSelectOption[] =
     trainerData?.list
-      .filter(
-        (trainer) =>
-          trainer.status === "CERTIFIED" || trainer.status === "ACTIVE"
-      )
+      .filter((trainer) => trainer.stage === "CERTIFIED")
       .map((trainer) => ({
         value: trainer.id,
         label: `${trainer.full_name} · ${trainer.level.toLowerCase()}`,

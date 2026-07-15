@@ -7,13 +7,13 @@ import AppSelect, {
 import CreateTrainerFormOS from "@/components/forms/CreateTrainerFormOS";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
-import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
+import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
   TrainerLevelEnum,
-  TrainerStatusEnum,
+  TrainerStageEnum,
 } from "@prisma/client";
 import {
   BadgeCheck,
@@ -21,20 +21,20 @@ import {
   Crown,
   Plus,
   Search,
-  Sparkles,
+  ShieldCheck,
   UserRoundSearch,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const statusOptions: AppSelectOption[] = [
-  { value: "", label: "All statuses" },
+const stageOptions: AppSelectOption[] = [
+  { value: "", label: "All stages" },
   { value: "CANDIDATE", label: "Candidate" },
+  { value: "QUALIFIED", label: "Qualified" },
+  { value: "NOT_QUALIFIED", label: "Not qualified" },
   { value: "CERTIFIED", label: "Certified" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "REMEDIAL", label: "Remedial" },
-  { value: "INACTIVE", label: "Inactive" },
+  { value: "NOT_ELIGIBLE", label: "Not eligible" },
 ];
 const levelOptions: AppSelectOption[] = [
   { value: "", label: "All levels" },
@@ -57,7 +57,7 @@ export default function TrainerPoolListOS({
   const [debouncedKeyword, setDebouncedKeyword] = useState<
     string | undefined
   >();
-  const [status, setStatus] = useState<TrainerStatusEnum | "">("");
+  const [stage, setStage] = useState<TrainerStageEnum | "">("");
   const [level, setLevel] = useState<TrainerLevelEnum | "">("");
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function TrainerPoolListOS({
         page,
         page_size: 20,
         keyword: debouncedKeyword,
-        status: status || undefined,
+        stage: stage || undefined,
         level: level || undefined,
       },
       { enabled: !!sessionToken }
@@ -91,25 +91,30 @@ export default function TrainerPoolListOS({
       value: data?.summary.candidates ?? 0,
       icon: UserRoundSearch,
       apply: () => {
-        setStatus((current) => (current === "CANDIDATE" ? "" : "CANDIDATE"));
+        setStage((current) => (current === "CANDIDATE" ? "" : "CANDIDATE"));
         setPage(1);
       },
-      isActive: status === "CANDIDATE",
+      isActive: stage === "CANDIDATE",
+    },
+    {
+      label: "Qualified",
+      value: data?.summary.qualified ?? 0,
+      icon: ShieldCheck,
+      apply: () => {
+        setStage((current) => (current === "QUALIFIED" ? "" : "QUALIFIED"));
+        setPage(1);
+      },
+      isActive: stage === "QUALIFIED",
     },
     {
       label: "Certified pool",
       value: data?.summary.certified ?? 0,
       icon: BadgeCheck,
-    },
-    {
-      label: "Active monthly",
-      value: data?.summary.active ?? 0,
-      icon: Sparkles,
       apply: () => {
-        setStatus((current) => (current === "ACTIVE" ? "" : "ACTIVE"));
+        setStage((current) => (current === "CERTIFIED" ? "" : "CERTIFIED"));
         setPage(1);
       },
-      isActive: status === "ACTIVE",
+      isActive: stage === "CERTIFIED",
     },
     {
       label: "Senior pool",
@@ -180,14 +185,14 @@ export default function TrainerPoolListOS({
           onChange={(event) => setKeyword(event.target.value)}
         />
         <AppSelect
-          selectId="trainer-status-filter"
-          placeholder="All statuses"
-          value={status}
+          selectId="trainer-stage-filter"
+          placeholder="All stages"
+          value={stage}
           onChange={(value) => {
-            setStatus((value as TrainerStatusEnum) ?? "");
+            setStage((value as TrainerStageEnum) ?? "");
             setPage(1);
           }}
-          options={statusOptions}
+          options={stageOptions}
         />
         <AppSelect
           selectId="trainer-level-filter"
@@ -246,7 +251,7 @@ export default function TrainerPoolListOS({
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    <TrainerStatusLabel status={trainer.status} />
+                    <TrainerStageLabel stage={trainer.stage} />
                     <TrainerLevelLabel level={trainer.level} />
                   </div>
 

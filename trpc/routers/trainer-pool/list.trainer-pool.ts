@@ -13,6 +13,7 @@ import {
 import {
   Prisma,
   TrainerLevelEnum,
+  TrainerStageEnum,
   TrainerStatusEnum,
 } from "@prisma/client";
 import z from "zod";
@@ -46,6 +47,7 @@ export const listTrainerPool = {
   trainers: administratorProcedure
     .input(
       z.object({
+        stage: z.enum(TrainerStageEnum).optional(),
         status: z.enum(TrainerStatusEnum).optional(),
         level: z.enum(TrainerLevelEnum).optional(),
         keyword: stringNotBlank().optional(),
@@ -56,7 +58,10 @@ export const listTrainerPool = {
     .query(async ({ ctx, input }) => {
       const where: Prisma.TrainerWhereInput = {
         deleted_at: null,
-        status: input.status,
+        // Backend-only filter, not surfaced as a picker in the UI — defaults
+        // to active so deactivated trainers stay out of the pool by default.
+        status: input.status ?? TrainerStatusEnum.ACTIVE,
+        stage: input.stage,
         level: input.level,
         ...(input.keyword && {
           OR: [
@@ -79,10 +84,10 @@ export const listTrainerPool = {
           ],
         }),
       };
-      const [aggregate, statusGroups, seniorCount] = await Promise.all([
+      const [aggregate, stageGroups, seniorCount] = await Promise.all([
         ctx.prisma.trainer.aggregate({ where, _count: true }),
         ctx.prisma.trainer.groupBy({
-          by: ["status"],
+          by: ["stage"],
           where: { deleted_at: null },
           _count: true,
         }),
@@ -113,7 +118,7 @@ export const listTrainerPool = {
         take: paging.prisma.take,
       });
       const counts = Object.fromEntries(
-        statusGroups.map((group) => [group.status, group._count])
+        stageGroups.map((group) => [group.stage, group._count])
       );
 
       return {
@@ -128,6 +133,7 @@ export const listTrainerPool = {
             avatar: trainer.user.avatar,
             source: trainer.source,
             level: trainer.level,
+            stage: trainer.stage,
             status: trainer.status,
             specializations: trainer.specializations.map((entry) => ({
               id: entry.specialization.id,
@@ -149,11 +155,9 @@ export const listTrainerPool = {
           };
         }),
         summary: {
-          candidates: counts[TrainerStatusEnum.CANDIDATE] ?? 0,
-          certified:
-            (counts[TrainerStatusEnum.CERTIFIED] ?? 0) +
-            (counts[TrainerStatusEnum.ACTIVE] ?? 0),
-          active: counts[TrainerStatusEnum.ACTIVE] ?? 0,
+          candidates: counts[TrainerStageEnum.CANDIDATE] ?? 0,
+          qualified: counts[TrainerStageEnum.QUALIFIED] ?? 0,
+          certified: counts[TrainerStageEnum.CERTIFIED] ?? 0,
           senior: seniorCount,
         },
         metapaging: paging.metapaging,

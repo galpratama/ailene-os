@@ -61,11 +61,19 @@ CREATE TYPE trainer_level_enum AS ENUM (
   'senior'
 );
 
-CREATE TYPE trainer_status_enum AS ENUM (
+-- Pipeline stage, derived automatically from screening/certification
+-- progress, never set directly by an admin.
+CREATE TYPE trainer_stage_enum AS ENUM (
   'candidate',
+  'qualified',
+  'not_qualified',
   'certified',
+  'not_eligible'
+);
+
+-- Simple on/off flag, independent of pipeline stage.
+CREATE TYPE trainer_status_enum AS ENUM (
   'active',
-  'remedial',
   'inactive'
 );
 
@@ -331,7 +339,8 @@ CREATE TABLE trainers (
   id                     UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
   source                 trainer_source_enum       NULL,
   level                  trainer_level_enum    NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
-  status                 trainer_status_enum   NOT NULL     DEFAULT 'candidate',
+  stage                  trainer_stage_enum    NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
+  status                 trainer_status_enum   NOT NULL     DEFAULT 'active', -- simple on/off flag
   user_id                UUID                  NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
   referred_by            UUID                      NULL,
   notes                  TEXT                      NULL,

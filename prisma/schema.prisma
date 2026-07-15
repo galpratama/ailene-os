@@ -85,12 +85,23 @@ enum TrainerLevelEnum {
   @@map("trainer_level_enum")
 }
 
+// Pipeline stage — derived automatically from screening/certification
+// progress, never set directly by an admin.
+enum TrainerStageEnum {
+  CANDIDATE     @map("candidate")
+  QUALIFIED     @map("qualified")
+  NOT_QUALIFIED @map("not_qualified")
+  CERTIFIED     @map("certified")
+  NOT_ELIGIBLE  @map("not_eligible")
+
+  @@map("trainer_stage_enum")
+}
+
+// Simple on/off flag, independent of pipeline stage — for backend filtering
+// (e.g. hiding a trainer without touching their pipeline progress).
 enum TrainerStatusEnum {
-  CANDIDATE @map("candidate")
-  CERTIFIED @map("certified")
-  ACTIVE    @map("active")
-  REMEDIAL  @map("remedial")
-  INACTIVE  @map("inactive")
+  ACTIVE   @map("active")
+  INACTIVE @map("inactive")
 
   @@map("trainer_status_enum")
 }
@@ -436,7 +447,8 @@ model Trainer {
   id                  String                     @id @default(uuid()) @db.Uuid
   source              TrainerSourceEnum?
   level               TrainerLevelEnum           @default(JUNIOR)
-  status              TrainerStatusEnum          @default(CANDIDATE)
+  stage               TrainerStageEnum           @default(CANDIDATE)
+  status              TrainerStatusEnum          @default(ACTIVE)
   user                User                       @relation("TrainerUser", fields: [user_id], references: [id])
   user_id             String                     @unique @db.Uuid
   referrer            User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])

@@ -8,6 +8,7 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
+  Prisma,
   TrainerAvailabilityStatusEnum,
   TrainerCertificationStatusEnum,
   TrainerCertificationStepEnum,
@@ -21,10 +22,44 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import {
   certificationSessionsRequired,
+  deriveTrainerStage,
   levelFromScore,
 } from "./trainer-pool.shared";
 
 const optionalText = stringNotBlank().nullable().optional();
+
+// Recomputes the trainer's pipeline stage from their current screening
+// steps, rubric score, and certification decision, and persists it. Call
+// this after any mutation that could move the trainer along the pipeline.
+async function recomputeAndPersistStage(
+  tx: Prisma.TransactionClient,
+  trainerId: string
+) {
+  const [screeningSteps, screeningScore, certificationDecision] =
+    await Promise.all([
+      tx.trainerScreeningStep.findMany({
+        where: { trainer_id: trainerId },
+      }),
+      tx.trainerScreeningScore.findUnique({
+        where: { trainer_id: trainerId },
+      }),
+      tx.trainerCertificationStep.findUnique({
+        where: {
+          trainer_id_step: {
+            trainer_id: trainerId,
+            step: TrainerCertificationStepEnum.CERTIFICATION_DECISION,
+          },
+        },
+      }),
+    ]);
+  const stage = deriveTrainerStage({
+    screeningSteps,
+    screeningScoreTotal: screeningScore?.total_score ?? null,
+    certificationDecisionStatus: certificationDecision?.status ?? null,
+  });
+  await tx.trainer.update({ where: { id: trainerId }, data: { stage } });
+  return stage;
+}
 
 export const updateTrainerPool = {
   trainer: administratorProcedure
@@ -72,33 +107,36 @@ export const updateTrainerPool = {
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.trainerScreeningStep.upsert({
-        where: {
-          trainer_id_step: {
+      await ctx.prisma.$transaction(async (tx) => {
+        await tx.trainerScreeningStep.upsert({
+          where: {
+            trainer_id_step: {
+              trainer_id: input.trainer_id,
+              step: input.step,
+            },
+          },
+          create: {
             trainer_id: input.trainer_id,
             step: input.step,
+            status: input.status,
+            notes: input.notes ?? null,
+            completed_at:
+              input.status === TrainerScreeningStatusEnum.PASSED ||
+              input.status === TrainerScreeningStatusEnum.SKIPPED
+                ? new Date()
+                : null,
           },
-        },
-        create: {
-          trainer_id: input.trainer_id,
-          step: input.step,
-          status: input.status,
-          notes: input.notes ?? null,
-          completed_at:
-            input.status === TrainerScreeningStatusEnum.PASSED ||
-            input.status === TrainerScreeningStatusEnum.SKIPPED
-              ? new Date()
-              : null,
-        },
-        update: {
-          status: input.status,
-          notes: input.notes,
-          completed_at:
-            input.status === TrainerScreeningStatusEnum.PASSED ||
-            input.status === TrainerScreeningStatusEnum.SKIPPED
-              ? new Date()
-              : null,
-        },
+          update: {
+            status: input.status,
+            notes: input.notes,
+            completed_at:
+              input.status === TrainerScreeningStatusEnum.PASSED ||
+              input.status === TrainerScreeningStatusEnum.SKIPPED
+                ? new Date()
+                : null,
+          },
+        });
+        await recomputeAndPersistStage(tx, input.trainer_id);
       });
       return { code: STATUS_OK, message: "Screening step updated" };
     }),
@@ -131,8 +169,8 @@ export const updateTrainerPool = {
         reliability_score;
       const suggested_level = levelFromScore(total_score);
 
-      await ctx.prisma.$transaction([
-        ctx.prisma.trainerScreeningScore.upsert({
+      await ctx.prisma.$transaction(async (tx) => {
+        await tx.trainerScreeningScore.upsert({
           where: { trainer_id },
           create: {
             ...input,
@@ -150,12 +188,13 @@ export const updateTrainerPool = {
             scored_by: ctx.user.id,
             scored_at: new Date(),
           },
-        }),
-        ctx.prisma.trainer.update({
+        });
+        await tx.trainer.update({
           where: { id: trainer_id },
           data: { level: suggested_level },
-        }),
-      ]);
+        });
+        await recomputeAndPersistStage(tx, trainer_id);
+      });
       return {
         code: STATUS_OK,
         message: "Screening score updated",
@@ -260,15 +299,7 @@ export const updateTrainerPool = {
           },
         });
 
-        if (
-          isDecision &&
-          input.status === TrainerCertificationStatusEnum.PASSED
-        ) {
-          await tx.trainer.update({
-            where: { id: input.trainer_id },
-            data: { status: TrainerStatusEnum.CERTIFIED },
-          });
-        }
+        await recomputeAndPersistStage(tx, input.trainer_id);
       });
       return {
         code: STATUS_OK,

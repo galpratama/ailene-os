@@ -2,7 +2,7 @@
 
 import TrainerScreeningFormOS from "@/components/forms/TrainerScreeningFormOS";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
-import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
+import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -53,7 +53,7 @@ export default function TrainerScreeningOS({
           Screening
         </h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          <TrainerStatusLabel status={trainer.status} />
+          <TrainerStageLabel stage={trainer.stage} />
           <TrainerLevelLabel level={trainer.level} />
         </div>
       </div>

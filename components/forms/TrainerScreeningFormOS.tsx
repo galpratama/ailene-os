@@ -11,7 +11,24 @@ import type {
   TrainerScreeningStatusEnum,
   TrainerScreeningStepEnum,
 } from "@prisma/client";
-import { Check, Clock, Loader2, Minus, X } from "lucide-react";
+import {
+  Bot,
+  Check,
+  ClipboardCheck,
+  ClipboardList,
+  FileText,
+  GaugeCircle,
+  Info,
+  Loader2,
+  MessageSquare,
+  Minus,
+  PhoneCall,
+  Presentation,
+  RotateCcw,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { FormEvent, useState } from "react";
 
 const statusOptions: AppSelectOption[] = [
@@ -29,31 +46,47 @@ const stepLabels: Record<TrainerScreeningStepEnum, string> = {
   REFERENCE_CHECK: "Reference check",
 };
 
-const SENIOR_BAR = 75;
+const stepDescriptions: Record<TrainerScreeningStepEnum, string> = {
+  APPLICATION_REVIEW:
+    "Initial review of the candidate's application and portfolio.",
+  INTERVIEW: "Structured interview with the trainer pool team.",
+  TEACHING_DEMO: "Live teaching demo evaluated by reviewers.",
+  PRACTICAL_TEST: "Hands-on practical assessment of AI skills.",
+  REFERENCE_CHECK: "Verification of references from prior work.",
+};
 
-const stepStatusStyle: Record<
+const stepIcons: Record<TrainerScreeningStepEnum, typeof FileText> = {
+  APPLICATION_REVIEW: FileText,
+  INTERVIEW: Users,
+  TEACHING_DEMO: Presentation,
+  PRACTICAL_TEST: ClipboardCheck,
+  REFERENCE_CHECK: PhoneCall,
+};
+
+// Mirrors MIN_SCREENING_STEPS_PASSED / QUALIFYING_SCORE in
+// trpc/routers/trainer-pool/trainer-pool.shared.ts — kept in sync manually
+// since that file pulls in server-only packages that can't be imported here.
+const MIN_STEPS_PASSED = 4;
+const QUALIFYING_SCORE = 75;
+
+const statusStyle: Record<
   TrainerScreeningStatusEnum,
-  { border: string; icon: typeof Check; iconClass: string }
+  { ring: string; icon?: typeof Check }
 > = {
   PASSED: {
-    border: "border-l-4 border-l-hijau",
+    ring: "border-hijau bg-hijau text-white",
     icon: Check,
-    iconClass: "text-hijau",
   },
   FAILED: {
-    border: "border-l-4 border-l-merah",
+    ring: "border-merah bg-merah text-white",
     icon: X,
-    iconClass: "text-merah",
   },
   PENDING: {
-    border: "border-l-4 border-l-gray-300 dark:border-l-zinc-600",
-    icon: Clock,
-    iconClass: "text-gray-400",
+    ring: "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
   },
   SKIPPED: {
-    border: "border-l-4 border-l-gray-200 dark:border-l-zinc-700",
+    ring: "border-gray-200 bg-gray-50 text-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600",
     icon: Minus,
-    iconClass: "text-gray-300 dark:text-zinc-600",
   },
 };
 
@@ -66,7 +99,114 @@ type Score = {
   total_score: number;
 };
 
-function ScoreFormOS({
+type Criterion = {
+  key: keyof Omit<Score, "total_score">;
+  label: string;
+  description: string;
+  max: number;
+  icon: typeof Bot;
+};
+
+const criteria: Criterion[] = [
+  {
+    key: "ai_hands_on_score",
+    label: "AI hands-on",
+    description: "Depth of practical, hands-on AI skill.",
+    max: 30,
+    icon: Bot,
+  },
+  {
+    key: "facilitation_score",
+    label: "Facilitation",
+    description: "Ability to lead and engage a room.",
+    max: 25,
+    icon: Presentation,
+  },
+  {
+    key: "domain_credibility_score",
+    label: "Domain credibility",
+    description: "Track record and credibility in the subject area.",
+    max: 20,
+    icon: ShieldCheck,
+  },
+  {
+    key: "communication_score",
+    label: "Communication",
+    description: "Clarity and structure when explaining ideas.",
+    max: 15,
+    icon: MessageSquare,
+  },
+  {
+    key: "reliability_score",
+    label: "Reliability",
+    description: "Punctuality and consistency across sessions.",
+    max: 10,
+    icon: ClipboardList,
+  },
+];
+
+function computeTotal(values: Record<Criterion["key"], string>) {
+  return criteria.reduce(
+    (sum, criterion) => sum + (Number(values[criterion.key]) || 0),
+    0
+  );
+}
+
+function ScoreGauge({ score }: { score: number }) {
+  const percent = Math.min(100, Math.max(0, score));
+  const radius = 45;
+  const circumference = Math.PI * radius;
+  const filled = (percent / 100) * circumference;
+  const needleAngle = -90 + (percent / 100) * 180;
+  const passed = percent >= QUALIFYING_SCORE;
+
+  return (
+    <div className="mx-auto w-44">
+      <svg viewBox="0 0 100 55" className="w-full">
+        <path
+          d="M 5 50 A 45 45 0 0 1 95 50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+          strokeLinecap="round"
+          className="text-gray-100 dark:text-zinc-800"
+        />
+        <path
+          d="M 5 50 A 45 45 0 0 1 95 50"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circumference}`}
+          className={passed ? "text-hijau" : "text-claude"}
+        />
+        <line
+          x1="50"
+          y1="50"
+          x2="50"
+          y2="14"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          className="text-gray-600 dark:text-zinc-300"
+          style={{
+            transformOrigin: "50px 50px",
+            transform: `rotate(${needleAngle}deg)`,
+          }}
+        />
+        <circle cx="50" cy="50" r="3.5" className="fill-gray-600 dark:fill-zinc-300" />
+      </svg>
+      <p className="-mt-3 text-center">
+        <span className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
+          {score}
+        </span>
+        <span className="text-sm font-semibold text-gray-400">/100</span>
+      </p>
+    </div>
+  );
+}
+
+function RubricScorePanel({
   trainerId,
   initial,
 }: {
@@ -74,26 +214,18 @@ function ScoreFormOS({
   initial?: Score | null;
 }) {
   const utils = trpc.useUtils();
-  const [ai, setAi] = useState(String(initial?.ai_hands_on_score ?? 0));
-  const [facilitation, setFacilitation] = useState(
-    String(initial?.facilitation_score ?? 0)
-  );
-  const [domain, setDomain] = useState(
-    String(initial?.domain_credibility_score ?? 0)
-  );
-  const [communication, setCommunication] = useState(
-    String(initial?.communication_score ?? 0)
-  );
-  const [reliability, setReliability] = useState(
-    String(initial?.reliability_score ?? 0)
-  );
-  const [result, setResult] = useState<string | null>(null);
+  const defaults = {
+    ai_hands_on_score: String(initial?.ai_hands_on_score ?? 0),
+    facilitation_score: String(initial?.facilitation_score ?? 0),
+    domain_credibility_score: String(initial?.domain_credibility_score ?? 0),
+    communication_score: String(initial?.communication_score ?? 0),
+    reliability_score: String(initial?.reliability_score ?? 0),
+  };
+  const [values, setValues] =
+    useState<Record<Criterion["key"], string>>(defaults);
 
   const mutation = trpc.update.trainerPool.screeningScore.useMutation({
-    onSuccess: (data) => {
-      setResult(
-        `Total ${data.total_score}/100 · suggested level ${data.suggested_level.toLowerCase()}`
-      );
+    onSuccess: () => {
       utils.read.trainerPool.trainer.invalidate({ id: trainerId });
       utils.list.trainerPool.trainers.invalidate();
     },
@@ -103,104 +235,81 @@ function ScoreFormOS({
     event.preventDefault();
     mutation.mutate({
       trainer_id: trainerId,
-      ai_hands_on_score: Number(ai),
-      facilitation_score: Number(facilitation),
-      domain_credibility_score: Number(domain),
-      communication_score: Number(communication),
-      reliability_score: Number(reliability),
+      ai_hands_on_score: Number(values.ai_hands_on_score),
+      facilitation_score: Number(values.facilitation_score),
+      domain_credibility_score: Number(values.domain_credibility_score),
+      communication_score: Number(values.communication_score),
+      reliability_score: Number(values.reliability_score),
     });
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="mt-5 rounded-xl border border-gray-200 p-4 dark:border-zinc-800"
-    >
-      <div className="mb-4">
-        <h4 className="text-sm font-bold text-gray-900 dark:text-zinc-100">
-          Rubric score
-        </h4>
-        <p className="mt-0.5 text-xs text-gray-500">
-          Saving recalculates the total and applies the suggested level.
-          {" "}A total of {SENIOR_BAR}+ clears the bar for Senior.
-        </p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <AppNumberInput
-          inputId="score-ai"
-          label="AI hands-on · 30"
-          value={ai}
-          onValueChange={setAi}
-        />
-        <AppNumberInput
-          inputId="score-facilitation"
-          label="Facilitation · 25"
-          value={facilitation}
-          onValueChange={setFacilitation}
-        />
-        <AppNumberInput
-          inputId="score-domain"
-          label="Domain · 20"
-          value={domain}
-          onValueChange={setDomain}
-        />
-        <AppNumberInput
-          inputId="score-communication"
-          label="Communication · 15"
-          value={communication}
-          onValueChange={setCommunication}
-        />
-        <AppNumberInput
-          inputId="score-reliability"
-          label="Reliability · 10"
-          value={reliability}
-          onValueChange={setReliability}
-        />
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <AppButton type="submit" size="sm" disabled={mutation.isPending}>
-          {mutation.isPending ? (
-            <Loader2 size={13} className="animate-spin" />
-          ) : (
-            <Check size={13} />
-          )}
-          Save score
-        </AppButton>
-        {(result || initial) && (
-          <p className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-zinc-300">
-            {result ??
-              `Current total: ${
-                (initial?.ai_hands_on_score ?? 0) +
-                (initial?.facilitation_score ?? 0) +
-                (initial?.domain_credibility_score ?? 0) +
-                (initial?.communication_score ?? 0) +
-                (initial?.reliability_score ?? 0)
-              }/100`}
-            {(() => {
-              const total =
-                initial?.total_score ??
-                (initial?.ai_hands_on_score ?? 0) +
-                  (initial?.facilitation_score ?? 0) +
-                  (initial?.domain_credibility_score ?? 0) +
-                  (initial?.communication_score ?? 0) +
-                  (initial?.reliability_score ?? 0);
-              return total >= SENIOR_BAR ? (
-                <span className="rounded-full bg-hijau-t px-2 py-0.5 text-[11px] font-bold text-hijau dark:bg-green-950/40 dark:text-green-300">
-                  Clears the bar
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+        Rubric score
+      </h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Saving recalculates the total and applies the suggested level.
+      </p>
+      <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
+        {criteria.map((criterion) => (
+          <div
+            key={criterion.key}
+            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-zinc-800"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
+              <criterion.icon size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                {criterion.label}{" "}
+                <span className="font-normal text-gray-400">
+                  · max {criterion.max}
                 </span>
-              ) : (
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
-                  Below bar
-                </span>
-              );
-            })()}
+              </p>
+              <p className="truncate text-xs text-gray-500">
+                {criterion.description}
+              </p>
+            </div>
+            <div className="w-20 shrink-0">
+              <AppNumberInput
+                inputId={`score-${criterion.key}`}
+                value={values[criterion.key]}
+                onValueChange={(next) =>
+                  setValues((current) => ({ ...current, [criterion.key]: next }))
+                }
+              />
+            </div>
+          </div>
+        ))}
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <AppButton type="submit" size="sm" disabled={mutation.isPending}>
+            {mutation.isPending ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Check size={13} />
+            )}
+            Save score
+          </AppButton>
+          <AppButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => setValues(defaults)}
+          >
+            <RotateCcw size={13} />
+            Reset
+          </AppButton>
+          <p className="text-xs font-semibold text-gray-600 dark:text-zinc-300">
+            Live total: {computeTotal(values)}/100
           </p>
-        )}
-        {mutation.error && (
-          <p className="text-xs text-red-500">{mutation.error.message}</p>
-        )}
-      </div>
-    </form>
+          {mutation.error && (
+            <p className="text-xs text-red-500">{mutation.error.message}</p>
+          )}
+        </div>
+      </form>
+    </section>
   );
 }
 
@@ -225,66 +334,120 @@ export default function TrainerScreeningFormOS({
   });
 
   const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
+  const totalScore = score?.total_score ?? 0;
+  const clearsBar = totalScore >= QUALIFYING_SCORE;
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-            Screening
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Five-step candidate review and the 100-point qualification rubric.
+    <div className="flex flex-col gap-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+          <div className="flex items-center gap-2 text-gray-500">
+            <GaugeCircle size={15} />
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Overall progress
+            </p>
+          </div>
+          <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+            {passedCount} of {steps.length}
           </p>
-        </div>
-        <div className="w-full max-w-40 sm:w-40">
-          <p className="mb-1 text-right text-xs font-semibold text-gray-600 dark:text-zinc-300">
-            {passedCount} of {steps.length} passed
-          </p>
+          <p className="text-xs text-gray-500">steps passed</p>
           <ProgressBar
+            className="mt-3"
             value={passedCount}
             total={steps.length}
-            variant={passedCount === steps.length ? "hijau" : "claude"}
+            variant={passedCount >= MIN_STEPS_PASSED ? "hijau" : "claude"}
           />
         </div>
+
+        <div className="rounded-xl border border-gray-300 bg-card-bg p-5 text-center dark:border-zinc-700">
+          <div className="flex items-center justify-center gap-2 text-gray-500">
+            <ClipboardList size={15} />
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Current total score
+            </p>
+          </div>
+          <ScoreGauge score={totalScore} />
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              clearsBar
+                ? "bg-hijau-t text-hijau dark:bg-green-950/40 dark:text-green-300"
+                : "bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
+            }`}
+          >
+            {clearsBar ? "Clears the bar" : "Below bar"}
+          </span>
+        </div>
+
+        <div className="flex gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+          <Info size={16} className="mt-0.5 shrink-0 text-claude" />
+          <p className="text-xs leading-relaxed text-gray-500">
+            A trainer qualifies once at least {MIN_STEPS_PASSED} of{" "}
+            {steps.length} screening steps pass and the rubric total reaches{" "}
+            {QUALIFYING_SCORE}+. Certification review then decides Certified
+            vs. Not eligible.
+          </p>
+        </div>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {steps.map((entry) => {
-          const style = stepStatusStyle[entry.status];
-          const StepIcon = style.icon;
-          return (
-            <div
-              key={entry.step}
-              className={`rounded-xl border border-gray-200 bg-gray-50/50 p-3 dark:border-zinc-800 dark:bg-transparent ${style.border}`}
-            >
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">
-                  {stepLabels[entry.step]}
-                </p>
-                <StepIcon size={13} className={style.iconClass} />
-              </div>
-              <AppSelect
-                selectId={`screening-${entry.step}`}
-                placeholder="Status"
-                value={entry.status}
-                options={statusOptions}
-                onChange={(value) =>
-                  updateStep.mutate({
-                    trainer_id: trainerId,
-                    step: entry.step,
-                    status: value as TrainerScreeningStatusEnum,
-                  })
-                }
-              />
-            </div>
-          );
-        })}
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+          <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+            Screening steps
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Five-step candidate review, in order.
+          </p>
+          <div className="mt-4 flex flex-col gap-3">
+            {steps.map((entry, index) => {
+              const style = statusStyle[entry.status];
+              const StatusIcon = style.icon;
+              const StepIcon = stepIcons[entry.step];
+              return (
+                <div
+                  key={entry.step}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-zinc-800"
+                >
+                  <span
+                    className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${style.ring}`}
+                  >
+                    {StatusIcon ? <StatusIcon size={14} /> : index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                      <StepIcon size={13} className="text-gray-400" />
+                      {stepLabels[entry.step]}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {stepDescriptions[entry.step]}
+                    </p>
+                  </div>
+                  <div className="w-32 shrink-0">
+                    <AppSelect
+                      selectId={`screening-${entry.step}`}
+                      placeholder="Status"
+                      value={entry.status}
+                      options={statusOptions}
+                      onChange={(value) =>
+                        updateStep.mutate({
+                          trainer_id: trainerId,
+                          step: entry.step,
+                          status: value as TrainerScreeningStatusEnum,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <RubricScorePanel
+          key={`${trainerId}-${score?.total_score ?? 0}`}
+          trainerId={trainerId}
+          initial={score}
+        />
       </div>
-      <ScoreFormOS
-        key={`${trainerId}-${score?.ai_hands_on_score ?? "new"}-${score?.total_score ?? 0}`}
-        trainerId={trainerId}
-        initial={score}
-      />
-    </section>
+    </div>
   );
 }
