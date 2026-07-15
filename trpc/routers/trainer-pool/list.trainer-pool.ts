@@ -193,7 +193,7 @@ export const listTrainerPool = {
         summary: {
           candidates: counts[TrainerStageEnum.CANDIDATE] ?? 0,
           qualified: counts[TrainerStageEnum.QUALIFIED] ?? 0,
-          certified: counts[TrainerStageEnum.CERTIFIED] ?? 0,
+          eligible: counts[TrainerStageEnum.ELIGIBLE] ?? 0,
           senior: seniorCount,
         },
         metapaging: paging.metapaging,

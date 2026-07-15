@@ -91,7 +91,7 @@ enum TrainerStageEnum {
   CANDIDATE     @map("candidate")
   QUALIFIED     @map("qualified")
   NOT_QUALIFIED @map("not_qualified")
-  CERTIFIED     @map("certified")
+  ELIGIBLE      @map("eligible")
   NOT_ELIGIBLE  @map("not_eligible")
 
   @@map("trainer_stage_enum")

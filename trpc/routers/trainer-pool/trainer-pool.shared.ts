@@ -138,7 +138,7 @@ export function deriveTrainerStage(input: {
   certificationDecisionStatus: TrainerCertificationStatusEnum | null | undefined;
 }): TrainerStageEnum {
   if (input.certificationDecisionStatus === TrainerCertificationStatusEnum.PASSED) {
-    return TrainerStageEnum.CERTIFIED;
+    return TrainerStageEnum.ELIGIBLE;
   }
   if (input.certificationDecisionStatus === TrainerCertificationStatusEnum.FAILED) {
     return TrainerStageEnum.NOT_ELIGIBLE;
@@ -192,7 +192,7 @@ export function assertTrainerAssignable(
       message: "Junior trainers must be assigned as assistant or co-trainer.",
     });
   }
-  if (trainer.stage !== TrainerStageEnum.CERTIFIED) {
+  if (trainer.stage !== TrainerStageEnum.ELIGIBLE) {
     throw new TRPCError({
       code: STATUS_BAD_REQUEST,
       message: "Only certified trainers can be assigned.",

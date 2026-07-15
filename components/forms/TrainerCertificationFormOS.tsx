@@ -216,24 +216,26 @@ export default function TrainerCertificationFormOS({
               </div>
             </div>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Ringkasan sertifikasi
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Nilai kandidat di setiap tahap untuk menentukan kesiapannya
-              menjadi trainer bersertifikat.
-            </p>
-          </div>
-          <div className="w-full max-w-40 sm:w-40">
-            <p className="mb-1 text-right text-xs font-semibold text-gray-600 dark:text-zinc-300">
-              {passedCount} dari {steps.length} selesai
-            </p>
-            <ProgressBar
-              value={passedCount}
-              total={steps.length}
-              variant={passedCount === steps.length ? "hijau" : "claude"}
-            />
+          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+                Ringkasan sertifikasi
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Nilai kandidat di setiap tahap untuk menentukan kesiapannya
+                menjadi trainer bersertifikat.
+              </p>
+            </div>
+            <div className="w-full sm:w-40 sm:shrink-0">
+              <p className="mb-1 text-right text-xs font-semibold text-gray-600 dark:text-zinc-300">
+                {passedCount} dari {steps.length} selesai
+              </p>
+              <ProgressBar
+                value={passedCount}
+                total={steps.length}
+                variant={passedCount === steps.length ? "hijau" : "claude"}
+              />
+            </div>
           </div>
         </div>
         {mutation.error && (

@@ -67,7 +67,7 @@ CREATE TYPE trainer_stage_enum AS ENUM (
   'candidate',
   'qualified',
   'not_qualified',
-  'certified',
+  'eligible',
   'not_eligible'
 );
 

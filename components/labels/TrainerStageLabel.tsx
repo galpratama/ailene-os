@@ -8,7 +8,7 @@ const stageConfig: Record<
   CANDIDATE: { label: "Candidate", variant: "biru" },
   QUALIFIED: { label: "Qualified", variant: "kuning" },
   NOT_QUALIFIED: { label: "Not qualified", variant: "merah" },
-  CERTIFIED: { label: "Certified", variant: "hijau" },
+  ELIGIBLE: { label: "Eligible", variant: "hijau" },
   NOT_ELIGIBLE: { label: "Not eligible", variant: "merah" },
 };
 

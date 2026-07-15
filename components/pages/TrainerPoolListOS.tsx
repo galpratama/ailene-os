@@ -33,7 +33,7 @@ const stageOptions: AppSelectOption[] = [
   { value: "CANDIDATE", label: "Candidate" },
   { value: "QUALIFIED", label: "Qualified" },
   { value: "NOT_QUALIFIED", label: "Not qualified" },
-  { value: "CERTIFIED", label: "Certified" },
+  { value: "ELIGIBLE", label: "Eligible" },
   { value: "NOT_ELIGIBLE", label: "Not eligible" },
 ];
 const levelOptions: AppSelectOption[] = [
@@ -108,13 +108,13 @@ export default function TrainerPoolListOS({
     },
     {
       label: "Certified pool",
-      value: data?.summary.certified ?? 0,
+      value: data?.summary.eligible ?? 0,
       icon: BadgeCheck,
       apply: () => {
-        setStage((current) => (current === "CERTIFIED" ? "" : "CERTIFIED"));
+        setStage((current) => (current === "ELIGIBLE" ? "" : "ELIGIBLE"));
         setPage(1);
       },
-      isActive: stage === "CERTIFIED",
+      isActive: stage === "ELIGIBLE",
     },
     {
       label: "Senior pool",
