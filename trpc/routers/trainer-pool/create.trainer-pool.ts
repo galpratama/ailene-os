@@ -26,8 +26,6 @@ import z from "zod";
 import {
   assertTrainerAssignable,
   buildApplicationNotes,
-  certificationSessionsRequired,
-  certificationSteps,
   MIN_AI_EXPERIENCE_YEARS,
 } from "./trainer-pool.shared";
 
@@ -116,11 +114,8 @@ async function createTrainer(
           ? { application_review: TrainerScreeningStatusEnum.PASSED }
           : {},
       },
-      certification_steps: {
-        create: certificationSteps.map((step) => ({
-          step,
-          sessions_required: certificationSessionsRequired(step),
-        })),
+      certification: {
+        create: {},
       },
     },
   });

@@ -119,7 +119,16 @@ export const listTrainerPool = {
               reference_check: true,
             },
           },
-          certification_steps: { select: { status: true } },
+          certification: {
+            select: {
+              orientation: true,
+              material_mastery: true,
+              shadowing: true,
+              co_training: true,
+              solo_observed_delivery: true,
+              certification_decision: true,
+            },
+          },
         },
         orderBy: [{ created_at: "desc" }],
         skip: paging.prisma.skip,
@@ -140,6 +149,16 @@ export const listTrainerPool = {
                 trainer.screening.teaching_demo,
                 trainer.screening.practical_test,
                 trainer.screening.reference_check,
+              ]
+            : [];
+          const certificationStatuses = trainer.certification
+            ? [
+                trainer.certification.orientation,
+                trainer.certification.material_mastery,
+                trainer.certification.shadowing,
+                trainer.certification.co_training,
+                trainer.certification.solo_observed_delivery,
+                trainer.certification.certification_decision,
               ]
             : [];
           return {
@@ -163,10 +182,10 @@ export const listTrainerPool = {
               total: 5,
             },
             certification_progress: {
-              passed: trainer.certification_steps.filter(
-                (entry) => entry.status === "PASSED"
+              passed: certificationStatuses.filter(
+                (status) => status === "PASSED"
               ).length,
-              total: trainer.certification_steps.length,
+              total: 6,
             },
             created_at: trainer.created_at,
           };

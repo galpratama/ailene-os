@@ -2,7 +2,6 @@ import { STATUS_BAD_REQUEST } from "@/lib/status_code";
 import {
   TrainerAssignmentRoleEnum,
   TrainerCertificationStatusEnum,
-  TrainerCertificationStepEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
   TrainerStageEnum,
@@ -37,22 +36,49 @@ export const SCREENING_STEP_KEY_TO_COLUMN: Record<
   REFERENCE_CHECK: "reference_check",
 };
 
-export const certificationSteps = [
-  TrainerCertificationStepEnum.ORIENTATION,
-  TrainerCertificationStepEnum.MATERIAL_MASTERY,
-  TrainerCertificationStepEnum.SHADOWING,
-  TrainerCertificationStepEnum.CO_TRAINING,
-  TrainerCertificationStepEnum.SOLO_OBSERVED_DELIVERY,
-  TrainerCertificationStepEnum.CERTIFICATION_DECISION,
+// Wire-level step identifiers the frontend sends/receives — no longer a
+// Prisma enum (steps are now named columns on TrainerCertification), but the
+// wire contract stays stable.
+export const CERTIFICATION_STEP_KEYS = [
+  "ORIENTATION",
+  "MATERIAL_MASTERY",
+  "SHADOWING",
+  "CO_TRAINING",
+  "SOLO_OBSERVED_DELIVERY",
+  "CERTIFICATION_DECISION",
+] as const;
+export type CertificationStepKey = (typeof CERTIFICATION_STEP_KEYS)[number];
+
+export const CERTIFICATION_STEP_KEY_TO_COLUMN: Record<
+  CertificationStepKey,
+  | "orientation"
+  | "material_mastery"
+  | "shadowing"
+  | "co_training"
+  | "solo_observed_delivery"
+  | "certification_decision"
+> = {
+  ORIENTATION: "orientation",
+  MATERIAL_MASTERY: "material_mastery",
+  SHADOWING: "shadowing",
+  CO_TRAINING: "co_training",
+  SOLO_OBSERVED_DELIVERY: "solo_observed_delivery",
+  CERTIFICATION_DECISION: "certification_decision",
+};
+
+// These three steps carry a recommended session count, shown as guidance to
+// the evaluator (not tracked/gated per-trainer — the admin's own status call
+// is authoritative).
+export const CERTIFICATION_SESSION_STEPS: readonly CertificationStepKey[] = [
+  "SHADOWING",
+  "CO_TRAINING",
+  "SOLO_OBSERVED_DELIVERY",
 ];
 
-export function certificationSessionsRequired(
-  step: TrainerCertificationStepEnum
-) {
-  return step === TrainerCertificationStepEnum.SHADOWING ||
-    step === TrainerCertificationStepEnum.CO_TRAINING
-    ? 2
-    : 1;
+export function certificationSessionsRecommended(
+  step: CertificationStepKey
+): number {
+  return CERTIFICATION_SESSION_STEPS.includes(step) ? 2 : 0;
 }
 
 // 75+ on the 100-point screening rubric clears the bar for Senior.

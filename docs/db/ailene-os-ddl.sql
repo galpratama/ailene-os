@@ -93,15 +93,6 @@ CREATE TYPE trnsc_status_enum AS ENUM (
   'skipped'
 );
 
-CREATE TYPE trncert_step_enum AS ENUM (
-  'orientation',
-  'material_mastery',
-  'shadowing',
-  'co_training',
-  'solo_observed_delivery',
-  'certification_decision'
-);
-
 CREATE TYPE trncert_status_enum AS ENUM (
   'not_started',
   'in_progress',
@@ -368,19 +359,17 @@ CREATE TABLE trainer_screenings (
   updated_at                TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE trainer_certification_steps (
-  id                  SERIAL               PRIMARY KEY,
-  trainer_id          UUID                 NOT NULL,
-  step                trncert_step_enum    NOT NULL,
-  status              trncert_status_enum  NOT NULL  DEFAULT 'not_started',
-  sessions_required   SMALLINT             NOT NULL  DEFAULT 1,
-  sessions_completed  SMALLINT             NOT NULL  DEFAULT 0,
-  evaluator_id        UUID                     NULL,
-  notes               TEXT                     NULL,
-  completed_at        TIMESTAMPTZ              NULL,
-  created_at          TIMESTAMPTZ          NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at          TIMESTAMPTZ          NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (trainer_id, step)
+CREATE TABLE trainer_certifications (
+  id                               SERIAL               PRIMARY KEY,
+  trainer_id                       UUID                 NOT NULL     UNIQUE,
+  orientation                      trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  material_mastery                 trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  shadowing                        trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  co_training                      trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  solo_observed_delivery           trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  certification_decision           trncert_status_enum  NOT NULL     DEFAULT 'not_started',
+  created_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE trainer_availabilities (
@@ -754,9 +743,8 @@ ALTER TABLE trainer_screenings
   ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (scored_by)  REFERENCES users (id);
 
-ALTER TABLE trainer_certification_steps
-  ADD FOREIGN KEY (trainer_id)   REFERENCES trainers (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (evaluator_id) REFERENCES users (id);
+ALTER TABLE trainer_certifications
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
 
 ALTER TABLE trainer_availabilities
   ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
@@ -908,8 +896,8 @@ CREATE TRIGGER update_trainer_screenings_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_trainer_certification_steps_updated_at_trigger
-  BEFORE UPDATE ON trainer_certification_steps
+CREATE TRIGGER update_trainer_certifications_updated_at_trigger
+  BEFORE UPDATE ON trainer_certifications
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 

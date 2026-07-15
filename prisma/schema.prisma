@@ -126,17 +126,6 @@ enum TrainerScreeningStatusEnum {
   @@map("trnsc_status_enum")
 }
 
-enum TrainerCertificationStepEnum {
-  ORIENTATION            @map("orientation")
-  MATERIAL_MASTERY       @map("material_mastery")
-  SHADOWING              @map("shadowing")
-  CO_TRAINING            @map("co_training")
-  SOLO_OBSERVED_DELIVERY @map("solo_observed_delivery")
-  CERTIFICATION_DECISION @map("certification_decision")
-
-  @@map("trncert_step_enum")
-}
-
 enum TrainerCertificationStatusEnum {
   NOT_STARTED @map("not_started")
   IN_PROGRESS @map("in_progress")
@@ -336,29 +325,28 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                     String                     @id @default(uuid()) @db.Uuid
-  full_name              String                     @db.VarChar()
-  email                  String                     @unique @db.VarChar()
-  phone_country          PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id       Int?                       @db.SmallInt
-  phone_number           String?                    @db.VarChar()
-  avatar                 String?                    @db.VarChar()
-  role                   Role                       @relation(fields: [role_id], references: [id])
-  role_id                Int                        @default(3) @db.SmallInt // General User
-  status                 StatusEnum                 @default(ACTIVE)
-  date_of_birth          DateTime?                  @db.Date
-  occupation             OccupationEnum?
-  created_at             DateTime                   @default(now()) @db.Timestamptz()
-  updated_at             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  last_login             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at             DateTime?                  @db.Timestamptz()
-  tokens                 Token[]
-  b2b_pipelines          B2BPipeline[]
-  b2b_actions            B2BAction[]
-  trainer_profile        Trainer?                   @relation("TrainerUser")
-  trainer_referrals      Trainer[]                  @relation("TrainerReferrer")
-  trainer_scores         TrainerScreening[]         @relation("TrainerScreeningScorer")
-  trainer_certifications TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
+  id                String             @id @default(uuid()) @db.Uuid
+  full_name         String             @db.VarChar()
+  email             String             @unique @db.VarChar()
+  phone_country     PhoneCountryCode?  @relation(fields: [phone_country_id], references: [id])
+  phone_country_id  Int?               @db.SmallInt
+  phone_number      String?            @db.VarChar()
+  avatar            String?            @db.VarChar()
+  role              Role               @relation(fields: [role_id], references: [id])
+  role_id           Int                @default(3) @db.SmallInt // General User
+  status            StatusEnum         @default(ACTIVE)
+  date_of_birth     DateTime?          @db.Date
+  occupation        OccupationEnum?
+  created_at        DateTime           @default(now()) @db.Timestamptz()
+  updated_at        DateTime           @default(now()) @updatedAt @db.Timestamptz()
+  last_login        DateTime           @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at        DateTime?          @db.Timestamptz()
+  tokens            Token[]
+  b2b_pipelines     B2BPipeline[]
+  b2b_actions       B2BAction[]
+  trainer_profile   Trainer?           @relation("TrainerUser")
+  trainer_referrals Trainer[]          @relation("TrainerReferrer")
+  trainer_scores    TrainerScreening[] @relation("TrainerScreeningScorer")
 
   @@map("users")
 }
@@ -450,7 +438,7 @@ model Trainer {
   deleted_at          DateTime?                  @db.Timestamptz()
   specializations     TrainerSpecializationMap[]
   screening           TrainerScreening?
-  certification_steps TrainerCertificationStep[]
+  certification       TrainerCertification?
   availabilities      TrainerAvailability[]
   assignments         TrainerAssignment[]
 
@@ -491,23 +479,20 @@ model TrainerScreening {
   @@map("trainer_screenings")
 }
 
-model TrainerCertificationStep {
-  id                 Int                            @id @default(autoincrement())
-  trainer            Trainer                        @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id         String                         @db.Uuid
-  step               TrainerCertificationStepEnum
-  status             TrainerCertificationStatusEnum @default(NOT_STARTED)
-  sessions_required  Int                            @default(1) @db.SmallInt
-  sessions_completed Int                            @default(0) @db.SmallInt
-  evaluator          User?                          @relation("TrainerCertificationEvaluator", fields: [evaluator_id], references: [id])
-  evaluator_id       String?                        @db.Uuid
-  notes              String?                        @db.Text
-  completed_at       DateTime?                      @db.Timestamptz()
-  created_at         DateTime                       @default(now()) @db.Timestamptz()
-  updated_at         DateTime                       @default(now()) @updatedAt @db.Timestamptz()
+model TrainerCertification {
+  id                             Int                            @id @default(autoincrement())
+  trainer                        Trainer                        @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
+  trainer_id                     String                         @unique @db.Uuid
+  orientation                    TrainerCertificationStatusEnum @default(NOT_STARTED)
+  material_mastery               TrainerCertificationStatusEnum @default(NOT_STARTED)
+  shadowing                      TrainerCertificationStatusEnum @default(NOT_STARTED)
+  co_training                    TrainerCertificationStatusEnum @default(NOT_STARTED)
+  solo_observed_delivery         TrainerCertificationStatusEnum @default(NOT_STARTED)
+  certification_decision         TrainerCertificationStatusEnum @default(NOT_STARTED)
+  created_at                     DateTime                       @default(now()) @db.Timestamptz()
+  updated_at                     DateTime                       @default(now()) @updatedAt @db.Timestamptz()
 
-  @@unique([trainer_id, step])
-  @@map("trainer_certification_steps")
+  @@map("trainer_certifications")
 }
 
 model TrainerAvailability {

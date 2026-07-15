@@ -11,7 +11,6 @@ import {
   Prisma,
   TrainerAvailabilityStatusEnum,
   TrainerCertificationStatusEnum,
-  TrainerCertificationStepEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
   TrainerSourceEnum,
@@ -20,7 +19,9 @@ import {
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import {
-  certificationSessionsRequired,
+  CERTIFICATION_STEP_KEY_TO_COLUMN,
+  CERTIFICATION_STEP_KEYS,
+  type CertificationStepKey,
   computeScreeningTotal,
   deriveTrainerStage,
   levelFromScore,
@@ -37,20 +38,13 @@ async function recomputeAndPersistStage(
   tx: Prisma.TransactionClient,
   trainerId: string
 ) {
-  const [screening, certificationDecision] = await Promise.all([
+  const [screening, certification] = await Promise.all([
     tx.trainerScreening.findUnique({ where: { trainer_id: trainerId } }),
-    tx.trainerCertificationStep.findUnique({
-      where: {
-        trainer_id_step: {
-          trainer_id: trainerId,
-          step: TrainerCertificationStepEnum.CERTIFICATION_DECISION,
-        },
-      },
-    }),
+    tx.trainerCertification.findUnique({ where: { trainer_id: trainerId } }),
   ]);
   const stage = deriveTrainerStage({
     screening,
-    certificationDecisionStatus: certificationDecision?.status ?? null,
+    certificationDecisionStatus: certification?.certification_decision ?? null,
   });
   await tx.trainer.update({ where: { id: trainerId }, data: { stage } });
   return stage;
@@ -190,63 +184,36 @@ export const updateTrainerPool = {
     .input(
       z.object({
         trainer_id: stringIsUUID(),
-        step: z.enum(TrainerCertificationStepEnum),
+        step: z.enum(CERTIFICATION_STEP_KEYS),
         status: z.enum(TrainerCertificationStatusEnum),
-        sessions_required: numberIsPosInt().max(20).optional(),
-        sessions_completed: numberIsNonNegInt().max(20).optional(),
-        notes: optionalText,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const isDecision =
-        input.step === TrainerCertificationStepEnum.CERTIFICATION_DECISION;
-      const completed =
-        input.status === TrainerCertificationStatusEnum.PASSED ||
-        input.status === TrainerCertificationStatusEnum.FAILED;
+      const isDecision = input.step === "CERTIFICATION_DECISION";
+      const column = CERTIFICATION_STEP_KEY_TO_COLUMN[input.step];
 
       await ctx.prisma.$transaction(async (tx) => {
-        const existing = await tx.trainerCertificationStep.findUnique({
-          where: {
-            trainer_id_step: {
-              trainer_id: input.trainer_id,
-              step: input.step,
-            },
-          },
+        const existing = await tx.trainerCertification.findUnique({
+          where: { trainer_id: input.trainer_id },
         });
-        const sessionsRequired =
-          input.sessions_required ??
-          existing?.sessions_required ??
-          certificationSessionsRequired(input.step);
-        const sessionsCompleted =
-          input.sessions_completed ?? existing?.sessions_completed ?? 0;
-
-        if (
-          input.status === TrainerCertificationStatusEnum.PASSED &&
-          (input.step === TrainerCertificationStepEnum.SHADOWING ||
-            input.step === TrainerCertificationStepEnum.CO_TRAINING) &&
-          sessionsCompleted < sessionsRequired
-        ) {
-          throw new TRPCError({
-            code: STATUS_BAD_REQUEST,
-            message:
-              "Complete all required sessions before passing this step.",
-          });
-        }
 
         if (
           isDecision &&
           input.status === TrainerCertificationStatusEnum.PASSED
         ) {
-          const passedSteps = await tx.trainerCertificationStep.count({
-            where: {
-              trainer_id: input.trainer_id,
-              step: {
-                not: TrainerCertificationStepEnum.CERTIFICATION_DECISION,
-              },
-              status: TrainerCertificationStatusEnum.PASSED,
-            },
-          });
-          if (passedSteps !== 5) {
+          const otherSteps: CertificationStepKey[] = [
+            "ORIENTATION",
+            "MATERIAL_MASTERY",
+            "SHADOWING",
+            "CO_TRAINING",
+            "SOLO_OBSERVED_DELIVERY",
+          ];
+          const allPassed = otherSteps.every(
+            (key) =>
+              existing?.[CERTIFICATION_STEP_KEY_TO_COLUMN[key]] ===
+              TrainerCertificationStatusEnum.PASSED
+          );
+          if (!allPassed) {
             throw new TRPCError({
               code: STATUS_BAD_REQUEST,
               message:
@@ -255,31 +222,17 @@ export const updateTrainerPool = {
           }
         }
 
-        await tx.trainerCertificationStep.upsert({
-          where: {
-            trainer_id_step: {
-              trainer_id: input.trainer_id,
-              step: input.step,
-            },
-          },
+        const data: Prisma.TrainerCertificationUncheckedUpdateInput = {
+          [column]: input.status,
+        };
+
+        await tx.trainerCertification.upsert({
+          where: { trainer_id: input.trainer_id },
           create: {
             trainer_id: input.trainer_id,
-            step: input.step,
-            status: input.status,
-            sessions_required: sessionsRequired,
-            sessions_completed: sessionsCompleted,
-            evaluator_id: ctx.user.id,
-            notes: input.notes ?? null,
-            completed_at: completed ? new Date() : null,
-          },
-          update: {
-            status: input.status,
-            sessions_required: sessionsRequired,
-            sessions_completed: sessionsCompleted,
-            evaluator_id: ctx.user.id,
-            notes: input.notes,
-            completed_at: completed ? new Date() : null,
-          },
+            ...data,
+          } as Prisma.TrainerCertificationUncheckedCreateInput,
+          update: data,
         });
 
         await recomputeAndPersistStage(tx, input.trainer_id);

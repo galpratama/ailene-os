@@ -2,8 +2,6 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import TrainerCertificationFormOS from "@/components/forms/TrainerCertificationFormOS";
-import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
-import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -58,14 +56,21 @@ export default function TrainerCertificationOS({
         <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
           Certification
         </h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <TrainerStageLabel stage={trainer.stage} />
-          <TrainerLevelLabel level={trainer.level} />
-        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          Pantau dan nilai jalur sertifikasi kandidat menuju pool trainer
+          bersertifikat.
+        </p>
       </div>
 
       <TrainerCertificationFormOS
         trainerId={trainerId}
+        trainer={{
+          full_name: trainer.full_name,
+          avatar: trainer.user.avatar,
+          ai_experience_years: trainer.ai_experience_years,
+          stage: trainer.stage,
+          level: trainer.level,
+        }}
         steps={trainer.certification_steps}
       />
     </div>
