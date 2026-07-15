@@ -5,19 +5,37 @@ import {
   TrainerCertificationStepEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
-  TrainerScreeningStepEnum,
   TrainerStageEnum,
   TrainerStatusEnum,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
-export const screeningSteps = [
-  TrainerScreeningStepEnum.APPLICATION_REVIEW,
-  TrainerScreeningStepEnum.INTERVIEW,
-  TrainerScreeningStepEnum.TEACHING_DEMO,
-  TrainerScreeningStepEnum.PRACTICAL_TEST,
-  TrainerScreeningStepEnum.REFERENCE_CHECK,
-];
+// Wire-level step identifiers the frontend sends/receives — these are no
+// longer a Prisma enum (steps are now named columns on TrainerScreening),
+// but the wire contract stays stable.
+export const SCREENING_STEP_KEYS = [
+  "APPLICATION_REVIEW",
+  "INTERVIEW",
+  "TEACHING_DEMO",
+  "PRACTICAL_TEST",
+  "REFERENCE_CHECK",
+] as const;
+export type ScreeningStepKey = (typeof SCREENING_STEP_KEYS)[number];
+
+export const SCREENING_STEP_KEY_TO_COLUMN: Record<
+  ScreeningStepKey,
+  | "application_review"
+  | "interview"
+  | "teaching_demo"
+  | "practical_test"
+  | "reference_check"
+> = {
+  APPLICATION_REVIEW: "application_review",
+  INTERVIEW: "interview",
+  TEACHING_DEMO: "teaching_demo",
+  PRACTICAL_TEST: "practical_test",
+  REFERENCE_CHECK: "reference_check",
+};
 
 export const certificationSteps = [
   TrainerCertificationStepEnum.ORIENTATION,
@@ -83,8 +101,14 @@ export const QUALIFYING_SCORE = 75;
 // progress, never set directly by an admin. Call this after any mutation to
 // screening steps, the rubric score, or certification steps.
 export function deriveTrainerStage(input: {
-  screeningSteps: { status: TrainerScreeningStatusEnum }[];
-  screeningScoreTotal: number | null | undefined;
+  screening: {
+    application_review: TrainerScreeningStatusEnum;
+    interview: TrainerScreeningStatusEnum;
+    teaching_demo: TrainerScreeningStatusEnum;
+    practical_test: TrainerScreeningStatusEnum;
+    reference_check: TrainerScreeningStatusEnum;
+    total_score: number;
+  } | null;
   certificationDecisionStatus: TrainerCertificationStatusEnum | null | undefined;
 }): TrainerStageEnum {
   if (input.certificationDecisionStatus === TrainerCertificationStatusEnum.PASSED) {
@@ -93,22 +117,30 @@ export function deriveTrainerStage(input: {
   if (input.certificationDecisionStatus === TrainerCertificationStatusEnum.FAILED) {
     return TrainerStageEnum.NOT_ELIGIBLE;
   }
+  if (!input.screening) {
+    return TrainerStageEnum.CANDIDATE;
+  }
 
-  const allStepsDecided =
-    input.screeningSteps.length > 0 &&
-    input.screeningSteps.every(
-      (step) => step.status !== TrainerScreeningStatusEnum.PENDING
-    );
+  const statuses = [
+    input.screening.application_review,
+    input.screening.interview,
+    input.screening.teaching_demo,
+    input.screening.practical_test,
+    input.screening.reference_check,
+  ];
+  const allStepsDecided = statuses.every(
+    (status) => status !== TrainerScreeningStatusEnum.PENDING
+  );
   if (!allStepsDecided) {
     return TrainerStageEnum.CANDIDATE;
   }
 
-  const passedCount = input.screeningSteps.filter(
-    (step) => step.status === TrainerScreeningStatusEnum.PASSED
+  const passedCount = statuses.filter(
+    (status) => status === TrainerScreeningStatusEnum.PASSED
   ).length;
   const qualified =
     passedCount >= MIN_SCREENING_STEPS_PASSED &&
-    (input.screeningScoreTotal ?? 0) >= QUALIFYING_SCORE;
+    input.screening.total_score >= QUALIFYING_SCORE;
 
   return qualified ? TrainerStageEnum.QUALIFIED : TrainerStageEnum.NOT_QUALIFIED;
 }

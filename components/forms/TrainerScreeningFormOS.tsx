@@ -3,15 +3,19 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
+import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import ProgressBar from "@/components/labels/ProgressBar";
+import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import { trpc } from "@/trpc/client";
 import type {
+  TrainerLevelEnum,
   TrainerScreeningStatusEnum,
-  TrainerScreeningStepEnum,
+  TrainerStageEnum,
 } from "@prisma/client";
 import {
   Bot,
   Check,
+  CircleUserRound,
   ClipboardCheck,
   ClipboardList,
   FileText,
@@ -27,7 +31,17 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
+
+// Mirrors SCREENING_STEP_KEYS in trpc/routers/trainer-pool/trainer-pool.shared.ts
+type TrainerScreeningStepKey =
+  | "APPLICATION_REVIEW"
+  | "INTERVIEW"
+  | "TEACHING_DEMO"
+  | "PRACTICAL_TEST"
+  | "REFERENCE_CHECK";
 
 const statusOptions: AppSelectOption[] = [
   { value: "PENDING", label: "Pending" },
@@ -36,7 +50,7 @@ const statusOptions: AppSelectOption[] = [
   { value: "SKIPPED", label: "Skipped" },
 ];
 
-const stepLabels: Record<TrainerScreeningStepEnum, string> = {
+const stepLabels: Record<TrainerScreeningStepKey, string> = {
   APPLICATION_REVIEW: "Application review",
   INTERVIEW: "Interview",
   TEACHING_DEMO: "Teaching demo",
@@ -44,7 +58,7 @@ const stepLabels: Record<TrainerScreeningStepEnum, string> = {
   REFERENCE_CHECK: "Reference check",
 };
 
-const stepDescriptions: Record<TrainerScreeningStepEnum, string> = {
+const stepDescriptions: Record<TrainerScreeningStepKey, string> = {
   APPLICATION_REVIEW:
     "Initial review of the candidate's application and portfolio.",
   INTERVIEW: "Structured interview with the trainer pool team.",
@@ -53,7 +67,7 @@ const stepDescriptions: Record<TrainerScreeningStepEnum, string> = {
   REFERENCE_CHECK: "Verification of references from prior work.",
 };
 
-const stepIcons: Record<TrainerScreeningStepEnum, typeof FileText> = {
+const stepIcons: Record<TrainerScreeningStepKey, typeof FileText> = {
   APPLICATION_REVIEW: FileText,
   INTERVIEW: Users,
   TEACHING_DEMO: Presentation,
@@ -151,11 +165,10 @@ function ScoreGauge({ score }: { score: number }) {
   const radius = 45;
   const circumference = Math.PI * radius;
   const filled = (percent / 100) * circumference;
-  const needleAngle = -90 + (percent / 100) * 180;
   const passed = percent >= QUALIFYING_SCORE;
 
   return (
-    <div className="mx-auto w-44">
+    <div className="relative mx-auto w-44">
       <svg viewBox="0 0 100 55" className="w-full">
         <path
           d="M 5 50 A 45 45 0 0 1 95 50"
@@ -174,33 +187,13 @@ function ScoreGauge({ score }: { score: number }) {
           strokeDasharray={`${filled} ${circumference}`}
           className={passed ? "text-hijau" : "text-claude"}
         />
-        <line
-          x1="50"
-          y1="50"
-          x2="50"
-          y2="14"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          className="text-gray-600 dark:text-zinc-300"
-          style={{
-            transformOrigin: "50px 50px",
-            transform: `rotate(${needleAngle}deg)`,
-          }}
-        />
-        <circle
-          cx="50"
-          cy="50"
-          r="3.5"
-          className="fill-gray-600 dark:fill-zinc-300"
-        />
       </svg>
-      <p className="-mt-3 text-center">
-        <span className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
+      <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1">
+        <span className="text-4xl font-extrabold leading-none text-gray-900 dark:text-zinc-100">
           {score}
         </span>
-        <span className="text-sm font-semibold text-gray-400">/100</span>
-      </p>
+        <span className="pb-1 text-sm font-semibold text-gray-400">/100</span>
+      </div>
     </div>
   );
 }
@@ -223,14 +216,16 @@ function RubricScorePanel({
   const [values, setValues] =
     useState<Record<Criterion["key"], string>>(defaults);
 
-  const [result, setResult] = useState<string | null>(null);
   const mutation = trpc.update.trainerPool.screeningScore.useMutation({
     onSuccess: (data) => {
-      setResult(
-        `Saved — weighted total ${data.total_score}/100 · suggested level ${data.suggested_level.toLowerCase()}`
-      );
+      toast.success("Screening score saved.", {
+        description: `Weighted total ${data.total_score}/100 · suggested level ${data.suggested_level.toLowerCase()}`,
+      });
       utils.read.trainerPool.trainer.invalidate({ id: trainerId });
       utils.list.trainerPool.trainers.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Failed to save score.", { description: error.message });
     },
   });
 
@@ -304,22 +299,11 @@ function RubricScorePanel({
             variant="outline"
             size="sm"
             disabled={mutation.isPending}
-            onClick={() => {
-              setValues(defaults);
-              setResult(null);
-            }}
+            onClick={() => setValues(defaults)}
           >
             <RotateCcw size={13} />
             Reset
           </AppButton>
-          {result && (
-            <p className="text-xs font-semibold text-gray-600 dark:text-zinc-300">
-              {result}
-            </p>
-          )}
-          {mutation.error && (
-            <p className="text-xs text-red-500">{mutation.error.message}</p>
-          )}
         </div>
       </form>
     </section>
@@ -328,12 +312,20 @@ function RubricScorePanel({
 
 export default function TrainerScreeningFormOS({
   trainerId,
+  trainer,
   steps,
   score,
 }: {
   trainerId: string;
+  trainer: {
+    full_name: string;
+    avatar: string | null;
+    ai_experience_years: number;
+    stage: TrainerStageEnum;
+    level: TrainerLevelEnum;
+  };
   steps: {
-    step: TrainerScreeningStepEnum;
+    step: TrainerScreeningStepKey;
     status: TrainerScreeningStatusEnum;
   }[];
   score?: Score | null;
@@ -354,7 +346,36 @@ export default function TrainerScreeningFormOS({
       <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div>
-            <div className="flex items-center gap-2 text-gray-500">
+            <div className="flex items-center gap-3">
+              {trainer.avatar ? (
+                <Image
+                  src={trainer.avatar}
+                  alt={trainer.full_name}
+                  width={40}
+                  height={40}
+                  className="size-10 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-claude text-white">
+                  <CircleUserRound size={22} fill="currentColor" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
+                  {trainer.full_name}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <TrainerStageLabel stage={trainer.stage} />
+                  <TrainerLevelLabel level={trainer.level} />
+                  <span className="text-xs text-gray-500">
+                    {trainer.ai_experience_years}{" "}
+                    {trainer.ai_experience_years === 1 ? "year" : "years"} exp
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2 text-gray-500">
               <GaugeCircle size={15} />
               <p className="text-xs font-semibold uppercase tracking-wide">
                 Screening progress
@@ -414,7 +435,7 @@ export default function TrainerScreeningFormOS({
                       <StepIcon size={13} className="text-gray-400" />
                       {stepLabels[entry.step]}
                     </p>
-                    <p className="truncate text-xs text-gray-500">
+                    <p className="line-clamp-2 text-xs text-gray-500">
                       {stepDescriptions[entry.step]}
                     </p>
                   </div>

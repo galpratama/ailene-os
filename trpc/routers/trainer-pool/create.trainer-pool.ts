@@ -29,7 +29,6 @@ import {
   certificationSessionsRequired,
   certificationSteps,
   MIN_AI_EXPERIENCE_YEARS,
-  screeningSteps,
 } from "./trainer-pool.shared";
 
 const optionalText = stringNotBlank().nullable().optional();
@@ -112,16 +111,10 @@ async function createTrainer(
           specialization: { connect: { id: specialization_id } },
         })),
       },
-      screening_steps: {
-        create: screeningSteps.map((step, index) => ({
-          step,
-          status:
-            applicationReviewPassed && index === 0
-              ? TrainerScreeningStatusEnum.PASSED
-              : TrainerScreeningStatusEnum.PENDING,
-          completed_at:
-            applicationReviewPassed && index === 0 ? new Date() : null,
-        })),
+      screening: {
+        create: applicationReviewPassed
+          ? { application_review: TrainerScreeningStatusEnum.PASSED }
+          : {},
       },
       certification_steps: {
         create: certificationSteps.map((step) => ({

@@ -86,14 +86,6 @@ CREATE TYPE trainer_source_enum AS ENUM (
   'internal_referral'
 );
 
-CREATE TYPE trnsc_step_enum AS ENUM (
-  'application_review',
-  'interview',
-  'teaching_demo',
-  'practical_test',
-  'reference_check'
-);
-
 CREATE TYPE trnsc_status_enum AS ENUM (
   'pending',
   'passed',
@@ -336,26 +328,18 @@ CREATE TABLE b2b_actions (
 -- Trainer Pool
 
 CREATE TABLE trainers (
-  id                         UUID                 PRIMARY KEY  DEFAULT gen_random_uuid(),
-  user_id                    UUID                 NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
-  source                     trainer_source_enum           NULL,
-  level                      trainer_level_enum   NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
-  stage                      trainer_stage_enum   NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
-  status                     trainer_status_enum  NOT NULL     DEFAULT 'active', -- simple on/off flag
-  referred_by                UUID                          NULL,
-  notes                      TEXT                          NULL,
-  ai_experience_years        SMALLINT             NOT NULL     DEFAULT 0,
-  ai_hands_on_score          SMALLINT             NOT NULL     DEFAULT 0,
-  facilitation_score         SMALLINT             NOT NULL     DEFAULT 0,
-  domain_credibility_score   SMALLINT             NOT NULL     DEFAULT 0,
-  communication_score        SMALLINT             NOT NULL     DEFAULT 0,
-  reliability_score          SMALLINT             NOT NULL     DEFAULT 0,
-  total_score                SMALLINT             NOT NULL     DEFAULT 0,
-  scored_by                  UUID                          NULL,
-  scored_at                  TIMESTAMPTZ                   NULL,
-  created_at                 TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  updated_at                 TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  deleted_at                 TIMESTAMPTZ                   NULL
+  id                   UUID                 PRIMARY KEY  DEFAULT gen_random_uuid(),
+  user_id              UUID                 NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
+  source               trainer_source_enum           NULL,
+  level                trainer_level_enum   NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
+  stage                trainer_stage_enum   NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
+  status               trainer_status_enum  NOT NULL     DEFAULT 'active', -- simple on/off flag
+  referred_by          UUID                          NULL,
+  notes                TEXT                          NULL,
+  ai_experience_years  SMALLINT             NOT NULL     DEFAULT 0,
+  created_at           TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at           TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  deleted_at           TIMESTAMPTZ                   NULL
 );
 
 CREATE TABLE trainer_specialization_map (
@@ -364,16 +348,24 @@ CREATE TABLE trainer_specialization_map (
   PRIMARY KEY (trainer_id, specialization_id)
 );
 
-CREATE TABLE trainer_screening_steps (
-  id            SERIAL              PRIMARY KEY,
-  trainer_id    UUID                NOT NULL,
-  step          trnsc_step_enum     NOT NULL,
-  status        trnsc_status_enum   NOT NULL  DEFAULT 'pending',
-  notes         TEXT                    NULL,
-  completed_at  TIMESTAMPTZ             NULL,
-  created_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (trainer_id, step)
+CREATE TABLE trainer_screenings (
+  id                        SERIAL             PRIMARY KEY,
+  trainer_id                UUID               NOT NULL     UNIQUE,
+  application_review        trnsc_status_enum  NOT NULL     DEFAULT 'pending',
+  interview                 trnsc_status_enum  NOT NULL     DEFAULT 'pending',
+  teaching_demo             trnsc_status_enum  NOT NULL     DEFAULT 'pending',
+  practical_test            trnsc_status_enum  NOT NULL     DEFAULT 'pending',
+  reference_check           trnsc_status_enum  NOT NULL     DEFAULT 'pending',
+  ai_hands_on_score         SMALLINT           NOT NULL     DEFAULT 0,
+  facilitation_score        SMALLINT           NOT NULL     DEFAULT 0,
+  domain_credibility_score  SMALLINT           NOT NULL     DEFAULT 0,
+  communication_score       SMALLINT           NOT NULL     DEFAULT 0,
+  reliability_score         SMALLINT           NOT NULL     DEFAULT 0,
+  total_score               SMALLINT           NOT NULL     DEFAULT 0,
+  scored_by                 UUID                        NULL,
+  scored_at                 TIMESTAMPTZ                 NULL,
+  created_at                TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at                TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE trainer_certification_steps (
@@ -752,15 +744,15 @@ ALTER TABLE b2b_actions
 
 ALTER TABLE trainers
   ADD FOREIGN KEY (user_id)     REFERENCES users (id),
-  ADD FOREIGN KEY (referred_by) REFERENCES users (id),
-  ADD FOREIGN KEY (scored_by)   REFERENCES users (id);
+  ADD FOREIGN KEY (referred_by) REFERENCES users (id);
 
 ALTER TABLE trainer_specialization_map
   ADD FOREIGN KEY (trainer_id)        REFERENCES trainers (id)                ON DELETE CASCADE,
   ADD FOREIGN KEY (specialization_id) REFERENCES trainer_specializations (id) ON DELETE CASCADE;
 
-ALTER TABLE trainer_screening_steps
-  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
+ALTER TABLE trainer_screenings
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (scored_by)  REFERENCES users (id);
 
 ALTER TABLE trainer_certification_steps
   ADD FOREIGN KEY (trainer_id)   REFERENCES trainers (id) ON DELETE CASCADE,
@@ -911,8 +903,8 @@ CREATE TRIGGER update_trainers_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_trainer_screening_steps_updated_at_trigger
-  BEFORE UPDATE ON trainer_screening_steps
+CREATE TRIGGER update_trainer_screenings_updated_at_trigger
+  BEFORE UPDATE ON trainer_screenings
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 

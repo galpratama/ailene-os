@@ -1,3 +1,4 @@
+import AppToaster from "@/components/elements/AppToaster";
 import SidebarOS from "@/components/navigations/SidebarOS";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
@@ -51,6 +52,7 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
             </main>
           </div>
         </div>
+        <AppToaster />
       </SidebarProvider>
     </ThemeProvider>
   );

@@ -14,7 +14,6 @@ import {
   TrainerCertificationStepEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
-  TrainerScreeningStepEnum,
   TrainerSourceEnum,
   TrainerStatusEnum,
 } from "@prisma/client";
@@ -25,6 +24,8 @@ import {
   computeScreeningTotal,
   deriveTrainerStage,
   levelFromScore,
+  SCREENING_STEP_KEY_TO_COLUMN,
+  SCREENING_STEP_KEYS,
 } from "./trainer-pool.shared";
 
 const optionalText = stringNotBlank().nullable().optional();
@@ -36,14 +37,8 @@ async function recomputeAndPersistStage(
   tx: Prisma.TransactionClient,
   trainerId: string
 ) {
-  const [screeningSteps, trainer, certificationDecision] = await Promise.all([
-    tx.trainerScreeningStep.findMany({
-      where: { trainer_id: trainerId },
-    }),
-    tx.trainer.findUniqueOrThrow({
-      where: { id: trainerId },
-      select: { total_score: true },
-    }),
+  const [screening, certificationDecision] = await Promise.all([
+    tx.trainerScreening.findUnique({ where: { trainer_id: trainerId } }),
     tx.trainerCertificationStep.findUnique({
       where: {
         trainer_id_step: {
@@ -54,8 +49,7 @@ async function recomputeAndPersistStage(
     }),
   ]);
   const stage = deriveTrainerStage({
-    screeningSteps,
-    screeningScoreTotal: trainer.total_score,
+    screening,
     certificationDecisionStatus: certificationDecision?.status ?? null,
   });
   await tx.trainer.update({ where: { id: trainerId }, data: { stage } });
@@ -102,40 +96,22 @@ export const updateTrainerPool = {
     .input(
       z.object({
         trainer_id: stringIsUUID(),
-        step: z.enum(TrainerScreeningStepEnum),
+        step: z.enum(SCREENING_STEP_KEYS),
         status: z.enum(TrainerScreeningStatusEnum),
-        notes: optionalText,
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const column = SCREENING_STEP_KEY_TO_COLUMN[input.step];
       await ctx.prisma.$transaction(async (tx) => {
-        await tx.trainerScreeningStep.upsert({
-          where: {
-            trainer_id_step: {
-              trainer_id: input.trainer_id,
-              step: input.step,
-            },
-          },
+        await tx.trainerScreening.upsert({
+          where: { trainer_id: input.trainer_id },
           create: {
             trainer_id: input.trainer_id,
-            step: input.step,
-            status: input.status,
-            notes: input.notes ?? null,
-            completed_at:
-              input.status === TrainerScreeningStatusEnum.PASSED ||
-              input.status === TrainerScreeningStatusEnum.SKIPPED
-                ? new Date()
-                : null,
-          },
+            [column]: input.status,
+          } as Prisma.TrainerScreeningUncheckedCreateInput,
           update: {
-            status: input.status,
-            notes: input.notes,
-            completed_at:
-              input.status === TrainerScreeningStatusEnum.PASSED ||
-              input.status === TrainerScreeningStatusEnum.SKIPPED
-                ? new Date()
-                : null,
-          },
+            [column]: input.status,
+          } as Prisma.TrainerScreeningUncheckedUpdateInput,
         });
         await recomputeAndPersistStage(tx, input.trainer_id);
       });
@@ -172,9 +148,10 @@ export const updateTrainerPool = {
       const suggested_level = levelFromScore(total_score);
 
       await ctx.prisma.$transaction(async (tx) => {
-        await tx.trainer.update({
-          where: { id: trainer_id },
-          data: {
+        await tx.trainerScreening.upsert({
+          where: { trainer_id },
+          create: {
+            trainer_id,
             ai_hands_on_score,
             facilitation_score,
             domain_credibility_score,
@@ -183,8 +160,21 @@ export const updateTrainerPool = {
             total_score,
             scored_by: ctx.user.id,
             scored_at: new Date(),
-            level: suggested_level,
           },
+          update: {
+            ai_hands_on_score,
+            facilitation_score,
+            domain_credibility_score,
+            communication_score,
+            reliability_score,
+            total_score,
+            scored_by: ctx.user.id,
+            scored_at: new Date(),
+          },
+        });
+        await tx.trainer.update({
+          where: { id: trainer_id },
+          data: { level: suggested_level },
         });
         await recomputeAndPersistStage(tx, trainer_id);
       });

@@ -1,10 +1,10 @@
 "use client";
 
+import AppButton from "@/components/buttons/AppButton";
 import TrainerScreeningFormOS from "@/components/forms/TrainerScreeningFormOS";
-import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
-import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
-import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function TrainerScreeningOS({
@@ -18,6 +18,7 @@ export default function TrainerScreeningOS({
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
+  const router = useRouter();
   const { data, isLoading, isError } =
     trpc.read.trainerPool.trainer.useQuery(
       { id: trainerId },
@@ -43,23 +44,32 @@ export default function TrainerScreeningOS({
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <div>
-        <Link
-          href={`/trainers/${trainerId}`}
-          className="text-xs font-semibold text-gray-500 hover:text-claude"
+        <AppButton
+          variant="ghost"
+          size="sm"
+          className="-ml-3"
+          onClick={() => router.push(`/trainers/${trainerId}`)}
         >
-          ← {trainer.full_name}
-        </Link>
+          <ChevronLeft size={14} />
+          Trainer Profile
+        </AppButton>
         <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
-          Screening
+          Screening Trainer
         </h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <TrainerStageLabel stage={trainer.stage} />
-          <TrainerLevelLabel level={trainer.level} />
-        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          Review candidate progress and score their screening rubric.
+        </p>
       </div>
 
       <TrainerScreeningFormOS
         trainerId={trainerId}
+        trainer={{
+          full_name: trainer.full_name,
+          avatar: trainer.user.avatar,
+          ai_experience_years: trainer.ai_experience_years,
+          stage: trainer.stage,
+          level: trainer.level,
+        }}
         steps={trainer.screening_steps}
         score={trainer}
       />

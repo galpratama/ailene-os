@@ -110,7 +110,15 @@ export const listTrainerPool = {
           specializations: {
             include: { specialization: true },
           },
-          screening_steps: { select: { status: true } },
+          screening: {
+            select: {
+              application_review: true,
+              interview: true,
+              teaching_demo: true,
+              practical_test: true,
+              reference_check: true,
+            },
+          },
           certification_steps: { select: { status: true } },
         },
         orderBy: [{ created_at: "desc" }],
@@ -125,6 +133,15 @@ export const listTrainerPool = {
         code: STATUS_OK,
         message: "Success",
         list: trainers.map((trainer) => {
+          const screeningStatuses = trainer.screening
+            ? [
+                trainer.screening.application_review,
+                trainer.screening.interview,
+                trainer.screening.teaching_demo,
+                trainer.screening.practical_test,
+                trainer.screening.reference_check,
+              ]
+            : [];
           return {
             id: trainer.id,
             full_name: trainer.user.full_name,
@@ -140,10 +157,10 @@ export const listTrainerPool = {
               name: entry.specialization.specialization_name,
             })),
             screening_progress: {
-              passed: trainer.screening_steps.filter(
-                (entry) => entry.status === "PASSED"
+              passed: screeningStatuses.filter(
+                (status) => status === "PASSED"
               ).length,
-              total: trainer.screening_steps.length,
+              total: 5,
             },
             certification_progress: {
               passed: trainer.certification_steps.filter(

@@ -117,16 +117,6 @@ enum TrainerSourceEnum {
   @@map("trainer_source_enum")
 }
 
-enum TrainerScreeningStepEnum {
-  APPLICATION_REVIEW @map("application_review")
-  INTERVIEW          @map("interview")
-  TEACHING_DEMO      @map("teaching_demo")
-  PRACTICAL_TEST     @map("practical_test")
-  REFERENCE_CHECK    @map("reference_check")
-
-  @@map("trnsc_step_enum")
-}
-
 enum TrainerScreeningStatusEnum {
   PENDING @map("pending")
   PASSED  @map("passed")
@@ -367,7 +357,7 @@ model User {
   b2b_actions            B2BAction[]
   trainer_profile        Trainer?                   @relation("TrainerUser")
   trainer_referrals      Trainer[]                  @relation("TrainerReferrer")
-  trainer_scores         Trainer[]                  @relation("TrainerScreeningScorer")
+  trainer_scores         TrainerScreening[]         @relation("TrainerScreeningScorer")
   trainer_certifications TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
 
   @@map("users")
@@ -444,34 +434,25 @@ model B2BAction {
 // Trainer Pool
 
 model Trainer {
-  id                       String                     @id @default(uuid()) @db.Uuid
-  source                   TrainerSourceEnum?
-  level                    TrainerLevelEnum           @default(JUNIOR)
-  stage                    TrainerStageEnum           @default(CANDIDATE)
-  status                   TrainerStatusEnum          @default(ACTIVE)
-  user                     User                       @relation("TrainerUser", fields: [user_id], references: [id])
-  user_id                  String                     @unique @db.Uuid
-  referrer                 User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
-  referred_by              String?                    @db.Uuid
-  notes                    String?                    @db.Text
-  ai_experience_years      Int                        @default(0) @db.SmallInt
-  ai_hands_on_score        Int                        @default(0) @db.SmallInt
-  facilitation_score       Int                        @default(0) @db.SmallInt
-  domain_credibility_score Int                        @default(0) @db.SmallInt
-  communication_score      Int                        @default(0) @db.SmallInt
-  reliability_score        Int                        @default(0) @db.SmallInt
-  total_score              Int                        @default(0) @db.SmallInt
-  scorer                   User?                      @relation("TrainerScreeningScorer", fields: [scored_by], references: [id])
-  scored_by                String?                    @db.Uuid
-  scored_at                DateTime?                  @db.Timestamptz()
-  created_at               DateTime                   @default(now()) @db.Timestamptz()
-  updated_at               DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at               DateTime?                  @db.Timestamptz()
-  specializations          TrainerSpecializationMap[]
-  screening_steps          TrainerScreeningStep[]
-  certification_steps      TrainerCertificationStep[]
-  availabilities           TrainerAvailability[]
-  assignments              TrainerAssignment[]
+  id                  String                     @id @default(uuid()) @db.Uuid
+  source              TrainerSourceEnum?
+  level               TrainerLevelEnum           @default(JUNIOR)
+  stage               TrainerStageEnum           @default(CANDIDATE)
+  status              TrainerStatusEnum          @default(ACTIVE)
+  user                User                       @relation("TrainerUser", fields: [user_id], references: [id])
+  user_id             String                     @unique @db.Uuid
+  referrer            User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
+  referred_by         String?                    @db.Uuid
+  notes               String?                    @db.Text
+  ai_experience_years Int                        @default(0) @db.SmallInt
+  created_at          DateTime                   @default(now()) @db.Timestamptz()
+  updated_at          DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at          DateTime?                  @db.Timestamptz()
+  specializations     TrainerSpecializationMap[]
+  screening           TrainerScreening?
+  certification_steps TrainerCertificationStep[]
+  availabilities      TrainerAvailability[]
+  assignments         TrainerAssignment[]
 
   @@map("trainers")
 }
@@ -486,19 +467,28 @@ model TrainerSpecializationMap {
   @@map("trainer_specialization_map")
 }
 
-model TrainerScreeningStep {
-  id           Int                        @id @default(autoincrement())
-  trainer      Trainer                    @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id   String                     @db.Uuid
-  step         TrainerScreeningStepEnum
-  status       TrainerScreeningStatusEnum @default(PENDING)
-  notes        String?                    @db.Text
-  completed_at DateTime?                  @db.Timestamptz()
-  created_at   DateTime                   @default(now()) @db.Timestamptz()
-  updated_at   DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+model TrainerScreening {
+  id                       Int                        @id @default(autoincrement())
+  trainer                  Trainer                    @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
+  trainer_id               String                     @unique @db.Uuid
+  application_review       TrainerScreeningStatusEnum @default(PENDING)
+  interview                TrainerScreeningStatusEnum @default(PENDING)
+  teaching_demo            TrainerScreeningStatusEnum @default(PENDING)
+  practical_test           TrainerScreeningStatusEnum @default(PENDING)
+  reference_check          TrainerScreeningStatusEnum @default(PENDING)
+  ai_hands_on_score        Int                        @default(0) @db.SmallInt
+  facilitation_score       Int                        @default(0) @db.SmallInt
+  domain_credibility_score Int                        @default(0) @db.SmallInt
+  communication_score      Int                        @default(0) @db.SmallInt
+  reliability_score        Int                        @default(0) @db.SmallInt
+  total_score              Int                        @default(0) @db.SmallInt
+  scorer                   User?                      @relation("TrainerScreeningScorer", fields: [scored_by], references: [id])
+  scored_by                String?                    @db.Uuid
+  scored_at                DateTime?                  @db.Timestamptz()
+  created_at               DateTime                   @default(now()) @db.Timestamptz()
+  updated_at               DateTime                   @default(now()) @updatedAt @db.Timestamptz()
 
-  @@unique([trainer_id, step])
-  @@map("trainer_screening_steps")
+  @@map("trainer_screenings")
 }
 
 model TrainerCertificationStep {
