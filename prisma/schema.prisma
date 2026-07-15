@@ -135,14 +135,6 @@ enum TrainerCertificationStatusEnum {
   @@map("trncert_status_enum")
 }
 
-enum TrainerAvailabilityStatusEnum {
-  AVAILABLE   @map("available")
-  LIMITED     @map("limited")
-  UNAVAILABLE @map("unavailable")
-
-  @@map("trainer_availability_status_enum")
-}
-
 enum TrainerAssignmentRoleEnum {
   LEAD       @map("lead")
   ASSISTANT  @map("assistant")
@@ -439,7 +431,6 @@ model Trainer {
   specializations     TrainerSpecializationMap[]
   screening           TrainerScreening?
   certification       TrainerCertification?
-  availabilities      TrainerAvailability[]
   assignments         TrainerAssignment[]
 
   @@map("trainers")
@@ -493,20 +484,6 @@ model TrainerCertification {
   updated_at                     DateTime                       @default(now()) @updatedAt @db.Timestamptz()
 
   @@map("trainer_certifications")
-}
-
-model TrainerAvailability {
-  id         Int                           @id @default(autoincrement())
-  trainer    Trainer                       @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id String                        @db.Uuid
-  period     DateTime                      @db.Date
-  status     TrainerAvailabilityStatusEnum @default(AVAILABLE)
-  notes      String?                       @db.VarChar()
-  created_at DateTime                      @default(now()) @db.Timestamptz()
-  updated_at DateTime                      @default(now()) @updatedAt @db.Timestamptz()
-
-  @@unique([trainer_id, period])
-  @@map("trainer_availabilities")
 }
 
 model TrainerAssignment {

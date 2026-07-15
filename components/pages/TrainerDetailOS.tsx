@@ -3,7 +3,6 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppTextArea from "@/components/fields/AppTextArea";
 import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
-import TrainerAvailabilityFormOS from "@/components/forms/TrainerAvailabilityFormOS";
 import Label, { type LabelVariant } from "@/components/labels/Label";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
@@ -15,8 +14,6 @@ import type {
 import {
   ArrowRight,
   Award,
-  BriefcaseBusiness,
-  CalendarCheck,
   CalendarPlus,
   Check,
   CircleUserRound,
@@ -81,7 +78,7 @@ const screeningStatusConfig: Record<
   { label: string; variant: LabelVariant }
 > = {
   PENDING: { label: "Pending", variant: "gray" },
-  PASSED: { label: "Passed", variant: "hijau" },
+  PASSED: { label: "Passed", variant: "biru" },
   FAILED: { label: "Failed", variant: "merah" },
   SKIPPED: { label: "Skipped", variant: "gray" },
 };
@@ -95,13 +92,23 @@ const stageValueText: Record<TrainerStageEnum, string> = {
 };
 
 type PathwayTone = "passed" | "failed" | "active" | "neutral";
+type PathwayAccent = "hijau" | "claude";
 
-const pathwayCircleClass: Record<PathwayTone, string> = {
-  passed: "border-hijau bg-hijau text-white",
-  failed: "border-merah bg-merah text-white",
-  active: "border-claude bg-claude/10 text-claude",
-  neutral:
-    "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+const pathwayCircleClass: Record<PathwayAccent, Record<PathwayTone, string>> = {
+  hijau: {
+    passed: "border-hijau bg-hijau text-white",
+    failed: "border-merah bg-merah text-white",
+    active: "border-claude bg-claude/10 text-claude",
+    neutral:
+      "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+  },
+  claude: {
+    passed: "border-claude bg-claude text-white",
+    failed: "border-merah bg-merah text-white",
+    active: "border-claude bg-claude/10 text-claude",
+    neutral:
+      "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+  },
 };
 
 type PathwayStep = {
@@ -116,24 +123,20 @@ function PathwaySection({
   title,
   href,
   steps,
+  accent = "hijau",
 }: {
   title: string;
   href: string;
   steps: PathwayStep[];
+  accent?: PathwayAccent;
 }) {
   const router = useRouter();
 
   return (
     <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-          {title}
-        </h3>
-        <AppButton
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push(href)}
-        >
+        <h3 className="font-bold text-gray-900 dark:text-zinc-100">{title}</h3>
+        <AppButton variant="ghost" size="sm" onClick={() => router.push(href)}>
           View details
           <ArrowRight size={13} />
         </AppButton>
@@ -147,7 +150,7 @@ function PathwaySection({
               className="flex flex-1 flex-col items-center gap-2 text-center"
             >
               <div
-                className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold ${pathwayCircleClass[step.tone]}`}
+                className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold ${pathwayCircleClass[accent][step.tone]}`}
               >
                 {step.tone === "passed" ? <Check size={16} /> : index + 1}
               </div>
@@ -236,12 +239,6 @@ export default function TrainerDetailOS({
     );
   }
 
-  const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const currentAvailability = trainer.availabilities.find(
-    (entry) =>
-      new Date(entry.period).toISOString().slice(0, 7) === currentMonthKey
-  );
-
   function openNotesEditor() {
     setNotesDraft(trainer?.notes ?? "");
     setEditingNotes(true);
@@ -260,7 +257,7 @@ export default function TrainerDetailOS({
         <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100">
           Trainer Profile
         </h2>
-        <AppButton onClick={() => setAssignmentOpen(true)}>
+        <AppButton size="sm" onClick={() => setAssignmentOpen(true)}>
           <CalendarPlus size={14} />
           Assign to Project
         </AppButton>
@@ -299,6 +296,12 @@ export default function TrainerDetailOS({
                 <MessageCircle size={15} className="text-gray-400" />
                 {trainer.phone_country?.phone_code ?? ""}{" "}
                 {trainer.phone_number ?? "No WhatsApp"}
+              </span>
+              <span className="flex items-center gap-2">
+                <Sparkles size={15} className="text-gray-400" />
+                {trainer.ai_experience_years}{" "}
+                {trainer.ai_experience_years === 1 ? "year" : "years"} AI
+                experience
               </span>
             </div>
             {trainer.specializations.length > 0 && (
@@ -349,57 +352,24 @@ export default function TrainerDetailOS({
         </div>
       </section>
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-        <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-          Professional Information
-        </h3>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <InfoTile
-            icon={BriefcaseBusiness}
-            label="Source"
-            value={
-              trainer.source
-                ? trainer.source.toLowerCase().replaceAll("_", " ")
-                : "Not set"
-            }
-          />
-          <InfoTile
-            icon={Sparkles}
-            label="AI Experience"
-            value={`${trainer.ai_experience_years} ${
-              trainer.ai_experience_years === 1 ? "year" : "years"
-            }`}
-          />
-          {trainer.referrer && (
+      {trainer.referrer && (
+        <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+          <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+            Professional Information
+          </h3>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <InfoTile
               icon={UserPlus}
               label="Referred by"
               value={trainer.referrer.full_name}
             />
-          )}
-          <InfoTile
-            icon={CalendarCheck}
-            label="This month"
-            value={
-              currentAvailability
-                ? currentAvailability.status.charAt(0) +
-                  currentAvailability.status.slice(1).toLowerCase()
-                : "Not set"
-            }
-          />
-        </div>
-        {updateTrainer.error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
-            {updateTrainer.error.message}
-          </p>
-        )}
-      </section>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-            Notes
-          </h3>
+          <h3 className="font-bold text-gray-900 dark:text-zinc-100">Notes</h3>
           {!editingNotes && (
             <AppButton variant="ghost" size="sm" onClick={openNotesEditor}>
               <Plus size={13} />
@@ -432,6 +402,11 @@ export default function TrainerDetailOS({
                 Save
               </AppButton>
             </div>
+            {updateTrainer.error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                {updateTrainer.error.message}
+              </p>
+            )}
           </div>
         ) : trainer.notes ? (
           <p className="mt-3 whitespace-pre-wrap rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-600 dark:bg-zinc-800/60 dark:text-zinc-300">
@@ -447,6 +422,7 @@ export default function TrainerDetailOS({
       <PathwaySection
         title="Screening Pathway"
         href={`/trainers/${trainerId}/screening`}
+        accent="claude"
         steps={trainer.screening_steps.map((entry) => ({
           key: entry.step,
           title: screeningStepTitles[entry.step as ScreeningStepKey],
@@ -526,11 +502,6 @@ export default function TrainerDetailOS({
           )}
         </div>
       </section>
-
-      <TrainerAvailabilityFormOS
-        trainerId={trainerId}
-        availabilities={trainer.availabilities}
-      />
 
       <CreateTrainerAssignmentFormOS
         trainerId={trainerId}

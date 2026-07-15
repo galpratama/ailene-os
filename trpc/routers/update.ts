@@ -14,7 +14,6 @@ export const updateRouter = createTRPCRouter({
     screeningStep: updateTrainerPool.screeningStep,
     screeningScore: updateTrainerPool.screeningScore,
     certificationStep: updateTrainerPool.certificationStep,
-    availability: updateTrainerPool.availability,
   },
   lms: {
     project: updateLms.project,

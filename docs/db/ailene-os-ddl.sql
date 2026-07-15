@@ -100,12 +100,6 @@ CREATE TYPE trncert_status_enum AS ENUM (
   'failed'
 );
 
-CREATE TYPE trainer_availability_status_enum AS ENUM (
-  'available',
-  'limited',
-  'unavailable'
-);
-
 CREATE TYPE trna_role_enum AS ENUM (
   'lead',
   'assistant',
@@ -370,17 +364,6 @@ CREATE TABLE trainer_certifications (
   certification_decision           trncert_status_enum  NOT NULL     DEFAULT 'not_started',
   created_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   updated_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE trainer_availabilities (
-  id          SERIAL                            PRIMARY KEY,
-  trainer_id  UUID                              NOT NULL,
-  period      DATE                              NOT NULL,
-  status      trainer_availability_status_enum  NOT NULL  DEFAULT 'available',
-  notes       VARCHAR                               NULL,
-  created_at  TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (trainer_id, period)
 );
 
 CREATE TABLE trainer_assignments (
@@ -746,9 +729,6 @@ ALTER TABLE trainer_screenings
 ALTER TABLE trainer_certifications
   ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
 
-ALTER TABLE trainer_availabilities
-  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
-
 ALTER TABLE trainer_assignments
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id);
@@ -898,11 +878,6 @@ CREATE TRIGGER update_trainer_screenings_updated_at_trigger
 
 CREATE TRIGGER update_trainer_certifications_updated_at_trigger
   BEFORE UPDATE ON trainer_certifications
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER update_trainer_availabilities_updated_at_trigger
-  BEFORE UPDATE ON trainer_availabilities
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 

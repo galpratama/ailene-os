@@ -9,7 +9,6 @@ import {
 } from "@/trpc/utils/validation";
 import {
   Prisma,
-  TrainerAvailabilityStatusEnum,
   TrainerCertificationStatusEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
@@ -241,43 +240,5 @@ export const updateTrainerPool = {
         code: STATUS_OK,
         message: isDecision ? "Certification decision updated" : "Step updated",
       };
-    }),
-
-  availability: administratorProcedure
-    .input(
-      z.object({
-        trainer_id: stringIsUUID(),
-        period: z.iso.date(),
-        status: z.enum(TrainerAvailabilityStatusEnum),
-        notes: optionalText,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!input.period.endsWith("-01")) {
-        throw new TRPCError({
-          code: STATUS_BAD_REQUEST,
-          message: "Availability period must be the first day of a month.",
-        });
-      }
-      const period = new Date(input.period);
-      await ctx.prisma.trainerAvailability.upsert({
-        where: {
-          trainer_id_period: {
-            trainer_id: input.trainer_id,
-            period,
-          },
-        },
-        create: {
-          trainer_id: input.trainer_id,
-          period,
-          status: input.status,
-          notes: input.notes ?? null,
-        },
-        update: {
-          status: input.status,
-          notes: input.notes,
-        },
-      });
-      return { code: STATUS_OK, message: "Availability updated" };
     }),
 };

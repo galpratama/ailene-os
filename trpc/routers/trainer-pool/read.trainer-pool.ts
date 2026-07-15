@@ -25,7 +25,6 @@ export const readTrainerPool = {
           },
           screening: true,
           certification: true,
-          availabilities: { orderBy: { period: "desc" } },
         },
       });
       if (!trainer) throw readFailedNotFound("trainer");
