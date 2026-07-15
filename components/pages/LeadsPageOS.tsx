@@ -3,12 +3,11 @@
 import AppInput from "@/components/fields/AppInput";
 import CreateLeadFormOS from "@/components/forms/CreateLeadFormOS";
 import StageLabel from "@/components/labels/StageLabel";
+import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
 import {
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Search,
   SquareArrowOutUpRight,
@@ -166,27 +165,11 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
         </div>
       )}
 
-      {data && totalPage > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="p-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <span className="text-xs text-gray-500 dark:text-zinc-400">
-            Page {page} of {totalPage}
-          </span>
-          <button
-            disabled={page >= totalPage}
-            onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
-            className="p-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      <AppPaginationOS
+        currentPage={page}
+        totalPages={totalPage}
+        onPageChange={setPage}
+      />
 
       <CreateLeadFormOS
         sessionToken={sessionToken}

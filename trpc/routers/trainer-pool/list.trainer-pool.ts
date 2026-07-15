@@ -95,7 +95,12 @@ export const listTrainerPool = {
         where,
         include: {
           user: {
-            select: { full_name: true, email: true, phone_number: true },
+            select: {
+              full_name: true,
+              email: true,
+              phone_number: true,
+              avatar: true,
+            },
           },
           specializations: {
             include: { specialization: true },
@@ -127,6 +132,7 @@ export const listTrainerPool = {
             full_name: trainer.user.full_name,
             email: trainer.user.email,
             phone_number: trainer.user.phone_number,
+            avatar: trainer.user.avatar,
             source: trainer.source,
             level: trainer.level,
             status: trainer.status,

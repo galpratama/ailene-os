@@ -1,6 +1,5 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, {
   type AppSelectOption,
@@ -9,6 +8,7 @@ import CreateTrainerFormOS from "@/components/forms/CreateTrainerFormOS";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
+import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
@@ -17,14 +17,14 @@ import type {
 } from "@prisma/client";
 import {
   BadgeCheck,
-  ChevronLeft,
-  ChevronRight,
+  CircleUserRound,
   Crown,
   Plus,
   Search,
   Sparkles,
   UserRoundSearch,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -214,125 +214,114 @@ export default function TrainerPoolListOS({
         </p>
       )}
       {data && !isLoading && !isError && (
-        <div className="overflow-x-auto rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-          <table className="w-full min-w-230 text-sm">
-            <thead>
-              <tr className="border-b border-gray-300 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-700">
-                <th className="px-5 py-3">Trainer</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Level</th>
-                <th className="px-5 py-3">Specialization</th>
-                <th className="px-5 py-3">Progress</th>
-                <th className="px-5 py-3">Rating</th>
-              </tr>
-            </thead>
-            <tbody>
+        <>
+          {data.list.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {data.list.map((trainer) => (
-                <tr
+                <Link
                   key={trainer.id}
-                  className="border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                  href={`/trainers/${trainer.id}`}
+                  className="flex flex-col gap-4 rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
                 >
-                  <td className="px-5 py-3.5">
-                    <Link
-                      href={`/trainers/${trainer.id}`}
-                      className="font-semibold text-gray-900 hover:text-claude dark:text-zinc-100"
-                    >
-                      {trainer.full_name}
-                      <span className="mt-0.5 block text-xs font-normal text-gray-500">
-                        {trainer.email}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <TrainerStatusLabel status={trainer.status} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <TrainerLevelLabel level={trainer.level} />
-                  </td>
-                  <td className="max-w-70 px-5 py-3.5 text-gray-600 dark:text-zinc-300">
-                    {trainer.specializations.map((entry) => entry.name).join(", ") ||
-                      "—"}
-                  </td>
-                  <td className="min-w-32 px-5 py-3.5">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-14 shrink-0 text-[11px] text-gray-400">
-                          Screen
-                        </span>
-                        <ProgressBar
-                          value={trainer.screening_progress.passed}
-                          total={trainer.screening_progress.total}
-                          variant={
-                            trainer.screening_progress.passed ===
-                            trainer.screening_progress.total
-                              ? "hijau"
-                              : "claude"
-                          }
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      {trainer.avatar ? (
+                        <Image
+                          src={trainer.avatar}
+                          alt={trainer.full_name}
+                          width={40}
+                          height={40}
+                          className="size-10 shrink-0 rounded-full object-cover"
                         />
-                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
-                          {trainer.screening_progress.passed}/
-                          {trainer.screening_progress.total}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-14 shrink-0 text-[11px] text-gray-400">
-                          Certify
-                        </span>
-                        <ProgressBar
-                          value={trainer.certification_progress.passed}
-                          total={trainer.certification_progress.total}
-                          variant={
-                            trainer.certification_progress.passed ===
-                            trainer.certification_progress.total
-                              ? "hijau"
-                              : "claude"
-                          }
-                        />
-                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
-                          {trainer.certification_progress.passed}/
-                          {trainer.certification_progress.total}
-                        </span>
+                      ) : (
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-claude text-white">
+                          <CircleUserRound size={22} fill="currentColor" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
+                          {trainer.full_name}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
+                          {trainer.email}
+                        </p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-5 py-3.5 font-semibold text-gray-700 dark:text-zinc-200">
-                    {trainer.average_rating?.toFixed(1) ?? "—"}
-                  </td>
-                </tr>
+                    <p className="shrink-0 text-right text-sm font-semibold text-gray-700 dark:text-zinc-200">
+                      {trainer.average_rating?.toFixed(1) ?? "—"}
+                      <span className="block text-[10px] font-normal text-gray-400">
+                        rating
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    <TrainerStatusLabel status={trainer.status} />
+                    <TrainerLevelLabel level={trainer.level} />
+                  </div>
+
+                  <p className="text-xs text-gray-600 dark:text-zinc-300">
+                    {trainer.specializations
+                      .map((entry) => entry.name)
+                      .join(", ") || "No specialization set"}
+                  </p>
+
+                  <div className="mt-auto flex flex-col gap-1.5 border-t border-gray-200 pt-3 dark:border-zinc-800">
+                    <div className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-[11px] text-gray-400">
+                        Screen
+                      </span>
+                      <ProgressBar
+                        value={trainer.screening_progress.passed}
+                        total={trainer.screening_progress.total}
+                        variant={
+                          trainer.screening_progress.passed ===
+                          trainer.screening_progress.total
+                            ? "hijau"
+                            : "claude"
+                        }
+                      />
+                      <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                        {trainer.screening_progress.passed}/
+                        {trainer.screening_progress.total}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-[11px] text-gray-400">
+                        Certify
+                      </span>
+                      <ProgressBar
+                        value={trainer.certification_progress.passed}
+                        total={trainer.certification_progress.total}
+                        variant={
+                          trainer.certification_progress.passed ===
+                          trainer.certification_progress.total
+                            ? "hijau"
+                            : "claude"
+                        }
+                      />
+                      <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                        {trainer.certification_progress.passed}/
+                        {trainer.certification_progress.total}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
-          {data.list.length === 0 && (
+            </div>
+          ) : (
             <p className="py-10 text-center text-sm text-gray-400">
               No trainers match these filters.
             </p>
           )}
-        </div>
+        </>
       )}
 
-      {totalPage > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <AppButton
-            variant="outline"
-            size="iconSm"
-            disabled={page <= 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            <ChevronLeft size={14} />
-          </AppButton>
-          <span className="text-xs text-gray-500">
-            Page {page} of {totalPage}
-          </span>
-          <AppButton
-            variant="outline"
-            size="iconSm"
-            disabled={page >= totalPage}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            <ChevronRight size={14} />
-          </AppButton>
-        </div>
-      )}
+      <AppPaginationOS
+        currentPage={page}
+        totalPages={totalPage}
+        onPageChange={setPage}
+      />
 
       <CreateTrainerFormOS
         sessionToken={sessionToken}
