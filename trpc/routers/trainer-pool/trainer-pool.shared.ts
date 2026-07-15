@@ -42,6 +42,35 @@ export function levelFromScore(totalScore: number): TrainerLevelEnum {
   return totalScore >= 75 ? TrainerLevelEnum.SENIOR : TrainerLevelEnum.JUNIOR;
 }
 
+// Each rubric criterion is scored 0-100 by the admin; these weights (summing
+// to 1) are applied server-side to produce the overall 0-100 total. The
+// frontend only displays the weight percentages — it never computes with
+// them, so the scoring math lives in exactly one place.
+export const SCREENING_RUBRIC_WEIGHTS = {
+  ai_hands_on_score: 0.3,
+  facilitation_score: 0.25,
+  domain_credibility_score: 0.2,
+  communication_score: 0.15,
+  reliability_score: 0.1,
+} as const;
+
+export function computeScreeningTotal(scores: {
+  ai_hands_on_score: number;
+  facilitation_score: number;
+  domain_credibility_score: number;
+  communication_score: number;
+  reliability_score: number;
+}): number {
+  const total =
+    scores.ai_hands_on_score * SCREENING_RUBRIC_WEIGHTS.ai_hands_on_score +
+    scores.facilitation_score * SCREENING_RUBRIC_WEIGHTS.facilitation_score +
+    scores.domain_credibility_score *
+      SCREENING_RUBRIC_WEIGHTS.domain_credibility_score +
+    scores.communication_score * SCREENING_RUBRIC_WEIGHTS.communication_score +
+    scores.reliability_score * SCREENING_RUBRIC_WEIGHTS.reliability_score;
+  return Math.round(total);
+}
+
 // Minimum years of hands-on AI experience required to join the trainer pool.
 export const MIN_AI_EXPERIENCE_YEARS = 1;
 

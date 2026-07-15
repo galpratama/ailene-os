@@ -22,6 +22,7 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import {
   certificationSessionsRequired,
+  computeScreeningTotal,
   deriveTrainerStage,
   levelFromScore,
 } from "./trainer-pool.shared";
@@ -145,11 +146,11 @@ export const updateTrainerPool = {
     .input(
       z.object({
         trainer_id: stringIsUUID(),
-        ai_hands_on_score: z.int().min(0).max(30),
-        facilitation_score: z.int().min(0).max(25),
-        domain_credibility_score: z.int().min(0).max(20),
-        communication_score: z.int().min(0).max(15),
-        reliability_score: z.int().min(0).max(10),
+        ai_hands_on_score: z.int().min(0).max(100),
+        facilitation_score: z.int().min(0).max(100),
+        domain_credibility_score: z.int().min(0).max(100),
+        communication_score: z.int().min(0).max(100),
+        reliability_score: z.int().min(0).max(100),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -161,12 +162,13 @@ export const updateTrainerPool = {
         communication_score,
         reliability_score,
       } = input;
-      const total_score =
-        ai_hands_on_score +
-        facilitation_score +
-        domain_credibility_score +
-        communication_score +
-        reliability_score;
+      const total_score = computeScreeningTotal({
+        ai_hands_on_score,
+        facilitation_score,
+        domain_credibility_score,
+        communication_score,
+        reliability_score,
+      });
       const suggested_level = levelFromScore(total_score);
 
       await ctx.prisma.$transaction(async (tx) => {

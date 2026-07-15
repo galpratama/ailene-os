@@ -345,8 +345,6 @@ CREATE TABLE trainers (
   referred_by                UUID                          NULL,
   notes                      TEXT                          NULL,
   ai_experience_years        SMALLINT             NOT NULL     DEFAULT 0,
-  -- Screening rubric score, folded onto the trainer instead of a separate
-  -- 1:1 table (same pattern as level/stage/status above).
   ai_hands_on_score          SMALLINT             NOT NULL     DEFAULT 0,
   facilitation_score         SMALLINT             NOT NULL     DEFAULT 0,
   domain_credibility_score   SMALLINT             NOT NULL     DEFAULT 0,

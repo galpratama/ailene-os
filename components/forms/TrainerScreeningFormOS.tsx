@@ -2,9 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppNumberInput from "@/components/fields/AppNumberInput";
-import AppSelect, {
-  type AppSelectOption,
-} from "@/components/fields/AppSelect";
+import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import ProgressBar from "@/components/labels/ProgressBar";
 import { trpc } from "@/trpc/client";
 import type {
@@ -103,7 +101,10 @@ type Criterion = {
   key: keyof Omit<Score, "total_score">;
   label: string;
   description: string;
-  max: number;
+  // Mirrors SCREENING_RUBRIC_WEIGHTS in trainer-pool.shared.ts — display
+  // only. Each criterion is scored 0-100; the backend applies these weights
+  // to compute the total, never the frontend.
+  weight: number;
   icon: typeof Bot;
 };
 
@@ -112,45 +113,38 @@ const criteria: Criterion[] = [
     key: "ai_hands_on_score",
     label: "AI hands-on",
     description: "Depth of practical, hands-on AI skill.",
-    max: 30,
+    weight: 30,
     icon: Bot,
   },
   {
     key: "facilitation_score",
     label: "Facilitation",
     description: "Ability to lead and engage a room.",
-    max: 25,
+    weight: 25,
     icon: Presentation,
   },
   {
     key: "domain_credibility_score",
     label: "Domain credibility",
     description: "Track record and credibility in the subject area.",
-    max: 20,
+    weight: 20,
     icon: ShieldCheck,
   },
   {
     key: "communication_score",
     label: "Communication",
     description: "Clarity and structure when explaining ideas.",
-    max: 15,
+    weight: 15,
     icon: MessageSquare,
   },
   {
     key: "reliability_score",
     label: "Reliability",
     description: "Punctuality and consistency across sessions.",
-    max: 10,
+    weight: 10,
     icon: ClipboardList,
   },
 ];
-
-function computeTotal(values: Record<Criterion["key"], string>) {
-  return criteria.reduce(
-    (sum, criterion) => sum + (Number(values[criterion.key]) || 0),
-    0
-  );
-}
 
 function ScoreGauge({ score }: { score: number }) {
   const percent = Math.min(100, Math.max(0, score));
@@ -194,7 +188,12 @@ function ScoreGauge({ score }: { score: number }) {
             transform: `rotate(${needleAngle}deg)`,
           }}
         />
-        <circle cx="50" cy="50" r="3.5" className="fill-gray-600 dark:fill-zinc-300" />
+        <circle
+          cx="50"
+          cy="50"
+          r="3.5"
+          className="fill-gray-600 dark:fill-zinc-300"
+        />
       </svg>
       <p className="-mt-3 text-center">
         <span className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
@@ -224,8 +223,12 @@ function RubricScorePanel({
   const [values, setValues] =
     useState<Record<Criterion["key"], string>>(defaults);
 
+  const [result, setResult] = useState<string | null>(null);
   const mutation = trpc.update.trainerPool.screeningScore.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setResult(
+        `Saved — weighted total ${data.total_score}/100 · suggested level ${data.suggested_level.toLowerCase()}`
+      );
       utils.read.trainerPool.trainer.invalidate({ id: trainerId });
       utils.list.trainerPool.trainers.invalidate();
     },
@@ -249,7 +252,8 @@ function RubricScorePanel({
         Rubric score
       </h3>
       <p className="mt-1 text-sm text-gray-500">
-        Saving recalculates the total and applies the suggested level.
+        Score each criterion 0-100. Weighting into the overall total happens on
+        save.
       </p>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
         {criteria.map((criterion) => (
@@ -264,7 +268,7 @@ function RubricScorePanel({
               <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
                 {criterion.label}{" "}
                 <span className="font-normal text-gray-400">
-                  · max {criterion.max}
+                  · weight {criterion.weight}%
                 </span>
               </p>
               <p className="truncate text-xs text-gray-500">
@@ -274,9 +278,13 @@ function RubricScorePanel({
             <div className="w-20 shrink-0">
               <AppNumberInput
                 inputId={`score-${criterion.key}`}
+                placeholder="/100"
                 value={values[criterion.key]}
                 onValueChange={(next) =>
-                  setValues((current) => ({ ...current, [criterion.key]: next }))
+                  setValues((current) => ({
+                    ...current,
+                    [criterion.key]: next,
+                  }))
                 }
               />
             </div>
@@ -296,14 +304,19 @@ function RubricScorePanel({
             variant="outline"
             size="sm"
             disabled={mutation.isPending}
-            onClick={() => setValues(defaults)}
+            onClick={() => {
+              setValues(defaults);
+              setResult(null);
+            }}
           >
             <RotateCcw size={13} />
             Reset
           </AppButton>
-          <p className="text-xs font-semibold text-gray-600 dark:text-zinc-300">
-            Live total: {computeTotal(values)}/100
-          </p>
+          {result && (
+            <p className="text-xs font-semibold text-gray-600 dark:text-zinc-300">
+              {result}
+            </p>
+          )}
           {mutation.error && (
             <p className="text-xs text-red-500">{mutation.error.message}</p>
           )}
@@ -335,59 +348,43 @@ export default function TrainerScreeningFormOS({
 
   const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
   const totalScore = score?.total_score ?? 0;
-  const clearsBar = totalScore >= QUALIFYING_SCORE;
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-          <div className="flex items-center gap-2 text-gray-500">
-            <GaugeCircle size={15} />
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              Overall progress
+      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+        <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <div>
+            <div className="flex items-center gap-2 text-gray-500">
+              <GaugeCircle size={15} />
+              <p className="text-xs font-semibold uppercase tracking-wide">
+                Screening progress
+              </p>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+              {passedCount} of {steps.length}{" "}
+              <span className="text-sm font-normal text-gray-500">
+                steps passed
+              </span>
+            </p>
+            <ProgressBar
+              className="mt-3"
+              value={passedCount}
+              total={steps.length}
+              variant={passedCount >= MIN_STEPS_PASSED ? "hijau" : "claude"}
+            />
+            <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-gray-500">
+              <Info size={14} className="mt-0.5 shrink-0 text-claude" />A
+              trainer qualifies once at least {MIN_STEPS_PASSED} of{" "}
+              {steps.length} steps pass and the rubric total reaches{" "}
+              {QUALIFYING_SCORE}+. Certification review then decides Certified
+              vs. Not eligible.
             </p>
           </div>
-          <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
-            {passedCount} of {steps.length}
-          </p>
-          <p className="text-xs text-gray-500">steps passed</p>
-          <ProgressBar
-            className="mt-3"
-            value={passedCount}
-            total={steps.length}
-            variant={passedCount >= MIN_STEPS_PASSED ? "hijau" : "claude"}
-          />
-        </div>
-
-        <div className="rounded-xl border border-gray-300 bg-card-bg p-5 text-center dark:border-zinc-700">
-          <div className="flex items-center justify-center gap-2 text-gray-500">
-            <ClipboardList size={15} />
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              Current total score
-            </p>
+          <div className="flex flex-col items-center border-t border-gray-200 pt-4 text-center sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0 dark:border-zinc-800">
+            <ScoreGauge score={totalScore} />
           </div>
-          <ScoreGauge score={totalScore} />
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
-              clearsBar
-                ? "bg-hijau-t text-hijau dark:bg-green-950/40 dark:text-green-300"
-                : "bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
-            }`}
-          >
-            {clearsBar ? "Clears the bar" : "Below bar"}
-          </span>
         </div>
-
-        <div className="flex gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-          <Info size={16} className="mt-0.5 shrink-0 text-claude" />
-          <p className="text-xs leading-relaxed text-gray-500">
-            A trainer qualifies once at least {MIN_STEPS_PASSED} of{" "}
-            {steps.length} screening steps pass and the rubric total reaches{" "}
-            {QUALIFYING_SCORE}+. Certification review then decides Certified
-            vs. Not eligible.
-          </p>
-        </div>
-      </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
