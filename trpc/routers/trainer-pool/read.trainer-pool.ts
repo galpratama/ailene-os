@@ -12,7 +12,6 @@ export const readTrainerPool = {
         include: {
           user: { include: { phone_country: true } },
           referrer: { select: { id: true, full_name: true } },
-          level_override_setter: { select: { id: true, full_name: true } },
           specializations: {
             include: { specialization: true },
           },

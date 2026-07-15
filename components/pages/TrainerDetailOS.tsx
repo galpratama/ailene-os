@@ -5,28 +5,28 @@ import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
-import CreateTrainerEvaluationFormOS from "@/components/forms/CreateTrainerEvaluationFormOS";
 import TrainerAvailabilityFormOS from "@/components/forms/TrainerAvailabilityFormOS";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
-import type {
-  TrainerLevelEnum,
-  TrainerLevelOverrideEnum,
-  TrainerStatusEnum,
-} from "@prisma/client";
+import type { TrainerLevelEnum, TrainerStatusEnum } from "@prisma/client";
 import {
+  AlertTriangle,
   ArrowRight,
   BriefcaseBusiness,
   CalendarPlus,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
   Mail,
   MessageCircle,
+  PauseCircle,
   Plus,
-  Star,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const statusOptions: AppSelectOption[] = [
   { value: "CANDIDATE", label: "Candidate" },
@@ -36,16 +36,134 @@ const statusOptions: AppSelectOption[] = [
   { value: "INACTIVE", label: "Inactive" },
 ];
 const levelOptions: AppSelectOption[] = [
-  { value: "APPRENTICE", label: "Apprentice" },
-  { value: "CERTIFIED", label: "Certified Trainer" },
-  { value: "SENIOR", label: "Senior / Specialist" },
-  { value: "LEAD", label: "Lead Trainer" },
+  { value: "JUNIOR", label: "Junior" },
+  { value: "SENIOR", label: "Senior" },
 ];
-const levelOverrideOptions: AppSelectOption[] = [
-  { value: "", label: "Derived from level" },
-  { value: "JUNIOR", label: "Junior (manual override)" },
-  { value: "SENIOR", label: "Senior (manual override)" },
+
+const journeyStages: {
+  status: TrainerStatusEnum;
+  label: string;
+  caption: string;
+}[] = [
+  {
+    status: "CANDIDATE",
+    label: "Candidate",
+    caption: "Screening & rubric",
+  },
+  {
+    status: "CERTIFIED",
+    label: "Certified",
+    caption: "Certification pathway done",
+  },
+  { status: "ACTIVE", label: "Active", caption: "Delivering live projects" },
 ];
+
+function TrainerJourney({
+  status,
+  isPending,
+  onNavigate,
+}: {
+  status: TrainerStatusEnum;
+  isPending: boolean;
+  onNavigate: (direction: "prev" | "next") => void;
+}) {
+  const isDetour = status === "REMEDIAL" || status === "INACTIVE";
+  const currentIndex = isDetour
+    ? journeyStages.length - 1
+    : journeyStages.findIndex((stage) => stage.status === status);
+  const linearIndex = journeyStages.findIndex((stage) => stage.status === status);
+  const canGoPrev = linearIndex > 0;
+  const canGoNext = linearIndex !== -1 && linearIndex < journeyStages.length - 1;
+
+  return (
+    <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <div className="flex items-center gap-3">
+        <AppButton
+          type="button"
+          variant="outline"
+          size="iconSm"
+          disabled={!canGoPrev || isPending}
+          onClick={() => onNavigate("prev")}
+        >
+          {isPending ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <ChevronLeft size={14} />
+          )}
+        </AppButton>
+        <div className="flex flex-1 items-center">
+        {journeyStages.map((stage, index) => {
+          const isCurrent = !isDetour && index === currentIndex;
+          const isComplete = index < currentIndex;
+          return (
+            <div key={stage.status} className="flex flex-1 items-center last:flex-none">
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <span
+                  className={`flex size-8 items-center justify-center rounded-full border-2 text-xs font-bold ${
+                    isComplete
+                      ? "border-hijau bg-hijau text-white"
+                      : isCurrent
+                        ? "border-claude bg-claude/10 text-claude"
+                        : "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+                  }`}
+                >
+                  {isComplete ? <Check size={15} /> : index + 1}
+                </span>
+                <div>
+                  <p
+                    className={`text-xs font-bold ${
+                      isCurrent || isComplete
+                        ? "text-gray-900 dark:text-zinc-100"
+                        : "text-gray-400 dark:text-zinc-500"
+                    }`}
+                  >
+                    {stage.label}
+                  </p>
+                  <p className="text-[11px] text-gray-400">{stage.caption}</p>
+                </div>
+              </div>
+              {index < journeyStages.length - 1 && (
+                <div
+                  className={`mx-2 h-0.5 flex-1 rounded-full ${
+                    index < currentIndex
+                      ? "bg-hijau"
+                      : "bg-gray-200 dark:bg-zinc-700"
+                  }`}
+                />
+              )}
+            </div>
+          );
+        })}
+        </div>
+        <AppButton
+          type="button"
+          variant="outline"
+          size="iconSm"
+          disabled={!canGoNext || isPending}
+          onClick={() => onNavigate("next")}
+        >
+          {isPending ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <ChevronRight size={14} />
+          )}
+        </AppButton>
+      </div>
+      {status === "REMEDIAL" && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-kuning-t px-3 py-2 text-xs font-semibold text-[#9a7a1a] dark:bg-yellow-950/40 dark:text-yellow-300">
+          <AlertTriangle size={14} />
+          Off track — under remedial review after evaluations flagged quality issues.
+        </div>
+      )}
+      {status === "INACTIVE" && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
+          <PauseCircle size={14} />
+          Paused — not currently eligible for new assignments.
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TrainerDetailOS({
   sessionToken,
@@ -60,7 +178,6 @@ export default function TrainerDetailOS({
 
   const utils = trpc.useUtils();
   const [assignmentOpen, setAssignmentOpen] = useState(false);
-  const [evaluationOpen, setEvaluationOpen] = useState(false);
   const { data, isLoading, isError } =
     trpc.read.trainerPool.trainer.useQuery(
       { id: trainerId },
@@ -71,22 +188,7 @@ export default function TrainerDetailOS({
       { trainer_id: trainerId, page: 1, page_size: 200 },
       { enabled: !!sessionToken }
     );
-  const { data: evaluationData } =
-    trpc.list.trainerPool.evaluations.useQuery(
-      { trainer_id: trainerId, page: 1, page_size: 200 },
-      { enabled: !!sessionToken }
-    );
   const trainer = data?.trainer;
-  const ratings = useMemo(
-    () =>
-      evaluationData?.list
-        .filter((entry) => entry.participant_rating_avg !== null)
-        .map((entry) => Number(entry.participant_rating_avg)) ?? [],
-    [evaluationData?.list]
-  );
-  const averageRating = ratings.length
-    ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
-    : null;
   const screeningPassed =
     trainer?.screening_steps.filter((entry) => entry.status === "PASSED")
       .length ?? 0;
@@ -137,16 +239,28 @@ export default function TrainerDetailOS({
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <AppButton variant="outline" onClick={() => setEvaluationOpen(true)}>
-            <Star size={14} />
-            Add Evaluation
-          </AppButton>
           <AppButton onClick={() => setAssignmentOpen(true)}>
             <CalendarPlus size={14} />
             Assign to Project
           </AppButton>
         </div>
       </div>
+
+      <TrainerJourney
+        status={trainer.status}
+        isPending={updateTrainer.isPending}
+        onNavigate={(direction) => {
+          const currentIndex = journeyStages.findIndex(
+            (stage) => stage.status === trainer.status
+          );
+          if (currentIndex === -1) return;
+          const targetIndex =
+            direction === "next" ? currentIndex + 1 : currentIndex - 1;
+          const target = journeyStages[targetIndex];
+          if (!target) return;
+          updateTrainer.mutate({ id: trainerId, status: target.status });
+        }}
+      />
 
       <section className="grid gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div>
@@ -167,10 +281,6 @@ export default function TrainerDetailOS({
               <BriefcaseBusiness size={15} className="text-gray-400" />
               {trainer.source?.toLowerCase().replaceAll("_", " ") ??
                 "Source not set"}
-            </div>
-            <div className="flex items-center gap-2 text-gray-600 dark:text-zinc-300">
-              <Star size={15} className="text-gray-400" />
-              {averageRating ? `${averageRating.toFixed(1)} rolling rating` : "No rating yet"}
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -216,54 +326,31 @@ export default function TrainerDetailOS({
               })
             }
           />
-          <AppSelect
-            selectId="trainer-detail-level-override"
-            label="Junior/Senior Override"
-            placeholder="Derived from level"
-            value={trainer.level_override ?? ""}
-            options={levelOverrideOptions}
-            onChange={(value) =>
-              updateTrainer.mutate({
-                id: trainerId,
-                level_override:
-                  (value as TrainerLevelOverrideEnum | "") || null,
-              })
-            }
-          />
-          {trainer.level_override && trainer.level_override_setter && (
-            <p className="text-xs text-gray-500">
-              Set by {trainer.level_override_setter.full_name}
-              {trainer.level_override_set_at
-                ? ` on ${new Date(trainer.level_override_set_at).toLocaleDateString("en-GB")}`
-                : ""}
-            </p>
-          )}
           <p className="text-xs leading-relaxed text-gray-500">
-            QC evaluations may automatically move this trainer to remedial or
-            inactive. Certification approval moves them to certified.
+            Certification approval moves this trainer to certified.
           </p>
         </div>
       </section>
 
-      <Link
-        href={`/trainers/${trainerId}/qualification`}
-        className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Screening &amp; Certification
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Review the qualification pipeline for this trainer.
-            </p>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Link
+          href={`/trainers/${trainerId}/screening`}
+          className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+                Screening
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Five-step candidate review and the 100-point rubric.
+              </p>
+            </div>
+            <ArrowRight size={16} className="shrink-0 text-gray-400" />
           </div>
-          <ArrowRight size={16} className="shrink-0 text-gray-400" />
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div>
+          <div className="mt-4">
             <p className="mb-1 text-xs font-semibold text-gray-600 dark:text-zinc-300">
-              Screening · {screeningPassed}/{screeningTotal} passed
+              {screeningPassed}/{screeningTotal} passed
             </p>
             <ProgressBar
               value={screeningPassed}
@@ -271,9 +358,25 @@ export default function TrainerDetailOS({
               variant={screeningPassed === screeningTotal ? "hijau" : "claude"}
             />
           </div>
-          <div>
+        </Link>
+        <Link
+          href={`/trainers/${trainerId}/certification`}
+          className="block rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+                Certification
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Pathway toward the certified pool.
+              </p>
+            </div>
+            <ArrowRight size={16} className="shrink-0 text-gray-400" />
+          </div>
+          <div className="mt-4">
             <p className="mb-1 text-xs font-semibold text-gray-600 dark:text-zinc-300">
-              Certification · {certificationPassed}/{certificationTotal} complete
+              {certificationPassed}/{certificationTotal} complete
             </p>
             <ProgressBar
               value={certificationPassed}
@@ -283,8 +386,8 @@ export default function TrainerDetailOS({
               }
             />
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex items-center justify-between gap-3">
@@ -333,57 +436,6 @@ export default function TrainerDetailOS({
         </div>
       </section>
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Evaluations
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Delivery feedback powering the quality-control loop.
-            </p>
-          </div>
-          <AppButton
-            size="sm"
-            variant="outline"
-            onClick={() => setEvaluationOpen(true)}
-          >
-            <Plus size={13} /> Evaluate
-          </AppButton>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {evaluationData?.list.map((entry) => (
-            <div
-              key={entry.id}
-              className="rounded-xl border border-gray-200 p-4 dark:border-zinc-800"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
-                  {entry.company_name ?? "General evaluation"}
-                </p>
-                <span className="flex items-center gap-1 text-sm font-bold text-claude">
-                  <Star size={13} fill="currentColor" />
-                  {entry.participant_rating_avg
-                    ? Number(entry.participant_rating_avg).toFixed(1)
-                    : "—"}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                {entry.pipeline_name ?? "No assignment linked"}
-              </p>
-              {entry.review_notes && (
-                <p className="mt-3 text-xs leading-relaxed text-gray-600 dark:text-zinc-300">
-                  {entry.review_notes}
-                </p>
-              )}
-            </div>
-          ))}
-          {!evaluationData?.list.length && (
-            <p className="text-sm text-gray-400">No evaluations yet.</p>
-          )}
-        </div>
-      </section>
-
       <TrainerAvailabilityFormOS
         trainerId={trainerId}
         availabilities={trainer.availabilities}
@@ -393,11 +445,6 @@ export default function TrainerDetailOS({
         trainerId={trainerId}
         isOpen={assignmentOpen}
         onClose={() => setAssignmentOpen(false)}
-      />
-      <CreateTrainerEvaluationFormOS
-        trainerId={trainerId}
-        isOpen={evaluationOpen}
-        onClose={() => setEvaluationOpen(false)}
       />
     </div>
   );

@@ -31,10 +31,8 @@ const sourceOptions: AppSelectOption[] = [
 ];
 
 const levels = [
-  ["Apprentice", "Belajar delivery bersama trainer senior"],
-  ["Certified", "Siap memimpin kelas inti Ailene"],
-  ["Senior", "Menangani topik advanced dan audience eksekutif"],
-  ["Lead", "Menjaga standar, mentor, dan sertifikasi trainer"],
+  ["Junior", "Belajar delivery bersama trainer senior sebelum mandiri"],
+  ["Senior", "Memimpin kelas inti dan menangani topik advanced/eksekutif"],
 ];
 
 export default function TrainerApplicationPageBIZ() {

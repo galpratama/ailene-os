@@ -79,7 +79,7 @@ export const listTrainerPool = {
           ],
         }),
       };
-      const [aggregate, statusGroups, leadCount] = await Promise.all([
+      const [aggregate, statusGroups, seniorCount] = await Promise.all([
         ctx.prisma.trainer.aggregate({ where, _count: true }),
         ctx.prisma.trainer.groupBy({
           by: ["status"],
@@ -87,7 +87,7 @@ export const listTrainerPool = {
           _count: true,
         }),
         ctx.prisma.trainer.count({
-          where: { deleted_at: null, level: TrainerLevelEnum.LEAD },
+          where: { deleted_at: null, level: TrainerLevelEnum.SENIOR },
         }),
       ]);
       const paging = calculatePage(input, aggregate);
@@ -105,10 +105,6 @@ export const listTrainerPool = {
           specializations: {
             include: { specialization: true },
           },
-          evaluations: {
-            where: { participant_rating_avg: { not: null } },
-            select: { participant_rating_avg: true },
-          },
           screening_steps: { select: { status: true } },
           certification_steps: { select: { status: true } },
         },
@@ -124,9 +120,6 @@ export const listTrainerPool = {
         code: STATUS_OK,
         message: "Success",
         list: trainers.map((trainer) => {
-          const ratings = trainer.evaluations.map((entry) =>
-            Number(entry.participant_rating_avg)
-          );
           return {
             id: trainer.id,
             full_name: trainer.user.full_name,
@@ -140,10 +133,6 @@ export const listTrainerPool = {
               id: entry.specialization.id,
               name: entry.specialization.specialization_name,
             })),
-            average_rating: ratings.length
-              ? ratings.reduce((sum, rating) => sum + rating, 0) /
-                ratings.length
-              : null,
             screening_progress: {
               passed: trainer.screening_steps.filter(
                 (entry) => entry.status === "PASSED"
@@ -165,7 +154,7 @@ export const listTrainerPool = {
             (counts[TrainerStatusEnum.CERTIFIED] ?? 0) +
             (counts[TrainerStatusEnum.ACTIVE] ?? 0),
           active: counts[TrainerStatusEnum.ACTIVE] ?? 0,
-          leads: leadCount,
+          senior: seniorCount,
         },
         metapaging: paging.metapaging,
       };
@@ -229,66 +218,6 @@ export const listTrainerPool = {
           session_date: entry.session_date,
           participant_count: entry.participant_count,
           notes: entry.notes,
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  evaluations: administratorProcedure
-    .input(
-      z.object({
-        trainer_id: stringIsUUID().optional(),
-        assignment_id: numberIsID().optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const where: Prisma.TrainerEvaluationWhereInput = {
-        trainer_id: input.trainer_id,
-        assignment_id: input.assignment_id,
-      };
-      const paging = calculatePage(
-        input,
-        await ctx.prisma.trainerEvaluation.aggregate({
-          where,
-          _count: true,
-        })
-      );
-      const list = await ctx.prisma.trainerEvaluation.findMany({
-        where,
-        include: {
-          reviewer: { select: { full_name: true } },
-          assignment: {
-            select: {
-              pipeline: {
-                select: {
-                  id: true,
-                  name: true,
-                  company: { select: { name: true } },
-                },
-              },
-            },
-          },
-        },
-        orderBy: [{ evaluation_date: "desc" }, { created_at: "desc" }],
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: list.map((entry) => ({
-          id: entry.id,
-          assignment_id: entry.assignment_id,
-          pipeline_id: entry.assignment?.pipeline.id ?? null,
-          pipeline_name: entry.assignment?.pipeline.name ?? null,
-          company_name: entry.assignment?.pipeline.company.name ?? null,
-          participant_rating_avg: entry.participant_rating_avg,
-          self_report_submitted: entry.self_report_submitted,
-          reviewer_name: entry.reviewer?.full_name ?? null,
-          review_notes: entry.review_notes,
-          evaluation_date: entry.evaluation_date,
         })),
         metapaging: paging.metapaging,
       };

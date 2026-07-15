@@ -57,10 +57,8 @@ CREATE TYPE b2ba_priority_enum AS ENUM (
 -- Enumeration for the Trainer Pool tables
 
 CREATE TYPE trainer_level_enum AS ENUM (
-  'apprentice',
-  'certified',
-  'senior',
-  'lead'
+  'junior',
+  'senior'
 );
 
 CREATE TYPE trainer_status_enum AS ENUM (
@@ -122,13 +120,6 @@ CREATE TYPE trna_role_enum AS ENUM (
   'assistant',
   'co_trainer',
   'specialist'
-);
-
--- Enumeration for the Trainer model (level override)
-
-CREATE TYPE trainer_level_override_enum AS ENUM (
-  'junior',
-  'senior'
 );
 
 -- Enumeration for the LMS tables (lms_*) — migrated from the Sevenpreneur
@@ -339,15 +330,12 @@ CREATE TABLE b2b_actions (
 CREATE TABLE trainers (
   id                     UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
   source                 trainer_source_enum       NULL,
-  level                  trainer_level_enum    NOT NULL     DEFAULT 'apprentice',
+  level                  trainer_level_enum    NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
   status                 trainer_status_enum   NOT NULL     DEFAULT 'candidate',
   user_id                UUID                  NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
   referred_by            UUID                      NULL,
   notes                  TEXT                      NULL,
   ai_experience_years    SMALLINT              NOT NULL     DEFAULT 0,
-  level_override         trainer_level_override_enum  NULL,
-  level_override_set_by  UUID                      NULL,
-  level_override_set_at  TIMESTAMPTZ               NULL,
   created_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   updated_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   deleted_at             TIMESTAMPTZ               NULL
@@ -422,18 +410,6 @@ CREATE TABLE trainer_assignments (
   notes              TEXT                NULL,
   created_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE trainer_evaluations (
-  id                      SERIAL        PRIMARY KEY,
-  assignment_id           INTEGER           NULL,
-  trainer_id              UUID          NOT NULL,
-  participant_rating_avg  DECIMAL(2,1)      NULL,
-  self_report_submitted   BOOLEAN       NOT NULL  DEFAULT FALSE,
-  reviewed_by             UUID              NULL,
-  review_notes            TEXT              NULL,
-  evaluation_date         DATE              NULL,
-  created_at              TIMESTAMPTZ   NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*
@@ -773,9 +749,8 @@ ALTER TABLE b2b_actions
 -- Trainer Pool
 
 ALTER TABLE trainers
-  ADD FOREIGN KEY (user_id)               REFERENCES users (id),
-  ADD FOREIGN KEY (referred_by)           REFERENCES users (id),
-  ADD FOREIGN KEY (level_override_set_by) REFERENCES users (id);
+  ADD FOREIGN KEY (user_id)     REFERENCES users (id),
+  ADD FOREIGN KEY (referred_by) REFERENCES users (id);
 
 ALTER TABLE trainer_specialization_map
   ADD FOREIGN KEY (trainer_id)        REFERENCES trainers (id)                ON DELETE CASCADE,
@@ -798,11 +773,6 @@ ALTER TABLE trainer_availabilities
 ALTER TABLE trainer_assignments
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id);
-
-ALTER TABLE trainer_evaluations
-  ADD FOREIGN KEY (assignment_id) REFERENCES trainer_assignments (id) ON DELETE SET NULL,
-  ADD FOREIGN KEY (trainer_id)    REFERENCES trainers (id),
-  ADD FOREIGN KEY (reviewed_by)   REFERENCES users (id);
 
 -- LMS
 -- Note: lms_members.user_id intentionally has no FK — it points at either a

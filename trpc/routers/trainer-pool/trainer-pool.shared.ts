@@ -3,7 +3,6 @@ import {
   TrainerAssignmentRoleEnum,
   TrainerCertificationStepEnum,
   TrainerLevelEnum,
-  TrainerLevelOverrideEnum,
   TrainerScreeningStepEnum,
   TrainerStatusEnum,
 } from "@prisma/client";
@@ -35,27 +34,13 @@ export function certificationSessionsRequired(
     : 1;
 }
 
+// 75+ on the 100-point screening rubric clears the bar for Senior.
 export function levelFromScore(totalScore: number): TrainerLevelEnum {
-  if (totalScore >= 90) return TrainerLevelEnum.LEAD;
-  if (totalScore >= 85) return TrainerLevelEnum.SENIOR;
-  if (totalScore >= 75) return TrainerLevelEnum.CERTIFIED;
-  return TrainerLevelEnum.APPRENTICE;
+  return totalScore >= 75 ? TrainerLevelEnum.SENIOR : TrainerLevelEnum.JUNIOR;
 }
 
 // Minimum years of hands-on AI experience required to join the trainer pool.
 export const MIN_AI_EXPERIENCE_YEARS = 1;
-
-// Apprentice = Junior, everything above (Certified/Senior/Lead) = Senior,
-// unless an admin has set a manual override on the trainer record.
-export function isTrainerJunior(trainer: {
-  level: TrainerLevelEnum;
-  level_override: TrainerLevelOverrideEnum | null;
-}): boolean {
-  if (trainer.level_override) {
-    return trainer.level_override === TrainerLevelOverrideEnum.JUNIOR;
-  }
-  return trainer.level === TrainerLevelEnum.APPRENTICE;
-}
 
 // Shared assignability rule used both by direct trainer-pool assignment and
 // by selecting a trainer application into an assignment.
@@ -64,14 +49,14 @@ export function assertTrainerAssignable(
   role: TrainerAssignmentRoleEnum | undefined
 ) {
   if (
-    trainer.level === TrainerLevelEnum.APPRENTICE &&
+    trainer.level === TrainerLevelEnum.JUNIOR &&
     (role === undefined ||
       role === TrainerAssignmentRoleEnum.LEAD ||
       role === TrainerAssignmentRoleEnum.SPECIALIST)
   ) {
     throw new TRPCError({
       code: STATUS_BAD_REQUEST,
-      message: "Apprentice trainers must be assigned as assistant or co-trainer.",
+      message: "Junior trainers must be assigned as assistant or co-trainer.",
     });
   }
   if (

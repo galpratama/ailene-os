@@ -1,4 +1,4 @@
-import TrainerQualificationOS from "@/components/pages/TrainerQualificationOS";
+import TrainerCertificationOS from "@/components/pages/TrainerCertificationOS";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -15,6 +15,9 @@ export default async function Page({
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
 
   return (
-    <TrainerQualificationOS sessionToken={sessionToken} trainerId={trainer_id} />
+    <TrainerCertificationOS
+      sessionToken={sessionToken}
+      trainerId={trainer_id}
+    />
   );
 }

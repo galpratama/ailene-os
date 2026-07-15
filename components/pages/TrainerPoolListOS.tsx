@@ -38,10 +38,8 @@ const statusOptions: AppSelectOption[] = [
 ];
 const levelOptions: AppSelectOption[] = [
   { value: "", label: "All levels" },
-  { value: "APPRENTICE", label: "Apprentice" },
-  { value: "CERTIFIED", label: "Certified Trainer" },
-  { value: "SENIOR", label: "Senior / Specialist" },
-  { value: "LEAD", label: "Lead Trainer" },
+  { value: "JUNIOR", label: "Junior" },
+  { value: "SENIOR", label: "Senior" },
 ];
 
 export default function TrainerPoolListOS({
@@ -114,14 +112,14 @@ export default function TrainerPoolListOS({
       isActive: status === "ACTIVE",
     },
     {
-      label: "Lead specialist",
-      value: data?.summary.leads ?? 0,
+      label: "Senior pool",
+      value: data?.summary.senior ?? 0,
       icon: Crown,
       apply: () => {
-        setLevel((current) => (current === "LEAD" ? "" : "LEAD"));
+        setLevel((current) => (current === "SENIOR" ? "" : "SENIOR"));
         setPage(1);
       },
-      isActive: level === "LEAD",
+      isActive: level === "SENIOR",
     },
   ];
   const totalPage = data?.metapaging.total_page ?? 1;
@@ -223,36 +221,28 @@ export default function TrainerPoolListOS({
                   href={`/trainers/${trainer.id}`}
                   className="flex flex-col gap-4 rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      {trainer.avatar ? (
-                        <Image
-                          src={trainer.avatar}
-                          alt={trainer.full_name}
-                          width={40}
-                          height={40}
-                          className="size-10 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-claude text-white">
-                          <CircleUserRound size={22} fill="currentColor" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
-                          {trainer.full_name}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
-                          {trainer.email}
-                        </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {trainer.avatar ? (
+                      <Image
+                        src={trainer.avatar}
+                        alt={trainer.full_name}
+                        width={40}
+                        height={40}
+                        className="size-10 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-claude text-white">
+                        <CircleUserRound size={22} fill="currentColor" />
                       </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
+                        {trainer.full_name}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
+                        {trainer.email}
+                      </p>
                     </div>
-                    <p className="shrink-0 text-right text-sm font-semibold text-gray-700 dark:text-zinc-200">
-                      {trainer.average_rating?.toFixed(1) ?? "—"}
-                      <span className="block text-[10px] font-normal text-gray-400">
-                        rating
-                      </span>
-                    </p>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">

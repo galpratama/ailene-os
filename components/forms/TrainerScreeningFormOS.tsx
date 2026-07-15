@@ -29,7 +29,7 @@ const stepLabels: Record<TrainerScreeningStepEnum, string> = {
   REFERENCE_CHECK: "Reference check",
 };
 
-const CERTIFIED_BAR = 75;
+const SENIOR_BAR = 75;
 
 const stepStatusStyle: Record<
   TrainerScreeningStatusEnum,
@@ -121,8 +121,8 @@ function ScoreFormOS({
           Rubric score
         </h4>
         <p className="mt-0.5 text-xs text-gray-500">
-          Saving recalculates the total and applies the suggested initial level.
-          {" "}A total of {CERTIFIED_BAR}+ clears the bar for certified track.
+          Saving recalculates the total and applies the suggested level.
+          {" "}A total of {SENIOR_BAR}+ clears the bar for Senior.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -184,7 +184,7 @@ function ScoreFormOS({
                   (initial?.domain_credibility_score ?? 0) +
                   (initial?.communication_score ?? 0) +
                   (initial?.reliability_score ?? 0);
-              return total >= CERTIFIED_BAR ? (
+              return total >= SENIOR_BAR ? (
                 <span className="rounded-full bg-hijau-t px-2 py-0.5 text-[11px] font-bold text-hijau dark:bg-green-950/40 dark:text-green-300">
                   Clears the bar
                 </span>

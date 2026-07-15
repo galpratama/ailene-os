@@ -36,20 +36,6 @@ export const deleteTrainerPool = {
       return { code: STATUS_NO_CONTENT, message: "Assignment deleted" };
     }),
 
-  evaluation: administratorProcedure
-    .input(objectHasOnlyID())
-    .mutation(async ({ ctx, input }) => {
-      const deleted = await ctx.prisma.trainerEvaluation.deleteMany({
-        where: { id: input.id },
-      });
-      await checkDeleteResult(
-        deleted.count,
-        "trainer evaluations",
-        "trainerPool.evaluation"
-      );
-      return { code: STATUS_NO_CONTENT, message: "Evaluation deleted" };
-    }),
-
   specialization: administratorProcedure
     .input(objectHasOnlyID())
     .mutation(async ({ ctx, input }) => {

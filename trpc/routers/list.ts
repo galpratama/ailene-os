@@ -33,7 +33,6 @@ export const listRouter = createTRPCRouter({
     applicationOptions: listTrainerPool.applicationOptions,
     trainers: listTrainerPool.trainers,
     assignments: listTrainerPool.assignments,
-    evaluations: listTrainerPool.evaluations,
     specializations: listTrainerPool.specializations,
   },
 

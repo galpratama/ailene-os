@@ -79,10 +79,8 @@ enum B2BActionPriorityEnum {
 // Enumeration for the TrainerPool models (trainer_*, trnsc_*, trncert_*, trna_*)
 
 enum TrainerLevelEnum {
-  APPRENTICE @map("apprentice")
-  CERTIFIED  @map("certified")
-  SENIOR     @map("senior")
-  LEAD       @map("lead")
+  JUNIOR @map("junior")
+  SENIOR @map("senior")
 
   @@map("trainer_level_enum")
 }
@@ -162,15 +160,6 @@ enum TrainerAssignmentRoleEnum {
   SPECIALIST @map("specialist")
 
   @@map("trna_role_enum")
-}
-
-// Enumeration for the Trainer model (level override)
-
-enum TrainerLevelOverrideEnum {
-  JUNIOR @map("junior")
-  SENIOR @map("senior")
-
-  @@map("trainer_level_override_enum")
 }
 
 // Enumeration for the LMS tables (lms_*) — migrated from the Sevenpreneur
@@ -346,31 +335,29 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                          String                     @id @default(uuid()) @db.Uuid
-  full_name                   String                     @db.VarChar()
-  email                       String                     @unique @db.VarChar()
-  phone_country               PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id            Int?                       @db.SmallInt
-  phone_number                String?                    @db.VarChar()
-  avatar                      String?                    @db.VarChar()
-  role                        Role                       @relation(fields: [role_id], references: [id])
-  role_id                     Int                        @default(3) @db.SmallInt // General User
-  status                      StatusEnum                 @default(ACTIVE)
-  date_of_birth               DateTime?                  @db.Date
-  occupation                  OccupationEnum?
-  created_at                  DateTime                   @default(now()) @db.Timestamptz()
-  updated_at                  DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  last_login                  DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at                  DateTime?                  @db.Timestamptz()
-  tokens                      Token[]
-  b2b_pipelines               B2BPipeline[]
-  b2b_actions                 B2BAction[]
-  trainer_profile             Trainer?                   @relation("TrainerUser")
-  trainer_referrals           Trainer[]                  @relation("TrainerReferrer")
-  trainer_scores              TrainerScreeningScore[]    @relation("TrainerScreeningScorer")
-  trainer_certifications      TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
-  trainer_evaluations         TrainerEvaluation[]        @relation("TrainerEvaluationReviewer")
-  trainer_level_overrides_set Trainer[]                  @relation("TrainerLevelOverrideSetter")
+  id                     String                     @id @default(uuid()) @db.Uuid
+  full_name              String                     @db.VarChar()
+  email                  String                     @unique @db.VarChar()
+  phone_country          PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
+  phone_country_id       Int?                       @db.SmallInt
+  phone_number           String?                    @db.VarChar()
+  avatar                 String?                    @db.VarChar()
+  role                   Role                       @relation(fields: [role_id], references: [id])
+  role_id                Int                        @default(3) @db.SmallInt // General User
+  status                 StatusEnum                 @default(ACTIVE)
+  date_of_birth          DateTime?                  @db.Date
+  occupation             OccupationEnum?
+  created_at             DateTime                   @default(now()) @db.Timestamptz()
+  updated_at             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  last_login             DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at             DateTime?                  @db.Timestamptz()
+  tokens                 Token[]
+  b2b_pipelines          B2BPipeline[]
+  b2b_actions            B2BAction[]
+  trainer_profile        Trainer?                   @relation("TrainerUser")
+  trainer_referrals      Trainer[]                  @relation("TrainerReferrer")
+  trainer_scores         TrainerScreeningScore[]    @relation("TrainerScreeningScorer")
+  trainer_certifications TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
 
   @@map("users")
 }
@@ -446,30 +433,25 @@ model B2BAction {
 // Trainer Pool
 
 model Trainer {
-  id                    String                     @id @default(uuid()) @db.Uuid
-  source                TrainerSourceEnum?
-  level                 TrainerLevelEnum           @default(APPRENTICE)
-  status                TrainerStatusEnum          @default(CANDIDATE)
-  user                  User                       @relation("TrainerUser", fields: [user_id], references: [id])
-  user_id               String                     @unique @db.Uuid
-  referrer              User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
-  referred_by           String?                    @db.Uuid
-  notes                 String?                    @db.Text
-  ai_experience_years   Int                        @default(0) @db.SmallInt
-  level_override        TrainerLevelOverrideEnum?
-  level_override_setter User?                      @relation("TrainerLevelOverrideSetter", fields: [level_override_set_by], references: [id])
-  level_override_set_by String?                    @db.Uuid
-  level_override_set_at DateTime?                  @db.Timestamptz()
-  created_at            DateTime                   @default(now()) @db.Timestamptz()
-  updated_at            DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at            DateTime?                  @db.Timestamptz()
-  specializations       TrainerSpecializationMap[]
-  screening_steps       TrainerScreeningStep[]
-  screening_score       TrainerScreeningScore?
-  certification_steps   TrainerCertificationStep[]
-  availabilities        TrainerAvailability[]
-  assignments           TrainerAssignment[]
-  evaluations           TrainerEvaluation[]
+  id                  String                     @id @default(uuid()) @db.Uuid
+  source              TrainerSourceEnum?
+  level               TrainerLevelEnum           @default(JUNIOR)
+  status              TrainerStatusEnum          @default(CANDIDATE)
+  user                User                       @relation("TrainerUser", fields: [user_id], references: [id])
+  user_id             String                     @unique @db.Uuid
+  referrer            User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
+  referred_by         String?                    @db.Uuid
+  notes               String?                    @db.Text
+  ai_experience_years Int                        @default(0) @db.SmallInt
+  created_at          DateTime                   @default(now()) @db.Timestamptz()
+  updated_at          DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at          DateTime?                  @db.Timestamptz()
+  specializations     TrainerSpecializationMap[]
+  screening_steps     TrainerScreeningStep[]
+  screening_score     TrainerScreeningScore?
+  certification_steps TrainerCertificationStep[]
+  availabilities      TrainerAvailability[]
+  assignments         TrainerAssignment[]
 
   @@map("trainers")
 }
@@ -563,26 +545,8 @@ model TrainerAssignment {
   notes             String?                   @db.Text
   created_at        DateTime                  @default(now()) @db.Timestamptz()
   updated_at        DateTime                  @default(now()) @updatedAt @db.Timestamptz()
-  evaluations       TrainerEvaluation[]
 
   @@map("trainer_assignments")
-}
-
-model TrainerEvaluation {
-  id                     Int                @id @default(autoincrement())
-  assignment             TrainerAssignment? @relation(fields: [assignment_id], references: [id], onDelete: SetNull)
-  assignment_id          Int?
-  trainer                Trainer            @relation(fields: [trainer_id], references: [id])
-  trainer_id             String             @db.Uuid
-  participant_rating_avg Decimal?           @db.Decimal(2, 1)
-  self_report_submitted  Boolean            @default(false)
-  reviewer               User?              @relation("TrainerEvaluationReviewer", fields: [reviewed_by], references: [id])
-  reviewed_by            String?            @db.Uuid
-  review_notes           String?            @db.Text
-  evaluation_date        DateTime?          @db.Date
-  created_at             DateTime           @default(now()) @db.Timestamptz()
-
-  @@map("trainer_evaluations")
 }
 
 // LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*

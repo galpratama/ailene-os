@@ -5,10 +5,8 @@ const levelConfig: Record<
   TrainerLevelEnum,
   { label: string; variant: LabelVariant }
 > = {
-  APPRENTICE: { label: "Apprentice", variant: "gray" },
-  CERTIFIED: { label: "Certified Trainer", variant: "biru" },
-  SENIOR: { label: "Senior / Specialist", variant: "pink" },
-  LEAD: { label: "Lead Trainer", variant: "oranye" },
+  JUNIOR: { label: "Junior", variant: "gray" },
+  SENIOR: { label: "Senior", variant: "biru" },
 };
 
 export default function TrainerLevelLabel({

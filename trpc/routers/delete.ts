@@ -12,7 +12,6 @@ export const deleteRouter = createTRPCRouter({
   trainerPool: {
     trainer: deleteTrainerPool.trainer,
     assignment: deleteTrainerPool.assignment,
-    evaluation: deleteTrainerPool.evaluation,
     specialization: deleteTrainerPool.specialization,
   },
   lms: {
