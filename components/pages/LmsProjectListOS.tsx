@@ -2,7 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import CreateLmsProjectFormOS from "@/components/forms/CreateLmsProjectFormOS";
-import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { BookOpen, Layers, Plus } from "lucide-react";
 import Link from "next/link";
@@ -20,11 +20,6 @@ export default function LmsProjectListOS({
 
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  useHeaderAction({
-    label: "New Project",
-    icon: Plus,
-    onClick: () => setIsCreateOpen(true),
-  });
 
   const { data, isLoading, isError } = trpc.list.lms.projects.useQuery(
     { page: 1, page_size: 50 },
@@ -33,29 +28,27 @@ export default function LmsProjectListOS({
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-            LMS Projects
-          </h2>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-            Client training programs, each scoping its own groups and members.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <AppButton variant="outline" onClick={() => router.push("/lms/levels")}>
-            <Layers size={14} />
-            Manage Levels
-          </AppButton>
-          <AppButton
-            variant="outline"
-            onClick={() => router.push("/lms/chapters")}
-          >
-            <BookOpen size={14} />
-            Manage Chapters
-          </AppButton>
-        </div>
-      </div>
+      <PageHeaderOS
+        title="LMS Projects"
+        description="Client training programs, each scoping its own groups and members."
+        action={{
+          label: "New Project",
+          icon: Plus,
+          onClick: () => setIsCreateOpen(true),
+        }}
+      >
+        <AppButton variant="outline" onClick={() => router.push("/lms/levels")}>
+          <Layers size={14} />
+          Manage Levels
+        </AppButton>
+        <AppButton
+          variant="outline"
+          onClick={() => router.push("/lms/chapters")}
+        >
+          <BookOpen size={14} />
+          Manage Chapters
+        </AppButton>
+      </PageHeaderOS>
 
       {isLoading && (
         <p className="py-8 text-center text-sm text-gray-400">

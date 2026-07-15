@@ -1,6 +1,4 @@
-import PageActionOS from "@/components/navigations/PageActionOS";
 import SidebarOS from "@/components/navigations/SidebarOS";
-import { HeaderActionProvider } from "@/contexts/HeaderActionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { ThemeProvider } from "next-themes";
@@ -43,19 +41,16 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
-        <HeaderActionProvider>
-          <div
-            className={`flex h-screen overflow-hidden bg-os-gradient ${spaceGrotesk.className} ${jersey10.variable}`}
-          >
-            <SidebarOS sessionToken={sessionToken} />
-            <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
-              <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">
-                <PageActionOS />
-                {children}
-              </main>
-            </div>
+        <div
+          className={`flex h-screen overflow-hidden bg-os-gradient ${spaceGrotesk.className} ${jersey10.variable}`}
+        >
+          <SidebarOS sessionToken={sessionToken} />
+          <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
+            <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">
+              {children}
+            </main>
           </div>
-        </HeaderActionProvider>
+        </div>
       </SidebarProvider>
     </ThemeProvider>
   );

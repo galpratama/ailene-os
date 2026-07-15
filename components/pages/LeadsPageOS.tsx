@@ -3,7 +3,7 @@
 import AppInput from "@/components/fields/AppInput";
 import CreateLeadFormOS from "@/components/forms/CreateLeadFormOS";
 import StageLabel from "@/components/labels/StageLabel";
-import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
 import {
@@ -30,11 +30,6 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
   }, [sessionToken]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  useHeaderAction({
-    label: "Add Lead",
-    icon: Plus,
-    onClick: () => setIsCreateOpen(true),
-  });
 
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
@@ -59,12 +54,15 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 sm:px-8">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Leads · B2B</h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-          Track and manage every lead across the B2B sales pipeline
-        </p>
-      </div>
+      <PageHeaderOS
+        title="Leads · B2B"
+        description="Track and manage every lead across the B2B sales pipeline"
+        action={{
+          label: "Add Lead",
+          icon: Plus,
+          onClick: () => setIsCreateOpen(true),
+        }}
+      />
 
       {/* Scorecards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

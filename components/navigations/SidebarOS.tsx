@@ -46,8 +46,8 @@ function NavItem({
         collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
         active
-          ? "bg-sb-item-active-bg text-sb-item-active-text font-medium"
-          : "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong"
+          ? "bg-linear-to-r from-[rgba(37,99,235,0.16)] to-transparent dark:from-[rgba(96,165,250,0.16)] text-sb-item-active-text font-medium"
+          : "text-sb-text hover:bg-linear-to-r hover:from-[rgba(37,99,235,0.08)] hover:to-transparent dark:hover:from-[rgba(96,165,250,0.08)] hover:text-sb-text-strong"
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">

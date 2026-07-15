@@ -9,7 +9,7 @@ import CreateTrainerFormOS from "@/components/forms/CreateTrainerFormOS";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
-import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
   TrainerLevelEnum,
@@ -54,11 +54,6 @@ export default function TrainerPoolListOS({
   }, [sessionToken]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  useHeaderAction({
-    label: "Add Candidate",
-    icon: Plus,
-    onClick: () => setIsCreateOpen(true),
-  });
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<
@@ -133,14 +128,15 @@ export default function TrainerPoolListOS({
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-          Trainer Pool
-        </h2>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-          Recruit, certify, assign, and maintain trainer quality in one place.
-        </p>
-      </div>
+      <PageHeaderOS
+        title="Trainer Pool"
+        description="Recruit, certify, assign, and maintain trainer quality in one place."
+        action={{
+          label: "Add Candidate",
+          icon: Plus,
+          onClick: () => setIsCreateOpen(true),
+        }}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => {

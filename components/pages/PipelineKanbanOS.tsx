@@ -5,7 +5,7 @@ import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import PriorityLabel from "@/components/labels/PriorityLabel";
-import { useHeaderAction } from "@/contexts/HeaderActionContext";
+import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BActionStatusEnum } from "@prisma/client";
 import { CalendarClock, Plus, Users } from "lucide-react";
@@ -51,11 +51,6 @@ export default function PipelineKanbanOS({
 
   const [createStatus, setCreateStatus] = useState<B2BActionStatusEnum | null>(null);
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
-  useHeaderAction({
-    label: "Add Action",
-    icon: Plus,
-    onClick: () => setCreateStatus("TO_DO"),
-  });
 
   const utils = trpc.useUtils();
 
@@ -121,14 +116,15 @@ export default function PipelineKanbanOS({
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-          {pipeline ? `${pipeline.company_name} · ${pipeline.name}` : "Loading..."}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-          Track and move activities across the delivery workflow
-        </p>
-      </div>
+      <PageHeaderOS
+        title={pipeline ? `${pipeline.company_name} · ${pipeline.name}` : "Loading..."}
+        description="Track and move activities across the delivery workflow"
+        action={{
+          label: "Add Action",
+          icon: Plus,
+          onClick: () => setCreateStatus("TO_DO"),
+        }}
+      />
 
       {isError && (
         <p className="text-sm text-red-500 py-8 text-center">
