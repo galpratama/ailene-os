@@ -336,18 +336,28 @@ CREATE TABLE b2b_actions (
 -- Trainer Pool
 
 CREATE TABLE trainers (
-  id                     UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
-  source                 trainer_source_enum       NULL,
-  level                  trainer_level_enum    NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
-  stage                  trainer_stage_enum    NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
-  status                 trainer_status_enum   NOT NULL     DEFAULT 'active', -- simple on/off flag
-  user_id                UUID                  NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
-  referred_by            UUID                      NULL,
-  notes                  TEXT                      NULL,
-  ai_experience_years    SMALLINT              NOT NULL     DEFAULT 0,
-  created_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  updated_at             TIMESTAMPTZ           NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  deleted_at             TIMESTAMPTZ               NULL
+  id                         UUID                 PRIMARY KEY  DEFAULT gen_random_uuid(),
+  user_id                    UUID                 NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
+  source                     trainer_source_enum           NULL,
+  level                      trainer_level_enum   NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
+  stage                      trainer_stage_enum   NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
+  status                     trainer_status_enum  NOT NULL     DEFAULT 'active', -- simple on/off flag
+  referred_by                UUID                          NULL,
+  notes                      TEXT                          NULL,
+  ai_experience_years        SMALLINT             NOT NULL     DEFAULT 0,
+  -- Screening rubric score, folded onto the trainer instead of a separate
+  -- 1:1 table (same pattern as level/stage/status above).
+  ai_hands_on_score          SMALLINT             NOT NULL     DEFAULT 0,
+  facilitation_score         SMALLINT             NOT NULL     DEFAULT 0,
+  domain_credibility_score   SMALLINT             NOT NULL     DEFAULT 0,
+  communication_score        SMALLINT             NOT NULL     DEFAULT 0,
+  reliability_score          SMALLINT             NOT NULL     DEFAULT 0,
+  total_score                SMALLINT             NOT NULL     DEFAULT 0,
+  scored_by                  UUID                          NULL,
+  scored_at                  TIMESTAMPTZ                   NULL,
+  created_at                 TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at                 TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  deleted_at                 TIMESTAMPTZ                   NULL
 );
 
 CREATE TABLE trainer_specialization_map (
@@ -366,21 +376,6 @@ CREATE TABLE trainer_screening_steps (
   created_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (trainer_id, step)
-);
-
-CREATE TABLE trainer_screening_scores (
-  id                        SERIAL       PRIMARY KEY,
-  trainer_id                UUID         NOT NULL  UNIQUE,
-  ai_hands_on_score         SMALLINT     NOT NULL  DEFAULT 0,
-  facilitation_score        SMALLINT     NOT NULL  DEFAULT 0,
-  domain_credibility_score  SMALLINT     NOT NULL  DEFAULT 0,
-  communication_score       SMALLINT     NOT NULL  DEFAULT 0,
-  reliability_score         SMALLINT     NOT NULL  DEFAULT 0,
-  total_score               SMALLINT     NOT NULL  DEFAULT 0,
-  scored_by                 UUID             NULL,
-  scored_at                 TIMESTAMPTZ      NULL,
-  created_at                TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at                TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE trainer_certification_steps (
@@ -759,7 +754,8 @@ ALTER TABLE b2b_actions
 
 ALTER TABLE trainers
   ADD FOREIGN KEY (user_id)     REFERENCES users (id),
-  ADD FOREIGN KEY (referred_by) REFERENCES users (id);
+  ADD FOREIGN KEY (referred_by) REFERENCES users (id),
+  ADD FOREIGN KEY (scored_by)   REFERENCES users (id);
 
 ALTER TABLE trainer_specialization_map
   ADD FOREIGN KEY (trainer_id)        REFERENCES trainers (id)                ON DELETE CASCADE,
@@ -767,10 +763,6 @@ ALTER TABLE trainer_specialization_map
 
 ALTER TABLE trainer_screening_steps
   ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
-
-ALTER TABLE trainer_screening_scores
-  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (scored_by)  REFERENCES users (id);
 
 ALTER TABLE trainer_certification_steps
   ADD FOREIGN KEY (trainer_id)   REFERENCES trainers (id) ON DELETE CASCADE,
@@ -923,11 +915,6 @@ CREATE TRIGGER update_trainers_updated_at_trigger
 
 CREATE TRIGGER update_trainer_screening_steps_updated_at_trigger
   BEFORE UPDATE ON trainer_screening_steps
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER update_trainer_screening_scores_updated_at_trigger
-  BEFORE UPDATE ON trainer_screening_scores
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 

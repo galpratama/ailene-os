@@ -61,7 +61,7 @@ export default function TrainerScreeningOS({
       <TrainerScreeningFormOS
         trainerId={trainerId}
         steps={trainer.screening_steps}
-        score={trainer.screening_score}
+        score={trainer}
       />
     </div>
   );

@@ -35,26 +35,26 @@ async function recomputeAndPersistStage(
   tx: Prisma.TransactionClient,
   trainerId: string
 ) {
-  const [screeningSteps, screeningScore, certificationDecision] =
-    await Promise.all([
-      tx.trainerScreeningStep.findMany({
-        where: { trainer_id: trainerId },
-      }),
-      tx.trainerScreeningScore.findUnique({
-        where: { trainer_id: trainerId },
-      }),
-      tx.trainerCertificationStep.findUnique({
-        where: {
-          trainer_id_step: {
-            trainer_id: trainerId,
-            step: TrainerCertificationStepEnum.CERTIFICATION_DECISION,
-          },
+  const [screeningSteps, trainer, certificationDecision] = await Promise.all([
+    tx.trainerScreeningStep.findMany({
+      where: { trainer_id: trainerId },
+    }),
+    tx.trainer.findUniqueOrThrow({
+      where: { id: trainerId },
+      select: { total_score: true },
+    }),
+    tx.trainerCertificationStep.findUnique({
+      where: {
+        trainer_id_step: {
+          trainer_id: trainerId,
+          step: TrainerCertificationStepEnum.CERTIFICATION_DECISION,
         },
-      }),
-    ]);
+      },
+    }),
+  ]);
   const stage = deriveTrainerStage({
     screeningSteps,
-    screeningScoreTotal: screeningScore?.total_score ?? null,
+    screeningScoreTotal: trainer.total_score,
     certificationDecisionStatus: certificationDecision?.status ?? null,
   });
   await tx.trainer.update({ where: { id: trainerId }, data: { stage } });
@@ -170,15 +170,9 @@ export const updateTrainerPool = {
       const suggested_level = levelFromScore(total_score);
 
       await ctx.prisma.$transaction(async (tx) => {
-        await tx.trainerScreeningScore.upsert({
-          where: { trainer_id },
-          create: {
-            ...input,
-            total_score,
-            scored_by: ctx.user.id,
-            scored_at: new Date(),
-          },
-          update: {
+        await tx.trainer.update({
+          where: { id: trainer_id },
+          data: {
             ai_hands_on_score,
             facilitation_score,
             domain_credibility_score,
@@ -187,11 +181,8 @@ export const updateTrainerPool = {
             total_score,
             scored_by: ctx.user.id,
             scored_at: new Date(),
+            level: suggested_level,
           },
-        });
-        await tx.trainer.update({
-          where: { id: trainer_id },
-          data: { level: suggested_level },
         });
         await recomputeAndPersistStage(tx, trainer_id);
       });

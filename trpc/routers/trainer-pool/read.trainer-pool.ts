@@ -16,7 +16,6 @@ export const readTrainerPool = {
             include: { specialization: true },
           },
           screening_steps: { orderBy: { id: "asc" } },
-          screening_score: true,
           certification_steps: { orderBy: { id: "asc" } },
           availabilities: { orderBy: { period: "desc" } },
         },
