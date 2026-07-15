@@ -32,10 +32,6 @@ export const updateTrainerPool = {
     .input(
       z.object({
         id: stringIsUUID(),
-        full_name: stringNotBlank().optional(),
-        email: z.email().optional(),
-        phone_country_id: numberIsPosInt().nullable().optional(),
-        phone_number: optionalText,
         source: z.enum(TrainerSourceEnum).nullable().optional(),
         level: z.enum(TrainerLevelEnum).optional(),
         status: z.enum(TrainerStatusEnum).optional(),

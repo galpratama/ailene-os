@@ -10,7 +10,7 @@ export const readTrainerPool = {
       const trainer = await ctx.prisma.trainer.findFirst({
         where: { id: input.id, deleted_at: null },
         include: {
-          phone_country: true,
+          user: { include: { phone_country: true } },
           referrer: { select: { id: true, full_name: true } },
           level_override_setter: { select: { id: true, full_name: true } },
           specializations: {
@@ -29,6 +29,10 @@ export const readTrainerPool = {
         message: "Success",
         trainer: {
           ...trainer,
+          full_name: trainer.user.full_name,
+          email: trainer.user.email,
+          phone_number: trainer.user.phone_number,
+          phone_country: trainer.user.phone_country,
           specializations: trainer.specializations.map((entry) => ({
             id: entry.specialization.id,
             name: entry.specialization.specialization_name,

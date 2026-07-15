@@ -338,14 +338,10 @@ CREATE TABLE b2b_actions (
 
 CREATE TABLE trainers (
   id                     UUID                  PRIMARY KEY  DEFAULT gen_random_uuid(),
-  full_name              VARCHAR               NOT NULL,
-  email                  VARCHAR               NOT NULL     UNIQUE,
-  phone_country_id       SMALLINT                  NULL,
-  phone_number           VARCHAR                   NULL,
   source                 trainer_source_enum       NULL,
   level                  trainer_level_enum    NOT NULL     DEFAULT 'apprentice',
   status                 trainer_status_enum   NOT NULL     DEFAULT 'candidate',
-  user_id                UUID                      NULL,
+  user_id                UUID                  NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
   referred_by            UUID                      NULL,
   notes                  TEXT                      NULL,
   ai_experience_years    SMALLINT              NOT NULL     DEFAULT 0,
@@ -777,7 +773,6 @@ ALTER TABLE b2b_actions
 -- Trainer Pool
 
 ALTER TABLE trainers
-  ADD FOREIGN KEY (phone_country_id)      REFERENCES phone_country_codes (id),
   ADD FOREIGN KEY (user_id)               REFERENCES users (id),
   ADD FOREIGN KEY (referred_by)           REFERENCES users (id),
   ADD FOREIGN KEY (level_override_set_by) REFERENCES users (id);

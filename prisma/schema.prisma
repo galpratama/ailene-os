@@ -324,13 +324,12 @@ model Role {
 }
 
 model PhoneCountryCode {
-  id           Int       @id @default(autoincrement()) @db.SmallInt
-  country_name String    @db.VarChar()
-  phone_code   String    @unique @db.VarChar()
-  emoji        String    @db.VarChar()
-  icon         String?   @db.VarChar()
+  id           Int     @id @default(autoincrement()) @db.SmallInt
+  country_name String  @db.VarChar()
+  phone_code   String  @unique @db.VarChar()
+  emoji        String  @db.VarChar()
+  icon         String? @db.VarChar()
   users        User[]
-  trainers     Trainer[]
 
   @@map("phone_country_codes")
 }
@@ -366,7 +365,7 @@ model User {
   tokens                      Token[]
   b2b_pipelines               B2BPipeline[]
   b2b_actions                 B2BAction[]
-  trainer_profiles            Trainer[]                  @relation("TrainerUser")
+  trainer_profile             Trainer?                   @relation("TrainerUser")
   trainer_referrals           Trainer[]                  @relation("TrainerReferrer")
   trainer_scores              TrainerScreeningScore[]    @relation("TrainerScreeningScorer")
   trainer_certifications      TrainerCertificationStep[] @relation("TrainerCertificationEvaluator")
@@ -448,16 +447,11 @@ model B2BAction {
 
 model Trainer {
   id                    String                     @id @default(uuid()) @db.Uuid
-  full_name             String                     @db.VarChar()
-  email                 String                     @unique @db.VarChar()
-  phone_country         PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id      Int?                       @db.SmallInt
-  phone_number          String?                    @db.VarChar()
   source                TrainerSourceEnum?
   level                 TrainerLevelEnum           @default(APPRENTICE)
   status                TrainerStatusEnum          @default(CANDIDATE)
-  user                  User?                      @relation("TrainerUser", fields: [user_id], references: [id])
-  user_id               String?                    @db.Uuid
+  user                  User                       @relation("TrainerUser", fields: [user_id], references: [id])
+  user_id               String                     @unique @db.Uuid
   referrer              User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
   referred_by           String?                    @db.Uuid
   notes                 String?                    @db.Text

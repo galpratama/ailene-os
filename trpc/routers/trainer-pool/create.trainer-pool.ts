@@ -64,17 +64,46 @@ function duplicateCandidateError() {
   });
 }
 
+// The join-trainer input always overrides the user's identity fields —
+// re-applying (or an admin re-entering someone) refreshes their name/phone.
+async function upsertUserForTrainer(
+  prisma: Prisma.TransactionClient,
+  input: z.infer<typeof candidateInput>
+) {
+  const email = input.email.toLowerCase();
+  return prisma.user.upsert({
+    where: { email },
+    update: {
+      full_name: input.full_name,
+      phone_country_id: input.phone_country_id ?? null,
+      phone_number: input.phone_number ?? null,
+    },
+    create: {
+      full_name: input.full_name,
+      email,
+      phone_country_id: input.phone_country_id ?? null,
+      phone_number: input.phone_number ?? null,
+    },
+  });
+}
+
 async function createTrainer(
   prisma: Prisma.TransactionClient,
   input: z.infer<typeof candidateInput>,
   applicationReviewPassed: boolean
 ) {
+  const user = await upsertUserForTrainer(prisma, input);
+
+  const existing = await prisma.trainer.findFirst({
+    where: { user_id: user.id, deleted_at: null },
+  });
+  if (existing) {
+    throw duplicateCandidateError();
+  }
+
   return prisma.trainer.create({
     data: {
-      full_name: input.full_name,
-      email: input.email.toLowerCase(),
-      phone_country_id: input.phone_country_id ?? null,
-      phone_number: input.phone_number ?? null,
+      user_id: user.id,
       source: input.source ?? null,
       ai_experience_years: input.ai_experience_years,
       notes: buildApplicationNotes(input) || null,

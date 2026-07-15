@@ -61,15 +61,19 @@ export const listTrainerPool = {
         ...(input.keyword && {
           OR: [
             {
-              full_name: {
-                contains: input.keyword,
-                mode: "insensitive",
+              user: {
+                full_name: {
+                  contains: input.keyword,
+                  mode: "insensitive",
+                },
               },
             },
             {
-              email: {
-                contains: input.keyword,
-                mode: "insensitive",
+              user: {
+                email: {
+                  contains: input.keyword,
+                  mode: "insensitive",
+                },
               },
             },
           ],
@@ -90,6 +94,9 @@ export const listTrainerPool = {
       const trainers = await ctx.prisma.trainer.findMany({
         where,
         include: {
+          user: {
+            select: { full_name: true, email: true, phone_number: true },
+          },
           specializations: {
             include: { specialization: true },
           },
@@ -117,9 +124,9 @@ export const listTrainerPool = {
           );
           return {
             id: trainer.id,
-            full_name: trainer.full_name,
-            email: trainer.email,
-            phone_number: trainer.phone_number,
+            full_name: trainer.user.full_name,
+            email: trainer.user.email,
+            phone_number: trainer.user.phone_number,
             source: trainer.source,
             level: trainer.level,
             status: trainer.status,
@@ -182,7 +189,13 @@ export const listTrainerPool = {
       const list = await ctx.prisma.trainerAssignment.findMany({
         where,
         include: {
-          trainer: { select: { id: true, full_name: true, level: true } },
+          trainer: {
+            select: {
+              id: true,
+              level: true,
+              user: { select: { full_name: true } },
+            },
+          },
           pipeline: {
             select: {
               id: true,
@@ -201,7 +214,7 @@ export const listTrainerPool = {
         list: list.map((entry) => ({
           id: entry.id,
           trainer_id: entry.trainer.id,
-          trainer_name: entry.trainer.full_name,
+          trainer_name: entry.trainer.user.full_name,
           trainer_level: entry.trainer.level,
           pipeline_id: entry.pipeline.id,
           pipeline_name: entry.pipeline.name,
