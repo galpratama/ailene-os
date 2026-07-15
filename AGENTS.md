@@ -8,6 +8,7 @@ These are project-specific conventions. Follow them exactly — don't fall back 
 - The database is a **live shared Supabase Postgres instance** (see `DATABASE_URL`/`DIRECT_URL` in `.env` — it's a real `supabase.co` host, not a local Postgres). Treat migrations and any destructive query as production actions: confirm with the user before running `prisma migrate`, `prisma db push`, or raw `DROP`/`TRUNCATE`/`DELETE` without a `WHERE`.
 - **Never run `prisma migrate reset` or any destructive database commands without explicit user confirmation.** This will wipe all data from the database. Always check for backups and consider the impact before running such commands.
 - **Do not commit and push database migration files without user review and approval.** Especially avoid force pushes that could affect production data.
+- **Never commit and push directly to production branches without explicit user approval.** Always verify changes with the user before pushing to remote repositories, especially when database operations are involved.
 - Enums are named `<domain>_enum` in SQL (`b2b_stage_enum`) and `<Domain>Enum` in Prisma (`B2BStageEnum`); model field names stay `snake_case` even though Prisma otherwise camelCases relations. Keep this mapping consistent (`@map(...)` on every enum value and model).
 - Table names are prefixed by domain in SQL (`b2b_pipeline`, `b2b_actions`) via `@@map`. Don't rename a Prisma model without also fixing the `@@map`.
 
