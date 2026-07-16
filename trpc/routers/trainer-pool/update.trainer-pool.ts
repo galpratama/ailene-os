@@ -4,7 +4,7 @@ import { checkUpdateResult } from "@/trpc/utils/errors";
 import {
   numberIsNonNegInt,
   numberIsPosInt,
-  stringIsUUID,
+  stringIsNanoId,
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
@@ -53,7 +53,7 @@ export const updateTrainerPool = {
   trainer: administratorProcedure
     .input(
       z.object({
-        id: stringIsUUID(),
+        id: stringIsNanoId(),
         source: z.enum(TrainerSourceEnum).nullable().optional(),
         level: z.enum(TrainerLevelEnum).optional(),
         status: z.enum(TrainerStatusEnum).optional(),
@@ -88,7 +88,7 @@ export const updateTrainerPool = {
   screeningStep: administratorProcedure
     .input(
       z.object({
-        trainer_id: stringIsUUID(),
+        trainer_id: stringIsNanoId(),
         step: z.enum(SCREENING_STEP_KEYS),
         status: z.enum(TrainerScreeningStatusEnum),
       })
@@ -114,7 +114,7 @@ export const updateTrainerPool = {
   screeningScore: administratorProcedure
     .input(
       z.object({
-        trainer_id: stringIsUUID(),
+        trainer_id: stringIsNanoId(),
         ai_hands_on_score: z.int().min(0).max(100),
         facilitation_score: z.int().min(0).max(100),
         domain_credibility_score: z.int().min(0).max(100),
@@ -182,7 +182,7 @@ export const updateTrainerPool = {
   certificationStep: administratorProcedure
     .input(
       z.object({
-        trainer_id: stringIsUUID(),
+        trainer_id: stringIsNanoId(),
         step: z.enum(CERTIFICATION_STEP_KEYS),
         status: z.enum(TrainerCertificationStatusEnum),
       })

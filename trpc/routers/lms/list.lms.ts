@@ -154,6 +154,10 @@ export const listLms = {
           description: entry.description,
           session_date: entry.session_date,
           status: entry.status,
+          method: entry.method,
+          location_url: entry.location_url,
+          location_name: entry.location_name,
+          duration_minutes: entry.duration_minutes,
           level_id: entry.level.id,
           level_name: entry.level.name,
           level_number: entry.level.level_number,
@@ -206,6 +210,25 @@ export const listLms = {
         skip: paging.prisma.skip,
         take: paging.prisma.take,
       });
+
+      // Session number = this chapter's 1-indexed position among every
+      // chapter in the same project, ordered by session_date — answers
+      // "sesi ke berapa" regardless of which level it belongs to.
+      const projectIds = [...new Set(list.map((entry) => entry.level.project.id))];
+      const projectChapters = await ctx.prisma.lmsChapter.findMany({
+        where: { level: { project_id: { in: projectIds } } },
+        select: { id: true, level: { select: { project_id: true } } },
+        orderBy: [{ session_date: "asc" }, { id: "asc" }],
+      });
+      const sessionNumberByChapterId = new Map<number, number>();
+      const counterByProjectId = new Map<number, number>();
+      for (const chapter of projectChapters) {
+        const projectId = chapter.level.project_id;
+        const next = (counterByProjectId.get(projectId) ?? 0) + 1;
+        counterByProjectId.set(projectId, next);
+        sessionNumberByChapterId.set(chapter.id, next);
+      }
+
       return {
         code: STATUS_OK,
         message: "Success",
@@ -214,12 +237,16 @@ export const listLms = {
           name: entry.name,
           description: entry.description,
           session_date: entry.session_date,
+          method: entry.method,
+          location_url: entry.location_url,
+          location_name: entry.location_name,
           level_name: entry.level.name,
           level_number: entry.level.level_number,
           project_id: entry.level.project.id,
           project_name: entry.level.project.name,
           company_name: entry.level.project.company?.name ?? null,
           trainer_name: entry.trainer?.user.full_name ?? null,
+          session_number: sessionNumberByChapterId.get(entry.id) ?? null,
         })),
         metapaging: paging.metapaging,
       };

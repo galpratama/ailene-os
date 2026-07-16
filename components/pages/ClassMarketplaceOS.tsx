@@ -3,8 +3,17 @@
 import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { Building2, Calendar, Check, Loader2 } from "lucide-react";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+import { Building2, Calendar, Check, Loader2, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
+
+dayjs.locale("id");
+
+const methodLabel: Record<"ONLINE" | "OFFLINE", string> = {
+  ONLINE: "Online",
+  OFFLINE: "Offline",
+};
 
 export default function ClassMarketplaceOS({
   sessionToken,
@@ -72,29 +81,46 @@ export default function ClassMarketplaceOS({
           {data.list.map((chapter) => (
             <div
               key={chapter.id}
-              className="flex flex-col rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700"
+              className="flex h-full flex-col rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700"
             >
-              <span className="text-xs font-semibold text-claude">
-                L{chapter.level_number} · {chapter.level_name}
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-claude">
+                  Level {chapter.level_number} · {chapter.level_name}
+                </span>
+                {chapter.session_number != null && (
+                  <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">
+                    Sesi ke-{chapter.session_number}
+                  </span>
+                )}
+              </div>
               <h3 className="mt-1 font-bold text-gray-900 dark:text-zinc-100">
                 {chapter.name}
               </h3>
-              <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
-                <Building2 size={13} />
-                {chapter.project_name}
-                {chapter.company_name ? ` · ${chapter.company_name}` : ""}
-              </p>
+              {chapter.company_name && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                  <Building2 size={13} />
+                  {chapter.company_name}
+                </p>
+              )}
               <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
                 <Calendar size={13} />
-                {new Date(chapter.session_date).toLocaleDateString("en-GB")}
+                {dayjs(chapter.session_date).format("dddd, D MMMM YYYY")}
               </p>
+              <a
+                href={chapter.location_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-1.5 text-xs text-claude hover:underline"
+              >
+                <MapPin size={13} />
+                {methodLabel[chapter.method]} - {chapter.location_name}
+              </a>
               {chapter.description && (
                 <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-gray-500">
                   {chapter.description}
                 </p>
               )}
-              <div className="mt-4">
+              <div className="mt-auto pt-4">
                 {chapter.trainer_name ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                     <Check size={13} /> Trainer: {chapter.trainer_name}

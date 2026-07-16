@@ -165,6 +165,10 @@ export default function LmsProjectDetailOS({
                             description: chapter.description,
                             session_date: chapter.session_date,
                             status: chapter.status,
+                            method: chapter.method,
+                            location_url: chapter.location_url,
+                            location_name: chapter.location_name,
+                            duration_minutes: chapter.duration_minutes,
                           })
                         }
                       >

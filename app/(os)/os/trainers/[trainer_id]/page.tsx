@@ -9,7 +9,7 @@ export default async function Page({
   params: Promise<{ trainer_id: string }>;
 }) {
   const { trainer_id } = await params;
-  if (!/^[0-9a-f-]{32,}$/i.test(trainer_id)) notFound();
+  if (!/^[A-Za-z0-9_-]{21}$/.test(trainer_id)) notFound();
 
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";

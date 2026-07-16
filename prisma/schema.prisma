@@ -156,6 +156,13 @@ enum LmsChapterTrainerRequestStatusEnum {
   @@map("lms_chapter_trainer_request_status_enum")
 }
 
+enum LmsChapterMethodEnum {
+  ONLINE  @map("online")
+  OFFLINE @map("offline")
+
+  @@map("lms_chapter_method_enum")
+}
+
 enum LmsUseCaseFrequencyEnum {
   DAILY        @map("daily")
   WEEKLY       @map("weekly")
@@ -416,7 +423,7 @@ model B2BAction {
 // Trainer Pool
 
 model Trainer {
-  id                  String                     @id @default(uuid()) @db.Uuid
+  id                  String                     @id @default(nanoid()) @db.Char(21)
   source              TrainerSourceEnum?
   level               TrainerLevelEnum           @default(JUNIOR)
   stage               TrainerStageEnum           @default(CANDIDATE)
@@ -441,7 +448,7 @@ model Trainer {
 
 model TrainerSpecializationMap {
   trainer           Trainer               @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id        String                @db.Uuid
+  trainer_id        String                @db.Char(21)
   specialization    TrainerSpecialization @relation(fields: [specialization_id], references: [id], onDelete: Cascade)
   specialization_id Int                   @db.SmallInt
 
@@ -452,7 +459,7 @@ model TrainerSpecializationMap {
 model TrainerScreening {
   id                       Int                        @id @default(autoincrement())
   trainer                  Trainer                    @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id               String                     @unique @db.Uuid
+  trainer_id               String                     @unique @db.Char(21)
   application_review       TrainerScreeningStatusEnum @default(PENDING)
   interview                TrainerScreeningStatusEnum @default(PENDING)
   teaching_demo            TrainerScreeningStatusEnum @default(PENDING)
@@ -476,7 +483,7 @@ model TrainerScreening {
 model TrainerCertification {
   id                     Int                            @id @default(autoincrement())
   trainer                Trainer                        @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id             String                         @unique @db.Uuid
+  trainer_id             String                         @unique @db.Char(21)
   orientation            TrainerCertificationStatusEnum @default(NOT_STARTED)
   material_mastery       TrainerCertificationStatusEnum @default(NOT_STARTED)
   shadowing              TrainerCertificationStatusEnum @default(NOT_STARTED)
@@ -548,14 +555,15 @@ model LmsGroup {
 }
 
 model LmsProject {
-  id         Int         @id @default(autoincrement())
-  name       String      @db.VarChar()
-  company    B2BCompany? @relation(fields: [company_id], references: [id])
-  company_id Int?
-  created_at DateTime    @default(now()) @db.Timestamptz()
-  updated_at DateTime    @default(now()) @updatedAt @db.Timestamptz()
-  groups     LmsGroup[]
-  levels     LmsLevel[]
+  id           Int         @id @default(autoincrement())
+  name         String      @db.VarChar()
+  company      B2BCompany? @relation(fields: [company_id], references: [id])
+  company_id   Int?
+  attendee_pax Int?
+  created_at   DateTime    @default(now()) @db.Timestamptz()
+  updated_at   DateTime    @default(now()) @updatedAt @db.Timestamptz()
+  groups       LmsGroup[]
+  levels       LmsLevel[]
 
   @@map("lms_projects")
 }
@@ -600,7 +608,11 @@ model LmsChapter {
   session_date     DateTime                   @db.Timestamptz()
   status           StatusEnum                 @default(ACTIVE)
   trainer          Trainer?                   @relation(fields: [trainer_id], references: [id], onDelete: SetNull)
-  trainer_id       String?                    @db.Uuid
+  trainer_id       String?                    @db.Char(21)
+  method           LmsChapterMethodEnum       @default(OFFLINE)
+  location_url     String                     @db.VarChar()
+  location_name    String                     @db.VarChar()
+  duration_minutes Int
   created_at       DateTime                   @default(now()) @db.Timestamptz()
   updated_at       DateTime                   @default(now()) @updatedAt @db.Timestamptz()
   quizzes          LmsQuiz[]
@@ -619,7 +631,7 @@ model LmsChapterTrainerRequest {
   chapter     LmsChapter                         @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
   chapter_id  Int
   trainer     Trainer                            @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id  String                             @db.Uuid
+  trainer_id  String                             @db.Char(21)
   status      LmsChapterTrainerRequestStatusEnum @default(PENDING)
   reviewer    User?                              @relation("LmsChapterTrainerRequestReviewer", fields: [reviewed_by], references: [id])
   reviewed_by String?                            @db.Uuid

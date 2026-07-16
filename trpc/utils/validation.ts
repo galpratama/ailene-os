@@ -19,6 +19,14 @@ export function stringIsUUID(): z.ZodString {
 }
 
 /**
+ * nanoid() default output: 21 chars, URL-safe alphabet (A-Za-z0-9_-).
+ * Used for Trainer.id, which is a nanoid rather than a UUID.
+ */
+export function stringIsNanoId(): z.ZodString {
+  return z.string().trim().length(21);
+}
+
+/**
  * Number should be an integer, 1 or bigger
  */
 export function numberIsID(): z.ZodInt {
@@ -27,8 +35,6 @@ export function numberIsID(): z.ZodInt {
 
 /**
  * Number should be an integer, 0 or bigger
- *
- * Administrator role has ID 0.
  */
 export function numberIsRoleID(): z.ZodInt {
   return z.int().min(0);
@@ -60,4 +66,11 @@ export function objectHasOnlyID() {
  */
 export function objectHasOnlyUUID() {
   return z.object({ id: z.uuid() });
+}
+
+/**
+ * Object only has one property `id` which is a nanoid (see stringIsNanoId)
+ */
+export function objectHasOnlyNanoId() {
+  return z.object({ id: stringIsNanoId() });
 }

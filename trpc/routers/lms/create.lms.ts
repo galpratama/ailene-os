@@ -4,10 +4,11 @@ import { readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsNonNegInt,
-  stringIsUUID,
+  numberIsPosInt,
+  stringIsNanoId,
   stringNotBlank,
 } from "@/trpc/utils/validation";
-import { Prisma, StatusEnum } from "@prisma/client";
+import { LmsChapterMethodEnum, Prisma, StatusEnum } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { assertTrainerCanRequestChapter } from "../trainer-pool/trainer-pool.shared";
@@ -20,11 +21,16 @@ export const createLms = {
       z.object({
         name: stringNotBlank(),
         company_id: numberIsID().nullable().optional(),
+        attendee_pax: numberIsPosInt().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const created = await ctx.prisma.lmsProject.create({
-        data: { name: input.name, company_id: input.company_id ?? null },
+        data: {
+          name: input.name,
+          company_id: input.company_id ?? null,
+          attendee_pax: input.attendee_pax ?? null,
+        },
       });
       return { code: STATUS_CREATED, message: "Project created", id: created.id };
     }),
@@ -62,7 +68,11 @@ export const createLms = {
         description: optionalText,
         session_date: z.iso.date(),
         status: z.enum(StatusEnum).optional(),
-        trainer_id: stringIsUUID().nullable().optional(),
+        trainer_id: stringIsNanoId().nullable().optional(),
+        method: z.enum(LmsChapterMethodEnum).optional(),
+        location_url: stringNotBlank(),
+        location_name: stringNotBlank(),
+        duration_minutes: numberIsPosInt(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -74,6 +84,10 @@ export const createLms = {
           session_date: new Date(input.session_date),
           status: input.status,
           trainer_id: input.trainer_id ?? null,
+          method: input.method,
+          location_url: input.location_url,
+          location_name: input.location_name,
+          duration_minutes: input.duration_minutes,
         },
       });
       return { code: STATUS_CREATED, message: "Chapter created", id: created.id };

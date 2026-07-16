@@ -20,6 +20,7 @@ export default function CreateLmsProjectFormOS({
   const utils = trpc.useUtils();
   const [name, setName] = useState("");
   const [companyId, setCompanyId] = useState<number | null>(null);
+  const [attendeePax, setAttendeePax] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const { data: companyData } = trpc.list.b2b.companies.useQuery(
@@ -35,6 +36,7 @@ export default function CreateLmsProjectFormOS({
   function close() {
     setName("");
     setCompanyId(null);
+    setAttendeePax("");
     setError(null);
     onClose();
   }
@@ -52,7 +54,11 @@ export default function CreateLmsProjectFormOS({
     if (!name.trim()) {
       return setError("Project name is required.");
     }
-    mutation.mutate({ name: name.trim(), company_id: companyId });
+    mutation.mutate({
+      name: name.trim(),
+      company_id: companyId,
+      attendee_pax: attendeePax.trim() ? Number(attendeePax) : null,
+    });
   }
 
   return (
@@ -83,6 +89,14 @@ export default function CreateLmsProjectFormOS({
             value={companyId}
             options={companyOptions}
             onChange={(value) => setCompanyId(value as number | null)}
+          />
+          <AppInput
+            inputId="lms-project-attendee-pax"
+            label="Attendee Pax"
+            type="number"
+            min={1}
+            value={attendeePax}
+            onChange={(event) => setAttendeePax(event.target.value)}
           />
         </div>
         <div className="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-zinc-800">

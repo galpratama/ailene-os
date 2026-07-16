@@ -4,10 +4,15 @@ import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsNonNegInt,
-  stringIsUUID,
+  numberIsPosInt,
+  stringIsNanoId,
   stringNotBlank,
 } from "@/trpc/utils/validation";
-import { LmsChapterTrainerRequestStatusEnum, StatusEnum } from "@prisma/client";
+import {
+  LmsChapterMethodEnum,
+  LmsChapterTrainerRequestStatusEnum,
+  StatusEnum,
+} from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
@@ -20,6 +25,7 @@ export const updateLms = {
         id: numberIsID(),
         name: stringNotBlank().optional(),
         company_id: numberIsID().nullable().optional(),
+        attendee_pax: numberIsPosInt().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -63,7 +69,11 @@ export const updateLms = {
         description: optionalText,
         session_date: z.iso.date().optional(),
         status: z.enum(StatusEnum).optional(),
-        trainer_id: stringIsUUID().nullable().optional(),
+        trainer_id: stringIsNanoId().nullable().optional(),
+        method: z.enum(LmsChapterMethodEnum).optional(),
+        location_url: stringNotBlank().optional(),
+        location_name: stringNotBlank().optional(),
+        duration_minutes: numberIsPosInt().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

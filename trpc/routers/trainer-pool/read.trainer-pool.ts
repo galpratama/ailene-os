@@ -1,7 +1,7 @@
 import { STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { readFailedNotFound } from "@/trpc/utils/errors";
-import { objectHasOnlyUUID } from "@/trpc/utils/validation";
+import { objectHasOnlyNanoId } from "@/trpc/utils/validation";
 import { TrainerCertificationStatusEnum, TrainerScreeningStatusEnum } from "@prisma/client";
 import {
   CERTIFICATION_STEP_KEY_TO_COLUMN,
@@ -13,7 +13,7 @@ import {
 
 export const readTrainerPool = {
   trainer: administratorProcedure
-    .input(objectHasOnlyUUID())
+    .input(objectHasOnlyNanoId())
     .query(async ({ ctx, input }) => {
       const trainer = await ctx.prisma.trainer.findFirst({
         where: { id: input.id, deleted_at: null },

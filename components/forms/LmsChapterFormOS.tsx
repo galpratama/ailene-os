@@ -8,13 +8,18 @@ import AppSelect, {
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
-import type { StatusEnum } from "@prisma/client";
+import type { LmsChapterMethodEnum, StatusEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 const statusOptions: AppSelectOption[] = [
   { value: "ACTIVE", label: "Active" },
   { value: "INACTIVE", label: "Inactive" },
+];
+
+const methodOptions: AppSelectOption[] = [
+  { value: "ONLINE", label: "Online" },
+  { value: "OFFLINE", label: "Offline" },
 ];
 
 export type LmsChapterEditing = {
@@ -24,6 +29,10 @@ export type LmsChapterEditing = {
   description: string | null;
   session_date: string | Date;
   status: StatusEnum;
+  method: LmsChapterMethodEnum;
+  location_url: string;
+  location_name: string;
+  duration_minutes: number;
 };
 
 function toDateInputValue(value: string | Date) {
@@ -48,6 +57,10 @@ export default function LmsChapterFormOS({
   const [description, setDescription] = useState("");
   const [sessionDate, setSessionDate] = useState("");
   const [status, setStatus] = useState<StatusEnum>("ACTIVE");
+  const [method, setMethod] = useState<LmsChapterMethodEnum>("OFFLINE");
+  const [locationUrl, setLocationUrl] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const { data: levelData } = trpc.list.lms.levels.useQuery(
@@ -68,12 +81,20 @@ export default function LmsChapterFormOS({
       setDescription(editing.description ?? "");
       setSessionDate(toDateInputValue(editing.session_date));
       setStatus(editing.status);
+      setMethod(editing.method);
+      setLocationUrl(editing.location_url);
+      setLocationName(editing.location_name);
+      setDurationMinutes(String(editing.duration_minutes));
     } else {
       setLevelId(null);
       setName("");
       setDescription("");
       setSessionDate("");
       setStatus("ACTIVE");
+      setMethod("OFFLINE");
+      setLocationUrl("");
+      setLocationName("");
+      setDurationMinutes("");
     }
     setError(null);
   }, [isOpen, editing]);
@@ -96,9 +117,19 @@ export default function LmsChapterFormOS({
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!levelId || !name.trim() || !sessionDate) {
-      return setError("Level, name, and session date are required.");
+    if (
+      !levelId ||
+      !name.trim() ||
+      !sessionDate ||
+      !locationUrl.trim() ||
+      !locationName.trim() ||
+      !durationMinutes.trim()
+    ) {
+      return setError(
+        "Level, name, session date, location URL, location name, and duration are required."
+      );
     }
+    const duration_minutes = Number(durationMinutes);
     if (editing) {
       updateMutation.mutate({
         id: editing.id,
@@ -107,6 +138,10 @@ export default function LmsChapterFormOS({
         description: description.trim() || null,
         session_date: sessionDate,
         status,
+        method,
+        location_url: locationUrl.trim(),
+        location_name: locationName.trim(),
+        duration_minutes,
       });
     } else {
       createMutation.mutate({
@@ -115,6 +150,10 @@ export default function LmsChapterFormOS({
         description: description.trim() || null,
         session_date: sessionDate,
         status,
+        method,
+        location_url: locationUrl.trim(),
+        location_name: locationName.trim(),
+        duration_minutes,
       });
     }
   }
@@ -177,6 +216,42 @@ export default function LmsChapterFormOS({
             value={status}
             options={statusOptions}
             onChange={(value) => setStatus((value as StatusEnum) ?? "ACTIVE")}
+          />
+          <AppSelect
+            selectId="lms-chapter-method"
+            label="Method"
+            required
+            placeholder="Select method"
+            value={method}
+            options={methodOptions}
+            onChange={(value) =>
+              setMethod((value as LmsChapterMethodEnum) ?? "OFFLINE")
+            }
+          />
+          <AppInput
+            inputId="lms-chapter-location-url"
+            label="Location URL"
+            required
+            placeholder="Zoom link, Google Maps link, etc."
+            value={locationUrl}
+            onChange={(event) => setLocationUrl(event.target.value)}
+          />
+          <AppInput
+            inputId="lms-chapter-location-name"
+            label="Location Name"
+            required
+            placeholder="e.g. Meeting Room 3, Zoom"
+            value={locationName}
+            onChange={(event) => setLocationName(event.target.value)}
+          />
+          <AppInput
+            inputId="lms-chapter-duration-minutes"
+            label="Duration (minutes)"
+            type="number"
+            required
+            min={1}
+            value={durationMinutes}
+            onChange={(event) => setDurationMinutes(event.target.value)}
           />
         </div>
         <div className="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-zinc-800">

@@ -3,13 +3,13 @@ import { administratorProcedure } from "@/trpc/init";
 import { checkDeleteResult, checkUpdateResult } from "@/trpc/utils/errors";
 import {
   objectHasOnlyID,
-  objectHasOnlyUUID,
+  objectHasOnlyNanoId,
 } from "@/trpc/utils/validation";
 import { TrainerStatusEnum } from "@prisma/client";
 
 export const deleteTrainerPool = {
   trainer: administratorProcedure
-    .input(objectHasOnlyUUID())
+    .input(objectHasOnlyNanoId())
     .mutation(async ({ ctx, input }) => {
       const archived = await ctx.prisma.trainer.updateMany({
         where: { id: input.id, deleted_at: null },
