@@ -52,7 +52,10 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     string | undefined
   >(undefined);
   const [assigneeFilter, setAssigneeFilter] = useState("");
-  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [pipelineFilter, setPipelineFilter] = useState<number | null>(null);
+  const [createStatus, setCreateStatus] = useState<B2BActionStatusEnum | null>(
+    null
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -66,6 +69,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       page_size: 500,
       keyword: debouncedKeyword,
       assignee_id: assigneeFilter || undefined,
+      pipeline_id: pipelineFilter ?? undefined,
     },
     { enabled: !!sessionToken }
   );
@@ -77,6 +81,18 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   const assigneeOptions: AppSelectOption[] = [
     { value: "", label: "All PICs" },
     ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+  ];
+
+  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: !!sessionToken }
+  );
+  const pipelineOptions: AppSelectOption[] = [
+    { value: null, label: "All Pipelines" },
+    ...(pipelineData?.list.map((p) => ({
+      value: p.id,
+      label: `${p.company_name} - ${p.name}`,
+    })) ?? []),
   ];
 
   const updateAction = trpc.update.b2b.action.useMutation();
@@ -132,7 +148,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
             Every action across every client, in one board
           </p>
         </div>
-        <AppButton size="sm" onClick={() => setCreateTaskOpen(true)}>
+        <AppButton size="sm" onClick={() => setCreateStatus("TO_DO")}>
           <Plus size={14} />
           Create New Task
         </AppButton>
@@ -154,6 +170,15 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
             value={assigneeFilter}
             options={assigneeOptions}
             onChange={(value) => setAssigneeFilter((value as string) ?? "")}
+          />
+        </div>
+        <div className="w-full max-w-70">
+          <AppSelect
+            selectId="tasks-pipeline-filter"
+            placeholder="All Pipelines"
+            value={pipelineFilter}
+            options={pipelineOptions}
+            onChange={(value) => setPipelineFilter(value as number | null)}
           />
         </div>
       </div>
@@ -257,6 +282,17 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                     <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">No tasks</p>
                   )}
                 </div>
+
+                <AppButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 w-full justify-start hover:bg-white dark:hover:bg-zinc-800"
+                  onClick={() => setCreateStatus(col.value)}
+                >
+                  <Plus size={13} />
+                  Add task
+                </AppButton>
               </div>
             );
           })}
@@ -272,8 +308,9 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
       <CreateActionFormOS
         sessionToken={sessionToken}
-        isOpen={createTaskOpen}
-        onClose={() => setCreateTaskOpen(false)}
+        isOpen={createStatus !== null}
+        defaultStatus={createStatus ?? "TO_DO"}
+        onClose={() => setCreateStatus(null)}
       />
     </div>
   );

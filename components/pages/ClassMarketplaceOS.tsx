@@ -5,7 +5,7 @@ import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
-import { Building2, Calendar, Check, Loader2, MapPin } from "lucide-react";
+import { Building2, Calendar, Check, Loader2, MapPin, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 dayjs.locale("id");
@@ -115,6 +115,12 @@ export default function ClassMarketplaceOS({
                 <MapPin size={13} />
                 {methodLabel[chapter.method]} - {chapter.location_name}
               </a>
+              {chapter.attendee_pax != null && (
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                  <Users size={13} />
+                  {chapter.attendee_pax} attendees
+                </p>
+              )}
               {chapter.description && (
                 <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-gray-500">
                   {chapter.description}

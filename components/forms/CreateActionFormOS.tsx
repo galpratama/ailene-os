@@ -106,7 +106,6 @@ export default function CreateActionFormOS({
 
   const createAction = trpc.create.b2b.action.useMutation({
     onSuccess: () => {
-      utils.list.b2b.actions.invalidate();
       utils.list.b2b.allActions.invalidate();
       handleClose();
     },

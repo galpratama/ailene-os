@@ -110,10 +110,11 @@ export default function HomeActivityOS({
         <div className="flex flex-col divide-y divide-gray-200 dark:divide-zinc-800">
           {activity.map((entry) => {
             const config = activityConfig[entry.type];
+            const href = entry.type.startsWith("action_") ? "/tasks" : "/leads";
             return (
               <Link
                 key={entry.id}
-                href={`/leads/${entry.pipeline_id}`}
+                href={href}
                 className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0"
               >
                 <span

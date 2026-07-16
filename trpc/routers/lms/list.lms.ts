@@ -61,6 +61,7 @@ export const listLms = {
           company_id: entry.company?.id ?? null,
           company_name: entry.company?.name ?? null,
           company_image_url: entry.company?.image_url ?? null,
+          attendee_pax: entry.attendee_pax,
           group_count: entry._count.groups,
           session_count: sessionCountByProject.get(entry.id) ?? 0,
           created_at: entry.created_at,
@@ -199,6 +200,7 @@ export const listLms = {
                 select: {
                   id: true,
                   name: true,
+                  attendee_pax: true,
                   company: { select: { name: true } },
                 },
               },
@@ -244,6 +246,7 @@ export const listLms = {
           level_number: entry.level.level_number,
           project_id: entry.level.project.id,
           project_name: entry.level.project.name,
+          attendee_pax: entry.level.project.attendee_pax,
           company_name: entry.level.project.company?.name ?? null,
           trainer_name: entry.trainer?.user.full_name ?? null,
           session_number: sessionNumberByChapterId.get(entry.id) ?? null,

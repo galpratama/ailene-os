@@ -85,7 +85,6 @@ export default function EditActionFormOS({
 
   const updateAction = trpc.update.b2b.action.useMutation({
     onSuccess: () => {
-      utils.list.b2b.actions.invalidate();
       utils.list.b2b.allActions.invalidate();
       handleClose();
     },

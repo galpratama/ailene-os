@@ -172,7 +172,10 @@ export const listB2B = {
           include: {
             owner: { select: { id: true, full_name: true, avatar: true } },
             company: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                image_url: true,
                 industry: { select: { id: true, industry_name: true } },
               },
             },
@@ -197,6 +200,7 @@ export const listB2B = {
         name: entry.name,
         company_id: entry.company.id,
         company_name: entry.company.name,
+        company_image_url: entry.company.image_url,
         industry_id: entry.company.industry.id,
         industry_name: entry.company.industry.industry_name,
         stage: entry.stage,
@@ -242,60 +246,8 @@ export const listB2B = {
       };
     }),
 
-  actions: administratorProcedure
-    .input(
-      z.object({
-        pipeline_id: numberIsID(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const whereClause = {
-        pipeline_id: opts.input.pipeline_id,
-      };
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.b2BAction.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const actionList = await opts.ctx.prisma.b2BAction.findMany({
-        include: {
-          assignee: { select: { id: true, full_name: true, avatar: true } },
-        },
-        orderBy: [{ created_at: "asc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: actionList.map((entry) => ({
-          id: entry.id,
-          pipeline_id: entry.pipeline_id,
-          name: entry.name,
-          summary: entry.summary,
-          status: entry.status,
-          priority: entry.priority,
-          due_date: entry.due_date,
-          assignee_id: entry.assignee_id,
-          assignee_name: entry.assignee?.full_name ?? null,
-          assignee_avatar: entry.assignee?.avatar ?? null,
-          created_at: entry.created_at,
-          updated_at: entry.updated_at,
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  // Same b2b_actions data as `actions`, but across every pipeline/company
-  // instead of one — for the global Tasks board.
+  // Same b2b_actions data as a single pipeline's actions would be, but
+  // across every pipeline/company at once — for the global Tasks board.
   allActions: administratorProcedure
     .input(
       z.object({
@@ -303,6 +255,7 @@ export const listB2B = {
         status: z.enum(B2BActionStatusEnum).optional(),
         assignee_id: stringIsUUID().optional(),
         company_id: numberIsID().optional(),
+        pipeline_id: numberIsID().optional(),
         page: numberIsPosInt().optional(),
         page_size: numberIsPosInt().optional(),
       })
@@ -311,6 +264,7 @@ export const listB2B = {
       const whereClause: Prisma.B2BActionWhereInput = {
         status: opts.input.status,
         assignee_id: opts.input.assignee_id,
+        pipeline_id: opts.input.pipeline_id,
         pipeline: opts.input.company_id
           ? { company_id: opts.input.company_id }
           : undefined,

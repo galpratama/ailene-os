@@ -3,7 +3,7 @@
 import CreateLmsProjectFormOS from "@/components/forms/CreateLmsProjectFormOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { Building2, Calendar, Plus } from "lucide-react";
+import { Building2, Calendar, Plus, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -79,6 +79,12 @@ export default function LmsProjectListOS({
                   {entry.session_count}{" "}
                   {entry.session_count === 1 ? "session" : "sessions"}
                 </p>
+                {entry.attendee_pax != null && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+                    <Users size={13} />
+                    {entry.attendee_pax} attendees
+                  </p>
+                )}
               </div>
             </Link>
           ))}

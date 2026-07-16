@@ -21,7 +21,6 @@ export const listRouter = createTRPCRouter({
   b2b: {
     companies: listB2B.companies,
     pipelines: listB2B.pipelines,
-    actions: listB2B.actions,
     allActions: listB2B.allActions,
     calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,

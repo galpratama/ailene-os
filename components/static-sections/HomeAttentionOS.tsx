@@ -89,7 +89,7 @@ function AttentionGroup({
 function ActionRow({ action }: { action: AttentionAction }) {
   return (
     <Link
-      href={`/leads/${action.pipeline_id}`}
+      href="/tasks"
       className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
     >
       <div className="min-w-0">
@@ -204,7 +204,7 @@ export default function HomeAttentionOS({
             {attention.stale_leads.map((lead) => (
               <Link
                 key={lead.id}
-                href={`/leads/${lead.id}`}
+                href="/leads"
                 className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
               >
                 <div className="min-w-0">
