@@ -2,7 +2,6 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppTextArea from "@/components/fields/AppTextArea";
-import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
 import Label, { type LabelVariant } from "@/components/labels/Label";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
@@ -14,7 +13,6 @@ import type {
 import {
   ArrowRight,
   Award,
-  CalendarPlus,
   Check,
   CircleUserRound,
   Mail,
@@ -25,7 +23,6 @@ import {
   UserPlus,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -204,15 +201,10 @@ export default function TrainerDetailOS({
   }, [sessionToken]);
 
   const utils = trpc.useUtils();
-  const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
   const { data, isLoading, isError } = trpc.read.trainerPool.trainer.useQuery(
     { id: trainerId },
-    { enabled: !!sessionToken }
-  );
-  const { data: assignmentData } = trpc.list.trainerPool.assignments.useQuery(
-    { trainer_id: trainerId, page: 1, page_size: 200 },
     { enabled: !!sessionToken }
   );
   const trainer = data?.trainer;
@@ -253,15 +245,9 @@ export default function TrainerDetailOS({
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100">
-          Trainer Profile
-        </h2>
-        <AppButton size="sm" onClick={() => setAssignmentOpen(true)}>
-          <CalendarPlus size={14} />
-          Assign to Project
-        </AppButton>
-      </div>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-zinc-100">
+        Trainer Profile
+      </h2>
 
       <section className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex flex-wrap gap-4">
@@ -456,58 +442,6 @@ export default function TrainerDetailOS({
         }))}
       />
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Assignments
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Client projects this trainer supports.
-            </p>
-          </div>
-          <AppButton size="sm" onClick={() => setAssignmentOpen(true)}>
-            <Plus size={13} /> Assign
-          </AppButton>
-        </div>
-        <div className="mt-4 divide-y divide-gray-200 dark:divide-zinc-800">
-          {assignmentData?.list.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
-            >
-              <div>
-                <Link
-                  href={`/leads/${entry.pipeline_id}`}
-                  className="font-semibold text-gray-900 hover:text-claude dark:text-zinc-100"
-                >
-                  {entry.company_name} · {entry.pipeline_name}
-                </Link>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  {entry.role.toLowerCase().replaceAll("_", " ")}
-                  {entry.participant_count
-                    ? ` · ${entry.participant_count} participants`
-                    : ""}
-                </p>
-              </div>
-              <span className="text-xs text-gray-500">
-                {entry.session_date
-                  ? new Date(entry.session_date).toLocaleDateString("en-GB")
-                  : "Date TBD"}
-              </span>
-            </div>
-          ))}
-          {!assignmentData?.list.length && (
-            <p className="py-5 text-sm text-gray-400">No assignments yet.</p>
-          )}
-        </div>
-      </section>
-
-      <CreateTrainerAssignmentFormOS
-        trainerId={trainerId}
-        isOpen={assignmentOpen}
-        onClose={() => setAssignmentOpen(false)}
-      />
     </div>
   );
 }

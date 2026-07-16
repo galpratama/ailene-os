@@ -135,15 +135,6 @@ enum TrainerCertificationStatusEnum {
   @@map("trncert_status_enum")
 }
 
-enum TrainerAssignmentRoleEnum {
-  LEAD       @map("lead")
-  ASSISTANT  @map("assistant")
-  CO_TRAINER @map("co_trainer")
-  SPECIALIST @map("specialist")
-
-  @@map("trna_role_enum")
-}
-
 // Enumeration for the LMS tables (lms_*) — migrated from the Sevenpreneur
 // AI-LMS database's ail_* schema (docs/db/ailene-ddl.sql in that repo).
 
@@ -153,6 +144,16 @@ enum LmsRoleEnum {
   SPONSOR  @map("sponsor")
 
   @@map("lms_role_enum")
+}
+
+// A chapter has exactly one trainer (LmsChapter.trainer_id); this tracks
+// eligible trainers requesting that slot until an admin selects one.
+enum LmsChapterTrainerRequestStatusEnum {
+  PENDING  @map("pending")
+  SELECTED @map("selected")
+  REJECTED @map("rejected")
+
+  @@map("lms_chapter_trainer_request_status_enum")
 }
 
 enum LmsUseCaseFrequencyEnum {
@@ -317,28 +318,29 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                String             @id @default(uuid()) @db.Uuid
-  full_name         String             @db.VarChar()
-  email             String             @unique @db.VarChar()
-  phone_country     PhoneCountryCode?  @relation(fields: [phone_country_id], references: [id])
-  phone_country_id  Int?               @db.SmallInt
-  phone_number      String?            @db.VarChar()
-  avatar            String?            @db.VarChar()
-  role              Role               @relation(fields: [role_id], references: [id])
-  role_id           Int                @default(3) @db.SmallInt // General User
-  status            StatusEnum         @default(ACTIVE)
-  date_of_birth     DateTime?          @db.Date
-  occupation        OccupationEnum?
-  created_at        DateTime           @default(now()) @db.Timestamptz()
-  updated_at        DateTime           @default(now()) @updatedAt @db.Timestamptz()
-  last_login        DateTime           @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at        DateTime?          @db.Timestamptz()
-  tokens            Token[]
-  b2b_pipelines     B2BPipeline[]
-  b2b_actions       B2BAction[]
-  trainer_profile   Trainer?           @relation("TrainerUser")
-  trainer_referrals Trainer[]          @relation("TrainerReferrer")
-  trainer_scores    TrainerScreening[] @relation("TrainerScreeningScorer")
+  id                              String                     @id @default(uuid()) @db.Uuid
+  full_name                       String                     @db.VarChar()
+  email                           String                     @unique @db.VarChar()
+  phone_country                   PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
+  phone_country_id                Int?                       @db.SmallInt
+  phone_number                    String?                    @db.VarChar()
+  avatar                          String?                    @db.VarChar()
+  role                            Role                       @relation(fields: [role_id], references: [id])
+  role_id                         Int                        @default(3) @db.SmallInt // General User
+  status                          StatusEnum                 @default(ACTIVE)
+  date_of_birth                   DateTime?                  @db.Date
+  occupation                      OccupationEnum?
+  created_at                      DateTime                   @default(now()) @db.Timestamptz()
+  updated_at                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  last_login                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at                      DateTime?                  @db.Timestamptz()
+  tokens                          Token[]
+  b2b_pipelines                   B2BPipeline[]
+  b2b_actions                     B2BAction[]
+  trainer_profile                 Trainer?                   @relation("TrainerUser")
+  trainer_referrals               Trainer[]                  @relation("TrainerReferrer")
+  trainer_scores                  TrainerScreening[]         @relation("TrainerScreeningScorer")
+  chapter_trainer_request_reviews LmsChapterTrainerRequest[] @relation("LmsChapterTrainerRequestReviewer")
 
   @@map("users")
 }
@@ -389,7 +391,6 @@ model B2BPipeline {
   created_at          DateTime                 @default(now()) @db.Timestamptz()
   updated_at          DateTime                 @default(now()) @updatedAt @db.Timestamptz()
   actions             B2BAction[]
-  trainer_assignments TrainerAssignment[]
 
   @@map("b2b_pipeline")
 }
@@ -431,7 +432,8 @@ model Trainer {
   specializations     TrainerSpecializationMap[]
   screening           TrainerScreening?
   certification       TrainerCertification?
-  assignments         TrainerAssignment[]
+  chapters            LmsChapter[]
+  chapter_requests    LmsChapterTrainerRequest[]
 
   @@map("trainers")
 }
@@ -471,35 +473,19 @@ model TrainerScreening {
 }
 
 model TrainerCertification {
-  id                             Int                            @id @default(autoincrement())
-  trainer                        Trainer                        @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
-  trainer_id                     String                         @unique @db.Uuid
-  orientation                    TrainerCertificationStatusEnum @default(NOT_STARTED)
-  material_mastery               TrainerCertificationStatusEnum @default(NOT_STARTED)
-  shadowing                      TrainerCertificationStatusEnum @default(NOT_STARTED)
-  co_training                    TrainerCertificationStatusEnum @default(NOT_STARTED)
-  solo_observed_delivery         TrainerCertificationStatusEnum @default(NOT_STARTED)
-  certification_decision         TrainerCertificationStatusEnum @default(NOT_STARTED)
-  created_at                     DateTime                       @default(now()) @db.Timestamptz()
-  updated_at                     DateTime                       @default(now()) @updatedAt @db.Timestamptz()
+  id                     Int                            @id @default(autoincrement())
+  trainer                Trainer                        @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
+  trainer_id             String                         @unique @db.Uuid
+  orientation            TrainerCertificationStatusEnum @default(NOT_STARTED)
+  material_mastery       TrainerCertificationStatusEnum @default(NOT_STARTED)
+  shadowing              TrainerCertificationStatusEnum @default(NOT_STARTED)
+  co_training            TrainerCertificationStatusEnum @default(NOT_STARTED)
+  solo_observed_delivery TrainerCertificationStatusEnum @default(NOT_STARTED)
+  certification_decision TrainerCertificationStatusEnum @default(NOT_STARTED)
+  created_at             DateTime                       @default(now()) @db.Timestamptz()
+  updated_at             DateTime                       @default(now()) @updatedAt @db.Timestamptz()
 
   @@map("trainer_certifications")
-}
-
-model TrainerAssignment {
-  id                Int                       @id @default(autoincrement())
-  pipeline          B2BPipeline               @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
-  pipeline_id       Int
-  trainer           Trainer                   @relation(fields: [trainer_id], references: [id])
-  trainer_id        String                    @db.Uuid
-  role              TrainerAssignmentRoleEnum @default(LEAD)
-  session_date      DateTime?                 @db.Date
-  participant_count Int?                      @db.SmallInt
-  notes             String?                   @db.Text
-  created_at        DateTime                  @default(now()) @db.Timestamptz()
-  updated_at        DateTime                  @default(now()) @updatedAt @db.Timestamptz()
-
-  @@map("trainer_assignments")
 }
 
 // LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*
@@ -568,6 +554,7 @@ model LmsProject {
   created_at DateTime    @default(now()) @db.Timestamptz()
   updated_at DateTime    @default(now()) @updatedAt @db.Timestamptz()
   groups     LmsGroup[]
+  levels     LmsLevel[]
 
   @@map("lms_projects")
 }
@@ -591,6 +578,8 @@ model LmsLevel {
   icon         String?      @db.VarChar()
   min_xp       Int          @default(0)
   status       StatusEnum   @default(ACTIVE)
+  project      LmsProject   @relation(fields: [project_id], references: [id])
+  project_id   Int
   created_at   DateTime     @default(now()) @db.Timestamptz()
   updated_at   DateTime     @default(now()) @updatedAt @db.Timestamptz()
   members      LmsMember[]
@@ -602,20 +591,43 @@ model LmsLevel {
 }
 
 model LmsChapter {
-  id           Int           @id @default(autoincrement())
-  level        LmsLevel      @relation(fields: [level_id], references: [id])
-  level_id     Int
-  name         String        @db.VarChar()
-  description  String?       @db.Text
-  session_date DateTime      @db.Timestamptz()
-  status       StatusEnum    @default(ACTIVE)
-  created_at   DateTime      @default(now()) @db.Timestamptz()
-  updated_at   DateTime      @default(now()) @updatedAt @db.Timestamptz()
-  quizzes      LmsQuiz[]
-  videos       LmsVideo[]
-  materials    LmsMaterial[]
+  id               Int                        @id @default(autoincrement())
+  level            LmsLevel                   @relation(fields: [level_id], references: [id])
+  level_id         Int
+  name             String                     @db.VarChar()
+  description      String?                    @db.Text
+  session_date     DateTime                   @db.Timestamptz()
+  status           StatusEnum                 @default(ACTIVE)
+  trainer          Trainer?                   @relation(fields: [trainer_id], references: [id], onDelete: SetNull)
+  trainer_id       String?                    @db.Uuid
+  created_at       DateTime                   @default(now()) @db.Timestamptz()
+  updated_at       DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  quizzes          LmsQuiz[]
+  videos           LmsVideo[]
+  materials        LmsMaterial[]
+  trainer_requests LmsChapterTrainerRequest[]
 
   @@map("lms_chapters")
+}
+
+// Tracks eligible trainers requesting to be the (single) trainer for a
+// chapter — an admin reviews these and picks one, which fills
+// LmsChapter.trainer_id and auto-rejects the other pending requests.
+model LmsChapterTrainerRequest {
+  id          Int                                @id @default(autoincrement())
+  chapter     LmsChapter                         @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  chapter_id  Int
+  trainer     Trainer                            @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
+  trainer_id  String                             @db.Uuid
+  status      LmsChapterTrainerRequestStatusEnum @default(PENDING)
+  reviewer    User?                              @relation("LmsChapterTrainerRequestReviewer", fields: [reviewed_by], references: [id])
+  reviewed_by String?                            @db.Uuid
+  reviewed_at DateTime?                          @db.Timestamptz()
+  created_at  DateTime                           @default(now()) @db.Timestamptz()
+  updated_at  DateTime                           @default(now()) @updatedAt @db.Timestamptz()
+
+  @@unique([chapter_id, trainer_id])
+  @@map("lms_chapter_trainer_requests")
 }
 
 model LmsQuiz {

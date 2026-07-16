@@ -2,13 +2,12 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
-import CreateTrainerAssignmentFormOS from "@/components/forms/CreateTrainerAssignmentFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BActionStatusEnum } from "@prisma/client";
-import { CalendarClock, Plus, Users } from "lucide-react";
+import { CalendarClock, Plus } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
@@ -50,7 +49,6 @@ export default function PipelineKanbanOS({
   }, [sessionToken]);
 
   const [createStatus, setCreateStatus] = useState<B2BActionStatusEnum | null>(null);
-  const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -64,11 +62,6 @@ export default function PipelineKanbanOS({
     { pipeline_id: pipelineId, page_size: 500 },
     { enabled: !!sessionToken }
   );
-  const { data: assignmentData } =
-    trpc.list.trainerPool.assignments.useQuery(
-      { pipeline_id: pipelineId, page: 1, page_size: 100 },
-      { enabled: !!sessionToken }
-    );
 
   const updateAction = trpc.update.b2b.action.useMutation();
 
@@ -131,48 +124,6 @@ export default function PipelineKanbanOS({
           Failed to load actions. You may not have access to this data.
         </p>
       )}
-
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Users size={16} className="text-claude" />
-              <h3 className="text-sm font-bold text-gray-900 dark:text-zinc-100">
-                Trainer Assigned
-              </h3>
-            </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Delivery team connected to this client project.
-            </p>
-          </div>
-          <AppButton
-            type="button"
-            size="sm"
-            onClick={() => setIsAssignmentOpen(true)}
-          >
-            <Plus size={13} />
-            Assign trainer
-          </AppButton>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {assignmentData?.list.map((entry) => (
-            <div
-              key={entry.id}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
-            >
-              <span className="font-bold text-gray-800 dark:text-zinc-200">
-                {entry.trainer_name}
-              </span>
-              <span className="ml-2 text-gray-500">
-                {entry.role.toLowerCase().replaceAll("_", " ")}
-              </span>
-            </div>
-          ))}
-          {!assignmentData?.list.length && (
-            <p className="text-xs text-gray-400">No trainer assigned yet.</p>
-          )}
-        </div>
-      </section>
 
       {!isError && (
         <div className="flex flex-1 gap-4 min-h-0 overflow-x-auto pb-1 lg:grid lg:grid-cols-4 lg:overflow-visible">
@@ -293,12 +244,6 @@ export default function PipelineKanbanOS({
         actionId={editingActionId}
         isOpen={editingActionId !== null}
         onClose={() => setEditingActionId(null)}
-      />
-
-      <CreateTrainerAssignmentFormOS
-        pipelineId={pipelineId}
-        isOpen={isAssignmentOpen}
-        onClose={() => setIsAssignmentOpen(false)}
       />
     </div>
   );

@@ -32,7 +32,6 @@ export const listRouter = createTRPCRouter({
   trainerPool: {
     applicationOptions: listTrainerPool.applicationOptions,
     trainers: listTrainerPool.trainers,
-    assignments: listTrainerPool.assignments,
     specializations: listTrainerPool.specializations,
   },
 
@@ -42,6 +41,8 @@ export const listRouter = createTRPCRouter({
     projects: listLms.projects,
     levels: listLms.levels,
     chapters: listLms.chapters,
+    marketplaceChapters: listLms.marketplaceChapters,
+    chapterTrainerRequests: listLms.chapterTrainerRequests,
   },
 
   // Analytics //

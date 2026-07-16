@@ -115,6 +115,7 @@ export default function LmsLevelListOS({
                           icon: level.icon,
                           min_xp: level.min_xp,
                           status: level.status,
+                          project_id: level.project_id,
                         })
                       }
                     >

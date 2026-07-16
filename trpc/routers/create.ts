@@ -12,12 +12,12 @@ export const createRouter = createTRPCRouter({
   trainerPool: {
     candidate: createTrainerPool.candidate,
     trainer: createTrainerPool.trainer,
-    assignment: createTrainerPool.assignment,
     specialization: createTrainerPool.specialization,
   },
   lms: {
     project: createLms.project,
     level: createLms.level,
     chapter: createLms.chapter,
+    chapterTrainerRequest: createLms.chapterTrainerRequest,
   },
 });

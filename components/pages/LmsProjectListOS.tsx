@@ -1,12 +1,10 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import CreateLmsProjectFormOS from "@/components/forms/CreateLmsProjectFormOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { BookOpen, Layers, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function LmsProjectListOS({
@@ -18,7 +16,6 @@ export default function LmsProjectListOS({
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const { data, isLoading, isError } = trpc.list.lms.projects.useQuery(
@@ -36,19 +33,7 @@ export default function LmsProjectListOS({
           icon: Plus,
           onClick: () => setIsCreateOpen(true),
         }}
-      >
-        <AppButton variant="outline" onClick={() => router.push("/lms/levels")}>
-          <Layers size={14} />
-          Manage Levels
-        </AppButton>
-        <AppButton
-          variant="outline"
-          onClick={() => router.push("/lms/chapters")}
-        >
-          <BookOpen size={14} />
-          Manage Chapters
-        </AppButton>
-      </PageHeaderOS>
+      />
 
       {isLoading && (
         <p className="py-8 text-center text-sm text-gray-400">

@@ -64,4 +64,18 @@ export const deleteLms = {
       await checkDeleteResult(deleted.count, "chapters", "lms.chapter");
       return { code: STATUS_OK, message: "Chapter deleted" };
     }),
+
+  chapterTrainerRequest: administratorProcedure
+    .input(objectHasOnlyID())
+    .mutation(async ({ ctx, input }) => {
+      const deleted = await ctx.prisma.lmsChapterTrainerRequest.deleteMany({
+        where: { id: input.id },
+      });
+      await checkDeleteResult(
+        deleted.count,
+        "chapter trainer requests",
+        "lms.chapterTrainerRequest"
+      );
+      return { code: STATUS_OK, message: "Request removed" };
+    }),
 };

@@ -1,12 +1,14 @@
-import { STATUS_OK } from "@/lib/status_code";
+import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
-import { checkUpdateResult } from "@/trpc/utils/errors";
+import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsNonNegInt,
+  stringIsUUID,
   stringNotBlank,
 } from "@/trpc/utils/validation";
-import { StatusEnum } from "@prisma/client";
+import { LmsChapterTrainerRequestStatusEnum, StatusEnum } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 
 const optionalText = stringNotBlank().nullable().optional();
@@ -39,6 +41,7 @@ export const updateLms = {
         icon: z.url().nullable().optional(),
         min_xp: numberIsNonNegInt().optional(),
         status: z.enum(StatusEnum).optional(),
+        project_id: numberIsID().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -60,6 +63,7 @@ export const updateLms = {
         description: optionalText,
         session_date: z.iso.date().optional(),
         status: z.enum(StatusEnum).optional(),
+        trainer_id: stringIsUUID().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -73,5 +77,51 @@ export const updateLms = {
       });
       await checkUpdateResult(updated.count, "chapter", "chapters");
       return { code: STATUS_OK, message: "Chapter updated" };
+    }),
+
+  // Admin picks one pending request as the chapter's trainer: marks it
+  // SELECTED, auto-rejects the other pending requests for that chapter, and
+  // fills LmsChapter.trainer_id.
+  selectChapterTrainer: administratorProcedure
+    .input(z.object({ request_id: numberIsID() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.$transaction(async (tx) => {
+        const request = await tx.lmsChapterTrainerRequest.findUnique({
+          where: { id: input.request_id },
+        });
+        if (!request) throw readFailedNotFound("request");
+        if (request.status !== LmsChapterTrainerRequestStatusEnum.PENDING) {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "This request has already been reviewed.",
+          });
+        }
+
+        await tx.lmsChapterTrainerRequest.update({
+          where: { id: request.id },
+          data: {
+            status: LmsChapterTrainerRequestStatusEnum.SELECTED,
+            reviewed_by: ctx.user.id,
+            reviewed_at: new Date(),
+          },
+        });
+        await tx.lmsChapterTrainerRequest.updateMany({
+          where: {
+            chapter_id: request.chapter_id,
+            id: { not: request.id },
+            status: LmsChapterTrainerRequestStatusEnum.PENDING,
+          },
+          data: {
+            status: LmsChapterTrainerRequestStatusEnum.REJECTED,
+            reviewed_by: ctx.user.id,
+            reviewed_at: new Date(),
+          },
+        });
+        await tx.lmsChapter.update({
+          where: { id: request.chapter_id },
+          data: { trainer_id: request.trainer_id },
+        });
+      });
+      return { code: STATUS_OK, message: "Trainer selected" };
     }),
 };

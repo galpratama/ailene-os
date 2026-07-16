@@ -19,5 +19,6 @@ export const updateRouter = createTRPCRouter({
     project: updateLms.project,
     level: updateLms.level,
     chapter: updateLms.chapter,
+    selectChapterTrainer: updateLms.selectChapterTrainer,
   },
 });

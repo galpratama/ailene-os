@@ -22,20 +22,6 @@ export const deleteTrainerPool = {
       return { code: STATUS_NO_CONTENT, message: "Trainer archived" };
     }),
 
-  assignment: administratorProcedure
-    .input(objectHasOnlyID())
-    .mutation(async ({ ctx, input }) => {
-      const deleted = await ctx.prisma.trainerAssignment.deleteMany({
-        where: { id: input.id },
-      });
-      await checkDeleteResult(
-        deleted.count,
-        "trainer assignments",
-        "trainerPool.assignment"
-      );
-      return { code: STATUS_NO_CONTENT, message: "Assignment deleted" };
-    }),
-
   specialization: administratorProcedure
     .input(objectHasOnlyID())
     .mutation(async ({ ctx, input }) => {

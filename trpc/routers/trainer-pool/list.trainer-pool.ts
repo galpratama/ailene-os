@@ -4,12 +4,7 @@ import {
   baseProcedure,
 } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
-import {
-  numberIsID,
-  numberIsPosInt,
-  stringIsUUID,
-  stringNotBlank,
-} from "@/trpc/utils/validation";
+import { numberIsPosInt, stringNotBlank } from "@/trpc/utils/validation";
 import {
   Prisma,
   TrainerLevelEnum,
@@ -196,69 +191,6 @@ export const listTrainerPool = {
           eligible: counts[TrainerStageEnum.ELIGIBLE] ?? 0,
           senior: seniorCount,
         },
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  assignments: administratorProcedure
-    .input(
-      z.object({
-        trainer_id: stringIsUUID().optional(),
-        pipeline_id: numberIsID().optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const where: Prisma.TrainerAssignmentWhereInput = {
-        trainer_id: input.trainer_id,
-        pipeline_id: input.pipeline_id,
-      };
-      const paging = calculatePage(
-        input,
-        await ctx.prisma.trainerAssignment.aggregate({
-          where,
-          _count: true,
-        })
-      );
-      const list = await ctx.prisma.trainerAssignment.findMany({
-        where,
-        include: {
-          trainer: {
-            select: {
-              id: true,
-              level: true,
-              user: { select: { full_name: true } },
-            },
-          },
-          pipeline: {
-            select: {
-              id: true,
-              name: true,
-              company: { select: { name: true } },
-            },
-          },
-        },
-        orderBy: [{ session_date: "desc" }, { created_at: "desc" }],
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: list.map((entry) => ({
-          id: entry.id,
-          trainer_id: entry.trainer.id,
-          trainer_name: entry.trainer.user.full_name,
-          trainer_level: entry.trainer.level,
-          pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.name,
-          company_name: entry.pipeline.company.name,
-          role: entry.role,
-          session_date: entry.session_date,
-          participant_count: entry.participant_count,
-          notes: entry.notes,
-        })),
         metapaging: paging.metapaging,
       };
     }),

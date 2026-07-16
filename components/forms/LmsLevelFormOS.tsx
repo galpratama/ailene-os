@@ -24,16 +24,19 @@ export type LmsLevelEditing = {
   icon: string | null;
   min_xp: number;
   status: StatusEnum;
+  project_id: number;
 };
 
 export default function LmsLevelFormOS({
   isOpen,
   onClose,
   editing,
+  projectId,
 }: {
   isOpen: boolean;
   onClose: () => void;
   editing?: LmsLevelEditing | null;
+  projectId?: number;
 }) {
   const utils = trpc.useUtils();
   const [levelNumber, setLevelNumber] = useState("");
@@ -41,7 +44,18 @@ export default function LmsLevelFormOS({
   const [icon, setIcon] = useState("");
   const [minXp, setMinXp] = useState("0");
   const [status, setStatus] = useState<StatusEnum>("ACTIVE");
+  const [levelProjectId, setLevelProjectId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: projectsData } = trpc.list.lms.projects.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: isOpen }
+  );
+  const projectOptions: AppSelectOption[] =
+    projectsData?.list.map((entry) => ({
+      value: String(entry.id),
+      label: entry.name,
+    })) ?? [];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -51,15 +65,17 @@ export default function LmsLevelFormOS({
       setIcon(editing.icon ?? "");
       setMinXp(String(editing.min_xp));
       setStatus(editing.status);
+      setLevelProjectId(editing.project_id);
     } else {
       setLevelNumber("");
       setName("");
       setIcon("");
       setMinXp("0");
       setStatus("ACTIVE");
+      setLevelProjectId(projectId ?? null);
     }
     setError(null);
-  }, [isOpen, editing]);
+  }, [isOpen, editing, projectId]);
 
   const createMutation = trpc.create.lms.level.useMutation({
     onSuccess: () => {
@@ -82,6 +98,9 @@ export default function LmsLevelFormOS({
     if (!levelNumber || !name.trim()) {
       return setError("Level number and name are required.");
     }
+    if (!levelProjectId) {
+      return setError("Project is required.");
+    }
     if (editing) {
       updateMutation.mutate({
         id: editing.id,
@@ -90,6 +109,7 @@ export default function LmsLevelFormOS({
         icon: icon.trim() || null,
         min_xp: minXp ? Number(minXp) : 0,
         status,
+        project_id: levelProjectId,
       });
     } else {
       createMutation.mutate({
@@ -98,6 +118,7 @@ export default function LmsLevelFormOS({
         icon: icon.trim() || null,
         min_xp: minXp ? Number(minXp) : 0,
         status,
+        project_id: levelProjectId,
       });
     }
   }
@@ -151,6 +172,15 @@ export default function LmsLevelFormOS({
             value={status}
             options={statusOptions}
             onChange={(value) => setStatus((value as StatusEnum) ?? "ACTIVE")}
+          />
+          <AppSelect
+            selectId="lms-level-project"
+            label="Project"
+            required
+            placeholder="Select project"
+            value={levelProjectId ? String(levelProjectId) : ""}
+            options={projectOptions}
+            onChange={(value) => setLevelProjectId(value ? Number(value) : null)}
           />
         </div>
         <div className="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-zinc-800">

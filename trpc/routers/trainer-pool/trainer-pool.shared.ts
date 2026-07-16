@@ -1,6 +1,5 @@
 import { STATUS_BAD_REQUEST } from "@/lib/status_code";
 import {
-  TrainerAssignmentRoleEnum,
   TrainerCertificationStatusEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
@@ -171,37 +170,22 @@ export function deriveTrainerStage(input: {
   return qualified ? TrainerStageEnum.QUALIFIED : TrainerStageEnum.NOT_QUALIFIED;
 }
 
-// Shared assignability rule used both by direct trainer-pool assignment and
-// by selecting a trainer application into an assignment.
-export function assertTrainerAssignable(
-  trainer: {
-    level: TrainerLevelEnum;
-    stage: TrainerStageEnum;
-    status: TrainerStatusEnum;
-  },
-  role: TrainerAssignmentRoleEnum | undefined
-) {
-  if (
-    trainer.level === TrainerLevelEnum.JUNIOR &&
-    (role === undefined ||
-      role === TrainerAssignmentRoleEnum.LEAD ||
-      role === TrainerAssignmentRoleEnum.SPECIALIST)
-  ) {
-    throw new TRPCError({
-      code: STATUS_BAD_REQUEST,
-      message: "Junior trainers must be assigned as assistant or co-trainer.",
-    });
-  }
+// Shared eligibility rule for a trainer requesting an LMS chapter slot.
+export function assertTrainerCanRequestChapter(trainer: {
+  stage: TrainerStageEnum;
+  status: TrainerStatusEnum;
+}) {
   if (trainer.stage !== TrainerStageEnum.ELIGIBLE) {
     throw new TRPCError({
       code: STATUS_BAD_REQUEST,
-      message: "Only certified trainers can be assigned.",
+      message:
+        "Hanya trainer yang sudah eligible yang bisa mengajukan diri untuk sebuah kelas.",
     });
   }
   if (trainer.status !== TrainerStatusEnum.ACTIVE) {
     throw new TRPCError({
       code: STATUS_BAD_REQUEST,
-      message: "This trainer is inactive.",
+      message: "Akun trainer ini sedang tidak aktif.",
     });
   }
 }

@@ -11,12 +11,12 @@ export const deleteRouter = createTRPCRouter({
   },
   trainerPool: {
     trainer: deleteTrainerPool.trainer,
-    assignment: deleteTrainerPool.assignment,
     specialization: deleteTrainerPool.specialization,
   },
   lms: {
     project: deleteLms.project,
     level: deleteLms.level,
     chapter: deleteLms.chapter,
+    chapterTrainerRequest: deleteLms.chapterTrainerRequest,
   },
 });

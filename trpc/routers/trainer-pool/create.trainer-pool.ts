@@ -7,7 +7,6 @@ import {
   baseProcedure,
 } from "@/trpc/init";
 import {
-  numberIsID,
   numberIsNonNegInt,
   numberIsPosInt,
   stringIsUUID,
@@ -15,7 +14,6 @@ import {
 } from "@/trpc/utils/validation";
 import {
   Prisma,
-  TrainerAssignmentRoleEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
   TrainerSourceEnum,
@@ -24,7 +22,6 @@ import {
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import {
-  assertTrainerAssignable,
   buildApplicationNotes,
   MIN_AI_EXPERIENCE_YEARS,
 } from "./trainer-pool.shared";
@@ -192,49 +189,6 @@ export const createTrainerPool = {
         }
         throw error;
       }
-    }),
-
-  assignment: administratorProcedure
-    .input(
-      z.object({
-        pipeline_id: numberIsID(),
-        trainer_id: stringIsUUID(),
-        role: z.enum(TrainerAssignmentRoleEnum).optional(),
-        session_date: z.iso.date().nullable().optional(),
-        participant_count: numberIsPosInt().max(500).nullable().optional(),
-        notes: optionalText,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const trainer = await ctx.prisma.trainer.findFirst({
-        where: { id: input.trainer_id, deleted_at: null },
-      });
-      if (!trainer) {
-        throw new TRPCError({
-          code: STATUS_BAD_REQUEST,
-          message: "Trainer is not available.",
-        });
-      }
-      assertTrainerAssignable(trainer, input.role);
-
-      const created = await ctx.prisma.trainerAssignment.create({
-        data: {
-          pipeline_id: input.pipeline_id,
-          trainer_id: input.trainer_id,
-          role: input.role,
-          session_date: input.session_date
-            ? new Date(input.session_date)
-            : null,
-          participant_count: input.participant_count ?? null,
-          notes: input.notes ?? null,
-        },
-      });
-
-      return {
-        code: STATUS_CREATED,
-        message: "Trainer assigned",
-        id: created.id,
-      };
     }),
 
   specialization: administratorProcedure

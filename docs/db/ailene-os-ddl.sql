@@ -100,13 +100,6 @@ CREATE TYPE trncert_status_enum AS ENUM (
   'failed'
 );
 
-CREATE TYPE trna_role_enum AS ENUM (
-  'lead',
-  'assistant',
-  'co_trainer',
-  'specialist'
-);
-
 -- Enumeration for the LMS tables (lms_*) — migrated from the Sevenpreneur
 -- AI-LMS database's ail_* schema (docs/db/ailene-ddl.sql in that repo).
 
@@ -114,6 +107,12 @@ CREATE TYPE lms_role_enum AS ENUM (
   'student',
   'champion',
   'sponsor'
+);
+
+CREATE TYPE lms_chapter_trainer_request_status_enum AS ENUM (
+  'pending',
+  'selected',
+  'rejected'
 );
 
 CREATE TYPE lms_use_case_frequency_enum AS ENUM (
@@ -366,18 +365,6 @@ CREATE TABLE trainer_certifications (
   updated_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE trainer_assignments (
-  id                 SERIAL          PRIMARY KEY,
-  pipeline_id        INTEGER         NOT NULL,
-  trainer_id         UUID            NOT NULL,
-  role               trna_role_enum  NOT NULL  DEFAULT 'lead',
-  session_date       DATE                NULL,
-  participant_count  SMALLINT            NULL,
-  notes              TEXT                NULL,
-  created_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at         TIMESTAMPTZ     NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
 -- LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*
 -- schema. Only the pure content-catalog tables carry migrated data; the
 -- member/progress/submission tables below are created empty (see the
@@ -438,6 +425,7 @@ CREATE TABLE lms_levels (
   icon          VARCHAR          NULL,
   min_xp        INTEGER      NOT NULL  DEFAULT 0,
   status        status_enum  NOT NULL  DEFAULT 'active',
+  project_id    INTEGER      NOT NULL,
   created_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
@@ -449,8 +437,21 @@ CREATE TABLE lms_chapters (
   description   TEXT             NULL,
   session_date  TIMESTAMPTZ  NOT NULL,
   status        status_enum  NOT NULL  DEFAULT 'active',
+  trainer_id    UUID             NULL,
   created_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE lms_chapter_trainer_requests (
+  id           SERIAL                                    PRIMARY KEY,
+  chapter_id   INTEGER                                    NOT NULL,
+  trainer_id   UUID                                       NOT NULL,
+  status       lms_chapter_trainer_request_status_enum   NOT NULL  DEFAULT 'pending',
+  reviewed_by  UUID                                           NULL,
+  reviewed_at  TIMESTAMPTZ                                   NULL,
+  created_at   TIMESTAMPTZ                               NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMPTZ                               NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (chapter_id, trainer_id)
 );
 
 CREATE TABLE lms_quizzes (
@@ -729,10 +730,6 @@ ALTER TABLE trainer_screenings
 ALTER TABLE trainer_certifications
   ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE CASCADE;
 
-ALTER TABLE trainer_assignments
-  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id);
-
 -- LMS
 -- Note: lms_members.user_id intentionally has no FK — it points at either a
 -- Sevenpreneur user id or an ailene-os users.id, two different identity spaces.
@@ -752,8 +749,17 @@ ALTER TABLE lms_coaching_notes
   ADD FOREIGN KEY (member_id)   REFERENCES lms_members (id),
   ADD FOREIGN KEY (champion_id) REFERENCES lms_members (id);
 
+ALTER TABLE lms_levels
+  ADD FOREIGN KEY (project_id) REFERENCES lms_projects (id);
+
 ALTER TABLE lms_chapters
-  ADD FOREIGN KEY (level_id) REFERENCES lms_levels (id);
+  ADD FOREIGN KEY (level_id)   REFERENCES lms_levels (id),
+  ADD FOREIGN KEY (trainer_id) REFERENCES trainers (id) ON DELETE SET NULL;
+
+ALTER TABLE lms_chapter_trainer_requests
+  ADD FOREIGN KEY (chapter_id)  REFERENCES lms_chapters (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (trainer_id)  REFERENCES trainers (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (reviewed_by) REFERENCES users (id);
 
 ALTER TABLE lms_quizzes
   ADD FOREIGN KEY (chapter_id) REFERENCES lms_chapters (id);
@@ -881,11 +887,6 @@ CREATE TRIGGER update_trainer_certifications_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_trainer_assignments_updated_at_trigger
-  BEFORE UPDATE ON trainer_assignments
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
 -- LMS
 
 CREATE TRIGGER update_lms_projects_updated_at_trigger
@@ -905,6 +906,11 @@ CREATE TRIGGER update_lms_levels_updated_at_trigger
 
 CREATE TRIGGER update_lms_chapters_updated_at_trigger
   BEFORE UPDATE ON lms_chapters
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_lms_chapter_trainer_requests_updated_at_trigger
+  BEFORE UPDATE ON lms_chapter_trainer_requests
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 

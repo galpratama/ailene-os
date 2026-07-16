@@ -35,10 +35,12 @@ export default function LmsChapterFormOS({
   isOpen,
   onClose,
   editing,
+  projectId,
 }: {
   isOpen: boolean;
   onClose: () => void;
   editing?: LmsChapterEditing | null;
+  projectId?: number;
 }) {
   const utils = trpc.useUtils();
   const [levelId, setLevelId] = useState<number | null>(null);
@@ -49,7 +51,7 @@ export default function LmsChapterFormOS({
   const [error, setError] = useState<string | null>(null);
 
   const { data: levelData } = trpc.list.lms.levels.useQuery(
-    { page: 1, page_size: 200 },
+    { page: 1, page_size: 200, project_id: projectId },
     { enabled: isOpen }
   );
   const levelOptions: AppSelectOption[] =
@@ -140,6 +142,12 @@ export default function LmsChapterFormOS({
             options={levelOptions}
             onChange={(value) => setLevelId(value as number | null)}
           />
+          {projectId && levelData && levelOptions.length === 0 && (
+            <p className="text-xs text-gray-500">
+              This project has no levels yet — create one from LMS Levels
+              first.
+            </p>
+          )}
           <AppInput
             inputId="lms-chapter-name"
             label="Name"

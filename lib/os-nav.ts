@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   LucideIcon,
   SquareCheckBig,
+  Store,
   Users,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ export const osMainNav: OSNavItem[] = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/trainers", label: "Trainers", icon: GraduationCap },
   { href: "/lms/projects", label: "LMS Projects", icon: FolderKanban },
+  { href: "/lms/class-marketplace", label: "Class Marketplace", icon: Store },
 ];
 
 export const osToolsNav: OSNavItem[] = [];
