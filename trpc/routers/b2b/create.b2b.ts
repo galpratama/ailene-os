@@ -27,6 +27,7 @@ const newCompanyInput = z.object({
   pic_job_title: stringNotBlank().nullable().optional(),
   pic_wa: stringNotBlank().nullable().optional(),
   pic_email: stringNotBlank().nullable().optional(),
+  image_url: z.url().nullable().optional(),
 });
 
 export const createB2B = {
@@ -41,6 +42,7 @@ export const createB2B = {
           pic_job_title: opts.input.pic_job_title ?? null,
           pic_wa: opts.input.pic_wa ?? null,
           pic_email: opts.input.pic_email ?? null,
+          image_url: opts.input.image_url ?? null,
         },
       });
       return {
@@ -94,6 +96,7 @@ export const createB2B = {
                 pic_job_title: new_company.pic_job_title ?? null,
                 pic_wa: new_company.pic_wa ?? null,
                 pic_email: new_company.pic_email ?? null,
+                image_url: new_company.image_url ?? null,
               },
             }
           : { connect: { id: company_id } };

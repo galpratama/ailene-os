@@ -367,6 +367,7 @@ model B2BCompany {
   pic_job_title String?       @db.VarChar()
   pic_wa        String?       @db.VarChar()
   pic_email     String?       @db.VarChar()
+  image_url     String?       @db.VarChar()
   created_at    DateTime      @default(now()) @db.Timestamptz()
   updated_at    DateTime      @default(now()) @updatedAt @db.Timestamptz()
   pipelines     B2BPipeline[]

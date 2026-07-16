@@ -277,6 +277,7 @@ CREATE TABLE b2b_company (
   pic_job_title  VARCHAR          NULL,
   pic_wa         VARCHAR          NULL,
   pic_email      VARCHAR          NULL,
+  image_url      VARCHAR          NULL,
   created_at     TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at     TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );

@@ -86,6 +86,7 @@ export const listB2B = {
           pic_job_title: entry.pic_job_title,
           pic_wa: entry.pic_wa,
           pic_email: entry.pic_email,
+          image_url: entry.image_url,
         })),
         metapaging: paging.metapaging,
       };
@@ -298,6 +299,7 @@ export const listB2B = {
   allActions: administratorProcedure
     .input(
       z.object({
+        keyword: stringNotBlank().optional(),
         status: z.enum(B2BActionStatusEnum).optional(),
         assignee_id: stringIsUUID().optional(),
         company_id: numberIsID().optional(),
@@ -312,6 +314,12 @@ export const listB2B = {
         pipeline: opts.input.company_id
           ? { company_id: opts.input.company_id }
           : undefined,
+        ...(opts.input.keyword && {
+          OR: [
+            { name: { contains: opts.input.keyword, mode: "insensitive" } },
+            { summary: { contains: opts.input.keyword, mode: "insensitive" } },
+          ],
+        }),
       };
 
       const paging = calculatePage(

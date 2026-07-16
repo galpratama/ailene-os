@@ -26,7 +26,10 @@ export const priorityOptions: AppSelectOption[] = [
 
 interface CreateActionFormOSProps {
   sessionToken: string;
-  pipelineId: number;
+  // When omitted, the form shows its own Pipeline picker (Company - Pipeline)
+  // instead of assuming an ambient pipeline — used on the cross-pipeline
+  // Tasks page, as opposed to a single pipeline's kanban.
+  pipelineId?: number;
   isOpen: boolean;
   onClose: () => void;
   defaultStatus?: B2BActionStatusEnum;
@@ -47,6 +50,9 @@ export default function CreateActionFormOS({
   const [priority, setPriority] = useState<B2BActionPriorityEnum>("MEDIUM");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
+  const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
+    null
+  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +77,17 @@ export default function CreateActionFormOS({
     ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
+  const needsPipelinePicker = pipelineId === undefined;
+  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: !!sessionToken && isOpen && needsPipelinePicker }
+  );
+  const pipelineOptions: AppSelectOption[] =
+    pipelineData?.list.map((p) => ({
+      value: p.id,
+      label: `${p.company_name} - ${p.name}`,
+    })) ?? [];
+
   function resetForm() {
     setName("");
     setSummary("");
@@ -78,6 +95,7 @@ export default function CreateActionFormOS({
     setPriority("MEDIUM");
     setDueDate("");
     setAssigneeId("");
+    setSelectedPipelineId(null);
     setError(null);
   }
 
@@ -89,6 +107,7 @@ export default function CreateActionFormOS({
   const createAction = trpc.create.b2b.action.useMutation({
     onSuccess: () => {
       utils.list.b2b.actions.invalidate();
+      utils.list.b2b.allActions.invalidate();
       handleClose();
     },
     onError: (err) => setError(err.message),
@@ -99,9 +118,11 @@ export default function CreateActionFormOS({
     setError(null);
 
     if (!name.trim()) return setError("Action name is required.");
+    const targetPipelineId = pipelineId ?? selectedPipelineId;
+    if (!targetPipelineId) return setError("Pipeline is required.");
 
     createAction.mutate({
-      pipeline_id: pipelineId,
+      pipeline_id: targetPipelineId,
       name: name.trim(),
       summary: summary.trim() || null,
       status,
@@ -114,7 +135,11 @@ export default function CreateActionFormOS({
   return (
     <SheetOS
       title="Add New Action"
-      description="Add a task to this lead's delivery workflow."
+      description={
+        needsPipelinePicker
+          ? "Add a task to a lead's delivery workflow."
+          : "Add a task to this lead's delivery workflow."
+      }
       isOpen={isOpen}
       onClose={handleClose}
     >
@@ -124,6 +149,18 @@ export default function CreateActionFormOS({
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
               {error}
             </p>
+          )}
+
+          {needsPipelinePicker && (
+            <AppSelect
+              selectId="action-pipeline"
+              label="Pipeline"
+              required
+              placeholder="Pick a pipeline"
+              value={selectedPipelineId}
+              onChange={(v) => setSelectedPipelineId(v as number | null)}
+              options={pipelineOptions}
+            />
           )}
 
           <AppInput

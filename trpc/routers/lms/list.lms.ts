@@ -29,13 +29,29 @@ export const listLms = {
       const list = await ctx.prisma.lmsProject.findMany({
         where,
         include: {
-          company: { select: { id: true, name: true } },
+          company: { select: { id: true, name: true, image_url: true } },
           _count: { select: { groups: true } },
         },
         orderBy: [{ created_at: "desc" }],
         skip: paging.prisma.skip,
         take: paging.prisma.take,
       });
+
+      // Sessions = chapters, which sit under a project's levels (not a
+      // direct project relation), so tally them per-project separately.
+      const levelChapterCounts = await ctx.prisma.lmsLevel.findMany({
+        where: { project_id: { in: list.map((entry) => entry.id) } },
+        select: { project_id: true, _count: { select: { chapters: true } } },
+      });
+      const sessionCountByProject = new Map<number, number>();
+      for (const level of levelChapterCounts) {
+        sessionCountByProject.set(
+          level.project_id,
+          (sessionCountByProject.get(level.project_id) ?? 0) +
+            level._count.chapters
+        );
+      }
+
       return {
         code: STATUS_OK,
         message: "Success",
@@ -44,7 +60,9 @@ export const listLms = {
           name: entry.name,
           company_id: entry.company?.id ?? null,
           company_name: entry.company?.name ?? null,
+          company_image_url: entry.company?.image_url ?? null,
           group_count: entry._count.groups,
+          session_count: sessionCountByProject.get(entry.id) ?? 0,
           created_at: entry.created_at,
         })),
         metapaging: paging.metapaging,

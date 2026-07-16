@@ -25,7 +25,7 @@ export const osMainNav: OSNavItem[] = [
   { href: "/tasks", label: "Tasks", icon: SquareCheckBig },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/trainers", label: "Trainers", icon: GraduationCap },
-  { href: "/lms/projects", label: "LMS Projects", icon: FolderKanban },
+  { href: "/lms/projects", label: "Corporate Training", icon: FolderKanban },
   { href: "/lms/class-marketplace", label: "Class Marketplace", icon: Store },
 ];
 

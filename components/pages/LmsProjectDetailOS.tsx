@@ -72,7 +72,7 @@ export default function LmsProjectDetailOS({
           href="/lms/projects"
           className="text-xs font-semibold text-gray-500 hover:text-claude"
         >
-          ← LMS Projects
+          ← Corporate Training
         </Link>
         <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
           {project.name}

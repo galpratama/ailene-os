@@ -54,6 +54,7 @@ export default function CreateLeadFormOS({
   const [picJobTitle, setPicJobTitle] = useState("");
   const [picWa, setPicWa] = useState("");
   const [picEmail, setPicEmail] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   const [name, setName] = useState("");
   const [stage, setStage] = useState<B2BStageEnum>("LEAD_IDENTIFIED");
@@ -141,6 +142,7 @@ export default function CreateLeadFormOS({
             pic_job_title: picJobTitle.trim() || null,
             pic_wa: picWa.trim() || null,
             pic_email: picEmail.trim() || null,
+            image_url: imageUrl.trim() || null,
           },
       stage,
       probability: probability ? Number(probability) : undefined,
@@ -258,6 +260,14 @@ export default function CreateLeadFormOS({
                     onChange={(e) => setPicEmail(e.target.value)}
                   />
                 </div>
+                <AppInput
+                  inputId="lead-company-image-url"
+                  label="Company Logo URL"
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://"
+                />
               </div>
             )}
           </div>

@@ -30,6 +30,7 @@ export const updateB2B = {
         pic_job_title: stringNotBlank().nullable().optional(),
         pic_wa: stringNotBlank().nullable().optional(),
         pic_email: stringNotBlank().nullable().optional(),
+        image_url: z.url().nullable().optional(),
       })
     )
     .mutation(async (opts) => {

@@ -1,10 +1,16 @@
 "use client";
 
+import AppButton from "@/components/buttons/AppButton";
+import AppInput from "@/components/fields/AppInput";
+import AppSelect, {
+  type AppSelectOption,
+} from "@/components/fields/AppSelect";
+import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BActionStatusEnum } from "@prisma/client";
-import { Building2, CalendarClock } from "lucide-react";
+import { Building2, CalendarClock, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
@@ -41,10 +47,37 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
   const utils = trpc.useUtils();
 
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState<
+    string | undefined
+  >(undefined);
+  const [assigneeFilter, setAssigneeFilter] = useState("");
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedKeyword(keyword.trim() || undefined);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [keyword]);
+
   const { data, isLoading, isError } = trpc.list.b2b.allActions.useQuery(
-    { page_size: 500 },
+    {
+      page_size: 500,
+      keyword: debouncedKeyword,
+      assignee_id: assigneeFilter || undefined,
+    },
     { enabled: !!sessionToken }
   );
+
+  const { data: userData } = trpc.list.users.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: !!sessionToken }
+  );
+  const assigneeOptions: AppSelectOption[] = [
+    { value: "", label: "All PICs" },
+    ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+  ];
 
   const updateAction = trpc.update.b2b.action.useMutation();
 
@@ -92,11 +125,37 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tasks</h2>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-          Every action across every client, in one board
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tasks</h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+            Every action across every client, in one board
+          </p>
+        </div>
+        <AppButton size="sm" onClick={() => setCreateTaskOpen(true)}>
+          <Plus size={14} />
+          Create New Task
+        </AppButton>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <AppInput
+          inputId="tasks-search"
+          icon={<Search size={14} />}
+          placeholder="Search tasks..."
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          className="max-w-70"
+        />
+        <div className="w-full max-w-56">
+          <AppSelect
+            selectId="tasks-assignee-filter"
+            placeholder="All PICs"
+            value={assigneeFilter}
+            options={assigneeOptions}
+            onChange={(value) => setAssigneeFilter((value as string) ?? "")}
+          />
+        </div>
       </div>
 
       {isError && (
@@ -209,6 +268,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
         actionId={editingActionId}
         isOpen={editingActionId !== null}
         onClose={() => setEditingActionId(null)}
+      />
+
+      <CreateActionFormOS
+        sessionToken={sessionToken}
+        isOpen={createTaskOpen}
+        onClose={() => setCreateTaskOpen(false)}
       />
     </div>
   );
