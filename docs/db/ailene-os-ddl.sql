@@ -404,6 +404,7 @@ CREATE TABLE lms_projects (
   id            SERIAL       PRIMARY KEY,
   name          VARCHAR      NOT NULL,
   company_id    INTEGER          NULL,
+  pipeline_id   INTEGER      NOT NULL,
   attendee_pax  INTEGER          NULL,
   created_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
@@ -753,7 +754,8 @@ ALTER TABLE lms_members
   ADD FOREIGN KEY (current_level_id) REFERENCES lms_levels (id);
 
 ALTER TABLE lms_projects
-  ADD FOREIGN KEY (company_id) REFERENCES b2b_company (id);
+  ADD FOREIGN KEY (company_id)  REFERENCES b2b_company (id),
+  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id);
 
 ALTER TABLE lms_groups
   ADD FOREIGN KEY (project_id)  REFERENCES lms_projects (id),

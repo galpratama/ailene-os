@@ -20,6 +20,7 @@ export default function CreateLmsProjectFormOS({
   const utils = trpc.useUtils();
   const [name, setName] = useState("");
   const [companyId, setCompanyId] = useState<number | null>(null);
+  const [pipelineId, setPipelineId] = useState<number | null>(null);
   const [attendeePax, setAttendeePax] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -33,9 +34,20 @@ export default function CreateLmsProjectFormOS({
       label: company.name,
     })) ?? [];
 
+  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: isOpen }
+  );
+  const pipelineOptions: AppSelectOption[] =
+    pipelineData?.list.map((pipeline) => ({
+      value: pipeline.id,
+      label: `${pipeline.company_name} - ${pipeline.name}`,
+    })) ?? [];
+
   function close() {
     setName("");
     setCompanyId(null);
+    setPipelineId(null);
     setAttendeePax("");
     setError(null);
     onClose();
@@ -54,9 +66,13 @@ export default function CreateLmsProjectFormOS({
     if (!name.trim()) {
       return setError("Project name is required.");
     }
+    if (!pipelineId) {
+      return setError("Linked pipeline is required.");
+    }
     mutation.mutate({
       name: name.trim(),
       company_id: companyId,
+      pipeline_id: pipelineId,
       attendee_pax: attendeePax.trim() ? Number(attendeePax) : null,
     });
   }
@@ -89,6 +105,15 @@ export default function CreateLmsProjectFormOS({
             value={companyId}
             options={companyOptions}
             onChange={(value) => setCompanyId(value as number | null)}
+          />
+          <AppSelect
+            selectId="lms-project-pipeline"
+            label="Linked Pipeline"
+            required
+            placeholder="Pick the deal this project delivers on"
+            value={pipelineId}
+            options={pipelineOptions}
+            onChange={(value) => setPipelineId(value as number | null)}
           />
           <AppInput
             inputId="lms-project-attendee-pax"

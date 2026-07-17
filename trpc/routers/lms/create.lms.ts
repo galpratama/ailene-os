@@ -21,6 +21,7 @@ export const createLms = {
       z.object({
         name: stringNotBlank(),
         company_id: numberIsID().nullable().optional(),
+        pipeline_id: numberIsID(),
         attendee_pax: numberIsPosInt().nullable().optional(),
       })
     )
@@ -29,6 +30,7 @@ export const createLms = {
         data: {
           name: input.name,
           company_id: input.company_id ?? null,
+          pipeline_id: input.pipeline_id,
           attendee_pax: input.attendee_pax ?? null,
         },
       });

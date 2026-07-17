@@ -3,6 +3,7 @@ import { administratorProcedure, baseProcedure } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
 import { numberIsID, numberIsPosInt, stringNotBlank } from "@/trpc/utils/validation";
 import {
+  B2BActionStatusEnum,
   LmsChapterTrainerRequestStatusEnum,
   Prisma,
   StatusEnum,
@@ -30,6 +31,7 @@ export const listLms = {
         where,
         include: {
           company: { select: { id: true, name: true, image_url: true } },
+          pipeline: { select: { id: true, name: true } },
           _count: { select: { groups: true } },
         },
         orderBy: [{ created_at: "desc" }],
@@ -52,6 +54,26 @@ export const listLms = {
         );
       }
 
+      // Task progress = the linked pipeline's B2B actions, done vs total —
+      // tallied per pipeline the same way session counts are per project.
+      const pipelineActions = await ctx.prisma.b2BAction.findMany({
+        where: { pipeline_id: { in: list.map((entry) => entry.pipeline_id) } },
+        select: { pipeline_id: true, status: true },
+      });
+      const taskProgressByPipeline = new Map<
+        number,
+        { done: number; total: number }
+      >();
+      for (const action of pipelineActions) {
+        const progress = taskProgressByPipeline.get(action.pipeline_id) ?? {
+          done: 0,
+          total: 0,
+        };
+        progress.total += 1;
+        if (action.status === B2BActionStatusEnum.DONE) progress.done += 1;
+        taskProgressByPipeline.set(action.pipeline_id, progress);
+      }
+
       return {
         code: STATUS_OK,
         message: "Success",
@@ -61,9 +83,13 @@ export const listLms = {
           company_id: entry.company?.id ?? null,
           company_name: entry.company?.name ?? null,
           company_image_url: entry.company?.image_url ?? null,
+          pipeline_id: entry.pipeline.id,
+          pipeline_name: entry.pipeline.name,
           attendee_pax: entry.attendee_pax,
           group_count: entry._count.groups,
           session_count: sessionCountByProject.get(entry.id) ?? 0,
+          task_done: taskProgressByPipeline.get(entry.pipeline_id)?.done ?? 0,
+          task_total: taskProgressByPipeline.get(entry.pipeline_id)?.total ?? 0,
           created_at: entry.created_at,
         })),
         metapaging: paging.metapaging,

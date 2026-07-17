@@ -1,6 +1,7 @@
 "use client";
 
 import CreateLmsProjectFormOS from "@/components/forms/CreateLmsProjectFormOS";
+import ProgressBar from "@/components/labels/ProgressBar";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { Building2, Calendar, Plus, Users } from "lucide-react";
@@ -85,6 +86,20 @@ export default function LmsProjectListOS({
                     {entry.attendee_pax} attendees
                   </p>
                 )}
+                <div className="mt-3 flex items-center gap-2">
+                  <ProgressBar
+                    value={entry.task_done}
+                    total={entry.task_total}
+                    variant={
+                      entry.task_total > 0 && entry.task_done === entry.task_total
+                        ? "hijau"
+                        : "claude"
+                    }
+                  />
+                  <span className="shrink-0 text-[11px] font-semibold text-gray-500">
+                    {entry.task_done}/{entry.task_total}
+                  </span>
+                </div>
               </div>
             </Link>
           ))}

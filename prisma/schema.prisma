@@ -399,6 +399,7 @@ model B2BPipeline {
   created_at          DateTime                 @default(now()) @db.Timestamptz()
   updated_at          DateTime                 @default(now()) @updatedAt @db.Timestamptz()
   actions             B2BAction[]
+  lms_projects        LmsProject[]
 
   @@map("b2b_pipeline")
 }
@@ -559,6 +560,8 @@ model LmsProject {
   name         String      @db.VarChar()
   company      B2BCompany? @relation(fields: [company_id], references: [id])
   company_id   Int?
+  pipeline     B2BPipeline @relation(fields: [pipeline_id], references: [id])
+  pipeline_id  Int
   attendee_pax Int?
   created_at   DateTime    @default(now()) @db.Timestamptz()
   updated_at   DateTime    @default(now()) @updatedAt @db.Timestamptz()

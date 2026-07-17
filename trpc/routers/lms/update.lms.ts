@@ -25,6 +25,7 @@ export const updateLms = {
         id: numberIsID(),
         name: stringNotBlank().optional(),
         company_id: numberIsID().nullable().optional(),
+        pipeline_id: numberIsID().optional(),
         attendee_pax: numberIsPosInt().nullable().optional(),
       })
     )
