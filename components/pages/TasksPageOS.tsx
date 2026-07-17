@@ -1,16 +1,29 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import ViewModeToggleOS, {
+  type ViewModeOS,
+} from "@/components/buttons/ViewModeToggleOS";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
+import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
+import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BActionStatusEnum } from "@prisma/client";
-import { Building2, CalendarClock, Plus, Search } from "lucide-react";
+import {
+  Building2,
+  CalendarClock,
+  Kanban,
+  LayoutGrid,
+  Plus,
+  Search,
+  Table2,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
@@ -19,6 +32,12 @@ const columns: { value: B2BActionStatusEnum; label: string; dot: string }[] = [
   { value: "IN_PROGRESS", label: "In Progress", dot: "bg-biru" },
   { value: "REVIEW", label: "Review", dot: "bg-kuning" },
   { value: "DONE", label: "Done", dot: "bg-hijau" },
+];
+
+const viewModeOptions = [
+  { value: "kanban" as const, label: "Kanban", icon: Kanban },
+  { value: "cards" as const, label: "Cards", icon: LayoutGrid },
+  { value: "table" as const, label: "Table", icon: Table2 },
 ];
 
 function initialsOf(name: string | null) {
@@ -46,6 +65,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   }, [sessionToken]);
 
   const utils = trpc.useUtils();
+
+  const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
+    "tasks_view_mode",
+    ["kanban", "cards", "table"],
+    "kanban"
+  );
 
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<
@@ -181,6 +206,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
             onChange={(value) => setPipelineFilter(value as number | null)}
           />
         </div>
+        <ViewModeToggleOS
+          value={viewMode}
+          onChange={setViewMode}
+          options={viewModeOptions}
+          className="ml-auto"
+        />
       </div>
 
       {isError && (
@@ -189,7 +220,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
         </p>
       )}
 
-      {!isError && (
+      {!isError && viewMode === "kanban" && (
         <div className="flex flex-1 gap-4 min-h-0 overflow-x-auto pb-1 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {columns.map((col) => {
             const items = board.filter((b) => b.status === col.value);
@@ -296,6 +327,160 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!isError && viewMode === "cards" && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {board.map((action) => {
+            const due = dueLabel(action.due_date, action.status === "DONE");
+            return (
+              <div
+                key={action.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setEditingActionId(action.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditingActionId(action.id);
+                  }
+                }}
+                className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-gray-900 dark:text-zinc-100 line-clamp-2">
+                    {action.name}
+                  </p>
+                  <ActionStatusLabel status={action.status} />
+                </div>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 dark:text-zinc-500">
+                  <Building2 size={12} />
+                  {action.company_name}
+                </span>
+                <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">
+                  <div className="flex items-center gap-2">
+                    <PriorityLabel priority={action.priority} />
+                    {due && (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                          due.late ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
+                        }`}
+                      >
+                        <CalendarClock size={11} />
+                        {due.text}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
+                    {action.assignee_avatar ? (
+                      <Image
+                        src={action.assignee_avatar}
+                        alt={action.assignee_name ?? ""}
+                        width={24}
+                        height={24}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      initialsOf(action.assignee_name)
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {!isLoading && board.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10 sm:col-span-2 xl:col-span-3">
+              No tasks found.
+            </p>
+          )}
+        </div>
+      )}
+
+      {!isError && viewMode === "table" && (
+        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-190 text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <th className="px-5 py-3">Task</th>
+                  <th className="px-5 py-3">Company</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Priority</th>
+                  <th className="px-5 py-3">Due</th>
+                  <th className="px-5 py-3">Assignee</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.map((action) => {
+                  const due = dueLabel(action.due_date, action.status === "DONE");
+                  return (
+                    <tr
+                      key={action.id}
+                      onClick={() => setEditingActionId(action.id)}
+                      className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    >
+                      <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
+                        {action.name}
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
+                        <span className="inline-flex items-center gap-1">
+                          <Building2 size={12} className="text-gray-400" />
+                          {action.company_name}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <ActionStatusLabel status={action.status} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <PriorityLabel priority={action.priority} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {due ? (
+                          <span
+                            className={`inline-flex items-center gap-1 ${
+                              due.late ? "text-red-500" : "text-gray-500 dark:text-zinc-400"
+                            }`}
+                          >
+                            <CalendarClock size={12} />
+                            {due.text}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 dark:text-zinc-600">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-5.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
+                            {action.assignee_avatar ? (
+                              <Image
+                                src={action.assignee_avatar}
+                                alt={action.assignee_name ?? ""}
+                                width={22}
+                                height={22}
+                                className="size-full object-cover"
+                              />
+                            ) : (
+                              initialsOf(action.assignee_name)
+                            )}
+                          </div>
+                          <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
+                            {action.assignee_name ?? "Unassigned"}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {!isLoading && board.length === 0 && (
+              <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
+                No tasks found.
+              </p>
+            )}
+          </div>
         </div>
       )}
 

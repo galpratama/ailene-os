@@ -1,5 +1,8 @@
 "use client";
 
+import ViewModeToggleOS, {
+  type ViewModeOS,
+} from "@/components/buttons/ViewModeToggleOS";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, {
   type AppSelectOption,
@@ -10,6 +13,7 @@ import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type {
   TrainerLevelEnum,
@@ -19,14 +23,22 @@ import {
   BadgeCheck,
   CircleUserRound,
   Crown,
+  LayoutGrid,
   Plus,
   Search,
   ShieldCheck,
+  Table2,
   UserRoundSearch,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+const viewModeOptions = [
+  { value: "cards" as const, label: "Cards", icon: LayoutGrid },
+  { value: "table" as const, label: "Table", icon: Table2 },
+];
 
 const stageOptions: AppSelectOption[] = [
   { value: "", label: "All stages" },
@@ -50,6 +62,13 @@ export default function TrainerPoolListOS({
   useEffect(() => {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
+
+  const router = useRouter();
+  const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
+    "trainers_view_mode",
+    ["cards", "table"],
+    "cards"
+  );
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -176,33 +195,44 @@ export default function TrainerPoolListOS({
         })}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
+      <div className="flex flex-wrap items-center gap-3">
         <AppInput
           inputId="trainer-search"
           icon={<Search size={14} />}
           placeholder="Search name or email..."
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
+          className="max-w-full sm:max-w-sm"
         />
-        <AppSelect
-          selectId="trainer-stage-filter"
-          placeholder="All stages"
-          value={stage}
-          onChange={(value) => {
-            setStage((value as TrainerStageEnum) ?? "");
-            setPage(1);
-          }}
-          options={stageOptions}
-        />
-        <AppSelect
-          selectId="trainer-level-filter"
-          placeholder="All levels"
-          value={level}
-          onChange={(value) => {
-            setLevel((value as TrainerLevelEnum) ?? "");
-            setPage(1);
-          }}
-          options={levelOptions}
+        <div className="w-full max-w-45">
+          <AppSelect
+            selectId="trainer-stage-filter"
+            placeholder="All stages"
+            value={stage}
+            onChange={(value) => {
+              setStage((value as TrainerStageEnum) ?? "");
+              setPage(1);
+            }}
+            options={stageOptions}
+          />
+        </div>
+        <div className="w-full max-w-45">
+          <AppSelect
+            selectId="trainer-level-filter"
+            placeholder="All levels"
+            value={level}
+            onChange={(value) => {
+              setLevel((value as TrainerLevelEnum) ?? "");
+              setPage(1);
+            }}
+            options={levelOptions}
+          />
+        </div>
+        <ViewModeToggleOS
+          value={viewMode}
+          onChange={setViewMode}
+          options={viewModeOptions}
+          className="ml-auto"
         />
       </div>
 
@@ -216,7 +246,7 @@ export default function TrainerPoolListOS({
           Failed to load trainer pool.
         </p>
       )}
-      {data && !isLoading && !isError && (
+      {data && !isLoading && !isError && viewMode === "cards" && (
         <>
           {data.list.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -310,6 +340,112 @@ export default function TrainerPoolListOS({
             </p>
           )}
         </>
+      )}
+
+      {data && !isLoading && !isError && viewMode === "table" && (
+        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-210 text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <th className="px-5 py-3">Trainer</th>
+                  <th className="px-5 py-3">Stage</th>
+                  <th className="px-5 py-3">Level</th>
+                  <th className="px-5 py-3">Specializations</th>
+                  <th className="px-5 py-3">Screen</th>
+                  <th className="px-5 py-3">Certify</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.list.map((trainer) => (
+                  <tr
+                    key={trainer.id}
+                    onClick={() => router.push(`/trainers/${trainer.id}`)}
+                    className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        {trainer.avatar ? (
+                          <Image
+                            src={trainer.avatar}
+                            alt={trainer.full_name}
+                            width={32}
+                            height={32}
+                            className="size-8 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-claude text-white">
+                            <CircleUserRound size={18} fill="currentColor" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
+                            {trainer.full_name}
+                          </p>
+                          <p className="truncate text-xs text-gray-400">
+                            {trainer.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <TrainerStageLabel stage={trainer.stage} />
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <TrainerLevelLabel level={trainer.level} />
+                    </td>
+                    <td className="px-5 py-3.5 max-w-52 truncate text-gray-600 dark:text-zinc-300">
+                      {trainer.specializations
+                        .map((entry) => entry.name)
+                        .join(", ") || "No specialization set"}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <ProgressBar
+                          value={trainer.screening_progress.passed}
+                          total={trainer.screening_progress.total}
+                          variant={
+                            trainer.screening_progress.passed ===
+                            trainer.screening_progress.total
+                              ? "hijau"
+                              : "claude"
+                          }
+                        />
+                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                          {trainer.screening_progress.passed}/
+                          {trainer.screening_progress.total}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <ProgressBar
+                          value={trainer.certification_progress.passed}
+                          total={trainer.certification_progress.total}
+                          variant={
+                            trainer.certification_progress.passed ===
+                            trainer.certification_progress.total
+                              ? "hijau"
+                              : "claude"
+                          }
+                        />
+                        <span className="w-7 shrink-0 text-right text-[11px] font-semibold text-gray-500">
+                          {trainer.certification_progress.passed}/
+                          {trainer.certification_progress.total}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.list.length === 0 && (
+              <p className="py-10 text-center text-sm text-gray-400">
+                No trainers match these filters.
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       <AppPaginationOS
