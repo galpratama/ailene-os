@@ -1,7 +1,9 @@
 import AppToaster from "@/components/elements/AppToaster";
 import SidebarOS from "@/components/navigations/SidebarOS";
+import AppPageState from "@/components/states/AppPageState";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { setSessionToken, trpc } from "@/trpc/server";
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
 import { Jersey_10, Space_Grotesk } from "next/font/google";
@@ -38,6 +40,15 @@ export const metadata: Metadata = {
 export default async function OSLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
+
+  if (!sessionToken) return null;
+  setSessionToken(sessionToken);
+
+  const checkUser = (await trpc.auth.checkSession()).user;
+
+  if (!checkUser || checkUser.role_name === "General User") {
+    return <AppPageState variant="FORBIDDEN" />;
+  }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
