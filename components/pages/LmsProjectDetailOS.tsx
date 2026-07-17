@@ -9,8 +9,7 @@ import LmsChapterTrainerPoolModalOS, {
   type LmsChapterTrainerPoolTarget,
 } from "@/components/modals/LmsChapterTrainerPoolModalOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { ListChecks, Pencil, Plus, Users } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, ListChecks, Pencil, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -72,12 +71,15 @@ export default function LmsProjectDetailOS({
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link
-            href="/lms/projects"
-            className="text-xs font-semibold text-gray-500 hover:text-claude"
+          <AppButton
+            size="sm"
+            variant="ghost"
+            className="-ml-3"
+            onClick={() => router.push("/lms/projects")}
           >
-            ← Corporate Training
-          </Link>
+            <ChevronLeft size={14} />
+            Project List
+          </AppButton>
           <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
             {project.name}
           </h2>
