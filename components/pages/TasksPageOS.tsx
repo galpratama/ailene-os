@@ -25,6 +25,7 @@ import {
   Table2,
 } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const columns: { value: B2BActionStatusEnum; label: string; dot: string }[] = [
@@ -72,12 +73,19 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     "kanban"
   );
 
+  // Deep-linked from a project's "View Detail Task" button as
+  // /tasks?pipeline_id=<id> — pre-selects that pipeline in the filter.
+  const searchParams = useSearchParams();
+  const linkedPipelineId = searchParams.get("pipeline_id");
+
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<
     string | undefined
   >(undefined);
   const [assigneeFilter, setAssigneeFilter] = useState("");
-  const [pipelineFilter, setPipelineFilter] = useState<number | null>(null);
+  const [pipelineFilter, setPipelineFilter] = useState<number | null>(
+    linkedPipelineId ? Number(linkedPipelineId) : null
+  );
   const [createStatus, setCreateStatus] = useState<B2BActionStatusEnum | null>(
     null
   );

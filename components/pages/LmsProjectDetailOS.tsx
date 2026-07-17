@@ -9,8 +9,9 @@ import LmsChapterTrainerPoolModalOS, {
   type LmsChapterTrainerPoolTarget,
 } from "@/components/modals/LmsChapterTrainerPoolModalOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { Pencil, Plus, Users } from "lucide-react";
+import { ListChecks, Pencil, Plus, Users } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function LmsProjectDetailOS({
@@ -23,6 +24,8 @@ export default function LmsProjectDetailOS({
   useEffect(() => {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
+
+  const router = useRouter();
 
   const [chapterFormOpen, setChapterFormOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<LmsChapterEditing | null>(
@@ -67,19 +70,29 @@ export default function LmsProjectDetailOS({
 
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
-      <div>
-        <Link
-          href="/lms/projects"
-          className="text-xs font-semibold text-gray-500 hover:text-claude"
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <Link
+            href="/lms/projects"
+            className="text-xs font-semibold text-gray-500 hover:text-claude"
+          >
+            ← Corporate Training
+          </Link>
+          <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
+            {project.name}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {project.company_name ?? "No linked company"}
+          </p>
+        </div>
+        <AppButton
+          size="sm"
+          variant="outline"
+          onClick={() => router.push(`/tasks?pipeline_id=${project.pipeline_id}`)}
         >
-          ← Corporate Training
-        </Link>
-        <h2 className="mt-2 text-xl font-bold text-gray-900 dark:text-zinc-100">
-          {project.name}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          {project.company_name ?? "No linked company"}
-        </p>
+          <ListChecks size={13} />
+          View Detail Task
+        </AppButton>
       </div>
 
       <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
