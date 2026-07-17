@@ -331,7 +331,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       {!isError && viewMode === "cards" && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {board.map((action) => {
             const due = dueLabel(action.due_date, action.status === "DONE");
             return (
@@ -399,7 +399,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       {!isError && viewMode === "table" && (
-        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+        <div className="shrink-0 overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
           <div className="overflow-x-auto">
             <table className="w-full min-w-190 text-sm">
               <thead>
