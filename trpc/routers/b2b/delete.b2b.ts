@@ -20,8 +20,15 @@ export const deleteB2B = {
   pipeline: administratorProcedure
     .input(objectHasOnlyID())
     .mutation(async (opts) => {
+      // Business Development can only delete a pipeline they own.
+      const isBusinessDevelopment =
+        opts.ctx.user.role.name === "Business Development";
+
       const deleted = await opts.ctx.prisma.b2BPipeline.deleteMany({
-        where: { id: opts.input.id },
+        where: {
+          id: opts.input.id,
+          ...(isBusinessDevelopment && { owner_id: opts.ctx.user.id }),
+        },
       });
       await checkDeleteResult(deleted.count, "pipelines", "pipeline");
       return {

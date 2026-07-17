@@ -76,8 +76,15 @@ export const updateB2B = {
         });
       }
 
+      // Business Development can only update a pipeline they own.
+      const isBusinessDevelopment =
+        opts.ctx.user.role.name === "Business Development";
+
       const updated = await opts.ctx.prisma.b2BPipeline.updateMany({
-        where: { id },
+        where: {
+          id,
+          ...(isBusinessDevelopment && { owner_id: opts.ctx.user.id }),
+        },
         data: {
           ...rest,
           ...(project_start_month !== undefined && {

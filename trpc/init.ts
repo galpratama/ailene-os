@@ -7,9 +7,7 @@ export type createTRPCContextOptions = {
   sessionToken?: string;
 };
 
-export async function createTRPCContext(
-  opts?: createTRPCContextOptions
-) {
+export async function createTRPCContext(opts?: createTRPCContextOptions) {
   const prisma = GetPrismaClient();
 
   async function getSessionTokenFromRequest() {
@@ -98,7 +96,8 @@ export const administratorProcedure = t.procedure.use(async (opts) => {
   }
   if (
     ctx.user.role.name !== "Administrator" &&
-    ctx.user.role.name !== "Super Admin"
+    ctx.user.role.name !== "Super Admin" &&
+    ctx.user.role.name !== "Business Development"
   ) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }

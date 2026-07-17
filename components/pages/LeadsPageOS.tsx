@@ -61,15 +61,28 @@ const stageColumns: { value: B2BStageEnum; label: string; dot: string }[] = [
   { value: "ON_HOLD", label: "On Hold", dot: "bg-gray-400" },
 ];
 
-export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) {
+export default function LeadsPageOS({
+  sessionToken,
+}: {
+  sessionToken: string;
+}) {
   useEffect(() => {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
   const utils = trpc.useUtils();
 
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+
+  const isBusinessDevelopment =
+    sessionData?.user.role_name === "Business Development";
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
+  const [editingPipelineId, setEditingPipelineId] = useState<number | null>(
+    null
+  );
 
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "leads_view_mode",
@@ -79,7 +92,9 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
 
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState<string | undefined>();
+  const [debouncedKeyword, setDebouncedKeyword] = useState<
+    string | undefined
+  >();
   const [stageFilter, setStageFilter] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
   const pageSize = 21;
@@ -108,7 +123,7 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
 
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
-    { enabled: !!sessionToken }
+    { enabled: !!sessionToken && !isBusinessDevelopment }
   );
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
@@ -193,7 +208,9 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
               <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
                 {getShortRupiahCurrency(data?.scorecards[sc.key] ?? 0)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{sc.label}</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                {sc.label}
+              </p>
             </div>
           </div>
         ))}
@@ -221,18 +238,20 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
             }}
           />
         </div>
-        <div className="w-full max-w-56">
-          <AppSelect
-            selectId="leads-owner-filter"
-            placeholder="All Owners"
-            value={ownerFilter}
-            options={ownerOptions}
-            onChange={(value) => {
-              setOwnerFilter((value as string) ?? "");
-              setPage(1);
-            }}
-          />
-        </div>
+        {!isBusinessDevelopment && (
+          <div className="w-full max-w-56">
+            <AppSelect
+              selectId="leads-owner-filter"
+              placeholder="All Owners"
+              value={ownerFilter}
+              options={ownerOptions}
+              onChange={(value) => {
+                setOwnerFilter((value as string) ?? "");
+                setPage(1);
+              }}
+            />
+          </div>
+        )}
         <ViewModeToggleOS
           value={viewMode}
           onChange={setViewMode}
@@ -241,7 +260,11 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
         />
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">Loading leads...</p>}
+      {isLoading && (
+        <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">
+          Loading leads...
+        </p>
+      )}
       {isError && (
         <p className="text-sm text-red-500 py-8 text-center">
           Failed to load leads. You may not have access to this data.
@@ -318,7 +341,9 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
                         {post.name}
                       </p>
                       <div className="flex items-center justify-between gap-2">
-                        <ProbabilityStatusLabel status={post.probability_status} />
+                        <ProbabilityStatusLabel
+                          status={post.probability_status}
+                        />
                         <span className="text-xs font-semibold text-gray-900 dark:text-zinc-100">
                           {getShortRupiahCurrency(Number(post.project_value))}
                         </span>
@@ -392,7 +417,9 @@ export default function LeadsPageOS({ sessionToken }: { sessionToken: string }) 
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <ProbabilityStatusLabel status={post.probability_status} />
+                        <ProbabilityStatusLabel
+                          status={post.probability_status}
+                        />
                         <span className="text-xs text-gray-400">
                           {post.probability}%
                         </span>

@@ -38,6 +38,10 @@ export const readB2B = {
   pipeline: administratorProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
+      // Business Development can only read a pipeline they own.
+      const isBusinessDevelopment =
+        opts.ctx.user.role.name === "Business Development";
+
       const thePipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
         include: {
           owner: { select: { id: true, full_name: true, avatar: true } },
@@ -47,7 +51,10 @@ export const readB2B = {
             },
           },
         },
-        where: { id: opts.input.id },
+        where: {
+          id: opts.input.id,
+          ...(isBusinessDevelopment && { owner_id: opts.ctx.user.id }),
+        },
       });
       if (!thePipeline) {
         throw readFailedNotFound("pipeline");

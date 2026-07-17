@@ -105,10 +105,17 @@ export const listB2B = {
       })
     )
     .query(async (opts) => {
+      // Business Development only ever sees their own pipelines — override
+      // whatever owner_id filter (or lack of one) the caller sent.
+      const isBusinessDevelopment =
+        opts.ctx.user.role.name === "Business Development";
+
       const whereClause: Prisma.B2BPipelineWhereInput = {
         stage: opts.input.stage,
         probability_status: opts.input.probability_status,
-        owner_id: opts.input.owner_id,
+        owner_id: isBusinessDevelopment
+          ? opts.ctx.user.id
+          : opts.input.owner_id,
         OR: undefined as Optional<
           [
             { name: { contains: string; mode: "insensitive" } },
