@@ -4,7 +4,7 @@ import AppButton from "@/components/buttons/AppButton";
 import ThemeToggleOS from "@/components/buttons/ThemeToggleOS";
 import { LogoAileneStroke } from "@/components/svg/LogoAileneStroke";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { osMainNav, osToolsNav } from "@/lib/os-nav";
+import { OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
 import { trpc, setSessionToken } from "@/trpc/client";
 import { LogOut, LucideIcon, Menu } from "lucide-react";
 import Image from "next/image";
@@ -12,8 +12,42 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const mainNav = osMainNav;
 const toolsNav = osToolsNav;
+
+function segmentClass(active: boolean) {
+  return `flex-1 h-7 rounded-md text-xs font-semibold transition-colors ${
+    active
+      ? "bg-claude text-white"
+      : "text-sb-text hover:text-sb-text-strong"
+  }`;
+}
+
+function SegmentToggle({
+  segment,
+  onChange,
+}: {
+  segment: OSSegment;
+  onChange: (segment: OSSegment) => void;
+}) {
+  return (
+    <div className="flex rounded-lg border border-sb-border-soft bg-sb-item-active-bg p-0.5">
+      <button
+        type="button"
+        onClick={() => onChange("B2B")}
+        className={segmentClass(segment === "B2B")}
+      >
+        B2B
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("B2C")}
+        className={segmentClass(segment === "B2C")}
+      >
+        B2C
+      </button>
+    </div>
+  );
+}
 
 const bizLoginURL =
   process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
@@ -150,6 +184,21 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
   } = useSidebar();
   const pathname = usePathname();
 
+  // Always start on B2B so the client's first render matches the server's
+  // (which has no access to localStorage) — read the saved value after mount.
+  const [segment, setSegment] = useState<OSSegment>("B2B");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_segment");
+    if (saved === "B2B" || saved === "B2C") setSegment(saved);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("sidebar_segment", segment);
+  }, [segment]);
+
+  const mainNav = osMainNav.filter((item) => item.segment === segment);
+
   // Safety net: if navigation ever happens without going through a NavItem's
   // onClick (e.g. browser back/forward), still close the mobile drawer.
   useEffect(() => {
@@ -236,6 +285,13 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             </span>
           </AppButton>
         </div>
+
+        {/* B2B / B2C segment toggle */}
+        {!isCollapsed && (
+          <div className="px-3 pb-3">
+            <SegmentToggle segment={segment} onChange={setSegment} />
+          </div>
+        )}
 
         {/* Main nav */}
         <nav
