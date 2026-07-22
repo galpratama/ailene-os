@@ -470,7 +470,7 @@ CREATE TABLE lms_chapter_trainer_requests (
 );
 
 CREATE TABLE lms_quizzes (
-  id           VARCHAR      PRIMARY KEY  DEFAULT encode(gen_random_bytes(12), 'hex'),
+  id           VARCHAR      PRIMARY KEY  DEFAULT nanoid(),
   chapter_id   INTEGER      NOT NULL,
   name         VARCHAR      NOT NULL,
   description  TEXT             NULL,
@@ -513,7 +513,7 @@ CREATE TABLE lms_videos (
 );
 
 CREATE TABLE lms_materials (
-  id           VARCHAR      PRIMARY KEY  DEFAULT encode(gen_random_bytes(12), 'hex'),
+  id           VARCHAR      PRIMARY KEY  DEFAULT nanoid(),
   chapter_id   INTEGER      NOT NULL,
   title        VARCHAR      NOT NULL,
   description  TEXT             NULL,

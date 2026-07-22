@@ -647,7 +647,7 @@ model LmsChapterTrainerRequest {
 }
 
 model LmsQuiz {
-  id          String              @id @default(dbgenerated("encode(gen_random_bytes(12), 'hex')")) @db.VarChar()
+  id          String              @id @default(nanoid()) @db.VarChar()
   chapter     LmsChapter          @relation(fields: [chapter_id], references: [id])
   chapter_id  Int
   name        String              @db.VarChar()
@@ -706,7 +706,7 @@ model LmsVideo {
 }
 
 model LmsMaterial {
-  id          String                  @id @default(dbgenerated("encode(gen_random_bytes(12), 'hex')")) @db.VarChar()
+  id          String                  @id @default(nanoid()) @db.VarChar()
   chapter     LmsChapter              @relation(fields: [chapter_id], references: [id])
   chapter_id  Int
   title       String                  @db.VarChar()
