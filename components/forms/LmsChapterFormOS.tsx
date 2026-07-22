@@ -76,6 +76,7 @@ export default function LmsChapterFormOS({
   useEffect(() => {
     if (!isOpen) return;
     if (editing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLevelId(editing.level_id);
       setName(editing.name);
       setDescription(editing.description ?? "");

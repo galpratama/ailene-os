@@ -190,6 +190,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar_segment");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved === "B2B" || saved === "B2C") setSegment(saved);
   }, []);
 

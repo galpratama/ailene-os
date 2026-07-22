@@ -30,6 +30,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsCollapsed(localStorage.getItem("sidebar_collapsed") === "true");
   }, []);
 

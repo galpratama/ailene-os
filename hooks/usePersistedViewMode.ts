@@ -16,6 +16,7 @@ export function usePersistedViewMode<T extends ViewModeOS>(
 
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (allowed.includes(saved as T)) setViewMode(saved as T);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

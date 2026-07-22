@@ -50,7 +50,7 @@ export default function LmsLevelListOS({
             Levels
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            The curriculum's overall progression, from Foundation onward.
+            The curriculum&apos;s overall progression, from Foundation onward.
           </p>
         </div>
         <AppButton onClick={openCreate}>

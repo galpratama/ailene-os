@@ -60,6 +60,7 @@ export default function LmsLevelFormOS({
   useEffect(() => {
     if (!isOpen) return;
     if (editing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLevelNumber(String(editing.level_number));
       setName(editing.name);
       setIcon(editing.icon ?? "");
