@@ -1,9 +1,11 @@
 "use client";
 
-import HomeActivityOS from "@/components/static-sections/HomeActivityOS";
-import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
+import LostReasonChartOS from "@/components/charts/LostReasonChartOS";
+import PipelineFunnelChartOS from "@/components/charts/PipelineFunnelChartOS";
+import StageDistributionChartOS from "@/components/charts/StageDistributionChartOS";
+import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
+import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import { AlertCircle, CheckSquare, Clock, Zap } from "lucide-react";
 import { useEffect } from "react";
 
 function getJakartaHour() {
@@ -29,55 +31,16 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data, isLoading, isError } =
-    trpc.list.b2b.homeSummary.useQuery(undefined, {
+  const { data, isError } = trpc.list.b2b.homeSummary.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+
+  const { data: analytics, isLoading: isAnalyticsLoading } =
+    trpc.list.b2b.dashboardAnalytics.useQuery(undefined, {
       enabled: !!sessionToken,
     });
 
-  const stats = [
-    {
-      label: "My Pending Approvals",
-      value: data?.stats.pending_approvals ?? 0,
-      icon: AlertCircle,
-      color: "text-kuning",
-      bg: "bg-kuning-t",
-    },
-    {
-      label: "My Tasks Today",
-      value: data?.stats.my_tasks_today ?? 0,
-      icon: CheckSquare,
-      color: "text-biru",
-      bg: "bg-biru-t",
-    },
-    {
-      label: "Team Overdue",
-      value: data?.stats.team_overdue ?? 0,
-      icon: Clock,
-      color: "text-merah",
-      bg: "bg-merah-t",
-    },
-    {
-      label: "Active Tasks",
-      value: data?.stats.active_tasks ?? 0,
-      icon: Zap,
-      color: "text-hijau",
-      bg: "bg-hijau-t",
-    },
-  ];
-
   const firstName = data?.user.full_name.trim().split(/\s+/)[0] ?? "";
-  const attention = data?.attention ?? {
-    totals: {
-      approvals: 0,
-      overdue_tasks: 0,
-      due_today_tasks: 0,
-      stale_leads: 0,
-    },
-    approvals: [],
-    overdue_tasks: [],
-    due_today_tasks: [],
-    stale_leads: [],
-  };
 
   return (
     <div className="flex min-h-full flex-col">
@@ -111,41 +74,40 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="flex flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700"
-            >
-              <div
-                className={`flex size-8 items-center justify-center rounded-lg ${stat.bg}`}
-              >
-                <stat.icon size={16} className={stat.color} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
-                  {isLoading ? "—" : stat.value}
-                </p>
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          ))}
+        {/* This week's trend */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <WeeklyConversionChartOS
+              data={analytics?.weekly_conversion ?? []}
+              weekStart={analytics?.meta.week_start ?? new Date()}
+              weekEnd={analytics?.meta.week_end ?? new Date()}
+              trailingStart={analytics?.meta.trailing_start ?? new Date()}
+              trailingEnd={analytics?.meta.trailing_end ?? new Date()}
+              isLoading={isAnalyticsLoading}
+            />
+          </div>
+          <LostReasonChartOS
+            data={analytics?.reason_distribution ?? []}
+            isLoading={isAnalyticsLoading}
+          />
         </div>
 
+        {/* Stage / flow analytics */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <HomeActivityOS
-            activity={data?.activity ?? []}
-            activityWindowDays={data?.meta.activity_window_days ?? 7}
-            isLoading={isLoading}
+          <StageDistributionChartOS
+            data={analytics?.stage_distribution ?? []}
+            isLoading={isAnalyticsLoading}
           />
-          <HomeAttentionOS
-            attention={attention}
-            staleLeadDays={data?.meta.stale_lead_days ?? 14}
-            isLoading={isLoading}
+          <PipelineFunnelChartOS
+            data={analytics?.funnel ?? []}
+            isLoading={isAnalyticsLoading}
           />
         </div>
+        <StageFlowSankeyChartOS
+          data={analytics?.sankey ?? { nodes: [], links: [] }}
+          windowDays={analytics?.meta.sankey_window_days ?? 90}
+          isLoading={isAnalyticsLoading}
+        />
       </div>
     </div>
   );

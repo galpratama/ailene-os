@@ -6,7 +6,11 @@ import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
-import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
+import {
+  B2BLostReasonEnum,
+  B2BProbabilityStatusEnum,
+  B2BStageEnum,
+} from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -25,6 +29,18 @@ const probabilityStatusOptions: AppSelectOption[] = [
   { value: "WARM", label: "Warm" },
   { value: "HOT", label: "Hot" },
 ];
+
+const reasonOptions: AppSelectOption[] = [
+  { value: "BUDGET_TOO_HIGH", label: "Budget Too High" },
+  { value: "TIMING_NOT_RIGHT", label: "Timing Not Right" },
+  { value: "LOST_TO_COMPETITOR", label: "Lost to Competitor" },
+  { value: "NO_RESPONSE", label: "No Response" },
+  { value: "NOT_A_FIT", label: "Not a Fit" },
+  { value: "INTERNAL_PRIORITY_SHIFT", label: "Internal Priority Shift" },
+  { value: "OTHER", label: "Other" },
+];
+
+const REASON_STAGES = new Set<B2BStageEnum>(["CLOSED_LOST", "ON_HOLD"]);
 
 function toMonthInputValue(value: string | Date | null) {
   if (!value) return "";
@@ -58,6 +74,7 @@ export default function EditLeadFormOS({
 
   const [name, setName] = useState("");
   const [stage, setStage] = useState<B2BStageEnum>("LEAD_IDENTIFIED");
+  const [reasonCode, setReasonCode] = useState<B2BLostReasonEnum | null>(null);
   const [probability, setProbability] = useState("");
   const [probabilityStatus, setProbabilityStatus] =
     useState<B2BProbabilityStatusEnum>("COLD");
@@ -96,6 +113,7 @@ export default function EditLeadFormOS({
     setImageUrl(pipeline.company_image_url ?? "");
     setName(pipeline.name);
     setStage(pipeline.stage);
+    setReasonCode(pipeline.current_stage_reason_code);
     setProbability(String(pipeline.probability));
     setProbabilityStatus(pipeline.probability_status);
     setProjectValue(String(Number(pipeline.project_value)));
@@ -142,6 +160,9 @@ export default function EditLeadFormOS({
           id: pipeline.id,
           name: name.trim(),
           stage,
+          reason_code: REASON_STAGES.has(stage)
+            ? (reasonCode ?? undefined)
+            : undefined,
           probability: probability ? Number(probability) : undefined,
           probability_status: probabilityStatus,
           project_value: projectValue ? Number(projectValue) : undefined,
@@ -278,6 +299,17 @@ export default function EditLeadFormOS({
                 options={probabilityStatusOptions}
               />
             </div>
+
+            {REASON_STAGES.has(stage) && (
+              <AppSelect
+                selectId="edit-lead-reason"
+                label={stage === "CLOSED_LOST" ? "Lost Reason" : "Hold Reason"}
+                placeholder="Pick a reason"
+                value={reasonCode}
+                onChange={(v) => setReasonCode(v as B2BLostReasonEnum)}
+                options={reasonOptions}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <AppNumberInput

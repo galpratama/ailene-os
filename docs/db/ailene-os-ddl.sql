@@ -41,6 +41,18 @@ CREATE TYPE b2b_probability_status_enum AS ENUM (
   'hot'
 );
 
+-- Enumeration for the b2b_pipeline / b2b_pipeline_stage_history tables
+
+CREATE TYPE b2b_lost_reason_enum AS ENUM (
+  'budget_too_high',
+  'timing_not_right',
+  'lost_to_competitor',
+  'no_response',
+  'not_a_fit',
+  'internal_priority_shift',
+  'other'
+);
+
 -- Enumeration for the b2b_actions table (b2ba_*)
 
 CREATE TYPE b2ba_status_enum AS ENUM (
@@ -291,18 +303,19 @@ CREATE TABLE b2b_company (
 );
 
 CREATE TABLE b2b_pipeline (
-  id                   SERIAL                        PRIMARY KEY,
-  name                 VARCHAR                       NOT NULL,
-  company_id           INTEGER                       NOT NULL,
-  stage                b2b_stage_enum                NOT NULL  DEFAULT 'lead_identified',
-  probability          SMALLINT                      NOT NULL  DEFAULT 0,
-  probability_status   b2b_probability_status_enum   NOT NULL  DEFAULT 'cold',
-  project_value        DECIMAL(15, 2)                NOT NULL  DEFAULT 0,
-  project_start_month  DATE                              NULL,
-  project_end_month    DATE                              NULL,
-  owner_id             UUID                          NOT NULL,
-  created_at           TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at           TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
+  id                          SERIAL                        PRIMARY KEY,
+  name                        VARCHAR                       NOT NULL,
+  company_id                  INTEGER                       NOT NULL,
+  stage                       b2b_stage_enum                NOT NULL  DEFAULT 'lead_identified',
+  probability                 SMALLINT                      NOT NULL  DEFAULT 0,
+  probability_status          b2b_probability_status_enum   NOT NULL  DEFAULT 'cold',
+  project_value               DECIMAL(15, 2)                NOT NULL  DEFAULT 0,
+  project_start_month         DATE                              NULL,
+  project_end_month           DATE                              NULL,
+  owner_id                    UUID                          NOT NULL,
+  current_stage_reason_code   b2b_lost_reason_enum              NULL, -- why the lead is currently On Hold / Closed Lost
+  created_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE b2b_actions (
@@ -316,6 +329,17 @@ CREATE TABLE b2b_actions (
   assignee_id  UUID                    NULL,
   created_at   TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at   TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Append-only log of every b2b_pipeline.stage change (b2b_pipeline only holds the current stage).
+CREATE TABLE b2b_pipeline_stage_history (
+  id           SERIAL                PRIMARY KEY,
+  pipeline_id  INTEGER               NOT NULL,
+  from_stage   b2b_stage_enum            NULL,
+  to_stage     b2b_stage_enum        NOT NULL,
+  reason_code  b2b_lost_reason_enum      NULL,
+  changed_by   UUID                  NOT NULL,
+  created_at   TIMESTAMPTZ           NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Trainer Pool
@@ -728,6 +752,10 @@ ALTER TABLE b2b_actions
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (assignee_id) REFERENCES users (id)         ON DELETE SET NULL;
 
+ALTER TABLE b2b_pipeline_stage_history
+  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (changed_by)  REFERENCES users (id);
+
 -- Trainer Pool
 
 ALTER TABLE trainers
@@ -986,6 +1014,10 @@ CREATE TRIGGER update_lms_announcement_updated_at_trigger
 
 -- Coaching notes — lookup a member's notes for the dashboard.
 CREATE INDEX lms_coaching_notes_member_id_idx ON lms_coaching_notes (member_id);
+
+-- Pipeline stage history — per-lead lookups and weekly-dashboard time-window queries.
+CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_history (pipeline_id);
+CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
 
 -- Announcement — enforce single-row table.
 CREATE UNIQUE INDEX lms_announcement_one_row_only ON lms_announcement ((TRUE));

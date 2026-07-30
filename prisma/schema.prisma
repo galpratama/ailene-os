@@ -56,6 +56,18 @@ enum B2BProbabilityStatusEnum {
   @@map("b2b_probability_status_enum")
 }
 
+enum B2BLostReasonEnum {
+  BUDGET_TOO_HIGH         @map("budget_too_high")
+  TIMING_NOT_RIGHT        @map("timing_not_right")
+  LOST_TO_COMPETITOR      @map("lost_to_competitor")
+  NO_RESPONSE             @map("no_response")
+  NOT_A_FIT               @map("not_a_fit")
+  INTERNAL_PRIORITY_SHIFT @map("internal_priority_shift")
+  OTHER                   @map("other")
+
+  @@map("b2b_lost_reason_enum")
+}
+
 // Enumeration for the B2BAction model (b2ba_*)
 
 enum B2BActionStatusEnum {
@@ -344,6 +356,7 @@ model User {
   tokens                          Token[]
   b2b_pipelines                   B2BPipeline[]
   b2b_actions                     B2BAction[]
+  b2b_pipeline_stage_changes      B2BPipelineStageHistory[]
   trainer_profile                 Trainer?                   @relation("TrainerUser")
   trainer_referrals               Trainer[]                  @relation("TrainerReferrer")
   trainer_scores                  TrainerScreening[]         @relation("TrainerScreeningScorer")
@@ -384,22 +397,24 @@ model B2BCompany {
 }
 
 model B2BPipeline {
-  id                  Int                      @id @default(autoincrement())
-  name                String                   @db.VarChar()
-  company             B2BCompany               @relation(fields: [company_id], references: [id])
-  company_id          Int
-  stage               B2BStageEnum             @default(LEAD_IDENTIFIED)
-  probability         Int                      @default(0) @db.SmallInt
-  probability_status  B2BProbabilityStatusEnum @default(COLD)
-  project_value       Decimal                  @default(0) @db.Decimal(15, 2)
-  project_start_month DateTime?                @db.Date
-  project_end_month   DateTime?                @db.Date
-  owner               User                     @relation(fields: [owner_id], references: [id])
-  owner_id            String                   @db.Uuid
-  created_at          DateTime                 @default(now()) @db.Timestamptz()
-  updated_at          DateTime                 @default(now()) @updatedAt @db.Timestamptz()
-  actions             B2BAction[]
-  lms_projects        LmsProject[]
+  id                        Int                       @id @default(autoincrement())
+  name                      String                    @db.VarChar()
+  company                   B2BCompany                @relation(fields: [company_id], references: [id])
+  company_id                Int
+  stage                     B2BStageEnum              @default(LEAD_IDENTIFIED)
+  probability               Int                       @default(0) @db.SmallInt
+  probability_status        B2BProbabilityStatusEnum  @default(COLD)
+  project_value             Decimal                   @default(0) @db.Decimal(15, 2)
+  project_start_month       DateTime?                 @db.Date
+  project_end_month         DateTime?                 @db.Date
+  owner                     User                      @relation(fields: [owner_id], references: [id])
+  owner_id                  String                    @db.Uuid
+  current_stage_reason_code B2BLostReasonEnum?
+  created_at                DateTime                  @default(now()) @db.Timestamptz()
+  updated_at                DateTime                  @default(now()) @updatedAt @db.Timestamptz()
+  actions                   B2BAction[]
+  stage_history             B2BPipelineStageHistory[]
+  lms_projects              LmsProject[]
 
   @@map("b2b_pipeline")
 }
@@ -419,6 +434,22 @@ model B2BAction {
   updated_at  DateTime              @default(now()) @updatedAt @db.Timestamptz()
 
   @@map("b2b_actions")
+}
+
+model B2BPipelineStageHistory {
+  id            Int                @id @default(autoincrement())
+  pipeline      B2BPipeline        @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline_id   Int
+  from_stage    B2BStageEnum?
+  to_stage      B2BStageEnum
+  reason_code   B2BLostReasonEnum?
+  changed_by    User               @relation(fields: [changed_by_id], references: [id])
+  changed_by_id String             @db.Uuid
+  created_at    DateTime           @default(now()) @db.Timestamptz()
+
+  @@index([pipeline_id])
+  @@index([created_at])
+  @@map("b2b_pipeline_stage_history")
 }
 
 // Trainer Pool

@@ -21,7 +21,7 @@ const stageStyles: Record<
   VERBAL_COMMIT: { variant: "kuning", icon: Handshake, label: "Verbal Commit" },
   CLOSED_WON: { variant: "hijau", icon: CheckCircle2, label: "Closed Won" },
   CLOSED_LOST: { variant: "merah", icon: XCircle, label: "Closed Lost" },
-  ON_HOLD: { variant: "gray", icon: PauseCircle, label: "On Hold" },
+  ON_HOLD: { variant: "oranye", icon: PauseCircle, label: "On Hold" },
 };
 
 export default function StageLabel({ stage }: { stage: B2BStageEnum }) {

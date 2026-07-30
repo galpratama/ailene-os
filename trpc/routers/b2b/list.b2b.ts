@@ -11,6 +11,7 @@ import {
 import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
+  B2BLostReasonEnum,
   B2BProbabilityStatusEnum,
   B2BStageEnum,
   Prisma,
@@ -21,6 +22,48 @@ import z from "zod";
 const DASHBOARD_TIME_ZONE = "Asia/Jakarta";
 const ACTIVITY_WINDOW_DAYS = 7;
 const STALE_LEAD_DAYS = 14;
+const WEEK_WINDOW_DAYS = 7;
+const TRAILING_WEEKS = 4;
+const SANKEY_WINDOW_DAYS = 90;
+
+const STAGE_ORDER: B2BStageEnum[] = [
+  B2BStageEnum.LEAD_IDENTIFIED,
+  B2BStageEnum.CONTACTED,
+  B2BStageEnum.NEGOTIATION,
+  B2BStageEnum.VERBAL_COMMIT,
+  B2BStageEnum.CLOSED_WON,
+  B2BStageEnum.CLOSED_LOST,
+  B2BStageEnum.ON_HOLD,
+];
+
+const STAGE_LABELS: Record<B2BStageEnum, string> = {
+  LEAD_IDENTIFIED: "Lead Identified",
+  CONTACTED: "Contacted",
+  NEGOTIATION: "Negotiation",
+  VERBAL_COMMIT: "Verbal Commit",
+  CLOSED_WON: "Closed Won",
+  CLOSED_LOST: "Closed Lost",
+  ON_HOLD: "On Hold",
+};
+
+// Natural lead progression only — Closed Lost/On Hold are exits, not funnel stops.
+const FUNNEL_STAGE_ORDER: B2BStageEnum[] = [
+  B2BStageEnum.LEAD_IDENTIFIED,
+  B2BStageEnum.CONTACTED,
+  B2BStageEnum.NEGOTIATION,
+  B2BStageEnum.VERBAL_COMMIT,
+  B2BStageEnum.CLOSED_WON,
+];
+
+const REASON_LABELS: Record<B2BLostReasonEnum, string> = {
+  BUDGET_TOO_HIGH: "Budget Too High",
+  TIMING_NOT_RIGHT: "Timing Not Right",
+  LOST_TO_COMPETITOR: "Lost to Competitor",
+  NO_RESPONSE: "No Response",
+  NOT_A_FIT: "Not a Fit",
+  INTERNAL_PRIORITY_SHIFT: "Internal Priority Shift",
+  OTHER: "Other",
+};
 
 function getCalendarDateInTimeZone(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -654,6 +697,187 @@ export const listB2B = {
         activity_since: activitySince,
         activity_window_days: ACTIVITY_WINDOW_DAYS,
         stale_lead_days: STALE_LEAD_DAYS,
+      },
+    };
+  }),
+
+  // Weekly dashboard analytics, sourced from b2b_pipeline_stage_history — no backfill, so depth is limited to history recorded since that table shipped.
+  dashboardAnalytics: administratorProcedure.query(async (opts) => {
+    const isBusinessDevelopment =
+      opts.ctx.user.role.name === "Business Development";
+    const ownerScope: Prisma.B2BPipelineWhereInput = isBusinessDevelopment
+      ? { owner_id: opts.ctx.user.id }
+      : {};
+    const historyOwnerScope: Prisma.B2BPipelineStageHistoryWhereInput =
+      isBusinessDevelopment ? { pipeline: { owner_id: opts.ctx.user.id } } : {};
+
+    const now = new Date();
+    const weekStart = new Date(now.getTime() - WEEK_WINDOW_DAYS * 86_400_000);
+    const sankeyStart = new Date(
+      now.getTime() - SANKEY_WINDOW_DAYS * 86_400_000
+    );
+    const trailingWindows = Array.from({ length: TRAILING_WEEKS }, (_, i) => ({
+      start: new Date(now.getTime() - (i + 2) * WEEK_WINDOW_DAYS * 86_400_000),
+      end: new Date(now.getTime() - (i + 1) * WEEK_WINDOW_DAYS * 86_400_000),
+    }));
+
+    const [stageGroups, sankeyGroups, thisWeekGroups, trailingGroups, reasonGroups] =
+      await Promise.all([
+        opts.ctx.prisma.b2BPipeline.groupBy({
+          by: ["stage"],
+          where: ownerScope,
+          _count: true,
+        }),
+        opts.ctx.prisma.b2BPipelineStageHistory.groupBy({
+          by: ["from_stage", "to_stage"],
+          where: { created_at: { gte: sankeyStart }, ...historyOwnerScope },
+          _count: true,
+        }),
+        opts.ctx.prisma.b2BPipelineStageHistory.groupBy({
+          by: ["to_stage"],
+          where: { created_at: { gte: weekStart }, ...historyOwnerScope },
+          _count: true,
+        }),
+        Promise.all(
+          trailingWindows.map((window) =>
+            opts.ctx.prisma.b2BPipelineStageHistory.groupBy({
+              by: ["to_stage"],
+              where: {
+                created_at: { gte: window.start, lt: window.end },
+                ...historyOwnerScope,
+              },
+              _count: true,
+            })
+          )
+        ),
+        opts.ctx.prisma.b2BPipelineStageHistory.groupBy({
+          by: ["reason_code"],
+          where: {
+            to_stage: { in: [B2BStageEnum.CLOSED_LOST, B2BStageEnum.ON_HOLD] },
+            created_at: { gte: weekStart },
+            ...historyOwnerScope,
+          },
+          _count: true,
+        }),
+      ]);
+
+    const stageCountMap = new Map(
+      stageGroups.map((group) => [group.stage, group._count])
+    );
+    const totalLeads = stageGroups.reduce((sum, group) => sum + group._count, 0);
+
+    const stage_distribution = STAGE_ORDER.map((stage) => {
+      const count = stageCountMap.get(stage) ?? 0;
+      return {
+        stage,
+        label: STAGE_LABELS[stage],
+        count,
+        percentage: totalLeads > 0 ? (count / totalLeads) * 100 : 0,
+      };
+    });
+
+    const leadIdentifiedCount =
+      stageCountMap.get(B2BStageEnum.LEAD_IDENTIFIED) ?? 0;
+    const funnel = FUNNEL_STAGE_ORDER.map((stage) => {
+      const count = stageCountMap.get(stage) ?? 0;
+      return {
+        stage,
+        label: STAGE_LABELS[stage],
+        count,
+        percentage:
+          leadIdentifiedCount > 0 ? (count / leadIdentifiedCount) * 100 : 0,
+      };
+    });
+
+    // Only include stages referenced by a transition this window — an unconnected node just clutters the diagram.
+    const referencedStages = new Set<B2BStageEnum>();
+    for (const group of sankeyGroups) {
+      if (group.from_stage) referencedStages.add(group.from_stage);
+      referencedStages.add(group.to_stage);
+    }
+    const sankeyStageOrder = STAGE_ORDER.filter((stage) =>
+      referencedStages.has(stage)
+    );
+    const sankeyNodeIndex = new Map(
+      sankeyStageOrder.map((stage, index) => [stage, index])
+    );
+    const sankey = {
+      nodes: sankeyStageOrder.map((stage) => ({ name: STAGE_LABELS[stage] })),
+      links: sankeyGroups
+        .filter(
+          (group): group is typeof group & { from_stage: B2BStageEnum } =>
+            group.from_stage !== null
+        )
+        .map((group) => ({
+          source: sankeyNodeIndex.get(group.from_stage)!,
+          target: sankeyNodeIndex.get(group.to_stage)!,
+          value: group._count,
+        })),
+    };
+
+    const thisWeekCountMap = new Map(
+      thisWeekGroups.map((group) => [group.to_stage, group._count])
+    );
+    const trailingCountMaps = trailingGroups.map(
+      (groups) => new Map(groups.map((group) => [group.to_stage, group._count]))
+    );
+    const weekly_conversion = STAGE_ORDER.map((stage) => {
+      const thisWeek = thisWeekCountMap.get(stage) ?? 0;
+      const trailingSum = trailingCountMaps.reduce(
+        (sum, map) => sum + (map.get(stage) ?? 0),
+        0
+      );
+      const trailingAvg = trailingSum / TRAILING_WEEKS;
+      return {
+        stage,
+        label: STAGE_LABELS[stage],
+        this_week: thisWeek,
+        trailing_avg: Math.round(trailingAvg * 10) / 10,
+        delta_pct:
+          trailingAvg > 0
+            ? ((thisWeek - trailingAvg) / trailingAvg) * 100
+            : null,
+      };
+    });
+
+    const closedWonThisWeek =
+      thisWeekCountMap.get(B2BStageEnum.CLOSED_WON) ?? 0;
+    const closedLostThisWeek =
+      thisWeekCountMap.get(B2BStageEnum.CLOSED_LOST) ?? 0;
+    const winRateDenominator = closedWonThisWeek + closedLostThisWeek;
+    const win_rate_this_week =
+      winRateDenominator > 0
+        ? (closedWonThisWeek / winRateDenominator) * 100
+        : null;
+
+    const reason_distribution = reasonGroups
+      .map((group) => ({
+        reason: group.reason_code,
+        label: group.reason_code
+          ? REASON_LABELS[group.reason_code]
+          : "Not specified",
+        count: group._count,
+      }))
+      .sort((left, right) => right.count - left.count);
+
+    return {
+      code: STATUS_OK,
+      message: "Success",
+      stage_distribution,
+      funnel,
+      sankey,
+      weekly_conversion,
+      win_rate_this_week,
+      reason_distribution,
+      meta: {
+        generated_at: now,
+        week_window_days: WEEK_WINDOW_DAYS,
+        week_start: weekStart,
+        week_end: now,
+        trailing_weeks: TRAILING_WEEKS,
+        trailing_start: trailingWindows[TRAILING_WEEKS - 1].start,
+        trailing_end: trailingWindows[0].end,
+        sankey_window_days: SANKEY_WINDOW_DAYS,
       },
     };
   }),

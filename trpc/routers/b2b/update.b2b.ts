@@ -10,6 +10,7 @@ import {
 import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
+  B2BLostReasonEnum,
   B2BProbabilityStatusEnum,
   B2BStageEnum,
 } from "@prisma/client";
@@ -53,6 +54,8 @@ export const updateB2B = {
         name: stringNotBlank().optional(),
         company_id: numberIsID().optional(),
         stage: z.enum(B2BStageEnum).optional(),
+        // Only recorded when `stage` moves into CLOSED_LOST/ON_HOLD (REASON_STAGES below) — ignored otherwise.
+        reason_code: z.enum(B2BLostReasonEnum).optional(),
         probability: z.number().int().min(0).max(100).optional(),
         probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
         project_value: z.number().nonnegative().optional(),
@@ -62,8 +65,13 @@ export const updateB2B = {
       })
     )
     .mutation(async (opts) => {
-      const { id, project_start_month, project_end_month, ...rest } =
-        opts.input;
+      const {
+        id,
+        project_start_month,
+        project_end_month,
+        reason_code,
+        ...rest
+      } = opts.input;
 
       if (
         project_start_month &&
@@ -79,27 +87,75 @@ export const updateB2B = {
       // Business Development can only update a pipeline they own.
       const isBusinessDevelopment =
         opts.ctx.user.role.name === "Business Development";
+      const REASON_STAGES: B2BStageEnum[] = [
+        B2BStageEnum.CLOSED_LOST,
+        B2BStageEnum.ON_HOLD,
+      ];
 
-      const updated = await opts.ctx.prisma.b2BPipeline.updateMany({
-        where: {
-          id,
-          ...(isBusinessDevelopment && { owner_id: opts.ctx.user.id }),
-        },
-        data: {
-          ...rest,
-          ...(project_start_month !== undefined && {
-            project_start_month: project_start_month
-              ? new Date(project_start_month)
-              : null,
-          }),
-          ...(project_end_month !== undefined && {
-            project_end_month: project_end_month
-              ? new Date(project_end_month)
-              : null,
-          }),
-        },
+      const updated = await opts.ctx.prisma.$transaction(async (tx) => {
+        const existing = await tx.b2BPipeline.findUnique({
+          where: { id },
+          select: { stage: true, owner_id: true },
+        });
+        if (
+          !existing ||
+          (isBusinessDevelopment && existing.owner_id !== opts.ctx.user.id)
+        ) {
+          return null;
+        }
+
+        const nextStage = rest.stage ?? existing.stage;
+        const stageChanged =
+          rest.stage !== undefined && rest.stage !== existing.stage;
+        const entersReasonStage =
+          stageChanged && REASON_STAGES.includes(nextStage);
+        const leavesReasonStage =
+          stageChanged &&
+          !entersReasonStage &&
+          REASON_STAGES.includes(existing.stage);
+        // Correcting the reason on an already On Hold/Closed Lost lead — no history row, since nothing transitioned.
+        const correctsReasonInPlace =
+          !stageChanged &&
+          reason_code !== undefined &&
+          REASON_STAGES.includes(existing.stage);
+
+        const row = await tx.b2BPipeline.update({
+          where: { id },
+          data: {
+            ...rest,
+            ...(project_start_month !== undefined && {
+              project_start_month: project_start_month
+                ? new Date(project_start_month)
+                : null,
+            }),
+            ...(project_end_month !== undefined && {
+              project_end_month: project_end_month
+                ? new Date(project_end_month)
+                : null,
+            }),
+            ...((entersReasonStage || correctsReasonInPlace) && {
+              current_stage_reason_code: reason_code ?? null,
+            }),
+            ...(leavesReasonStage && { current_stage_reason_code: null }),
+          },
+        });
+
+        if (stageChanged) {
+          await tx.b2BPipelineStageHistory.create({
+            data: {
+              pipeline_id: id,
+              from_stage: existing.stage,
+              to_stage: nextStage,
+              reason_code: entersReasonStage ? (reason_code ?? null) : null,
+              changed_by_id: opts.ctx.user.id,
+            },
+          });
+        }
+
+        return row;
       });
-      await checkUpdateResult(updated.count, "pipeline", "pipelines");
+
+      await checkUpdateResult(updated ? 1 : 0, "pipeline", "pipelines");
       return {
         code: STATUS_OK,
         message: "Pipeline updated",

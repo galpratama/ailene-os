@@ -6,6 +6,7 @@ import CreateLeadFormOS from "@/components/forms/CreateLeadFormOS";
 import EditLeadFormOS from "@/components/forms/EditLeadFormOS";
 import ProbabilityStatusLabel from "@/components/labels/ProbabilityStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
+import StageReasonPromptOS from "@/components/modals/StageReasonPromptOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import ViewModeToggleOS, {
@@ -14,7 +15,7 @@ import ViewModeToggleOS, {
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BStageEnum } from "@prisma/client";
+import type { B2BLostReasonEnum, B2BStageEnum } from "@prisma/client";
 import {
   Building2,
   Kanban,
@@ -58,7 +59,7 @@ const stageColumns: { value: B2BStageEnum; label: string; dot: string }[] = [
   { value: "VERBAL_COMMIT", label: "Verbal Commit", dot: "bg-kuning" },
   { value: "CLOSED_WON", label: "Closed Won", dot: "bg-hijau" },
   { value: "CLOSED_LOST", label: "Closed Lost", dot: "bg-merah" },
-  { value: "ON_HOLD", label: "On Hold", dot: "bg-gray-400" },
+  { value: "ON_HOLD", label: "On Hold", dot: "bg-oranye" },
 ];
 
 export default function LeadsPageOS({
@@ -157,13 +158,23 @@ export default function LeadsPageOS({
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<B2BStageEnum | null>(null);
 
-  const moveTo = (id: number, stage: B2BStageEnum) => {
-    const current = board.find((b) => b.id === id);
-    if (!current || current.stage === stage) return;
-    const prevStage = current.stage;
-    setMovedStages((prev) => ({ ...prev, [id]: stage }));
+  // Stages where we pause the drop to ask "why" before committing the move.
+  const REASON_STAGES = new Set<B2BStageEnum>(["CLOSED_LOST", "ON_HOLD"]);
+  const [pendingReasonPrompt, setPendingReasonPrompt] = useState<{
+    id: number;
+    stage: "CLOSED_LOST" | "ON_HOLD";
+    prevStage: B2BStageEnum;
+    leadName: string;
+  } | null>(null);
+
+  const commitStageChange = (
+    id: number,
+    stage: B2BStageEnum,
+    prevStage: B2BStageEnum,
+    reasonCode?: B2BLostReasonEnum
+  ) => {
     updatePipelineStage.mutate(
-      { id, stage },
+      { id, stage, reason_code: reasonCode },
       {
         onError: () => {
           setMovedStages((prev) => ({ ...prev, [id]: prevStage }));
@@ -171,6 +182,25 @@ export default function LeadsPageOS({
         onSuccess: () => utils.list.b2b.pipelines.invalidate(),
       }
     );
+  };
+
+  const moveTo = (id: number, stage: B2BStageEnum) => {
+    const current = board.find((b) => b.id === id);
+    if (!current || current.stage === stage) return;
+    const prevStage = current.stage;
+    // Card snaps to the new column instantly regardless of what happens next.
+    setMovedStages((prev) => ({ ...prev, [id]: stage }));
+
+    if (REASON_STAGES.has(stage)) {
+      setPendingReasonPrompt({
+        id,
+        stage: stage as "CLOSED_LOST" | "ON_HOLD",
+        prevStage,
+        leadName: current.company_name,
+      });
+      return;
+    }
+    commitStageChange(id, stage, prevStage);
   };
 
   const handleDrop =
@@ -563,6 +593,44 @@ export default function LeadsPageOS({
         pipelineId={editingPipelineId}
         isOpen={editingPipelineId !== null}
         onClose={() => setEditingPipelineId(null)}
+      />
+
+      <StageReasonPromptOS
+        target={
+          pendingReasonPrompt
+            ? {
+                leadName: pendingReasonPrompt.leadName,
+                stage: pendingReasonPrompt.stage,
+              }
+            : null
+        }
+        onConfirm={(reasonCode) => {
+          if (!pendingReasonPrompt) return;
+          commitStageChange(
+            pendingReasonPrompt.id,
+            pendingReasonPrompt.stage,
+            pendingReasonPrompt.prevStage,
+            reasonCode
+          );
+          setPendingReasonPrompt(null);
+        }}
+        onSkip={() => {
+          if (!pendingReasonPrompt) return;
+          commitStageChange(
+            pendingReasonPrompt.id,
+            pendingReasonPrompt.stage,
+            pendingReasonPrompt.prevStage
+          );
+          setPendingReasonPrompt(null);
+        }}
+        onCancel={() => {
+          if (!pendingReasonPrompt) return;
+          setMovedStages((prev) => ({
+            ...prev,
+            [pendingReasonPrompt.id]: pendingReasonPrompt.prevStage,
+          }));
+          setPendingReasonPrompt(null);
+        }}
       />
     </div>
   );
