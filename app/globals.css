@@ -19,6 +19,10 @@
   --hijau-t: #e6f1d8;
   --oranye: #f85149;
   --oranye-t: #fedcdb;
+  --ungu: #a78bfa;
+  --ungu-t: #ede9fe;
+  --toska: #2dd4bf;
+  --toska-t: #ccfbf1;
   --ink: #17171a;
   --ink-soft: #5a5a63;
   --ink-line: rgba(23, 23, 26, 0.1);
@@ -91,6 +95,10 @@
   --color-hijau-t: var(--hijau-t);
   --color-oranye: var(--oranye);
   --color-oranye-t: var(--oranye-t);
+  --color-ungu: var(--ungu);
+  --color-ungu-t: var(--ungu-t);
+  --color-toska: var(--toska);
+  --color-toska-t: var(--toska-t);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-line: var(--ink-line);

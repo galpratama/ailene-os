@@ -7,7 +7,9 @@ export type LabelVariant =
   | "hijau"
   | "merah"
   | "oranye"
-  | "pink";
+  | "pink"
+  | "ungu"
+  | "toska";
 
 const variantStyles: Record<
   LabelVariant,
@@ -47,6 +49,16 @@ const variantStyles: Record<
     text: "text-[#a0447e] dark:text-pink-300",
     border: "border-[#f0b8dd] dark:border-pink-800",
     bg: "bg-pink-t dark:bg-pink-950/40",
+  },
+  ungu: {
+    text: "text-[#7c5cc4] dark:text-purple-300",
+    border: "border-[#cdbdf0] dark:border-purple-800",
+    bg: "bg-ungu-t dark:bg-purple-950/40",
+  },
+  toska: {
+    text: "text-[#0f9b8e] dark:text-teal-300",
+    border: "border-[#a7ece4] dark:border-teal-800",
+    bg: "bg-toska-t dark:bg-teal-950/40",
   },
 };
 

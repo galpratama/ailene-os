@@ -5,7 +5,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -58,7 +57,8 @@ export default function WeeklyConversionChartOS({
         Weekly Conversion
       </p>
       <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-        This week ({weekRange}) vs. the trailing 4-week average ({trailingRange}).
+        This week ({weekRange}) vs. the trailing 4-week average ({trailingRange}
+        ).
       </p>
 
       {!hasData ? (
@@ -68,69 +68,84 @@ export default function WeeklyConversionChartOS({
           </p>
         </div>
       ) : (
-        <div className="mt-5 h-70 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-              accessibilityLayer
-            >
-              <CartesianGrid
-                vertical={false}
-                stroke="var(--dashboard-border)"
-                strokeDasharray="4 6"
+        <>
+          <div className="mt-5 h-[360px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data}
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                barCategoryGap="0%"
+                barGap="5%"
+                accessibilityLayer
+              >
+                <CartesianGrid
+                  vertical={false}
+                  stroke="var(--dashboard-border)"
+                  strokeDasharray="4 6"
+                />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  angle={-20}
+                  textAnchor="end"
+                  height={50}
+                  tick={{ fill: "var(--sb-text)", fontSize: 11 }}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                  tick={{ fill: "var(--sb-text)", fontSize: 11 }}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--dashboard-border)", opacity: 0.3 }}
+                  contentStyle={{
+                    backgroundColor: "var(--card-bg)",
+                    borderColor: "var(--dashboard-border)",
+                    borderRadius: 12,
+                    color: "var(--foreground)",
+                    fontSize: 12,
+                  }}
+                  itemStyle={{ fontSize: 12 }}
+                  labelStyle={{
+                    color: "var(--foreground)",
+                    fontWeight: 700,
+                    fontSize: 12,
+                  }}
+                />
+                <Bar
+                  dataKey="this_week"
+                  name={`This week (${weekRange})`}
+                  fill="var(--claude)"
+                />
+                <Bar
+                  dataKey="trailing_avg"
+                  name={`Trailing avg (${trailingRange})`}
+                  fill="var(--dashboard-border)"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-6 text-xs text-gray-500 dark:text-zinc-400">
+            <span className="flex items-center gap-2">
+              <span
+                className="inline-block h-3 w-3 rounded-sm"
+                style={{ backgroundColor: "var(--claude)" }}
               />
-              <XAxis
-                dataKey="label"
-                axisLine={false}
-                tickLine={false}
-                interval={0}
-                angle={-20}
-                textAnchor="end"
-                height={50}
-                tick={{ fill: "var(--sb-text)", fontSize: 11 }}
+              This week ({weekRange})
+            </span>
+            <span className="flex items-center gap-2">
+              <span
+                className="inline-block h-3 w-3 rounded-sm"
+                style={{ backgroundColor: "var(--dashboard-border)" }}
               />
-              <YAxis
-                allowDecimals={false}
-                axisLine={false}
-                tickLine={false}
-                width={32}
-                tick={{ fill: "var(--sb-text)", fontSize: 11 }}
-              />
-              <Tooltip
-                cursor={{ fill: "var(--dashboard-border)", opacity: 0.3 }}
-                contentStyle={{
-                  backgroundColor: "var(--card-bg)",
-                  borderColor: "var(--dashboard-border)",
-                  borderRadius: 12,
-                  color: "var(--foreground)",
-                  fontSize: 12,
-                }}
-                itemStyle={{ fontSize: 12 }}
-                labelStyle={{
-                  color: "var(--foreground)",
-                  fontWeight: 700,
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar
-                dataKey="this_week"
-                name={`This week (${weekRange})`}
-                fill="var(--claude)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={22}
-              />
-              <Bar
-                dataKey="trailing_avg"
-                name={`Trailing avg (${trailingRange})`}
-                fill="var(--dashboard-border)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={22}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+              Trailing avg ({trailingRange})
+            </span>
+          </div>
+        </>
       )}
     </div>
   );

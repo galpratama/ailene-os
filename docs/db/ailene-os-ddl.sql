@@ -28,6 +28,9 @@ CREATE TYPE occupation_enum AS ENUM (
 CREATE TYPE b2b_stage_enum AS ENUM (
   'lead_identified',
   'contacted',
+  'replied',
+  'show_interest',
+  'meeting_booked',
   'negotiation',
   'verbal_commit',
   'closed_won',

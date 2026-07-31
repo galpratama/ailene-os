@@ -13,6 +13,9 @@ import { FormEvent, useState } from "react";
 const stageOptions: AppSelectOption[] = [
   { value: "LEAD_IDENTIFIED", label: "Lead Identified" },
   { value: "CONTACTED", label: "Contacted" },
+  { value: "REPLIED", label: "Replied" },
+  { value: "SHOW_INTEREST", label: "Show Interest" },
+  { value: "MEETING_BOOKED", label: "Meeting Booked" },
   { value: "NEGOTIATION", label: "Negotiation" },
   { value: "VERBAL_COMMIT", label: "Verbal Commit" },
   { value: "CLOSED_WON", label: "Closed Won" },

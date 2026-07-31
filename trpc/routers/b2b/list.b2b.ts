@@ -29,6 +29,9 @@ const SANKEY_WINDOW_DAYS = 90;
 const STAGE_ORDER: B2BStageEnum[] = [
   B2BStageEnum.LEAD_IDENTIFIED,
   B2BStageEnum.CONTACTED,
+  B2BStageEnum.REPLIED,
+  B2BStageEnum.SHOW_INTEREST,
+  B2BStageEnum.MEETING_BOOKED,
   B2BStageEnum.NEGOTIATION,
   B2BStageEnum.VERBAL_COMMIT,
   B2BStageEnum.CLOSED_WON,
@@ -39,6 +42,9 @@ const STAGE_ORDER: B2BStageEnum[] = [
 const STAGE_LABELS: Record<B2BStageEnum, string> = {
   LEAD_IDENTIFIED: "Lead Identified",
   CONTACTED: "Contacted",
+  REPLIED: "Replied",
+  SHOW_INTEREST: "Show Interest",
+  MEETING_BOOKED: "Meeting Booked",
   NEGOTIATION: "Negotiation",
   VERBAL_COMMIT: "Verbal Commit",
   CLOSED_WON: "Closed Won",
@@ -50,6 +56,9 @@ const STAGE_LABELS: Record<B2BStageEnum, string> = {
 const FUNNEL_STAGE_ORDER: B2BStageEnum[] = [
   B2BStageEnum.LEAD_IDENTIFIED,
   B2BStageEnum.CONTACTED,
+  B2BStageEnum.REPLIED,
+  B2BStageEnum.SHOW_INTEREST,
+  B2BStageEnum.MEETING_BOOKED,
   B2BStageEnum.NEGOTIATION,
   B2BStageEnum.VERBAL_COMMIT,
   B2BStageEnum.CLOSED_WON,

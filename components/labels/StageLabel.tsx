@@ -1,12 +1,15 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
 import type { B2BStageEnum } from "@prisma/client";
 import {
+  CalendarCheck,
   CheckCircle2,
   Handshake,
   LucideIcon,
   MessagesSquare,
   PauseCircle,
   PhoneCall,
+  Reply,
+  Sparkles,
   Target,
   XCircle,
 } from "lucide-react";
@@ -17,6 +20,9 @@ const stageStyles: Record<
 > = {
   LEAD_IDENTIFIED: { variant: "gray", icon: Target, label: "Lead Identified" },
   CONTACTED: { variant: "biru", icon: PhoneCall, label: "Contacted" },
+  REPLIED: { variant: "biru", icon: Reply, label: "Replied" },
+  SHOW_INTEREST: { variant: "toska", icon: Sparkles, label: "Show Interest" },
+  MEETING_BOOKED: { variant: "ungu", icon: CalendarCheck, label: "Meeting Booked" },
   NEGOTIATION: { variant: "pink", icon: MessagesSquare, label: "Negotiation" },
   VERBAL_COMMIT: { variant: "kuning", icon: Handshake, label: "Verbal Commit" },
   CLOSED_WON: { variant: "hijau", icon: CheckCircle2, label: "Closed Won" },

@@ -74,7 +74,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           </div>
         )}
 
-        {/* This week's trend */}
+        {/* This week's trend + leads by stage */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2">
             <WeeklyConversionChartOS
@@ -86,20 +86,20 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
               isLoading={isAnalyticsLoading}
             />
           </div>
-          <LostReasonChartOS
-            data={analytics?.reason_distribution ?? []}
-            isLoading={isAnalyticsLoading}
-          />
-        </div>
-
-        {/* Stage / flow analytics */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <StageDistributionChartOS
             data={analytics?.stage_distribution ?? []}
             isLoading={isAnalyticsLoading}
           />
+        </div>
+
+        {/* Funnel + lost reason */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <PipelineFunnelChartOS
             data={analytics?.funnel ?? []}
+            isLoading={isAnalyticsLoading}
+          />
+          <LostReasonChartOS
+            data={analytics?.reason_distribution ?? []}
             isLoading={isAnalyticsLoading}
           />
         </div>

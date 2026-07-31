@@ -39,6 +39,9 @@ enum OccupationEnum {
 enum B2BStageEnum {
   LEAD_IDENTIFIED @map("lead_identified")
   CONTACTED       @map("contacted")
+  REPLIED         @map("replied")
+  SHOW_INTEREST   @map("show_interest")
+  MEETING_BOOKED  @map("meeting_booked")
   NEGOTIATION     @map("negotiation")
   VERBAL_COMMIT   @map("verbal_commit")
   CLOSED_WON      @map("closed_won")

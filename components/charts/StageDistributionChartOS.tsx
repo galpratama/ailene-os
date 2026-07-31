@@ -1,6 +1,6 @@
 "use client";
 
-import { STAGE_CHART_COLORS } from "@/components/charts/stageChartColors";
+import { STAGE_CHART_COLORS } from "@/lib/stage-chart-colors";
 import type { B2BStageEnum } from "@prisma/client";
 import {
   Bar,
@@ -44,7 +44,7 @@ export default function StageDistributionChartOS({
           </p>
         </div>
       ) : (
-        <div className="mt-5 h-70 w-full">
+        <div className="mt-5 h-[360px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -87,7 +87,7 @@ export default function StageDistributionChartOS({
                   "Count",
                 ]}
               />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={28}>
+              <Bar dataKey="count" maxBarSize={28}>
                 {data.map((entry) => (
                   <Cell key={entry.stage} fill={STAGE_CHART_COLORS[entry.stage]} />
                 ))}

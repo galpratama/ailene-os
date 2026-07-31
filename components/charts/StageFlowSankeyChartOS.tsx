@@ -12,6 +12,9 @@ type SankeyData = {
 const STAGE_NODE_COLORS: Record<string, string> = {
   "Lead Identified": "#9ca3af",
   Contacted: "var(--biru)",
+  Replied: "var(--biru)",
+  "Show Interest": "var(--toska)",
+  "Meeting Booked": "var(--ungu)",
   Negotiation: "var(--pink)",
   "Verbal Commit": "var(--kuning)",
   "Closed Won": "var(--hijau)",
