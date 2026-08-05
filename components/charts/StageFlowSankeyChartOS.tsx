@@ -54,7 +54,9 @@ export default function StageFlowSankeyChartOS({
   windowDays: number;
   isLoading: boolean;
 }) {
-  const hasData = data.links.length > 0;
+  // recharts' Sankey crashes (stack overflow) on cyclic/backward links, so only keep forward edges.
+  const links = data.links.filter((link) => link.target > link.source);
+  const hasData = links.length > 0;
 
   return (
     <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
@@ -84,7 +86,7 @@ export default function StageFlowSankeyChartOS({
           <div className="mt-5 h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <Sankey
-                data={data}
+                data={{ nodes: data.nodes, links }}
                 nodePadding={28}
                 nodeWidth={12}
                 margin={{ top: 8, right: 140, bottom: 8, left: 100 }}

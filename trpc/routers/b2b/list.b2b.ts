@@ -798,10 +798,18 @@ export const listB2B = {
       };
     });
 
+    const stagePosition = new Map(STAGE_ORDER.map((stage, index) => [stage, index]));
+    // recharts' Sankey crashes (stack overflow) on cyclic/backward links, so only keep transitions that move forward through STAGE_ORDER.
+    const forwardGroups = sankeyGroups.filter(
+      (group): group is typeof group & { from_stage: B2BStageEnum } =>
+        group.from_stage !== null &&
+        stagePosition.get(group.to_stage)! > stagePosition.get(group.from_stage)!
+    );
+
     // Only include stages referenced by a transition this window — an unconnected node just clutters the diagram.
     const referencedStages = new Set<B2BStageEnum>();
-    for (const group of sankeyGroups) {
-      if (group.from_stage) referencedStages.add(group.from_stage);
+    for (const group of forwardGroups) {
+      referencedStages.add(group.from_stage);
       referencedStages.add(group.to_stage);
     }
     const sankeyStageOrder = STAGE_ORDER.filter((stage) =>
@@ -812,16 +820,11 @@ export const listB2B = {
     );
     const sankey = {
       nodes: sankeyStageOrder.map((stage) => ({ name: STAGE_LABELS[stage] })),
-      links: sankeyGroups
-        .filter(
-          (group): group is typeof group & { from_stage: B2BStageEnum } =>
-            group.from_stage !== null
-        )
-        .map((group) => ({
-          source: sankeyNodeIndex.get(group.from_stage)!,
-          target: sankeyNodeIndex.get(group.to_stage)!,
-          value: group._count,
-        })),
+      links: forwardGroups.map((group) => ({
+        source: sankeyNodeIndex.get(group.from_stage)!,
+        target: sankeyNodeIndex.get(group.to_stage)!,
+        value: group._count,
+      })),
     };
 
     const thisWeekCountMap = new Map(
