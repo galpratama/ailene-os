@@ -394,7 +394,7 @@ export default function PricingCalculatorPageOS() {
     t += `Ops + AM      : ${getRupiahCurrency(result.opsFee)}\n`;
     t += `Amortisasi    : ${getRupiahCurrency(result.amoFee)}\n`;
     t += `Net Profit    : ${getRupiahCurrency(result.genesis)} (${(margin * 100).toFixed(1)}%)\n`;
-    t += `Invoice       : ${getRupiahCurrency(result.invoice)} (gross up PPh 0,5% + PPN 11%)\n`;
+    t += `Invoice       : ${getRupiahCurrency(result.invoice)} (gross up PPh 0,5%)\n`;
     t += margin < MARGIN_FLOOR ? "\nSTATUS: perlu approval, di bawah 45%\n" : "\nSTATUS: aman\n";
     return t;
   }
@@ -689,10 +689,6 @@ export default function PricingCalculatorPageOS() {
             <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-2.5 text-sm">
               <span>PPh Final 0,5% (gross up)</span>
               <span className="font-mono font-semibold">{getRupiahCurrency(result.pphTax)}</span>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between text-sm">
-              <span>PPN 11% (gross up)</span>
-              <span className="font-mono font-semibold">{getRupiahCurrency(result.ppnTax)}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between border-t-2 border-coral pt-2.5 text-base font-bold">
               <span>Total invoice</span>

@@ -303,10 +303,6 @@ export function InvoicePDF({
             <Text style={styles.totalLabel}>PPh Final 0,5% (gross up)</Text>
             <Text style={styles.totalValue}>{getRupiahCurrency(result.pphTax)}</Text>
           </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>PPN 11% (gross up)</Text>
-            <Text style={styles.totalValue}>{getRupiahCurrency(result.ppnTax)}</Text>
-          </View>
           <View style={styles.grandRow}>
             <Text style={styles.grandLabel}>Total Invoice</Text>
             <Text style={styles.grandValue}>{getRupiahCurrency(result.invoice)}</Text>

@@ -66,7 +66,6 @@ export const MN: Record<MateriLevel, string> = {
 export const OPS_PCT = 0.1;
 export const AMO_PCT = 0.05;
 export const TAX_PCT = 0.005;
-export const PPN_PCT = 0.11;
 export const MARGIN_FLOOR = 0.45;
 
 export const ADDON_PRICE = {
@@ -181,7 +180,6 @@ export interface PricingResult {
   margin: number;
   invoice: number;
   pphTax: number;
-  ppnTax: number;
   tax: number;
 }
 
@@ -200,10 +198,9 @@ export function calculatePricing(state: PricingState): PricingResult {
   const opsFee = netValue * OPS_PCT;
   const amoFee = netValue * AMO_PCT;
   const genesis = netValue - costTotal - addons.cost - bdFee - opsFee - amoFee;
-  // PPh 0,5% and PPN 11% are grossed up together: invoice = netValue / (1 - sum of rates).
-  const invoice = netValue / (1 - TAX_PCT - PPN_PCT);
+  // PPh Final 0,5% is grossed up so the amount received remains equal to netValue.
+  const invoice = netValue / (1 - TAX_PCT);
   const pphTax = invoice * TAX_PCT;
-  const ppnTax = invoice * PPN_PCT;
 
   return {
     subtotal,
@@ -219,7 +216,6 @@ export function calculatePricing(state: PricingState): PricingResult {
     margin: netValue > 0 ? genesis / netValue : 0,
     invoice,
     pphTax,
-    ppnTax,
-    tax: pphTax + ppnTax,
+    tax: pphTax,
   };
 }
