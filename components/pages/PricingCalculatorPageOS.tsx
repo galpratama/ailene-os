@@ -205,9 +205,18 @@ const flagStyles: Record<
   FlagType,
   { box: string; icon: typeof CircleX }
 > = {
-  stop: { box: "border-merah/40 bg-merah-t text-merah", icon: CircleX },
-  warn: { box: "border-kuning/50 bg-kuning-t text-[#9a7a1a] dark:text-yellow-300", icon: CircleAlert },
-  ok: { box: "border-hijau/40 bg-hijau-t text-[#5a8a2a] dark:text-green-300", icon: CircleCheck },
+  stop: {
+    box: "border-merah/40 bg-merah-t text-merah dark:border-red-800 dark:bg-red-950/40 dark:text-red-300",
+    icon: CircleX,
+  },
+  warn: {
+    box: "border-kuning/50 bg-kuning-t text-[#9a7a1a] dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
+    icon: CircleAlert,
+  },
+  ok: {
+    box: "border-hijau/40 bg-hijau-t text-[#5a8a2a] dark:border-green-800 dark:bg-green-950/40 dark:text-green-300",
+    icon: CircleCheck,
+  },
 };
 
 function Flag({ type, children }: { type: FlagType; children: ReactNode }) {
@@ -421,19 +430,21 @@ export default function PricingCalculatorPageOS() {
                   key={d.id}
                   className={`rounded-lg border ${
                     d.format === "offline"
-                      ? "border-oranye/30"
-                      : "border-biru/40"
+                      ? "border-oranye/30 dark:border-orange-800"
+                      : "border-biru/40 dark:border-blue-800"
                   }`}
                 >
                   <div
                     className={`flex flex-wrap items-center gap-2.5 rounded-t-lg px-3 py-2 ${
-                      d.format === "offline" ? "bg-oranye-t" : "bg-biru-t"
+                      d.format === "offline"
+                        ? "bg-oranye-t dark:bg-orange-950/40"
+                        : "bg-biru-t dark:bg-blue-950/40"
                     }`}
                   >
-                    <span className="text-sm font-bold text-gray-900 dark:text-zinc-900">
+                    <span className="text-sm font-bold text-gray-900 dark:text-zinc-100">
                       Hari {i + 1}
                     </span>
-                    <div className="flex rounded-md border border-gray-900/15 bg-white p-0.5">
+                    <div className="flex rounded-md border border-gray-900/15 bg-white p-0.5 dark:border-white/10 dark:bg-zinc-900">
                       <button
                         type="button"
                         onClick={() => updateDay(d.id, { format: "offline" as SessionFormat })}
@@ -449,7 +460,7 @@ export default function PricingCalculatorPageOS() {
                         Online
                       </button>
                     </div>
-                    <span className="ml-auto font-mono text-sm font-bold text-gray-900 dark:text-zinc-900">
+                    <span className="ml-auto font-mono text-sm font-bold text-gray-900 dark:text-zinc-100">
                       {getRupiahCurrency(dayPrice(d, materi))}
                     </span>
                     {days.length > 1 && (
@@ -457,7 +468,7 @@ export default function PricingCalculatorPageOS() {
                         type="button"
                         onClick={() => removeDay(d.id)}
                         title="Hapus hari"
-                        className="text-gray-500 hover:text-merah"
+                        className="text-gray-500 hover:text-merah dark:text-zinc-400 dark:hover:text-red-300"
                       >
                         <Trash2 size={15} />
                       </button>
