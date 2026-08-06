@@ -12,8 +12,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const toolsNav = osToolsNav;
-
 function segmentClass(active: boolean) {
   return `flex-1 h-7 rounded-md text-xs font-semibold transition-colors ${
     active
@@ -199,6 +197,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
   }, [segment]);
 
   const mainNav = osMainNav.filter((item) => item.segment === segment);
+  const toolsNav = osToolsNav.filter((item) => item.segment === segment);
 
   // Safety net: if navigation ever happens without going through a NavItem's
   // onClick (e.g. browser back/forward), still close the mobile drawer.
