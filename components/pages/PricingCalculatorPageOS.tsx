@@ -7,6 +7,7 @@ import AppSelect from "@/components/fields/AppSelect";
 import Label from "@/components/labels/Label";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { getRupiahCurrency } from "@/lib/currency";
+import { setSessionToken, trpc } from "@/trpc/client";
 import {
   ADDON_PRICE,
   CAP,
@@ -25,7 +26,10 @@ import {
   defaultAddons,
   uniquePax,
 } from "@/lib/pricing-b2b";
-import { downloadInvoicePDF, InvoicePDFProps } from "@/components/pdf/InvoicePDF";
+import {
+  downloadInvoicePDF,
+  InvoicePDFProps,
+} from "@/components/pdf/InvoicePDF";
 import dayjs from "dayjs";
 import {
   Check,
@@ -37,7 +41,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 
 type LocalDay = PricingDay & { id: number };
 type PresetKey = keyof typeof PRESETS;
@@ -106,6 +110,12 @@ const trainerOptions = [
   { value: "certified", label: "Certified (Rp5jt/hari)" },
   { value: "specialist", label: "Specialist (Rp8jt/hari)" },
   { value: "lead", label: "Lead (Rp12jt/hari +premium)" },
+];
+
+const trainerOptionsWithoutCost = [
+  { value: "certified", label: "Certified" },
+  { value: "specialist", label: "Specialist" },
+  { value: "lead", label: "Lead" },
 ];
 
 const addonGridClass =
@@ -204,10 +214,7 @@ function BreakdownRow({
 }
 
 type FlagType = "stop" | "warn" | "ok";
-const flagStyles: Record<
-  FlagType,
-  { box: string; icon: typeof CircleX }
-> = {
+const flagStyles: Record<FlagType, { box: string; icon: typeof CircleX }> = {
   stop: {
     box: "border-merah/40 bg-merah-t text-merah dark:border-red-800 dark:bg-red-950/40 dark:text-red-300",
     icon: CircleX,
@@ -225,7 +232,9 @@ const flagStyles: Record<
 function Flag({ type, children }: { type: FlagType; children: ReactNode }) {
   const { box, icon: Icon } = flagStyles[type];
   return (
-    <div className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${box}`}>
+    <div
+      className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${box}`}
+    >
       <Icon size={15} className="mt-0.5 shrink-0" />
       <span>{children}</span>
     </div>
@@ -290,7 +299,22 @@ function DownloadInvoiceButton({
   );
 }
 
-export default function PricingCalculatorPageOS() {
+export default function PricingCalculatorPageOS({
+  sessionToken,
+}: {
+  sessionToken: string;
+}) {
+  useEffect(() => {
+    if (sessionToken) setSessionToken(sessionToken);
+  }, [sessionToken]);
+
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+
+  const canViewCostDetails =
+    !!sessionData && sessionData.user.role_name !== "Business Development";
+
   const [activePreset, setActivePreset] = useState<PresetKey>("blank");
   const [days, setDays] = useState<LocalDay[]>(() => withIds(PRESETS.blank));
   const [materi, setMateri] = useState<keyof typeof MN>("std");
@@ -315,7 +339,8 @@ export default function PricingCalculatorPageOS() {
   }
 
   const [invoiceNumber] = useState(
-    () => `INV/${dayjs().format("YYYYMMDD")}/${Math.floor(1000 + Math.random() * 9000)}`
+    () =>
+      `INV/${dayjs().format("YYYYMMDD")}/${Math.floor(1000 + Math.random() * 9000)}`
   );
   const invoiceDate = dayjs().format("D MMMM YYYY");
 
@@ -329,21 +354,33 @@ export default function PricingCalculatorPageOS() {
   }
 
   function removeDay(id: number) {
-    setDays((prev) => (prev.length > 1 ? prev.filter((d) => d.id !== id) : prev));
+    setDays((prev) =>
+      prev.length > 1 ? prev.filter((d) => d.id !== id) : prev
+    );
   }
 
   function addDay() {
     const last = days[days.length - 1];
     setDays((prev) => [
       ...prev,
-      { id: nextId++, format: last.format, sesi: last.sesi, peserta: last.peserta, trainer: last.trainer },
+      {
+        id: nextId++,
+        format: last.format,
+        sesi: last.sesi,
+        peserta: last.peserta,
+        trainer: last.trainer,
+      },
     ]);
   }
 
   const margin = result.margin;
   const marginPct = Math.max(0, Math.min(100, margin * 100));
   const marginColor =
-    margin < MARGIN_FLOOR ? "bg-merah" : margin < 0.5 ? "bg-kuning" : "bg-hijau";
+    margin < MARGIN_FLOOR
+      ? "bg-merah"
+      : margin < 0.5
+        ? "bg-kuning"
+        : "bg-hijau";
   const marginMessage =
     margin < MARGIN_FLOOR
       ? "Di bawah batas 45%. Tidak bisa dikirim tanpa persetujuan Genesis."
@@ -367,38 +404,58 @@ export default function PricingCalculatorPageOS() {
     }
   });
   if (dcPct > 0) {
-    flags.push({ type: "warn", message: `Diskon ${dcPct}% butuh persetujuan Genesis. Catat alasannya.` });
+    flags.push({
+      type: "warn",
+      message: `Diskon ${dcPct}% butuh persetujuan Genesis. Catat alasannya.`,
+    });
   }
   if (bdPct > 15) {
-    flags.push({ type: "warn", message: `Komisi ${bdPct}% di atas tier standar. Butuh persetujuan.` });
+    flags.push({
+      type: "warn",
+      message: `Komisi ${bdPct}% di atas tier standar. Butuh persetujuan.`,
+    });
   }
   const isMixed =
-    days.some((d) => d.format === "offline") && days.some((d) => d.format === "online");
+    days.some((d) => d.format === "offline") &&
+    days.some((d) => d.format === "online");
   if (isMixed) {
     flags.push({
       type: "ok",
-      message: "Format campuran. Pastikan penawaran mencantumkan hari mana offline dan mana online.",
+      message:
+        "Format campuran. Pastikan penawaran mencantumkan hari mana offline dan mana online.",
     });
   }
   if (flags.length === 0) {
-    flags.push({ type: "ok", message: "Semua aman. Penawaran bisa langsung dikirim." });
+    flags.push({
+      type: "ok",
+      message: "Semua aman. Penawaran bisa langsung dikirim.",
+    });
   }
 
   function invoiceFilename() {
-    const slug = clientName.trim() ? clientName.trim().replace(/[^a-z0-9]+/gi, "-") : "invoice";
+    const slug = clientName.trim()
+      ? clientName.trim().replace(/[^a-z0-9]+/gi, "-")
+      : "invoice";
     return `${slug}-${invoiceNumber}.pdf`;
   }
 
   function internalText() {
     let t = "RINGKASAN INTERNAL\n\n";
     t += `Nilai program : ${getRupiahCurrency(result.netValue)}\n`;
-    t += `Biaya         : ${getRupiahCurrency(result.trainerCost + result.addonsCost)}\n`;
-    t += `Komisi BD     : ${getRupiahCurrency(result.bdFee)} (${bdPct}%)\n`;
-    t += `Ops + AM      : ${getRupiahCurrency(result.opsFee)}\n`;
-    t += `Amortisasi    : ${getRupiahCurrency(result.amoFee)}\n`;
+    if (canViewCostDetails) {
+      t += `Biaya         : ${getRupiahCurrency(result.trainerCost + result.addonsCost)}\n`;
+      t += `Komisi BD     : ${getRupiahCurrency(result.bdFee)} (${bdPct}%)\n`;
+      t += `Ops + AM      : ${getRupiahCurrency(result.opsFee)}\n`;
+      t += `Amortisasi    : ${getRupiahCurrency(result.amoFee)}\n`;
+    } else {
+      t += `Total Biaya   : ${getRupiahCurrency(result.totalCost)}\n`;
+    }
     t += `Net Profit    : ${getRupiahCurrency(result.genesis)} (${(margin * 100).toFixed(1)}%)\n`;
     t += `Invoice       : ${getRupiahCurrency(result.invoice)} (gross up PPh 0,5%)\n`;
-    t += margin < MARGIN_FLOOR ? "\nSTATUS: perlu approval, di bawah 45%\n" : "\nSTATUS: aman\n";
+    t +=
+      margin < MARGIN_FLOOR
+        ? "\nSTATUS: perlu approval, di bawah 45%\n"
+        : "\nSTATUS: aman\n";
     return t;
   }
 
@@ -450,14 +507,20 @@ export default function PricingCalculatorPageOS() {
                     <div className="flex rounded-md border border-gray-900/15 bg-white p-0.5 dark:border-white/10 dark:bg-zinc-900">
                       <button
                         type="button"
-                        onClick={() => updateDay(d.id, { format: "offline" as SessionFormat })}
+                        onClick={() =>
+                          updateDay(d.id, {
+                            format: "offline" as SessionFormat,
+                          })
+                        }
                         className={segmentClass(d.format === "offline")}
                       >
                         Offline
                       </button>
                       <button
                         type="button"
-                        onClick={() => updateDay(d.id, { format: "online" as SessionFormat })}
+                        onClick={() =>
+                          updateDay(d.id, { format: "online" as SessionFormat })
+                        }
                         className={segmentClass(d.format === "online")}
                       >
                         Online
@@ -484,21 +547,33 @@ export default function PricingCalculatorPageOS() {
                       placeholder="Pilih durasi"
                       value={d.sesi}
                       options={sesiOptions}
-                      onChange={(v) => updateDay(d.id, { sesi: Number(v) as 1 | 2 | 3 })}
+                      onChange={(v) =>
+                        updateDay(d.id, { sesi: Number(v) as 1 | 2 | 3 })
+                      }
                     />
                     <AppNumberInput
                       inputId={`day-${d.id}-peserta`}
                       label="Peserta"
                       value={String(d.peserta)}
-                      onValueChange={(v) => updateDay(d.id, { peserta: Math.max(1, parseInt(v || "1", 10)) })}
+                      onValueChange={(v) =>
+                        updateDay(d.id, {
+                          peserta: Math.max(1, parseInt(v || "1", 10)),
+                        })
+                      }
                     />
                     <AppSelect
                       selectId={`day-${d.id}-trainer`}
                       label="Trainer"
                       placeholder="Pilih trainer"
                       value={d.trainer}
-                      options={trainerOptions}
-                      onChange={(v) => updateDay(d.id, { trainer: v as TrainerTier })}
+                      options={
+                        canViewCostDetails
+                          ? trainerOptions
+                          : trainerOptionsWithoutCost
+                      }
+                      onChange={(v) =>
+                        updateDay(d.id, { trainer: v as TrainerTier })
+                      }
                     />
                   </div>
                 </div>
@@ -531,25 +606,39 @@ export default function PricingCalculatorPageOS() {
             </div>
           </Block>
 
-          <Block step={4} title="Add ons" side={getRupiahCurrency(addonsBreakdown.price)}>
+          <Block
+            step={4}
+            title="Add ons"
+            side={getRupiahCurrency(addonsBreakdown.price)}
+          >
             <div className="flex flex-col">
-              <div className={`${addonGridClass} pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500`}>
+              <div
+                className={`${addonGridClass} pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500`}
+              >
                 <span />
                 <span>Item</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right">Harga</span>
               </div>
 
-              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+              <div
+                className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+              >
                 <input
                   type="checkbox"
                   checked={addons.assessment}
-                  onChange={(e) => setAddons((a) => ({ ...a, assessment: e.target.checked }))}
+                  onChange={(e) =>
+                    setAddons((a) => ({ ...a, assessment: e.target.checked }))
+                  }
                   className="size-4 shrink-0 accent-claude"
                 />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-zinc-200">AI Readiness Assessment</p>
-                  <p className="text-xs text-gray-400">survei dan wawancara sebelum program</p>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200">
+                    AI Readiness Assessment
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    survei dan wawancara sebelum program
+                  </p>
                 </div>
                 <span />
                 <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
@@ -557,38 +646,61 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+              <div
+                className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+              >
                 <input
                   type="checkbox"
                   checked={addons.klinik}
-                  onChange={(e) => setAddons((a) => ({ ...a, klinik: e.target.checked }))}
+                  onChange={(e) =>
+                    setAddons((a) => ({ ...a, klinik: e.target.checked }))
+                  }
                   className="size-4 shrink-0 accent-claude"
                 />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-zinc-200">Klinik lanjutan</p>
-                  <p className="text-xs text-gray-400">pendampingan setelah training</p>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200">
+                    Klinik lanjutan
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    pendampingan setelah training
+                  </p>
                 </div>
                 <AppNumberInput
                   inputId="addon-klinik-sesi"
                   value={String(addons.klinikSesi)}
-                  onValueChange={(v) => setAddons((a) => ({ ...a, klinikSesi: Math.max(1, parseInt(v || "1", 10)) }))}
+                  onValueChange={(v) =>
+                    setAddons((a) => ({
+                      ...a,
+                      klinikSesi: Math.max(1, parseInt(v || "1", 10)),
+                    }))
+                  }
                   className="py-1.5 text-center"
                 />
                 <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
-                  {getRupiahCurrency(ADDON_PRICE.klinikPerSesi * addons.klinikSesi)}
+                  {getRupiahCurrency(
+                    ADDON_PRICE.klinikPerSesi * addons.klinikSesi
+                  )}
                 </span>
               </div>
 
-              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+              <div
+                className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+              >
                 <input
                   type="checkbox"
                   checked={addons.rekaman}
-                  onChange={(e) => setAddons((a) => ({ ...a, rekaman: e.target.checked }))}
+                  onChange={(e) =>
+                    setAddons((a) => ({ ...a, rekaman: e.target.checked }))
+                  }
                   className="size-4 shrink-0 accent-claude"
                 />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-zinc-200">Rekaman + akses LMS</p>
-                  <p className="text-xs text-gray-400">6 bulan untuk semua peserta</p>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200">
+                    Rekaman + akses LMS
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    6 bulan untuk semua peserta
+                  </p>
                 </div>
                 <span />
                 <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
@@ -596,26 +708,41 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+              <div
+                className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+              >
                 <input
                   type="checkbox"
                   checked={addons.sertifikat}
-                  onChange={(e) => setAddons((a) => ({ ...a, sertifikat: e.target.checked }))}
+                  onChange={(e) =>
+                    setAddons((a) => ({ ...a, sertifikat: e.target.checked }))
+                  }
                   className="size-4 shrink-0 accent-claude"
                 />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-zinc-200">Sertifikat</p>
-                  <p className="text-xs text-gray-400">per peserta unik, mengikuti Susunan hari</p>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200">
+                    Sertifikat
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    per peserta unik, mengikuti Susunan hari
+                  </p>
                 </div>
                 <AppNumberInput
                   inputId="addon-sertifikat-qty"
                   value={String(addons.sertifikatQty)}
-                  onValueChange={(v) => setAddons((a) => ({ ...a, sertifikatQty: Math.max(0, parseInt(v || "0", 10)) }))}
+                  onValueChange={(v) =>
+                    setAddons((a) => ({
+                      ...a,
+                      sertifikatQty: Math.max(0, parseInt(v || "0", 10)),
+                    }))
+                  }
                   title="Mengikuti jumlah peserta di Susunan hari, bisa diedit manual"
                   className="py-1.5 text-center"
                 />
                 <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
-                  {getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
+                  {getRupiahCurrency(
+                    ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty
+                  )}
                 </span>
               </div>
 
@@ -623,19 +750,34 @@ export default function PricingCalculatorPageOS() {
                 <input
                   type="checkbox"
                   checked={addons.perjalanan}
-                  onChange={(e) => setAddons((a) => ({ ...a, perjalanan: e.target.checked }))}
+                  onChange={(e) =>
+                    setAddons((a) => ({ ...a, perjalanan: e.target.checked }))
+                  }
                   className="size-4 shrink-0 accent-claude"
                 />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-zinc-200">Perjalanan luar kota</p>
-                  <p className="text-xs text-gray-400">tiket, hotel, transport lokal, isi total sesuai kebutuhan</p>
+                  <p className="text-sm text-gray-800 dark:text-zinc-200">
+                    Perjalanan luar kota
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    tiket, hotel, transport lokal, isi total sesuai kebutuhan
+                  </p>
                 </div>
                 <span />
                 <AppNumberInput
                   inputId="addon-perjalanan-rp"
                   value={String(addons.perjalananRp)}
-                  onValueChange={(v) => setAddons((a) => ({ ...a, perjalananRp: Math.max(0, parseInt(v || "0", 10)) }))}
-                  icon={<span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">Rp</span>}
+                  onValueChange={(v) =>
+                    setAddons((a) => ({
+                      ...a,
+                      perjalananRp: Math.max(0, parseInt(v || "0", 10)),
+                    }))
+                  }
+                  icon={
+                    <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">
+                      Rp
+                    </span>
+                  }
                   className="py-1.5"
                 />
               </div>
@@ -652,7 +794,11 @@ export default function PricingCalculatorPageOS() {
                 max={25}
                 step={0.5}
                 value={bdPct}
-                onChange={(e) => setBdPct(Math.max(0, Math.min(25, parseFloat(e.target.value) || 0)))}
+                onChange={(e) =>
+                  setBdPct(
+                    Math.max(0, Math.min(25, parseFloat(e.target.value) || 0))
+                  )
+                }
               />
               <AppInput
                 inputId="dc-pct"
@@ -662,7 +808,11 @@ export default function PricingCalculatorPageOS() {
                 max={30}
                 step={1}
                 value={dcPct}
-                onChange={(e) => setDcPct(Math.max(0, Math.min(30, parseFloat(e.target.value) || 0)))}
+                onChange={(e) =>
+                  setDcPct(
+                    Math.max(0, Math.min(30, parseFloat(e.target.value) || 0))
+                  )
+                }
               />
             </div>
           </Block>
@@ -686,16 +836,22 @@ export default function PricingCalculatorPageOS() {
               {getRupiahCurrency(result.netValue)}
             </p>
             <p className="mt-1.5 text-xs text-white/60">
-              {dcPct > 0 ? `sebelum diskon ${getRupiahCurrency(result.subtotal)} · ` : ""}
+              {dcPct > 0
+                ? `sebelum diskon ${getRupiahCurrency(result.subtotal)} · `
+                : ""}
               {days.length} hari · {totalSesi} sesi
             </p>
             <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-2.5 text-sm">
               <span>PPh Final 0,5% (gross up)</span>
-              <span className="font-mono font-semibold">{getRupiahCurrency(result.pphTax)}</span>
+              <span className="font-mono font-semibold">
+                {getRupiahCurrency(result.pphTax)}
+              </span>
             </div>
             <div className="mt-1.5 flex items-center justify-between border-t-2 border-coral pt-2.5 text-base font-bold">
               <span>Total invoice</span>
-              <span className="font-mono">{getRupiahCurrency(result.invoice)}</span>
+              <span className="font-mono">
+                {getRupiahCurrency(result.invoice)}
+              </span>
             </div>
           </div>
 
@@ -713,12 +869,20 @@ export default function PricingCalculatorPageOS() {
                 className={`h-full transition-[width] ${marginColor}`}
                 style={{ width: `${marginPct}%` }}
               />
-              <div className="absolute inset-y-0 w-0.5 bg-gray-900 dark:bg-zinc-100" style={{ left: "45%" }} />
+              <div
+                className="absolute inset-y-0 w-0.5 bg-gray-900 dark:bg-zinc-100"
+                style={{ left: "45%" }}
+              />
             </div>
-            <p className="relative mt-1 h-3.5 font-mono text-[10px] text-gray-400" style={{ left: "calc(45% - 14px)" }}>
+            <p
+              className="relative mt-1 h-3.5 font-mono text-[10px] text-gray-400"
+              style={{ left: "calc(45% - 14px)" }}
+            >
               batas 45%
             </p>
-            <p className="mt-2.5 text-sm text-gray-700 dark:text-zinc-300">{marginMessage}</p>
+            <p className="mt-2.5 text-sm text-gray-700 dark:text-zinc-300">
+              {marginMessage}
+            </p>
           </div>
 
           <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
@@ -733,10 +897,17 @@ export default function PricingCalculatorPageOS() {
                     <Label variant={d.format === "offline" ? "oranye" : "biru"}>
                       {d.format === "offline" ? "Offline" : "Online"}
                     </Label>
-                    <span className="font-semibold text-gray-900 dark:text-zinc-100">Hari {i + 1}</span>
+                    <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                      Hari {i + 1}
+                    </span>
                     <span className="text-xs text-gray-400">
-                      · {d.sesi === 1 ? "½ hari" : d.sesi === 2 ? "1 hari" : "1½ hari"} · {d.peserta} org ·{" "}
-                      {TRN[d.trainer]}
+                      ·{" "}
+                      {d.sesi === 1
+                        ? "½ hari"
+                        : d.sesi === 2
+                          ? "1 hari"
+                          : "1½ hari"}{" "}
+                      · {d.peserta} org · {TRN[d.trainer]}
                     </span>
                   </span>
                 }
@@ -744,19 +915,31 @@ export default function PricingCalculatorPageOS() {
               />
             ))}
             {addons.assessment && (
-              <BreakdownRow label="AI Readiness Assessment" value={getRupiahCurrency(ADDON_PRICE.assessment)} />
+              <BreakdownRow
+                label="AI Readiness Assessment"
+                value={getRupiahCurrency(ADDON_PRICE.assessment)}
+              />
             )}
             {addons.klinik && (
               <BreakdownRow
                 label={`Klinik lanjutan ×${addons.klinikSesi}`}
-                value={getRupiahCurrency(ADDON_PRICE.klinikPerSesi * addons.klinikSesi)}
+                value={getRupiahCurrency(
+                  ADDON_PRICE.klinikPerSesi * addons.klinikSesi
+                )}
               />
             )}
-            {addons.rekaman && <BreakdownRow label="Rekaman + LMS" value={getRupiahCurrency(ADDON_PRICE.rekaman)} />}
+            {addons.rekaman && (
+              <BreakdownRow
+                label="Rekaman + LMS"
+                value={getRupiahCurrency(ADDON_PRICE.rekaman)}
+              />
+            )}
             {addons.sertifikat && (
               <BreakdownRow
                 label={`Sertifikat ×${addons.sertifikatQty}`}
-                value={getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
+                value={getRupiahCurrency(
+                  ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty
+                )}
               />
             )}
             {addons.perjalanan && (
@@ -766,23 +949,65 @@ export default function PricingCalculatorPageOS() {
               />
             )}
             {dcPct > 0 && (
-              <BreakdownRow label={`Diskon ${dcPct}%`} value={getRupiahCurrency(result.discount)} negative />
+              <BreakdownRow
+                label={`Diskon ${dcPct}%`}
+                value={getRupiahCurrency(result.discount)}
+                negative
+              />
             )}
-            <BreakdownRow label="Nilai program" value={getRupiahCurrency(result.netValue)} bold />
+            <BreakdownRow
+              label="Nilai program"
+              value={getRupiahCurrency(result.netValue)}
+              bold
+            />
           </div>
 
           <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
             <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
               Biaya dan bagi hasil
             </h4>
-            <BreakdownRow label="Trainer, asisten, logistik" value={getRupiahCurrency(result.trainerCost)} negative />
-            {addonsBreakdown.cost > 0 && (
-              <BreakdownRow label="Biaya tambahan" value={getRupiahCurrency(result.addonsCost)} negative />
+            {canViewCostDetails ? (
+              <>
+                <BreakdownRow
+                  label="Trainer, asisten, logistik"
+                  value={getRupiahCurrency(result.trainerCost)}
+                  negative
+                />
+                {addonsBreakdown.cost > 0 && (
+                  <BreakdownRow
+                    label="Biaya tambahan"
+                    value={getRupiahCurrency(result.addonsCost)}
+                    negative
+                  />
+                )}
+                <BreakdownRow
+                  label={`Komisi BD ${bdPct}%`}
+                  value={getRupiahCurrency(result.bdFee)}
+                  negative
+                />
+                <BreakdownRow
+                  label="Operasional & AM 10%"
+                  value={getRupiahCurrency(result.opsFee)}
+                  negative
+                />
+                <BreakdownRow
+                  label="Amortisasi materi 5%"
+                  value={getRupiahCurrency(result.amoFee)}
+                  negative
+                />
+                <BreakdownRow
+                  label="Net Profit"
+                  value={getRupiahCurrency(result.genesis)}
+                  bold
+                />
+              </>
+            ) : (
+              <BreakdownRow
+                label="Total biaya"
+                value={getRupiahCurrency(result.totalCost)}
+                bold
+              />
             )}
-            <BreakdownRow label={`Komisi BD ${bdPct}%`} value={getRupiahCurrency(result.bdFee)} negative />
-            <BreakdownRow label="Operasional & AM 10%" value={getRupiahCurrency(result.opsFee)} negative />
-            <BreakdownRow label="Amortisasi materi 5%" value={getRupiahCurrency(result.amoFee)} negative />
-            <BreakdownRow label="Net Profit" value={getRupiahCurrency(result.genesis)} bold />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -807,7 +1032,11 @@ export default function PricingCalculatorPageOS() {
               })}
               getFilename={invoiceFilename}
             />
-            <CopyButton label="Salin ringkasan internal" getText={internalText} variant="outline" />
+            <CopyButton
+              label="Salin ringkasan internal"
+              getText={internalText}
+              variant="outline"
+            />
           </div>
         </div>
       </div>

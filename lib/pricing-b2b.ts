@@ -176,6 +176,7 @@ export interface PricingResult {
   bdFee: number;
   opsFee: number;
   amoFee: number;
+  totalCost: number;
   genesis: number;
   margin: number;
   invoice: number;
@@ -197,7 +198,8 @@ export function calculatePricing(state: PricingState): PricingResult {
   const bdFee = netValue * (state.bdPct / 100);
   const opsFee = netValue * OPS_PCT;
   const amoFee = netValue * AMO_PCT;
-  const genesis = netValue - costTotal - addons.cost - bdFee - opsFee - amoFee;
+  const totalCost = costTotal + addons.cost + bdFee + opsFee + amoFee;
+  const genesis = netValue - totalCost;
   // PPh Final 0,5% is grossed up so the amount received remains equal to netValue.
   const invoice = netValue / (1 - TAX_PCT);
   const pphTax = invoice * TAX_PCT;
@@ -212,6 +214,7 @@ export function calculatePricing(state: PricingState): PricingResult {
     bdFee,
     opsFee,
     amoFee,
+    totalCost,
     genesis,
     margin: netValue > 0 ? genesis / netValue : 0,
     invoice,
