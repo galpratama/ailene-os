@@ -1,0 +1,347 @@
+import {
+  Document,
+  Page,
+  Path,
+  StyleSheet,
+  Svg,
+  Text,
+  View,
+  pdf,
+} from "@react-pdf/renderer";
+import {
+  ADDON_PRICE,
+  MN,
+  PricingAddons,
+  PricingDay,
+  PricingResult,
+  TRN,
+  dayPrice,
+} from "@/lib/pricing-b2b";
+import { getRupiahCurrency } from "@/lib/currency";
+
+// Ailene wordmark path data ported from components/svg/LogoAilene.tsx (react-pdf's Path accepts the same `d`).
+const AILENE_LOGO_PATHS = [
+  "M418.25 587.91C398.112 587.91 388.043 574.372 388.043 547.295C388.043 542.726 388.297 538.073 388.805 533.334C390.666 515.565 394.051 493.904 398.958 468.351C403.866 442.629 408.943 418.091 414.189 394.737C415.712 387.968 418.081 383.23 421.296 380.522C424.681 377.815 429.081 376.461 434.496 376.461C439.573 376.461 443.296 377.307 445.665 378.999C448.203 380.692 449.472 383.399 449.472 387.122C449.472 388.138 449.134 390.338 448.457 393.722L446.68 401.337C438.896 435.183 433.227 460.144 429.673 476.22C426.119 492.128 423.327 506.681 421.296 519.881C419.604 530.542 418.758 540.273 418.758 549.072C418.758 556.349 421.042 559.987 425.611 559.987C428.827 559.987 432.719 557.957 437.288 553.895C441.857 549.665 448.034 542.896 455.818 533.588C457.849 531.219 460.134 530.034 462.672 530.034C464.872 530.034 466.564 531.05 467.749 533.08C469.103 535.111 469.78 537.903 469.78 541.457C469.78 548.226 468.172 553.472 464.957 557.195C457.511 566.334 450.065 573.779 442.619 579.533C435.173 585.118 427.05 587.91 418.25 587.91Z",
+  "M562.509 530.034C564.709 530.034 566.401 531.05 567.586 533.08C568.939 535.111 569.616 537.903 569.616 541.457C569.616 548.226 568.009 553.472 564.793 557.195C558.532 564.81 549.648 571.833 538.14 578.264C526.802 584.695 514.618 587.91 501.587 587.91C483.818 587.91 470.026 583.087 460.211 573.441C450.396 563.795 445.488 550.595 445.488 533.842C445.488 522.165 447.942 511.335 452.85 501.35C457.757 491.197 464.526 483.158 473.157 477.236C481.957 471.313 491.857 468.351 502.856 468.351C512.671 468.351 520.54 471.313 526.463 477.236C532.386 482.989 535.348 490.858 535.348 500.843C535.348 512.519 531.117 522.588 522.656 531.05C514.364 539.342 500.233 545.942 480.264 550.849C484.495 558.634 492.533 562.526 504.379 562.526C511.995 562.526 520.625 559.903 530.271 554.657C540.086 549.242 548.548 542.219 555.655 533.588C557.686 531.219 559.97 530.034 562.509 530.034ZM498.541 493.227C492.28 493.227 486.949 496.866 482.549 504.143C478.318 511.419 476.203 520.219 476.203 530.542V531.05C486.187 528.681 494.056 525.127 499.81 520.388C505.564 515.65 508.441 510.15 508.441 503.889C508.441 500.673 507.51 498.135 505.648 496.274C503.956 494.243 501.587 493.227 498.541 493.227Z",
+  "M566.971 587.91C560.54 587.91 555.971 584.525 553.263 577.756C550.725 570.987 549.456 560.157 549.456 545.265C549.456 523.265 552.587 502.366 558.848 482.566C560.371 477.659 562.825 474.105 566.209 471.905C569.763 469.536 574.671 468.351 580.932 468.351C584.317 468.351 586.686 468.774 588.04 469.62C589.393 470.466 590.07 472.074 590.07 474.443C590.07 477.151 588.801 483.243 586.263 492.72C584.57 499.489 583.217 505.412 582.201 510.489C581.186 515.565 580.34 521.827 579.663 529.273C585.247 514.719 591.509 502.873 598.447 493.735C605.385 484.597 612.154 478.082 618.754 474.189C625.523 470.297 631.7 468.351 637.285 468.351C648.284 468.351 653.784 473.851 653.784 484.851C653.784 491.451 651.923 503.381 648.2 520.642C644.984 535.365 643.377 545.096 643.377 549.834C643.377 556.603 645.831 559.987 650.738 559.987C654.123 559.987 658.099 557.957 662.669 553.895C667.407 549.665 673.668 542.896 681.453 533.588C683.483 531.219 685.768 530.034 688.306 530.034C690.506 530.034 692.199 531.05 693.383 533.08C694.737 535.111 695.414 537.903 695.414 541.457C695.414 548.226 693.806 553.472 690.591 557.195C683.314 566.164 675.445 573.526 666.984 579.279C658.692 585.033 649.215 587.91 638.554 587.91C629.923 587.91 623.408 585.456 619.008 580.549C614.608 575.472 612.408 568.195 612.408 558.718C612.408 553.98 613.593 545.519 615.962 533.334C618.162 522.673 619.262 515.312 619.262 511.25C619.262 508.543 618.331 507.189 616.47 507.189C614.27 507.189 611.139 510.066 607.078 515.819C603.185 521.404 599.124 528.85 594.893 538.157C590.832 547.465 587.532 557.28 584.993 567.603C583.132 575.556 580.932 580.972 578.394 583.848C576.024 586.556 572.217 587.91 566.971 587.91Z",
+  "M765.752 537.65C767.951 537.65 769.644 538.665 770.828 540.696C772.182 542.726 772.859 545.519 772.859 549.072C772.859 555.165 771.421 560.411 768.544 564.81C763.805 572.087 757.544 577.756 749.76 581.818C742.144 585.879 733.006 587.91 722.345 587.91C706.099 587.91 693.492 583.087 684.523 573.441C675.554 563.626 671.069 550.426 671.069 533.842C671.069 522.165 673.523 511.335 678.43 501.35C683.338 491.197 690.107 483.158 698.738 477.236C707.537 471.313 717.437 468.351 728.437 468.351C738.252 468.351 746.121 471.313 752.044 477.236C757.967 482.989 760.929 490.858 760.929 500.843C760.929 512.519 756.698 522.588 748.237 531.05C739.944 539.342 725.729 545.942 705.591 550.849C709.653 558.634 716.507 562.526 726.152 562.526C733.091 562.526 738.76 560.918 743.16 557.703C747.729 554.488 752.975 549.072 758.898 541.457C760.929 538.919 763.213 537.65 765.752 537.65ZM724.122 493.227C717.86 493.227 712.53 496.866 708.13 504.143C703.899 511.419 701.784 520.219 701.784 530.542V531.05C711.768 528.681 719.637 525.127 725.391 520.388C731.145 515.65 734.021 510.15 734.021 503.889C734.021 500.673 733.091 498.135 731.229 496.274C729.537 494.243 727.168 493.227 724.122 493.227Z",
+  "M282.572 480.055H304.434V551.56H326.059V583.353H294.029V561.965H282.572V583.353H207.531V561.965H185.906V480.055H207.531V458.431H282.572V480.055ZM217.936 551.56H272.166V490.223H217.936V551.56Z",
+  "M371.983 583.353H339.952V465.537H371.983V583.353Z",
+  "M376.366 429.139L353.718 451.787L331.07 429.139L353.718 406.489L376.366 429.139Z",
+];
+
+function AileneLogo({ color, width }: { color: string; width: number }) {
+  const height = width * (228 / 603);
+  return (
+    <Svg viewBox="178 368 603 228" width={width} height={height}>
+      {AILENE_LOGO_PATHS.map((d, i) => (
+        <Path key={i} d={d} fill={color} />
+      ))}
+    </Svg>
+  );
+}
+
+const INK = "#17171a";
+const CLAUDE = "#2563eb";
+const GRAY = "#6b7280";
+const LINE = "#e5e7eb";
+
+const styles = StyleSheet.create({
+  page: {
+    paddingTop: 40,
+    paddingBottom: 64,
+    paddingHorizontal: 40,
+    fontSize: 9.5,
+    color: INK,
+    fontFamily: "Helvetica",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 24,
+  },
+  invoiceLabel: {
+    fontSize: 18,
+    fontFamily: "Helvetica-Bold",
+    color: INK,
+    textAlign: "right",
+  },
+  invoiceMeta: {
+    marginTop: 4,
+    fontSize: 9,
+    color: GRAY,
+    textAlign: "right",
+  },
+  billTo: {
+    marginBottom: 20,
+  },
+  billToLabel: {
+    fontSize: 8,
+    color: GRAY,
+    marginBottom: 3,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  billToName: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: INK,
+  },
+  table: {
+    marginTop: 8,
+  },
+  tableHeadRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: INK,
+    paddingBottom: 6,
+    marginBottom: 4,
+  },
+  tableHeadCell: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    color: GRAY,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 0.75,
+    borderBottomColor: LINE,
+    paddingVertical: 7,
+  },
+  colItem: { width: "56%" },
+  colQty: { width: "14%", textAlign: "center" },
+  colPrice: { width: "30%", textAlign: "right" },
+  itemName: { fontSize: 9.5, color: INK },
+  itemSub: { fontSize: 8, color: GRAY, marginTop: 1.5 },
+  totals: {
+    marginTop: 16,
+    alignSelf: "flex-end",
+    width: "55%",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  totalLabel: { fontSize: 9.5, color: GRAY },
+  totalValue: { fontSize: 9.5, color: INK, fontFamily: "Helvetica-Bold" },
+  grandRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1.5,
+    borderTopColor: INK,
+    marginTop: 4,
+    paddingTop: 8,
+  },
+  grandLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK },
+  grandValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: CLAUDE },
+  note: {
+    marginTop: 20,
+    fontSize: 8.5,
+    color: GRAY,
+    lineHeight: 1.5,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 28,
+    left: 40,
+    right: 40,
+    borderTopWidth: 0.75,
+    borderTopColor: LINE,
+    paddingTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  footerCompany: {
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    color: INK,
+  },
+  footerAddress: {
+    fontSize: 7.5,
+    color: GRAY,
+    marginTop: 2,
+    lineHeight: 1.4,
+  },
+});
+
+export interface InvoicePDFProps {
+  clientName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  days: PricingDay[];
+  materi: keyof typeof MN;
+  addons: PricingAddons;
+  dcPct: number;
+  result: PricingResult;
+}
+
+function durasiLabel(sesi: PricingDay["sesi"]) {
+  return sesi === 1
+    ? "Setengah hari (3 jam)"
+    : sesi === 2
+      ? "Sehari penuh (6 jam)"
+      : "Diperpanjang (9 jam)";
+}
+
+export function InvoicePDF({
+  clientName,
+  invoiceNumber,
+  invoiceDate,
+  days,
+  materi,
+  addons,
+  dcPct,
+  result,
+}: InvoicePDFProps) {
+  return (
+    <Document title={`Invoice ${invoiceNumber}`}>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.headerRow}>
+          <AileneLogo color={INK} width={110} />
+          <View>
+            <Text style={styles.invoiceLabel}>INVOICE</Text>
+            <Text style={styles.invoiceMeta}>{invoiceNumber}</Text>
+            <Text style={styles.invoiceMeta}>{invoiceDate}</Text>
+          </View>
+        </View>
+
+        <View style={styles.billTo}>
+          <Text style={styles.billToLabel}>Ditagihkan kepada</Text>
+          <Text style={styles.billToName}>{clientName || "-"}</Text>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeadRow}>
+            <Text style={[styles.tableHeadCell, styles.colItem]}>Item</Text>
+            <Text style={[styles.tableHeadCell, styles.colQty]}>Qty</Text>
+            <Text style={[styles.tableHeadCell, styles.colPrice]}>Harga</Text>
+          </View>
+
+          {days.map((d, i) => (
+            <View style={styles.tableRow} key={i}>
+              <View style={styles.colItem}>
+                <Text style={styles.itemName}>
+                  Hari {i + 1} · {d.format === "offline" ? "Offline" : "Online"} · {TRN[d.trainer]}
+                </Text>
+                <Text style={styles.itemSub}>
+                  {durasiLabel(d.sesi)}, {d.peserta} peserta, materi {MN[materi]}
+                </Text>
+              </View>
+              <Text style={[styles.itemName, styles.colQty]}>1</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(dayPrice(d, materi))}
+              </Text>
+            </View>
+          ))}
+
+          {addons.assessment && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>AI Readiness Assessment</Text>
+              <Text style={[styles.itemName, styles.colQty]}>1</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(ADDON_PRICE.assessment)}
+              </Text>
+            </View>
+          )}
+          {addons.klinik && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>Klinik lanjutan</Text>
+              <Text style={[styles.itemName, styles.colQty]}>{addons.klinikSesi}</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(ADDON_PRICE.klinikPerSesi * addons.klinikSesi)}
+              </Text>
+            </View>
+          )}
+          {addons.rekaman && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>Rekaman + akses LMS (6 bulan)</Text>
+              <Text style={[styles.itemName, styles.colQty]}>1</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(ADDON_PRICE.rekaman)}
+              </Text>
+            </View>
+          )}
+          {addons.sertifikat && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>Sertifikat per peserta</Text>
+              <Text style={[styles.itemName, styles.colQty]}>{addons.sertifikatQty}</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
+              </Text>
+            </View>
+          )}
+          {addons.perjalanan && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>Perjalanan luar kota</Text>
+              <Text style={[styles.itemName, styles.colQty]}>1</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                {getRupiahCurrency(addons.perjalananRp)}
+              </Text>
+            </View>
+          )}
+          {dcPct > 0 && (
+            <View style={styles.tableRow}>
+              <Text style={[styles.itemName, styles.colItem]}>Diskon {dcPct}%</Text>
+              <Text style={[styles.itemName, styles.colQty]}>-</Text>
+              <Text style={[styles.itemName, styles.colPrice]}>
+                -{getRupiahCurrency(result.discount)}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.totals}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Nilai program</Text>
+            <Text style={styles.totalValue}>{getRupiahCurrency(result.netValue)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>PPh Final 0,5% (gross up)</Text>
+            <Text style={styles.totalValue}>{getRupiahCurrency(result.pphTax)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>PPN 11% (gross up)</Text>
+            <Text style={styles.totalValue}>{getRupiahCurrency(result.ppnTax)}</Text>
+          </View>
+          <View style={styles.grandRow}>
+            <Text style={styles.grandLabel}>Total Invoice</Text>
+            <Text style={styles.grandValue}>{getRupiahCurrency(result.invoice)}</Text>
+          </View>
+        </View>
+
+        {days.some((d) => d.format === "offline") && (
+          <Text style={styles.note}>
+            Catatan: ruang dan konsumsi untuk sesi offline disediakan klien.
+          </Text>
+        )}
+
+        <View style={styles.footer} fixed>
+          <View>
+            <Text style={styles.footerCompany}>PT Pengusaha Muda Indonesia</Text>
+            <Text style={styles.footerAddress}>
+              Soho Capital Floor 19, Podomoro City, Jl. Letjend S. Parman Kav 28,{"\n"}
+              Jakarta Barat, DKI Jakarta, Indonesia
+            </Text>
+          </View>
+          <AileneLogo color={GRAY} width={60} />
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+export async function downloadInvoicePDF(props: InvoicePDFProps, filename: string) {
+  const blob = await pdf(<InvoicePDF {...props} />).toBlob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}

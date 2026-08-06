@@ -1,4 +1,5 @@
 import {
+  Calculator,
   Calendar,
   ChartNoAxesCombined,
   FolderKanban,
@@ -33,4 +34,6 @@ export const osMainNav: OSNavItem[] = [
   { href: "/lms/class-marketplace", label: "Class Marketplace", icon: Store, segment: "B2B" },
 ];
 
-export const osToolsNav: OSNavItem[] = [];
+export const osToolsNav: OSNavItem[] = [
+  { href: "/pricing", label: "Pricing Calculator", icon: Calculator, segment: "B2B" },
+];
