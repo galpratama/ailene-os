@@ -153,7 +153,7 @@ function Block({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-4">
+    <section className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
       <div className="mb-3.5 flex items-center gap-2.5">
         <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-gray-900 text-xs font-bold text-white dark:bg-zinc-700">
           {step}
@@ -689,7 +689,7 @@ export default function PricingCalculatorPageOS() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-300 bg-card-bg p-4">
+          <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
             <div className="mb-2.5 flex items-baseline justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                 Net Margin
@@ -711,7 +711,7 @@ export default function PricingCalculatorPageOS() {
             <p className="mt-2.5 text-sm text-gray-700 dark:text-zinc-300">{marginMessage}</p>
           </div>
 
-          <div className="rounded-xl border border-gray-300 bg-card-bg p-4">
+          <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
             <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
               Rincian
             </h4>
@@ -761,7 +761,7 @@ export default function PricingCalculatorPageOS() {
             <BreakdownRow label="Nilai program" value={getRupiahCurrency(result.netValue)} bold />
           </div>
 
-          <div className="rounded-xl border border-gray-300 bg-card-bg p-4">
+          <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
             <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
               Biaya dan bagi hasil
             </h4>
