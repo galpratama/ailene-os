@@ -108,6 +108,9 @@ const trainerOptions = [
   { value: "lead", label: "Lead (Rp12jt/hari +premium)" },
 ];
 
+const addonGridClass =
+  "grid grid-cols-[20px_minmax(0,1fr)_52px_104px] items-center gap-2 sm:grid-cols-[20px_minmax(0,1fr)_64px_130px] sm:gap-3 [&>*]:min-w-0";
+
 function ChoiceCard({
   label,
   sub,
@@ -400,15 +403,15 @@ export default function PricingCalculatorPageOS() {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
+    <div className="flex min-w-0 flex-col gap-5 overflow-x-hidden px-4 py-6 sm:px-8">
       <PageHeaderOS
         title="Pricing Calculator"
         description="Susun penawaran program AI per hari. Harga, biaya, dan net margin dihitung langsung."
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
         {/* Left: builder */}
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Block step={1} title="Pilih Paket">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {presetOptions.map((p) => (
@@ -530,14 +533,14 @@ export default function PricingCalculatorPageOS() {
 
           <Block step={4} title="Add ons" side={getRupiahCurrency(addonsBreakdown.price)}>
             <div className="flex flex-col">
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+              <div className={`${addonGridClass} pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500`}>
                 <span />
                 <span>Item</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right">Harga</span>
               </div>
 
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 border-b border-gray-200 py-2.5 dark:border-zinc-800">
+              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
                 <input
                   type="checkbox"
                   checked={addons.assessment}
@@ -554,7 +557,7 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 border-b border-gray-200 py-2.5 dark:border-zinc-800">
+              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
                 <input
                   type="checkbox"
                   checked={addons.klinik}
@@ -576,7 +579,7 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 border-b border-gray-200 py-2.5 dark:border-zinc-800">
+              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
                 <input
                   type="checkbox"
                   checked={addons.rekaman}
@@ -593,7 +596,7 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 border-b border-gray-200 py-2.5 dark:border-zinc-800">
+              <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
                 <input
                   type="checkbox"
                   checked={addons.sertifikat}
@@ -616,7 +619,7 @@ export default function PricingCalculatorPageOS() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-[20px_minmax(0,1fr)_64px_130px] items-center gap-3 py-2.5">
+              <div className={`${addonGridClass} py-2.5`}>
                 <input
                   type="checkbox"
                   checked={addons.perjalanan}
@@ -640,7 +643,7 @@ export default function PricingCalculatorPageOS() {
           </Block>
 
           <Block step={5} title="Komersial">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
               <AppInput
                 inputId="bd-pct"
                 label="Komisi BD (%)"
@@ -666,7 +669,7 @@ export default function PricingCalculatorPageOS() {
         </div>
 
         {/* Right: live quote */}
-        <div className="flex flex-col gap-4 xl:sticky xl:top-6">
+        <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-6">
           <AppInput
             inputId="client-name"
             label="Nama Klien / Perusahaan"
