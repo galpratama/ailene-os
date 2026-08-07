@@ -13,9 +13,12 @@ import { trpc } from "@/trpc/client";
 import type { TrainerSourceEnum } from "@prisma/client";
 import {
   ArrowRight,
+  Award,
   BadgeCheck,
   Check,
+  ClipboardCheck,
   Loader2,
+  Rocket,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -33,6 +36,24 @@ const sourceOptions: AppSelectOption[] = [
 const levels = [
   ["Junior", "Belajar delivery bersama trainer senior sebelum mandiri"],
   ["Senior", "Memimpin kelas inti dan menangani topik advanced/eksekutif"],
+];
+
+const process = [
+  {
+    icon: ClipboardCheck,
+    title: "Screening",
+    description: "Review aplikasi dan wawancara singkat untuk memetakan keahlian dan kesiapanmu.",
+  },
+  {
+    icon: Award,
+    title: "Sertifikasi",
+    description: "Pathway sertifikasi berjenjang sesuai level, dari materi dasar sampai delivery langsung.",
+  },
+  {
+    icon: Rocket,
+    title: "Penempatan project",
+    description: "Dipasangkan dengan project yang sesuai spesialisasi dan level kesiapanmu.",
+  },
 ];
 
 export default function TrainerApplicationPageBIZ() {
@@ -107,27 +128,27 @@ export default function TrainerApplicationPageBIZ() {
     <div className="min-h-screen bg-off text-ink">
       <HeaderBIZ />
       <main>
-        <section className="border-b border-ink-line bg-kuning-t">
+        <section className="border-b border-ink-line bg-forest-deep text-white">
           <div className="mx-auto grid max-w-280 gap-12 px-7 py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-ink-line bg-white px-3 py-1.5 text-xs font-bold">
-                <Sparkles size={14} className="text-oranye" />
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold">
+                <Sparkles size={14} className="text-lime-bright" />
                 Ailene Trainer Pool
               </div>
               <h1 className="max-w-160 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
                 Bantu tim Indonesia memakai AI, bukan cuma membicarakannya.
               </h1>
-              <p className="mt-5 max-w-150 text-lg leading-relaxed text-ink-soft">
+              <p className="mt-5 max-w-150 text-lg leading-relaxed text-white/70">
                 Bergabung ke pool trainer freelance Ailene. Kamu akan melewati
                 screening, pathway sertifikasi, lalu dipasangkan dengan project
                 yang sesuai spesialisasi dan kesiapanmu.
               </p>
               <div className="mt-7 flex flex-wrap gap-5 text-sm font-semibold">
                 <span className="flex items-center gap-2">
-                  <Users size={17} /> Project sesuai demand
+                  <Users size={17} className="text-lime-bright" /> Project sesuai demand
                 </span>
                 <span className="flex items-center gap-2">
-                  <BadgeCheck size={17} /> Pathway sertifikasi jelas
+                  <BadgeCheck size={17} className="text-lime-bright" /> Pathway sertifikasi jelas
                 </span>
               </div>
             </div>
@@ -135,9 +156,9 @@ export default function TrainerApplicationPageBIZ() {
               {levels.map(([title, description], index) => (
                 <div
                   key={title}
-                  className="rounded-2xl border border-ink-line bg-white p-5"
+                  className="rounded-2xl border border-white/10 bg-white p-5 text-ink"
                 >
-                  <span className="text-xs font-bold text-oranye">
+                  <span className="text-xs font-bold text-claude">
                     LEVEL {index + 1}
                   </span>
                   <h2 className="mt-1 text-lg font-extrabold">{title}</h2>
@@ -150,10 +171,35 @@ export default function TrainerApplicationPageBIZ() {
           </div>
         </section>
 
+        <section className="border-b border-ink-line bg-white">
+          <div className="mx-auto max-w-280 px-7 py-14">
+            <div className="grid gap-6 sm:grid-cols-3">
+              {process.map((step, index) => (
+                <div key={step.title} className="flex gap-4">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-lime-bright text-forest-deep">
+                    <step.icon size={20} strokeWidth={2.25} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-claude">
+                      LANGKAH {index + 1}
+                    </p>
+                    <h3 className="mt-0.5 text-base font-extrabold">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mx-auto max-w-200 px-7 py-16">
           {submitted ? (
             <div className="rounded-2xl border border-ink-line bg-white p-10 text-center">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-hijau-t text-hijau">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-lime-bright text-forest-deep">
                 <Check size={28} strokeWidth={3} />
               </div>
               <h2 className="mt-5 text-2xl font-extrabold">
@@ -167,7 +213,7 @@ export default function TrainerApplicationPageBIZ() {
           ) : (
             <>
               <div className="mb-8">
-                <p className="text-sm font-bold text-oranye">APPLICATION</p>
+                <p className="text-sm font-bold text-claude">APPLICATION</p>
                 <h2 className="mt-1 text-3xl font-extrabold">
                   Ceritakan sedikit tentang dirimu
                 </h2>
@@ -246,7 +292,7 @@ export default function TrainerApplicationPageBIZ() {
                       {optionsData.specializations.map((specialization) => (
                         <label
                           key={specialization.id}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm"
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-colors has-[:checked]:border-claude has-[:checked]:bg-claude/5"
                         >
                           <input
                             type="checkbox"
@@ -328,7 +374,7 @@ export default function TrainerApplicationPageBIZ() {
                 </div>
                 <AppButton
                   type="submit"
-                  variant="ink"
+                  variant="green"
                   size="cta"
                   className="justify-center"
                   disabled={apply.isPending}

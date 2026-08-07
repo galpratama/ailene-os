@@ -15,6 +15,7 @@ export type AppButtonVariant =
   | "ink"
   | "white"
   | "orange"
+  | "green"
   | "discord";
 export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "cta";
 
@@ -38,6 +39,7 @@ const variantClasses: Record<AppButtonVariant, string> = {
   ink: "bg-ink text-white hover:bg-ink/90",
   white: "bg-white text-ink border border-ink-line hover:border-ink",
   orange: "bg-oranye text-white hover:bg-oranye/90",
+  green: "bg-lime-bright text-forest-deep hover:bg-lime-bright/90",
   discord: "bg-white text-[#5865F2] hover:bg-white/90",
 };
 
