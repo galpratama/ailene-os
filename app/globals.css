@@ -141,12 +141,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ailene OS runs one typeface everywhere — points every font-* Tailwind utility at Stack Sans Headline within the OS subtree. */
+/* Ailene OS runs one typeface everywhere and caps weight at medium — scopes every font-* and font-weight-* Tailwind utility within the OS subtree. */
 .os-font-scope {
   --font-sans: var(--font-stack);
   --font-mono: var(--font-stack);
   --font-display: var(--font-stack);
   --font-script: var(--font-stack);
+  --font-weight-semibold: var(--font-weight-medium);
+  --font-weight-bold: var(--font-weight-medium);
+  --font-weight-extrabold: var(--font-weight-medium);
+  --font-weight-black: var(--font-weight-medium);
 }
 
 /* OS root background — white fading into a pale forest green. */

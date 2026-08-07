@@ -29,10 +29,10 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const columns: { value: B2BActionStatusEnum; label: string; dot: string }[] = [
-  { value: "TO_DO", label: "To Do", dot: "bg-gray-400" },
-  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-biru" },
-  { value: "REVIEW", label: "Review", dot: "bg-kuning" },
-  { value: "DONE", label: "Done", dot: "bg-hijau" },
+  { value: "TO_DO", label: "To Do", dot: "bg-lime-bright" },
+  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-lime-bright" },
+  { value: "REVIEW", label: "Review", dot: "bg-lime-bright" },
+  { value: "DONE", label: "Done", dot: "bg-lime-bright" },
 ];
 
 const viewModeOptions = [
@@ -257,9 +257,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                       {col.label}
                     </span>
                   </div>
-                  <span
-                    className={`flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${col.dot}`}
-                  >
+                  <span className="flex size-5 items-center justify-center rounded-full bg-lime-bright text-[11px] font-bold text-forest-deep">
                     {isLoading ? "" : items.length}
                   </span>
                 </div>
