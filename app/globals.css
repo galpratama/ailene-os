@@ -28,9 +28,10 @@
   --ink-line: rgba(23, 23, 26, 0.1);
   --off: #fafaf8;
 
-  /* ailene os primary accent — friendly blue, styled after
-     campus.buildclub.ai's pastel-blue chrome (nav pills, links, buttons). */
-  --claude: #2563eb;
+  /* ailene os primary accent — forest/lime green identity. */
+  --claude: #1a7a52;
+  --lime-bright: #d6ee30;
+  --forest-deep: #062319;
 
   /* B2B training landing palette (home page only) — distinct from the pastel
      tokens above so existing pages keep their exact colors unchanged. */
@@ -46,35 +47,35 @@
   --cyan: #00c8f6;
   --charcoal: #202020;
 
-  /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark */
-  --dashboard-bg: #eaf1fd;
-  --dashboard-border: #e5e7eb;
+  /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark; sidebar stays dark forest in both modes. */
+  --dashboard-bg: #eef3ea;
+  --dashboard-border: #dde6d8;
   --card-bg: #ffffff;
-  --sb-bg: #dce8fd;
-  --sb-border: #b8cdf5;
-  --sb-border-soft: #c9dcf5;
-  --sb-text: #4b5563;
-  --sb-text-strong: #111827;
-  --sb-item-hover: #c9dcfb;
-  --sb-item-active-bg: #ffffff;
-  --sb-item-active-text: #2563eb;
+  --sb-bg: #062319;
+  --sb-border: #0f4a34;
+  --sb-border-soft: #0c3b29;
+  --sb-text: #a9c2b3;
+  --sb-text-strong: #f4faf1;
+  --sb-item-hover: #103d2d;
+  --sb-item-active-bg: #103d2d;
+  --sb-item-active-text: #d6ee30;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #05120c;
+  --foreground: #e7f2e9;
 
-  --dashboard-bg: #0a0a0a;
-  --dashboard-border: #27272a;
-  --card-bg: #18181b;
-  --sb-bg: #18181b;
-  --sb-border: #27272a;
-  --sb-border-soft: #27272a;
-  --sb-text: #a1a1aa;
-  --sb-text-strong: #f4f4f5;
-  --sb-item-hover: #27272a;
-  --sb-item-active-bg: rgba(37, 99, 235, 0.2);
-  --sb-item-active-text: #60a5fa;
+  --dashboard-bg: #05120c;
+  --dashboard-border: #163a2b;
+  --card-bg: #0b2118;
+  --sb-bg: #041a11;
+  --sb-border: #123526;
+  --sb-border-soft: #0f2c20;
+  --sb-text: #93a89b;
+  --sb-text-strong: #f4faf1;
+  --sb-item-hover: #123526;
+  --sb-item-active-bg: #123526;
+  --sb-item-active-text: #d6ee30;
 }
 
 @theme inline {
@@ -104,6 +105,8 @@
   --color-ink-line: var(--ink-line);
   --color-off: var(--off);
   --color-claude: var(--claude);
+  --color-lime-bright: var(--lime-bright);
+  --color-forest-deep: var(--forest-deep);
 
   --color-coral: var(--coral);
   --color-coral-t: var(--coral-t);
@@ -118,7 +121,6 @@
   --color-charcoal: var(--charcoal);
 
   --font-script: var(--font-caveat);
-  --font-display: var(--font-jersey);
 
   --color-dashboard-bg: var(--dashboard-bg);
   --color-dashboard-border: var(--dashboard-border);
@@ -139,23 +141,31 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* OS root background — white fading into the primary blue. */
+/* Ailene OS runs one typeface everywhere — points every font-* Tailwind utility at Stack Sans Headline within the OS subtree. */
+.os-font-scope {
+  --font-sans: var(--font-stack);
+  --font-mono: var(--font-stack);
+  --font-display: var(--font-stack);
+  --font-script: var(--font-stack);
+}
+
+/* OS root background — white fading into a pale forest green. */
 .bg-os-gradient {
-  background-image: linear-gradient(180deg, #ffffff 0%, #dce8fd 100%);
+  background-image: linear-gradient(180deg, #ffffff 0%, #dbe9de 100%);
 }
 .dark .bg-os-gradient {
-  background-image: linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%);
+  background-image: linear-gradient(180deg, #05120c 0%, #05120c 100%);
 }
 
 /* Subtle geometric (diamond lattice) texture over the OS background,
    styled after campus.buildclub.ai. Two crossed diagonal hairlines. */
 .bg-geo-pattern {
   background-image:
-    repeating-linear-gradient(45deg, rgba(37, 99, 235, 0.035) 0, rgba(37, 99, 235, 0.035) 1px, transparent 1px, transparent 48px),
-    repeating-linear-gradient(-45deg, rgba(37, 99, 235, 0.035) 0, rgba(37, 99, 235, 0.035) 1px, transparent 1px, transparent 48px);
+    repeating-linear-gradient(45deg, rgba(26, 122, 82, 0.035) 0, rgba(26, 122, 82, 0.035) 1px, transparent 1px, transparent 48px),
+    repeating-linear-gradient(-45deg, rgba(26, 122, 82, 0.035) 0, rgba(26, 122, 82, 0.035) 1px, transparent 1px, transparent 48px);
 }
 .dark .bg-geo-pattern {
   background-image:
-    repeating-linear-gradient(45deg, rgba(96, 165, 250, 0.035) 0, rgba(96, 165, 250, 0.035) 1px, transparent 1px, transparent 48px),
-    repeating-linear-gradient(-45deg, rgba(96, 165, 250, 0.035) 0, rgba(96, 165, 250, 0.035) 1px, transparent 1px, transparent 48px);
+    repeating-linear-gradient(45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px),
+    repeating-linear-gradient(-45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px);
 }

@@ -54,7 +54,7 @@ function withIds(days: PricingDay[]): LocalDay[] {
 function segmentClass(active: boolean) {
   return `flex-1 h-8 rounded-md px-3 text-xs font-semibold transition-colors ${
     active
-      ? "bg-claude text-white"
+      ? "bg-lime-bright text-forest-deep"
       : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
   }`;
 }

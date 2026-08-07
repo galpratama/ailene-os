@@ -71,7 +71,7 @@ export default function AnalyticsTrendChartOS({
               onClick={() => setMetric(value)}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
                 metric === value
-                  ? "bg-claude text-white"
+                  ? "bg-lime-bright text-forest-deep"
                   : "text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               }`}
             >

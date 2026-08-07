@@ -6,21 +6,15 @@ import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { setSessionToken, trpc } from "@/trpc/server";
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
-import { Jersey_10, Space_Grotesk } from "next/font/google";
+import { Stack_Sans_Headline } from "next/font/google";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
-const spaceGrotesk = Space_Grotesk({
+// Single OS-wide typeface; os-font-scope (globals.css) points every other font-* utility at this same variable.
+const stackSans = Stack_Sans_Headline({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-// Chunky display font for chrome-level headings (sidebar section labels,
-// org selector) — the campus.buildclub.ai-inspired playful accent.
-const jersey10 = Jersey_10({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-jersey",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-stack",
 });
 
 export const metadata: Metadata = {
@@ -54,7 +48,7 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
         <div
-          className={`flex h-screen overflow-hidden bg-os-gradient ${spaceGrotesk.className} ${jersey10.variable}`}
+          className={`flex h-screen overflow-hidden bg-os-gradient os-font-scope ${stackSans.className} ${stackSans.variable}`}
         >
           <SidebarOS sessionToken={sessionToken} />
           <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">

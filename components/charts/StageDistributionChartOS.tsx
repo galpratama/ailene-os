@@ -30,7 +30,7 @@ export default function StageDistributionChartOS({
 
   return (
     <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
+      <p className="text-base font-semibold capitalize text-gray-900 dark:text-zinc-100">
         Leads by Stage
       </p>
       <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">

@@ -11,6 +11,7 @@ export type AppButtonVariant =
   | "primary"
   | "outline"
   | "ghost"
+  | "sidebarOutline"
   | "ink"
   | "white"
   | "orange"
@@ -25,10 +26,13 @@ interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<AppButtonVariant, string> = {
   // OS (internal app)
-  primary: "bg-claude text-white hover:bg-claude/90 active:bg-claude/80",
+  primary: "bg-lime-bright text-forest-deep hover:bg-lime-bright/90 active:bg-lime-bright/80",
   outline:
     "border border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
   ghost: "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+  // Same shape as "outline" but tuned for the sidebar's dark-forest chrome instead of the light page background.
+  sidebarOutline:
+    "border border-sb-border-soft bg-sb-item-hover text-sb-text-strong hover:bg-sb-item-active-bg",
 
   // BIZ (marketing site)
   ink: "bg-ink text-white hover:bg-ink/90",

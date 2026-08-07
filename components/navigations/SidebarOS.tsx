@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 function segmentClass(active: boolean) {
   return `flex-1 h-7 rounded-md text-xs font-semibold transition-colors ${
     active
-      ? "bg-claude text-white"
+      ? "bg-lime-bright text-forest-deep"
       : "text-sb-text hover:text-sb-text-strong"
   }`;
 }
@@ -74,12 +74,12 @@ function NavItem({
       href={href}
       title={collapsed ? label : undefined}
       onClick={closeMobileSidebar}
-      className={`flex items-center rounded-full text-sm transition-colors ${
+      className={`flex items-center rounded-md text-sm transition-colors ${
         collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
       } ${
         active
-          ? "bg-linear-to-r from-[rgba(37,99,235,0.16)] to-transparent dark:from-[rgba(96,165,250,0.16)] text-sb-item-active-text font-medium"
-          : "text-sb-text hover:bg-linear-to-r hover:from-[rgba(37,99,235,0.08)] hover:to-transparent dark:hover:from-[rgba(96,165,250,0.08)] hover:text-sb-text-strong"
+          ? "bg-linear-to-r from-[rgba(214,238,48,0.18)] to-transparent dark:from-[rgba(214,238,48,0.22)] text-sb-item-active-text"
+          : "text-sb-text hover:bg-linear-to-r hover:from-[rgba(214,238,48,0.1)] hover:to-transparent dark:hover:from-[rgba(214,238,48,0.14)] hover:text-sb-text-strong"
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -160,7 +160,7 @@ function UserFooter({
             size="iconSm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="rounded-full hover:text-red-600"
+            className="rounded-full text-sb-text hover:bg-sb-item-hover hover:text-red-400"
             aria-label="Log out"
             title="Log out"
           >
@@ -249,7 +249,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           )}
 
           <AppButton
-            variant="outline"
+            variant="sidebarOutline"
             size="icon"
             onClick={closeMobileSidebar}
             className="rounded-full md:hidden"
@@ -258,7 +258,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             <Menu size={18} />
           </AppButton>
           <AppButton
-            variant="outline"
+            variant="sidebarOutline"
             size="icon"
             onClick={toggleSidebar}
             className="hidden rounded-full md:flex"
@@ -271,7 +271,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         {/* Org selector */}
         <div className={isCollapsed ? "px-2 pb-3" : "px-3 pb-3"}>
           <AppButton
-            variant="outline"
+            variant="sidebarOutline"
             size="md"
             className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-between"}`}
           >

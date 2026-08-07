@@ -42,7 +42,7 @@ function AileneLogo({ color, width }: { color: string; width: number }) {
 }
 
 const INK = "#17171a";
-const CLAUDE = "#2563eb";
+const CLAUDE = "#1a7a52";
 const GRAY = "#6b7280";
 const LINE = "#e5e7eb";
 

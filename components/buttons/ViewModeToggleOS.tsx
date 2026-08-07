@@ -13,7 +13,7 @@ interface ViewModeOptionOS {
 function segmentClass(active: boolean) {
   return `flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-colors ${
     active
-      ? "bg-claude text-white"
+      ? "bg-lime-bright text-forest-deep"
       : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
   }`;
 }

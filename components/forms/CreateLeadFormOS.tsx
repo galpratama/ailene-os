@@ -32,7 +32,7 @@ const probabilityStatusOptions: AppSelectOption[] = [
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
-    active ? "bg-claude text-white" : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+    active ? "bg-lime-bright text-forest-deep" : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
   }`;
 }
 
