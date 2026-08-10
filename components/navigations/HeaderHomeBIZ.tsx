@@ -76,7 +76,10 @@ export default function HeaderHomeBIZ() {
 
       <div className="mx-auto flex min-h-17.5 w-full max-w-315 items-center justify-between gap-4 px-4.5 sm:px-7.5">
         <Link href="#top" aria-label="Ailene home" onClick={closeMenu}>
-          <LogoAilene className="h-7 w-auto" />
+          <LogoAilene
+            variant={isScrolled ? "default" : "white"}
+            className="h-7 w-auto"
+          />
         </Link>
 
         <nav aria-label="Navigasi utama" className="ml-auto hidden items-center gap-6.5 lg:flex">

@@ -20,7 +20,7 @@ export default function FooterHomeBIZ() {
     <footer className="bg-[linear-gradient(180deg,var(--color-biz-forest)_0%,var(--color-biz-forest-mid)_100%)] pt-13.5 pb-6 text-white">
       <div className="mx-auto grid w-full max-w-315 gap-10 px-4.5 sm:px-7.5 lg:grid-cols-[1fr_1.5fr] lg:gap-16">
         <div>
-          <LogoAilene className="h-8 w-auto" />
+          <LogoAilene variant="white" className="h-8 w-auto" />
           <p className="mt-5 max-w-100 text-sm leading-[1.8] text-white/65">Membantu organisasi bergerak dari AI training menuju adopsi yang terlihat, terukur, dan berlanjut di pekerjaan sehari-hari.</p>
           <p className="mt-4"><a href="https://wa.me/6285110545698" target="_blank" rel="noreferrer" className="text-sm font-medium text-biz-lime hover:text-white">Diskusikan Kebutuhan Tim</a></p>
         </div>

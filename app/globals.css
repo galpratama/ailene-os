@@ -32,6 +32,8 @@
   --claude: #1a7a52;
   --lime-bright: #d6ee30;
   --forest-deep: #062319;
+  --ailene-logo-start: #439f4d;
+  --ailene-logo-end: #dfff6c;
 
   /* B2B training palette stays separate from the existing marketing tokens. */
   --coral: #ff8556;
@@ -127,6 +129,8 @@
   --color-claude: var(--claude);
   --color-lime-bright: var(--lime-bright);
   --color-forest-deep: var(--forest-deep);
+  --color-ailene-logo-start: var(--ailene-logo-start);
+  --color-ailene-logo-end: var(--ailene-logo-end);
 
   --color-coral: var(--coral);
   --color-coral-t: var(--coral-t);
