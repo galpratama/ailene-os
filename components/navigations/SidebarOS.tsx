@@ -127,7 +127,7 @@ function UserFooter({
 
   return (
     <div
-      className={`mt-auto border-t border-sb-border-soft flex items-center gap-2.5 ${
+      className={`shrink-0 border-t border-sb-border-soft flex items-center gap-2.5 ${
         collapsed ? "justify-center px-2 py-3" : "px-3 py-3"
       }`}
     >
@@ -318,46 +318,49 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           </div>
         )}
 
-        {/* Main nav */}
-        <nav
-          className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
-        >
-          {ungroupedNav.map((item) => (
-            <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+        {/* Scrollable nav region, footer stays pinned below it */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pb-6">
+          {/* Main nav */}
+          <nav
+            className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
+          >
+            {ungroupedNav.map((item) => (
+              <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+            ))}
+          </nav>
+
+          {/* Grouped nav sections (Business Development, Trainer Pool, Administrator, ...) */}
+          {navGroups.map((group) => (
+            <div key={group.label} className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+              {!isCollapsed && (
+                <p className="font-display px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+                  {group.label}
+                </p>
+              )}
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {group.items.map((item) => (
+                  <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+                ))}
+              </div>
+            </div>
           ))}
-        </nav>
 
-        {/* Grouped nav sections (Business Development, Trainer Pool, Administrator, ...) */}
-        {navGroups.map((group) => (
-          <div key={group.label} className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
-            {!isCollapsed && (
-              <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
-                {group.label}
-              </p>
-            )}
-            <div className="flex flex-col gap-0.5 mt-0.5">
-              {group.items.map((item) => (
-                <NavItem key={item.href} {...item} collapsed={isCollapsed} />
-              ))}
+          {/* Tools */}
+          {toolsNav.length > 0 && (
+            <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+              {!isCollapsed && (
+                <p className="font-display px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+                  Tools
+                </p>
+              )}
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                {toolsNav.map((item) => (
+                  <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-
-        {/* Tools */}
-        {toolsNav.length > 0 && (
-          <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
-            {!isCollapsed && (
-              <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
-                Tools
-              </p>
-            )}
-            <div className="flex flex-col gap-0.5 mt-0.5">
-              {toolsNav.map((item) => (
-                <NavItem key={item.href} {...item} collapsed={isCollapsed} />
-              ))}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />
       </aside>
