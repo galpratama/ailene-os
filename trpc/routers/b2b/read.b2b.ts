@@ -1,5 +1,6 @@
 import { STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
+import { actionDataScopeWhere, pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
 import { readFailedNotFound } from "@/trpc/utils/errors";
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 
@@ -38,10 +39,6 @@ export const readB2B = {
   pipeline: administratorProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
-      // Business Development can only read a pipeline they own.
-      const isBusinessDevelopment =
-        opts.ctx.user.role.name === "Business Development";
-
       const thePipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
         include: {
           owner: { select: { id: true, full_name: true, avatar: true } },
@@ -53,7 +50,7 @@ export const readB2B = {
         },
         where: {
           id: opts.input.id,
-          ...(isBusinessDevelopment && { owner_id: opts.ctx.user.id }),
+          ...pipelineDataScopeWhere(opts.ctx.user),
         },
       });
       if (!thePipeline) {
@@ -94,7 +91,7 @@ export const readB2B = {
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theAction = await opts.ctx.prisma.b2BAction.findFirst({
-        where: { id: opts.input.id },
+        where: { id: opts.input.id, ...actionDataScopeWhere(opts.ctx.user) },
       });
       if (!theAction) {
         throw readFailedNotFound("action");

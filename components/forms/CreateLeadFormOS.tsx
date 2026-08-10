@@ -70,6 +70,11 @@ export default function CreateLeadFormOS({
 
   const [error, setError] = useState<string | null>(null);
 
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
@@ -79,8 +84,20 @@ export default function CreateLeadFormOS({
   );
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen }
+    { enabled: !!sessionToken && isOpen && !isOwnScoped }
   );
+
+  // OWN-scoped users can only own their own leads, so auto-assign instead of showing a picker.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [seededOwnerForOpen, setSeededOwnerForOpen] = useState(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) setSeededOwnerForOpen(false);
+  }
+  if (isOpen && isOwnScoped && sessionData && !seededOwnerForOpen) {
+    setSeededOwnerForOpen(true);
+    setOwnerId(sessionData.user.id);
+  }
 
   const companyOptions: AppSelectOption[] =
     companyData?.list.map((c) => ({ value: c.id, label: c.name })) ?? [];
@@ -330,15 +347,17 @@ export default function CreateLeadFormOS({
             />
           </div>
 
-          <AppSelect
-            selectId="lead-owner"
-            label="Owner"
-            required
-            placeholder="Assign an owner"
-            value={ownerId}
-            onChange={(v) => setOwnerId((v as string) ?? "")}
-            options={ownerOptions}
-          />
+          {!isOwnScoped && (
+            <AppSelect
+              selectId="lead-owner"
+              label="Owner"
+              required
+              placeholder="Assign an owner"
+              value={ownerId}
+              onChange={(v) => setOwnerId((v as string) ?? "")}
+              options={ownerOptions}
+            />
+          )}
         </div>
 
         <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">

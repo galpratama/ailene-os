@@ -1,5 +1,7 @@
 import { STATUS_BAD_REQUEST, STATUS_CREATED } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
+import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
+import { readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsPosInt,
@@ -76,13 +78,11 @@ export const createB2B = {
       const { project_start_month, project_end_month, new_company, company_id } =
         opts.input;
 
-      // Business Development can only own pipelines they create — override
-      // whatever owner_id the caller sent.
-      const isBusinessDevelopment =
-        opts.ctx.user.role.name === "Business Development";
-      const ownerId = isBusinessDevelopment
-        ? opts.ctx.user.id
-        : opts.input.owner_id;
+      // OWN-scoped users can only own pipelines they create — override whatever owner_id the caller sent.
+      const ownerId =
+        opts.ctx.user.data_scope === "OWN"
+          ? opts.ctx.user.id
+          : opts.input.owner_id;
       if (
         project_start_month &&
         project_end_month &&
@@ -146,6 +146,17 @@ export const createB2B = {
       })
     )
     .mutation(async (opts) => {
+      const pipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
+        where: {
+          id: opts.input.pipeline_id,
+          ...pipelineDataScopeWhere(opts.ctx.user),
+        },
+        select: { id: true },
+      });
+      if (!pipeline) {
+        throw readFailedNotFound("pipeline");
+      }
+
       const created = await opts.ctx.prisma.b2BAction.create({
         data: {
           pipeline_id: opts.input.pipeline_id,

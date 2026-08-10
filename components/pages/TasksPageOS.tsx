@@ -67,6 +67,11 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
   const utils = trpc.useUtils();
 
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "tasks_view_mode",
     ["kanban", "cards", "table"],
@@ -109,7 +114,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
-    { enabled: !!sessionToken }
+    { enabled: !!sessionToken && !isOwnScoped }
   );
   const assigneeOptions: AppSelectOption[] = [
     { value: "", label: "All PICs" },
@@ -187,25 +192,28 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
         </AppButton>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <AppInput
-          inputId="tasks-search"
-          icon={<Search size={14} />}
-          placeholder="Search tasks..."
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-          className="max-w-70"
-        />
-        <div className="w-full max-w-56">
-          <AppSelect
-            selectId="tasks-assignee-filter"
-            placeholder="All PICs"
-            value={assigneeFilter}
-            options={assigneeOptions}
-            onChange={(value) => setAssigneeFilter((value as string) ?? "")}
+      <div className="flex flex-nowrap items-center gap-3">
+        <div className="w-70 shrink-0">
+          <AppInput
+            inputId="tasks-search"
+            icon={<Search size={14} />}
+            placeholder="Search tasks..."
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
           />
         </div>
-        <div className="w-full max-w-70">
+        {!isOwnScoped && (
+          <div className="w-56 shrink-0">
+            <AppSelect
+              selectId="tasks-assignee-filter"
+              placeholder="All PICs"
+              value={assigneeFilter}
+              options={assigneeOptions}
+              onChange={(value) => setAssigneeFilter((value as string) ?? "")}
+            />
+          </div>
+        )}
+        <div className="min-w-32 flex-1">
           <AppSelect
             selectId="tasks-pipeline-filter"
             placeholder="All Pipelines"
@@ -218,7 +226,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
           value={viewMode}
           onChange={setViewMode}
           options={viewModeOptions}
-          className="ml-auto"
+          className="ml-auto shrink-0"
         />
       </div>
 

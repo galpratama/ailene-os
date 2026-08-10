@@ -23,7 +23,6 @@ const jobFunctionOptions: AppSelectOption[] = [
 const dataScopeOptions: AppSelectOption[] = [
   { value: "OWN", label: "Own data" },
   { value: "TEAM", label: "Team data" },
-  { value: "ORGANIZATION", label: "Organization" },
   { value: "GLOBAL", label: "All data" },
 ];
 

@@ -83,8 +83,7 @@ export default function LeadsPageOS({
     enabled: !!sessionToken,
   });
 
-  const isBusinessDevelopment =
-    sessionData?.user.role_name === "Business Development";
+  const isOwnScoped = sessionData?.user.data_scope === "OWN";
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPipelineId, setEditingPipelineId] = useState<number | null>(
@@ -130,7 +129,7 @@ export default function LeadsPageOS({
 
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && !isBusinessDevelopment }
+    { enabled: !!sessionToken && !isOwnScoped }
   );
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
@@ -274,7 +273,7 @@ export default function LeadsPageOS({
             }}
           />
         </div>
-        {!isBusinessDevelopment && (
+        {!isOwnScoped && (
           <div className="w-full max-w-56">
             <AppSelect
               selectId="leads-owner-filter"

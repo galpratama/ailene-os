@@ -120,6 +120,8 @@ export const authRouter = createTRPCRouter({
         role_id: u.role_id,
         role_name: u.role.name,
         status: u.status,
+        team_id: u.team_id,
+        data_scope: u.data_scope,
       },
     };
   }),

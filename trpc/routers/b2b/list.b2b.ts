@@ -1,6 +1,7 @@
 import { Optional } from "@/lib/optional-type";
 import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
+import { actionDataScopeWhere, pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
 import {
   numberIsID,
@@ -157,17 +158,12 @@ export const listB2B = {
       })
     )
     .query(async (opts) => {
-      // Business Development only ever sees their own pipelines — override
-      // whatever owner_id filter (or lack of one) the caller sent.
-      const isBusinessDevelopment =
-        opts.ctx.user.role.name === "Business Development";
-
       const whereClause: Prisma.B2BPipelineWhereInput = {
         stage: opts.input.stage,
         probability_status: opts.input.probability_status,
-        owner_id: isBusinessDevelopment
-          ? opts.ctx.user.id
-          : opts.input.owner_id,
+        owner_id: opts.input.owner_id,
+        // Spread after owner_id so an OWN scope always wins over whatever the caller sent.
+        ...pipelineDataScopeWhere(opts.ctx.user),
         OR: undefined as Optional<
           [
             { name: { contains: string; mode: "insensitive" } },
@@ -320,13 +316,16 @@ export const listB2B = {
       })
     )
     .query(async (opts) => {
+      const scopeWhere = actionDataScopeWhere(opts.ctx.user);
+
       const whereClause: Prisma.B2BActionWhereInput = {
         status: opts.input.status,
         assignee_id: opts.input.assignee_id,
         pipeline_id: opts.input.pipeline_id,
-        pipeline: opts.input.company_id
-          ? { company_id: opts.input.company_id }
-          : undefined,
+        pipeline: {
+          ...(scopeWhere.pipeline as Prisma.B2BPipelineWhereInput),
+          ...(opts.input.company_id && { company_id: opts.input.company_id }),
+        },
         ...(opts.input.keyword && {
           OR: [
             { name: { contains: opts.input.keyword, mode: "insensitive" } },

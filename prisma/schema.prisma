@@ -58,10 +58,9 @@ enum JobFunctionEnum {
 }
 
 enum DataScopeEnum {
-  OWN          @map("own")
-  TEAM         @map("team")
-  ORGANIZATION @map("organization")
-  GLOBAL       @map("global")
+  OWN    @map("own")
+  TEAM   @map("team")
+  GLOBAL @map("global")
 
   @@map("data_scope_enum")
 }

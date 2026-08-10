@@ -1,5 +1,6 @@
 import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
+import { actionDataScopeWhere, isOwnerWithinScope } from "@/trpc/utils/data_scope";
 import { checkUpdateResult } from "@/trpc/utils/errors";
 import {
   numberIsID,
@@ -84,9 +85,6 @@ export const updateB2B = {
         });
       }
 
-      // Business Development can only update a pipeline they own.
-      const isBusinessDevelopment =
-        opts.ctx.user.role.name === "Business Development";
       const REASON_STAGES: B2BStageEnum[] = [
         B2BStageEnum.CLOSED_LOST,
         B2BStageEnum.ON_HOLD,
@@ -95,11 +93,19 @@ export const updateB2B = {
       const updated = await opts.ctx.prisma.$transaction(async (tx) => {
         const existing = await tx.b2BPipeline.findUnique({
           where: { id },
-          select: { stage: true, owner_id: true },
+          select: {
+            stage: true,
+            owner_id: true,
+            owner: { select: { team_id: true } },
+          },
         });
         if (
           !existing ||
-          (isBusinessDevelopment && existing.owner_id !== opts.ctx.user.id)
+          !isOwnerWithinScope(
+            opts.ctx.user,
+            existing.owner_id,
+            existing.owner.team_id
+          )
         ) {
           return null;
         }
@@ -177,7 +183,7 @@ export const updateB2B = {
     .mutation(async (opts) => {
       const { id, due_date, ...rest } = opts.input;
       const updated = await opts.ctx.prisma.b2BAction.updateMany({
-        where: { id },
+        where: { id, ...actionDataScopeWhere(opts.ctx.user) },
         data: {
           ...rest,
           ...(due_date !== undefined && {

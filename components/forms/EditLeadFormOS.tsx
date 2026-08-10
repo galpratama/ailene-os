@@ -4,6 +4,7 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
+import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
 import {
@@ -11,7 +12,7 @@ import {
   B2BProbabilityStatusEnum,
   B2BStageEnum,
 } from "@prisma/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 const stageOptions: AppSelectOption[] = [
@@ -66,6 +67,11 @@ export default function EditLeadFormOS({
   onClose,
 }: EditLeadFormOSProps) {
   const utils = trpc.useUtils();
+
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+  const isOwnScoped = sessionData?.user.data_scope === "OWN";
 
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
@@ -122,7 +128,8 @@ export default function EditLeadFormOS({
     setProjectValue(String(Number(pipeline.project_value)));
     setProjectStartMonth(toMonthInputValue(pipeline.project_start_month));
     setProjectEndMonth(toMonthInputValue(pipeline.project_end_month));
-    setOwnerId(pipeline.owner_id);
+    // OWN scope can only ever own their own leads, so use their id directly instead of whatever's on the record.
+    setOwnerId(isOwnScoped ? (sessionData?.user.id ?? pipeline.owner_id) : pipeline.owner_id);
   }
 
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
@@ -130,7 +137,7 @@ export default function EditLeadFormOS({
   });
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen }
+    { enabled: !!sessionToken && isOpen && !isOwnScoped }
   );
 
   const industryOptions: AppSelectOption[] =
@@ -146,6 +153,26 @@ export default function EditLeadFormOS({
   const updatePipeline = trpc.update.b2b.pipeline.useMutation();
   const updateCompany = trpc.update.b2b.company.useMutation();
   const isPending = updatePipeline.isPending || updateCompany.isPending;
+
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const deletePipeline = trpc.delete.b2b.pipeline.useMutation({
+    onSuccess: () => {
+      utils.list.b2b.pipelines.invalidate();
+      utils.list.b2b.allActions.invalidate();
+      setIsConfirmingDelete(false);
+      handleClose();
+    },
+    onError: (err) => {
+      setIsConfirmingDelete(false);
+      setError(err.message);
+    },
+  });
+
+  function handleConfirmDelete() {
+    if (!pipeline) return;
+    deletePipeline.mutate({ id: pipeline.id });
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -197,8 +224,9 @@ export default function EditLeadFormOS({
 
   const isReady = !isLoadingPipeline && !!pipeline;
 
-  return (
+  return [
     <SheetOS
+      key="sheet"
       title="Edit Lead"
       description="Update this lead's company and pipeline details."
       isOpen={isOpen}
@@ -350,18 +378,35 @@ export default function EditLeadFormOS({
               />
             </div>
 
-            <AppSelect
-              selectId="edit-lead-owner"
-              label="Owner"
-              required
-              placeholder="Assign an owner"
-              value={ownerId}
-              onChange={(v) => setOwnerId((v as string) ?? "")}
-              options={ownerOptions}
-            />
+            {!isOwnScoped && (
+              <AppSelect
+                selectId="edit-lead-owner"
+                label="Owner"
+                required
+                placeholder="Assign an owner"
+                value={ownerId}
+                onChange={(v) => setOwnerId((v as string) ?? "")}
+                options={ownerOptions}
+              />
+            )}
           </div>
 
           <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <AppButton
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Delete lead"
+              className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/40"
+              disabled={deletePipeline.isPending}
+              onClick={() => setIsConfirmingDelete(true)}
+            >
+              {deletePipeline.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+            </AppButton>
             <AppButton
               type="button"
               variant="outline"
@@ -382,6 +427,21 @@ export default function EditLeadFormOS({
           </div>
         </form>
       )}
-    </SheetOS>
-  );
+    </SheetOS>,
+    <AlertConfirmationOS
+      key="confirm-delete"
+      isOpen={isConfirmingDelete}
+      onClose={() => setIsConfirmingDelete(false)}
+      onConfirm={handleConfirmDelete}
+      title="Delete this lead?"
+      message={
+        pipeline
+          ? `Delete "${pipeline.name}"? This also deletes every task under this lead. This can't be undone.`
+          : ""
+      }
+      confirmLabel="Delete"
+      destructive
+      isPending={deletePipeline.isPending}
+    />,
+  ];
 }
