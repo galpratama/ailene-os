@@ -1,6 +1,11 @@
-import { STATUS_BAD_REQUEST, STATUS_CREATED } from "@/lib/status_code";
+import { STATUS_BAD_REQUEST, STATUS_CONFLICT, STATUS_CREATED } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
+import {
+  findOrganizationDuplicates,
+  normalizeOrgName,
+} from "@/trpc/utils/organization_dedupe";
+import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
 import { readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
@@ -32,20 +37,46 @@ const newCompanyInput = z.object({
   image_url: z.url().nullable().optional(),
 });
 
+async function assertNoDuplicateOrganization(
+  tx: Prisma.TransactionClient,
+  input: { name: string; pic_email?: string | null; pic_wa?: string | null },
+  force: boolean | undefined
+) {
+  if (force) return;
+  const duplicates = await findOrganizationDuplicates(tx, {
+    name: input.name,
+    email: input.pic_email,
+    phone: input.pic_wa,
+  });
+  if (duplicates.length > 0) {
+    throw new TRPCError({
+      code: STATUS_CONFLICT,
+      message: `Possible duplicate organization: ${duplicates.map((d) => d.name).join(", ")}`,
+    });
+  }
+}
+
 export const createB2B = {
   company: administratorProcedure
-    .input(newCompanyInput)
+    .input(newCompanyInput.extend({ force: z.boolean().optional() }))
     .mutation(async (opts) => {
-      const created = await opts.ctx.prisma.b2BCompany.create({
-        data: {
-          name: opts.input.name,
-          industry_id: opts.input.industry_id,
-          pic_name: opts.input.pic_name ?? null,
-          pic_job_title: opts.input.pic_job_title ?? null,
-          pic_wa: opts.input.pic_wa ?? null,
-          pic_email: opts.input.pic_email ?? null,
-          image_url: opts.input.image_url ?? null,
-        },
+      const created = await opts.ctx.prisma.$transaction(async (tx) => {
+        await assertNoDuplicateOrganization(tx, opts.input, opts.input.force);
+
+        const company = await tx.b2BCompany.create({
+          data: {
+            name: opts.input.name,
+            normalized_name: normalizeOrgName(opts.input.name),
+            industry_id: opts.input.industry_id,
+            pic_name: opts.input.pic_name ?? null,
+            pic_job_title: opts.input.pic_job_title ?? null,
+            pic_wa: opts.input.pic_wa ?? null,
+            pic_email: opts.input.pic_email ?? null,
+            image_url: opts.input.image_url ?? null,
+          },
+        });
+        await upsertPrimaryContact(tx, company.id, opts.input);
+        return company;
       });
       return {
         code: STATUS_CREATED,
@@ -62,6 +93,7 @@ export const createB2B = {
           // Provide an existing company_id, OR a new_company to create inline.
           company_id: numberIsID().optional(),
           new_company: newCompanyInput.optional(),
+          force: z.boolean().optional(),
           stage: z.enum(B2BStageEnum).optional(),
           probability: z.number().int().min(0).max(100).optional(),
           probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
@@ -94,37 +126,45 @@ export const createB2B = {
         });
       }
 
-      const company: Prisma.B2BCompanyCreateNestedOneWithoutPipelinesInput =
-        new_company
-          ? {
-              create: {
-                name: new_company.name,
-                industry_id: new_company.industry_id,
-                pic_name: new_company.pic_name ?? null,
-                pic_job_title: new_company.pic_job_title ?? null,
-                pic_wa: new_company.pic_wa ?? null,
-                pic_email: new_company.pic_email ?? null,
-                image_url: new_company.image_url ?? null,
-              },
-            }
-          : { connect: { id: company_id } };
+      const created = await opts.ctx.prisma.$transaction(async (tx) => {
+        let resolvedCompanyId: number;
+        if (new_company) {
+          await assertNoDuplicateOrganization(tx, new_company, opts.input.force);
+          const company = await tx.b2BCompany.create({
+            data: {
+              name: new_company.name,
+              normalized_name: normalizeOrgName(new_company.name),
+              industry_id: new_company.industry_id,
+              pic_name: new_company.pic_name ?? null,
+              pic_job_title: new_company.pic_job_title ?? null,
+              pic_wa: new_company.pic_wa ?? null,
+              pic_email: new_company.pic_email ?? null,
+              image_url: new_company.image_url ?? null,
+            },
+          });
+          await upsertPrimaryContact(tx, company.id, new_company);
+          resolvedCompanyId = company.id;
+        } else {
+          resolvedCompanyId = company_id!;
+        }
 
-      const created = await opts.ctx.prisma.b2BPipeline.create({
-        data: {
-          name: opts.input.name,
-          company,
-          stage: opts.input.stage,
-          probability: opts.input.probability,
-          probability_status: opts.input.probability_status,
-          project_value: opts.input.project_value,
-          project_start_month: project_start_month
-            ? new Date(project_start_month)
-            : null,
-          project_end_month: project_end_month
-            ? new Date(project_end_month)
-            : null,
-          owner: { connect: { id: ownerId } },
-        },
+        return tx.b2BPipeline.create({
+          data: {
+            name: opts.input.name,
+            company: { connect: { id: resolvedCompanyId } },
+            stage: opts.input.stage,
+            probability: opts.input.probability,
+            probability_status: opts.input.probability_status,
+            project_value: opts.input.project_value,
+            project_start_month: project_start_month
+              ? new Date(project_start_month)
+              : null,
+            project_end_month: project_end_month
+              ? new Date(project_end_month)
+              : null,
+            owner: { connect: { id: ownerId } },
+          },
+        });
       });
       return {
         code: STATUS_CREATED,
@@ -171,6 +211,81 @@ export const createB2B = {
       return {
         code: STATUS_CREATED,
         message: "Action created",
+        id: created.id,
+      };
+    }),
+
+  contact: administratorProcedure
+    .input(
+      z.object({
+        full_name: stringNotBlank(),
+        email: z.email().nullable().optional(),
+        phone: stringNotBlank().nullable().optional(),
+        job_title: stringNotBlank().nullable().optional(),
+        organization_id: numberIsID().optional(),
+        is_primary: z.boolean().optional(),
+      })
+    )
+    .mutation(async (opts) => {
+      const { organization_id, is_primary, ...rest } = opts.input;
+
+      const created = await opts.ctx.prisma.$transaction(async (tx) => {
+        const contact = await tx.contact.create({
+          data: {
+            full_name: rest.full_name,
+            email: rest.email ?? null,
+            phone: rest.phone ?? null,
+            job_title: rest.job_title ?? null,
+          },
+        });
+        if (organization_id) {
+          await tx.contactOrganizationRelationship.create({
+            data: {
+              contact_id: contact.id,
+              organization_id,
+              is_primary: is_primary ?? false,
+            },
+          });
+        }
+        return contact;
+      });
+
+      return {
+        code: STATUS_CREATED,
+        message: "Contact created",
+        id: created.id,
+      };
+    }),
+
+  // "Request review" path from the duplicate-check modal.
+  organizationDuplicateReview: administratorProcedure
+    .input(
+      z.object({
+        proposed_name: stringNotBlank(),
+        proposed_industry_id: numberIsID().optional(),
+        proposed_pic_name: stringNotBlank().nullable().optional(),
+        proposed_pic_job_title: stringNotBlank().nullable().optional(),
+        proposed_pic_wa: stringNotBlank().nullable().optional(),
+        proposed_pic_email: stringNotBlank().nullable().optional(),
+        matched_organization_ids: z.array(numberIsID()).default([]),
+      })
+    )
+    .mutation(async (opts) => {
+      const created = await opts.ctx.prisma.organizationDuplicateReview.create({
+        data: {
+          requested_by_id: opts.ctx.user.id,
+          proposed_name: opts.input.proposed_name,
+          proposed_industry_id: opts.input.proposed_industry_id,
+          proposed_pic_name: opts.input.proposed_pic_name,
+          proposed_pic_job_title: opts.input.proposed_pic_job_title,
+          proposed_pic_wa: opts.input.proposed_pic_wa,
+          proposed_pic_email: opts.input.proposed_pic_email,
+          matched_organization_ids: opts.input.matched_organization_ids,
+        },
+      });
+      return {
+        code: STATUS_CREATED,
+        message: "Duplicate review submitted",
         id: created.id,
       };
     }),

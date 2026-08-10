@@ -26,6 +26,9 @@ export const listRouter = createTRPCRouter({
     calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,
     dashboardAnalytics: listB2B.dashboardAnalytics,
+    checkOrganizationDuplicate: listB2B.checkOrganizationDuplicate,
+    contacts: listB2B.contacts,
+    organizationDuplicateReviews: listB2B.organizationDuplicateReviews,
   },
 
   // Trainer Pool //

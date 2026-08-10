@@ -84,6 +84,26 @@ CREATE TYPE b2b_lost_reason_enum AS ENUM (
   'other'
 );
 
+-- Organization (b2b_company) lifecycle — starts prospect, auto-bumps to customer on a closed_won pipeline.
+CREATE TYPE organization_status_enum AS ENUM (
+  'prospect',
+  'customer',
+  'archived'
+);
+
+-- Entity types covered by master_data_audit_log.
+CREATE TYPE master_data_entity_type_enum AS ENUM (
+  'organization',
+  'contact'
+);
+
+CREATE TYPE duplicate_review_status_enum AS ENUM (
+  'pending',
+  'linked_existing',
+  'created_new',
+  'dismissed'
+);
+
 -- Enumeration for the b2b_actions table (b2ba_*)
 
 CREATE TYPE b2ba_status_enum AS ENUM (
@@ -358,16 +378,79 @@ CREATE TABLE ownership_reassignments (
 -- B2B Sales Pipeline
 
 CREATE TABLE b2b_company (
-  id             SERIAL       PRIMARY KEY,
-  name           VARCHAR      NOT NULL,
-  industry_id    SMALLINT     NOT NULL,
-  pic_name       VARCHAR          NULL,
-  pic_job_title  VARCHAR          NULL,
-  pic_wa         VARCHAR          NULL,
-  pic_email      VARCHAR          NULL,
-  image_url      VARCHAR          NULL,
-  created_at     TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at     TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+  id                SERIAL                    PRIMARY KEY,
+  name              VARCHAR                   NOT NULL,
+  normalized_name   VARCHAR                   NOT NULL,
+  aliases           VARCHAR[]                 NOT NULL  DEFAULT '{}',
+  legal_identifier  VARCHAR                       NULL,
+  status            organization_status_enum  NOT NULL  DEFAULT 'prospect',
+  archived_at       TIMESTAMPTZ                   NULL,
+  industry_id       SMALLINT                  NOT NULL,
+  pic_name          VARCHAR                       NULL,
+  pic_job_title     VARCHAR                       NULL,
+  pic_wa            VARCHAR                       NULL,
+  pic_email         VARCHAR                       NULL,
+  image_url         VARCHAR                       NULL,
+  created_at        TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Reusable person record — can relate to multiple organizations (see
+-- contact_organization_relationships) instead of living as flat fields on one company.
+CREATE TABLE contacts (
+  id          SERIAL       PRIMARY KEY,
+  full_name   VARCHAR      NOT NULL,
+  email       VARCHAR          NULL,
+  phone       VARCHAR          NULL,
+  job_title   VARCHAR          NULL,
+  created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- One primary relationship per contact-organization pair, with effective dates.
+CREATE TABLE contact_organization_relationships (
+  contact_id        INTEGER      NOT NULL,
+  organization_id   INTEGER      NOT NULL,
+  is_primary        BOOLEAN      NOT NULL  DEFAULT FALSE,
+  relationship_role VARCHAR          NULL,
+  effective_from    DATE         NOT NULL  DEFAULT CURRENT_DATE,
+  effective_to      DATE             NULL,
+  created_at        TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (contact_id, organization_id)
+);
+
+-- "Request review" path from the duplicate-check modal — captures the
+-- proposed organization identity for a Manager/Admin to resolve.
+CREATE TABLE organization_duplicate_reviews (
+  id                        SERIAL                       PRIMARY KEY,
+  requested_by_id           UUID                         NOT NULL,
+  proposed_name             VARCHAR                      NOT NULL,
+  proposed_industry_id      SMALLINT                         NULL,
+  proposed_pic_name         VARCHAR                          NULL,
+  proposed_pic_job_title    VARCHAR                          NULL,
+  proposed_pic_wa           VARCHAR                          NULL,
+  proposed_pic_email        VARCHAR                          NULL,
+  matched_organization_ids  INTEGER[]                    NOT NULL  DEFAULT '{}',
+  status                    duplicate_review_status_enum NOT NULL  DEFAULT 'pending',
+  resolved_organization_id  INTEGER                          NULL,
+  resolved_by_id            UUID                             NULL,
+  resolved_at               TIMESTAMPTZ                      NULL,
+  resolution_note           TEXT                             NULL,
+  created_at                TIMESTAMPTZ                  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Append-only audit trail for Organization/Contact edits — same shape as
+-- user_audit_log, generalized across both entity types.
+CREATE TABLE master_data_audit_log (
+  id                  SERIAL                        PRIMARY KEY,
+  target_entity_type  master_data_entity_type_enum  NOT NULL,
+  target_entity_id    INTEGER                       NOT NULL,
+  actor_id            UUID                          NOT NULL,
+  field_changed       VARCHAR                       NOT NULL,
+  old_value           VARCHAR                           NULL,
+  new_value           VARCHAR                           NULL,
+  reason              TEXT                              NULL,
+  created_at          TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE b2b_pipeline (
@@ -836,6 +919,19 @@ ALTER TABLE b2b_pipeline_stage_history
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (changed_by)  REFERENCES users (id);
 
+ALTER TABLE contact_organization_relationships
+  ADD FOREIGN KEY (contact_id)      REFERENCES contacts (id)    ON DELETE CASCADE,
+  ADD FOREIGN KEY (organization_id) REFERENCES b2b_company (id) ON DELETE CASCADE;
+
+ALTER TABLE organization_duplicate_reviews
+  ADD FOREIGN KEY (requested_by_id)      REFERENCES users (id),
+  ADD FOREIGN KEY (proposed_industry_id) REFERENCES industries (id),
+  ADD FOREIGN KEY (resolved_organization_id) REFERENCES b2b_company (id),
+  ADD FOREIGN KEY (resolved_by_id)       REFERENCES users (id);
+
+ALTER TABLE master_data_audit_log
+  ADD FOREIGN KEY (actor_id) REFERENCES users (id);
+
 -- Trainer Pool
 
 ALTER TABLE trainers
@@ -1103,6 +1199,15 @@ CREATE INDEX lms_coaching_notes_member_id_idx ON lms_coaching_notes (member_id);
 -- Pipeline stage history — per-lead lookups and weekly-dashboard time-window queries.
 CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_history (pipeline_id);
 CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
+
+-- Organizations — duplicate-name matching on create.
+CREATE INDEX b2b_company_normalized_name_idx ON b2b_company (normalized_name);
+
+-- Duplicate reviews — filtering the manager queue by status.
+CREATE INDEX organization_duplicate_reviews_status_idx ON organization_duplicate_reviews (status);
+
+-- Master data audit log — lookup an organization/contact's change history.
+CREATE INDEX master_data_audit_log_target_idx ON master_data_audit_log (target_entity_type, target_entity_id);
 
 -- User audit log — lookup a user's change history for the audit log page.
 CREATE INDEX user_audit_log_target_user_id_idx ON user_audit_log (target_user_id);

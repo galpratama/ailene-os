@@ -11,6 +11,7 @@ export const STATUS_NO_CONTENT = "NO_CONTENT" as const; // 204 No Content
 export const STATUS_BAD_REQUEST = "BAD_REQUEST" as const; // 400 Bad Request
 export const STATUS_FORBIDDEN = "FORBIDDEN" as const; // 403 Forbidden
 export const STATUS_NOT_FOUND = "NOT_FOUND" as const; // 404 Not Found
+export const STATUS_CONFLICT = "CONFLICT" as const; // 409 Conflict
 
 // 5xx //
 

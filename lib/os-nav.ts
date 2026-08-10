@@ -1,4 +1,5 @@
 import {
+  Building2,
   Calculator,
   Calendar,
   ChartNoAxesCombined,
@@ -33,6 +34,13 @@ export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true, segment: "B2B" },
   { href: "/calendar", label: "Calendar", icon: Calendar, segment: "B2B" },
   { href: "/tracking", label: "Tracking", icon: ChartNoAxesCombined, segment: "B2C" },
+  {
+    href: "/organizations",
+    label: "Organizations",
+    icon: Building2,
+    segment: "B2B",
+    group: "Business Development",
+  },
   {
     href: "/leads",
     label: "Leads",

@@ -11,18 +11,31 @@ export const readB2B = {
       const theCompany = await opts.ctx.prisma.b2BCompany.findFirst({
         include: {
           industry: { select: { id: true, industry_name: true } },
+          contacts: { include: { contact: true } },
         },
         where: { id: opts.input.id },
       });
       if (!theCompany) {
         throw readFailedNotFound("company");
       }
+
+      const timeline = await opts.ctx.prisma.masterDataAuditLog.findMany({
+        where: { target_entity_type: "ORGANIZATION", target_entity_id: theCompany.id },
+        include: { actor: { select: { full_name: true } } },
+        orderBy: { created_at: "desc" },
+        take: 50,
+      });
+
       return {
         code: STATUS_OK,
         message: "Success",
         company: {
           id: theCompany.id,
           name: theCompany.name,
+          status: theCompany.status,
+          aliases: theCompany.aliases,
+          legal_identifier: theCompany.legal_identifier,
+          archived_at: theCompany.archived_at,
           industry_id: theCompany.industry.id,
           industry_name: theCompany.industry.industry_name,
           pic_name: theCompany.pic_name,
@@ -33,6 +46,59 @@ export const readB2B = {
           created_at: theCompany.created_at,
           updated_at: theCompany.updated_at,
         },
+        contacts: theCompany.contacts.map((rel) => ({
+          id: rel.contact.id,
+          full_name: rel.contact.full_name,
+          email: rel.contact.email,
+          phone: rel.contact.phone,
+          job_title: rel.contact.job_title,
+          is_primary: rel.is_primary,
+        })),
+        timeline: timeline.map((entry) => ({
+          id: entry.id,
+          field_changed: entry.field_changed,
+          old_value: entry.old_value,
+          new_value: entry.new_value,
+          reason: entry.reason,
+          actor_name: entry.actor.full_name,
+          created_at: entry.created_at,
+        })),
+      };
+    }),
+
+  contact: administratorProcedure
+    .input(objectHasOnlyID())
+    .query(async (opts) => {
+      const theContact = await opts.ctx.prisma.contact.findFirst({
+        where: { id: opts.input.id },
+        include: {
+          organizations: {
+            include: { organization: { select: { id: true, name: true } } },
+          },
+        },
+      });
+      if (!theContact) {
+        throw readFailedNotFound("contact");
+      }
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        contact: {
+          id: theContact.id,
+          full_name: theContact.full_name,
+          email: theContact.email,
+          phone: theContact.phone,
+          job_title: theContact.job_title,
+          created_at: theContact.created_at,
+        },
+        relationships: theContact.organizations.map((rel) => ({
+          organization_id: rel.organization.id,
+          organization_name: rel.organization.name,
+          is_primary: rel.is_primary,
+          relationship_role: rel.relationship_role,
+          effective_from: rel.effective_from,
+          effective_to: rel.effective_to,
+        })),
       };
     }),
 

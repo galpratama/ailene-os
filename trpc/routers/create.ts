@@ -13,6 +13,8 @@ export const createRouter = createTRPCRouter({
     company: createB2B.company,
     pipeline: createB2B.pipeline,
     action: createB2B.action,
+    contact: createB2B.contact,
+    organizationDuplicateReview: createB2B.organizationDuplicateReview,
   },
   trainerPool: {
     candidate: createTrainerPool.candidate,

@@ -1,21 +1,23 @@
 import { STATUS_BAD_REQUEST, STATUS_NO_CONTENT } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
-import { checkDeleteResult, readFailedNotFound } from "@/trpc/utils/errors";
+import { checkDeleteResult, checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 import { TRPCError } from "@trpc/server";
 
 export const deleteB2B = {
+  // Never hard-deletes — always archives, so linked leads/history are preserved.
   company: administratorProcedure
     .input(objectHasOnlyID())
     .mutation(async (opts) => {
-      const deleted = await opts.ctx.prisma.b2BCompany.deleteMany({
+      const updated = await opts.ctx.prisma.b2BCompany.updateMany({
         where: { id: opts.input.id },
+        data: { status: "ARCHIVED", archived_at: new Date() },
       });
-      await checkDeleteResult(deleted.count, "companies", "company");
+      await checkUpdateResult(updated.count, "company", "companies");
       return {
         code: STATUS_NO_CONTENT,
-        message: "Success",
+        message: "Organization archived",
       };
     }),
 

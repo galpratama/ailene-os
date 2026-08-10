@@ -110,6 +110,32 @@ enum B2BLostReasonEnum {
   @@map("b2b_lost_reason_enum")
 }
 
+// Organization (B2BCompany) lifecycle — starts PROSPECT, auto-bumps to CUSTOMER on a CLOSED_WON pipeline.
+enum OrganizationStatusEnum {
+  PROSPECT @map("prospect")
+  CUSTOMER @map("customer")
+  ARCHIVED @map("archived")
+
+  @@map("organization_status_enum")
+}
+
+// Entity types covered by MasterDataAuditLog.
+enum MasterDataEntityTypeEnum {
+  ORGANIZATION @map("organization")
+  CONTACT      @map("contact")
+
+  @@map("master_data_entity_type_enum")
+}
+
+enum DuplicateReviewStatusEnum {
+  PENDING         @map("pending")
+  LINKED_EXISTING @map("linked_existing")
+  CREATED_NEW     @map("created_new")
+  DISMISSED       @map("dismissed")
+
+  @@map("duplicate_review_status_enum")
+}
+
 // Enumeration for the B2BAction model (b2ba_*)
 
 enum B2BActionStatusEnum {
@@ -337,10 +363,11 @@ enum LmsPaMotivationEnum {
 // Lookup tables
 
 model Industry {
-  id            Int          @id @default(autoincrement()) @db.SmallInt
-  industry_name String       @unique @db.VarChar()
-  created_at    DateTime     @default(now()) @db.Timestamptz()
-  b2b_companies B2BCompany[]
+  id                         Int                           @id @default(autoincrement()) @db.SmallInt
+  industry_name              String                        @unique @db.VarChar()
+  created_at                 DateTime                      @default(now()) @db.Timestamptz()
+  b2b_companies              B2BCompany[]
+  duplicate_review_proposals OrganizationDuplicateReview[]
 
   @@map("industries")
 }
@@ -389,44 +416,47 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                              String                     @id @default(uuid()) @db.Uuid
-  full_name                       String                     @db.VarChar()
-  email                           String                     @unique @db.VarChar()
-  phone_country                   PhoneCountryCode?          @relation(fields: [phone_country_id], references: [id])
-  phone_country_id                Int?                       @db.SmallInt
-  phone_number                    String?                    @db.VarChar()
-  avatar                          String?                    @db.VarChar()
-  role                            Role                       @relation(fields: [role_id], references: [id])
-  role_id                         Int                        @default(3) @db.SmallInt // General User
-  team                            Team?                      @relation(fields: [team_id], references: [id])
-  team_id                         Int?                       @db.SmallInt
+  id                              String                        @id @default(uuid()) @db.Uuid
+  full_name                       String                        @db.VarChar()
+  email                           String                        @unique @db.VarChar()
+  phone_country                   PhoneCountryCode?             @relation(fields: [phone_country_id], references: [id])
+  phone_country_id                Int?                          @db.SmallInt
+  phone_number                    String?                       @db.VarChar()
+  avatar                          String?                       @db.VarChar()
+  role                            Role                          @relation(fields: [role_id], references: [id])
+  role_id                         Int                           @default(3) @db.SmallInt // General User
+  team                            Team?                         @relation(fields: [team_id], references: [id])
+  team_id                         Int?                          @db.SmallInt
   job_function                    JobFunctionEnum?
-  data_scope                      DataScopeEnum              @default(OWN)
-  status                          UserAccountStatusEnum      @default(ACTIVE)
-  invited_by                      User?                      @relation("UserInvitedBy", fields: [invited_by_id], references: [id])
-  invited_by_id                   String?                    @db.Uuid
-  invited_at                      DateTime?                  @db.Timestamptz()
-  invited_users                   User[]                     @relation("UserInvitedBy")
-  date_of_birth                   DateTime?                  @db.Date
+  data_scope                      DataScopeEnum                 @default(OWN)
+  status                          UserAccountStatusEnum         @default(ACTIVE)
+  invited_by                      User?                         @relation("UserInvitedBy", fields: [invited_by_id], references: [id])
+  invited_by_id                   String?                       @db.Uuid
+  invited_at                      DateTime?                     @db.Timestamptz()
+  invited_users                   User[]                        @relation("UserInvitedBy")
+  date_of_birth                   DateTime?                     @db.Date
   occupation                      OccupationEnum?
-  created_at                      DateTime                   @default(now()) @db.Timestamptz()
-  updated_at                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  last_login                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at                      DateTime?                  @db.Timestamptz()
+  created_at                      DateTime                      @default(now()) @db.Timestamptz()
+  updated_at                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
+  last_login                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at                      DateTime?                     @db.Timestamptz()
   tokens                          Token[]
   b2b_pipelines                   B2BPipeline[]
   b2b_actions                     B2BAction[]
   b2b_pipeline_stage_changes      B2BPipelineStageHistory[]
-  trainer_profile                 Trainer?                   @relation("TrainerUser")
-  trainer_referrals               Trainer[]                  @relation("TrainerReferrer")
-  trainer_scores                  TrainerScreening[]         @relation("TrainerScreeningScorer")
-  chapter_trainer_request_reviews LmsChapterTrainerRequest[] @relation("LmsChapterTrainerRequestReviewer")
-  audit_log_entries               UserAuditLog[]             @relation("UserAuditLogTarget")
-  audit_log_actions               UserAuditLog[]             @relation("UserAuditLogActor")
-  reassignments_as_creator        OwnershipReassignment[]    @relation("OwnershipReassignmentOriginalCreator")
-  reassignments_as_previous_owner OwnershipReassignment[]    @relation("OwnershipReassignmentPreviousOwner")
-  reassignments_as_new_owner      OwnershipReassignment[]    @relation("OwnershipReassignmentNewOwner")
-  reassignments_as_actor          OwnershipReassignment[]    @relation("OwnershipReassignmentActor")
+  trainer_profile                 Trainer?                      @relation("TrainerUser")
+  trainer_referrals               Trainer[]                     @relation("TrainerReferrer")
+  trainer_scores                  TrainerScreening[]            @relation("TrainerScreeningScorer")
+  chapter_trainer_request_reviews LmsChapterTrainerRequest[]    @relation("LmsChapterTrainerRequestReviewer")
+  audit_log_entries               UserAuditLog[]                @relation("UserAuditLogTarget")
+  audit_log_actions               UserAuditLog[]                @relation("UserAuditLogActor")
+  reassignments_as_creator        OwnershipReassignment[]       @relation("OwnershipReassignmentOriginalCreator")
+  reassignments_as_previous_owner OwnershipReassignment[]       @relation("OwnershipReassignmentPreviousOwner")
+  reassignments_as_new_owner      OwnershipReassignment[]       @relation("OwnershipReassignmentNewOwner")
+  reassignments_as_actor          OwnershipReassignment[]       @relation("OwnershipReassignmentActor")
+  duplicate_reviews_requested     OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewRequester")
+  duplicate_reviews_resolved      OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewResolver")
+  master_data_audit_actions       MasterDataAuditLog[]
 
   @@map("users")
 }
@@ -483,21 +513,102 @@ model OwnershipReassignment {
 // B2B Sales Pipeline
 
 model B2BCompany {
-  id            Int           @id @default(autoincrement())
-  name          String        @db.VarChar()
-  industry      Industry      @relation(fields: [industry_id], references: [id])
-  industry_id   Int           @db.SmallInt
-  pic_name      String?       @db.VarChar()
-  pic_job_title String?       @db.VarChar()
-  pic_wa        String?       @db.VarChar()
-  pic_email     String?       @db.VarChar()
-  image_url     String?       @db.VarChar()
-  created_at    DateTime      @default(now()) @db.Timestamptz()
-  updated_at    DateTime      @default(now()) @updatedAt @db.Timestamptz()
-  pipelines     B2BPipeline[]
-  lms_projects  LmsProject[]
+  id                           Int                               @id @default(autoincrement())
+  name                         String                            @db.VarChar()
+  normalized_name              String                            @db.VarChar()
+  aliases                      String[]                          @default([])
+  legal_identifier             String?                           @db.VarChar()
+  status                       OrganizationStatusEnum            @default(PROSPECT)
+  archived_at                  DateTime?                         @db.Timestamptz()
+  industry                     Industry                          @relation(fields: [industry_id], references: [id])
+  industry_id                  Int                               @db.SmallInt
+  pic_name                     String?                           @db.VarChar()
+  pic_job_title                String?                           @db.VarChar()
+  pic_wa                       String?                           @db.VarChar()
+  pic_email                    String?                           @db.VarChar()
+  image_url                    String?                           @db.VarChar()
+  created_at                   DateTime                          @default(now()) @db.Timestamptz()
+  updated_at                   DateTime                          @default(now()) @updatedAt @db.Timestamptz()
+  pipelines                    B2BPipeline[]
+  lms_projects                 LmsProject[]
+  contacts                     ContactOrganizationRelationship[]
+  organizationDuplicateReviews OrganizationDuplicateReview[]
 
+  @@index([normalized_name])
   @@map("b2b_company")
+}
+
+// Reusable person record — can relate to multiple organizations, not flat fields on one company.
+model Contact {
+  id            Int                               @id @default(autoincrement())
+  full_name     String                            @db.VarChar()
+  email         String?                           @db.VarChar()
+  phone         String?                           @db.VarChar()
+  job_title     String?                           @db.VarChar()
+  created_at    DateTime                          @default(now()) @db.Timestamptz()
+  updated_at    DateTime                          @default(now()) @updatedAt @db.Timestamptz()
+  organizations ContactOrganizationRelationship[]
+
+  @@map("contacts")
+}
+
+// One primary relationship per contact-organization pair, with effective dates.
+model ContactOrganizationRelationship {
+  contact           Contact    @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  contact_id        Int
+  organization      B2BCompany @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  organization_id   Int
+  is_primary        Boolean    @default(false)
+  relationship_role String?    @db.VarChar()
+  effective_from    DateTime   @default(now()) @db.Date
+  effective_to      DateTime?  @db.Date
+  created_at        DateTime   @default(now()) @db.Timestamptz()
+
+  @@id([contact_id, organization_id])
+  @@map("contact_organization_relationships")
+}
+
+// "Request review" path from the duplicate-check modal, for a Manager/Admin to resolve.
+model OrganizationDuplicateReview {
+  id                       Int                       @id @default(autoincrement())
+  requested_by             User                      @relation("OrganizationDuplicateReviewRequester", fields: [requested_by_id], references: [id])
+  requested_by_id          String                    @db.Uuid
+  proposed_name            String                    @db.VarChar()
+  proposed_industry        Industry?                 @relation(fields: [proposed_industry_id], references: [id])
+  proposed_industry_id     Int?                      @db.SmallInt
+  proposed_pic_name        String?                   @db.VarChar()
+  proposed_pic_job_title   String?                   @db.VarChar()
+  proposed_pic_wa          String?                   @db.VarChar()
+  proposed_pic_email       String?                   @db.VarChar()
+  matched_organization_ids Int[]                     @default([])
+  status                   DuplicateReviewStatusEnum @default(PENDING)
+  resolved_organization    B2BCompany?               @relation(fields: [resolved_organization_id], references: [id])
+  resolved_organization_id Int?
+  resolved_by              User?                     @relation("OrganizationDuplicateReviewResolver", fields: [resolved_by_id], references: [id])
+  resolved_by_id           String?                   @db.Uuid
+  resolved_at              DateTime?                 @db.Timestamptz()
+  resolution_note          String?                   @db.Text
+  created_at               DateTime                  @default(now()) @db.Timestamptz()
+
+  @@index([status])
+  @@map("organization_duplicate_reviews")
+}
+
+// Append-only audit trail for Organization/Contact edits, generalized across both entity types.
+model MasterDataAuditLog {
+  id                 Int                      @id @default(autoincrement())
+  target_entity_type MasterDataEntityTypeEnum
+  target_entity_id   Int
+  actor              User                     @relation(fields: [actor_id], references: [id])
+  actor_id           String                   @db.Uuid
+  field_changed      String                   @db.VarChar()
+  old_value          String?                  @db.VarChar()
+  new_value          String?                  @db.VarChar()
+  reason             String?                  @db.Text
+  created_at         DateTime                 @default(now()) @db.Timestamptz()
+
+  @@index([target_entity_type, target_entity_id])
+  @@map("master_data_audit_log")
 }
 
 model B2BPipeline {

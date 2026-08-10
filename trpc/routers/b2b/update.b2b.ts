@@ -1,7 +1,9 @@
 import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure } from "@/trpc/init";
+import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
 import { actionDataScopeWhere, isOwnerWithinScope } from "@/trpc/utils/data_scope";
-import { checkUpdateResult } from "@/trpc/utils/errors";
+import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
+import { normalizeOrgName } from "@/trpc/utils/organization_dedupe";
+import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsPosInt,
@@ -14,9 +16,19 @@ import {
   B2BLostReasonEnum,
   B2BProbabilityStatusEnum,
   B2BStageEnum,
+  OrganizationStatusEnum,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+
+type AuditRow = {
+  target_entity_type: "ORGANIZATION" | "CONTACT";
+  target_entity_id: number;
+  actor_id: string;
+  field_changed: string;
+  old_value: string | null;
+  new_value: string | null;
+};
 
 // "YYYY-MM-DD" string from frontend. Day expected to be 01 by convention.
 const monthDate = z.iso.date();
@@ -33,15 +45,69 @@ export const updateB2B = {
         pic_wa: stringNotBlank().nullable().optional(),
         pic_email: stringNotBlank().nullable().optional(),
         image_url: z.url().nullable().optional(),
+        status: z.enum(OrganizationStatusEnum).optional(),
+        aliases: z.array(stringNotBlank()).optional(),
+        legal_identifier: stringNotBlank().nullable().optional(),
+        reason: stringNotBlank().optional(),
       })
     )
     .mutation(async (opts) => {
-      const { id, ...data } = opts.input;
-      const updated = await opts.ctx.prisma.b2BCompany.updateMany({
-        where: { id },
-        data,
+      const { id, reason, ...data } = opts.input;
+
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const existing = await tx.b2BCompany.findUnique({ where: { id } });
+        if (!existing) throw readFailedNotFound("company");
+
+        const auditRows: AuditRow[] = [];
+        const trackedFields: (keyof typeof data)[] = [
+          "name",
+          "industry_id",
+          "pic_name",
+          "pic_job_title",
+          "pic_wa",
+          "pic_email",
+          "status",
+          "legal_identifier",
+        ];
+        for (const field of trackedFields) {
+          const nextValue = data[field];
+          if (nextValue === undefined) continue;
+          const prevValue = existing[field as keyof typeof existing];
+          if (String(prevValue ?? "") === String(nextValue ?? "")) continue;
+          auditRows.push({
+            target_entity_type: "ORGANIZATION",
+            target_entity_id: id,
+            actor_id: opts.ctx.user.id,
+            field_changed: field,
+            old_value: prevValue == null ? null : String(prevValue),
+            new_value: nextValue == null ? null : String(nextValue),
+          });
+        }
+
+        const updated = await tx.b2BCompany.updateMany({
+          where: { id },
+          data: {
+            ...data,
+            ...(data.name !== undefined && {
+              normalized_name: normalizeOrgName(data.name),
+            }),
+            ...(data.status === "ARCHIVED" && { archived_at: new Date() }),
+            ...(data.status !== undefined &&
+              data.status !== "ARCHIVED" && { archived_at: null }),
+          },
+        });
+        await checkUpdateResult(updated.count, "company", "companies");
+
+        if (data.pic_name !== undefined) {
+          await upsertPrimaryContact(tx, id, data);
+        }
+        if (auditRows.length) {
+          await tx.masterDataAuditLog.createMany({
+            data: auditRows.map((row) => ({ ...row, reason })),
+          });
+        }
       });
-      await checkUpdateResult(updated.count, "company", "companies");
+
       return {
         code: STATUS_OK,
         message: "Company updated",
@@ -158,6 +224,14 @@ export const updateB2B = {
           });
         }
 
+        // A closed-won deal graduates its organization from Prospect to Customer.
+        if (stageChanged && nextStage === "CLOSED_WON") {
+          await tx.b2BCompany.updateMany({
+            where: { id: row.company_id, status: "PROSPECT" },
+            data: { status: "CUSTOMER" },
+          });
+        }
+
         return row;
       });
 
@@ -195,6 +269,131 @@ export const updateB2B = {
       return {
         code: STATUS_OK,
         message: "Action updated",
+      };
+    }),
+
+  contact: administratorProcedure
+    .input(
+      z.object({
+        id: numberIsID(),
+        full_name: stringNotBlank().optional(),
+        email: z.email().nullable().optional(),
+        phone: stringNotBlank().nullable().optional(),
+        job_title: stringNotBlank().nullable().optional(),
+      })
+    )
+    .mutation(async (opts) => {
+      const { id, ...data } = opts.input;
+      const updated = await opts.ctx.prisma.contact.updateMany({
+        where: { id },
+        data,
+      });
+      await checkUpdateResult(updated.count, "contact", "contacts");
+      return {
+        code: STATUS_OK,
+        message: "Contact updated",
+      };
+    }),
+
+  resolveOrganizationDuplicateReview: roleBasedProcedure([
+    "Administrator",
+    "Super Admin",
+    "Manager",
+  ])
+    .input(
+      z.object({
+        id: numberIsID(),
+        resolution: z.enum(["LINKED_EXISTING", "CREATED_NEW", "DISMISSED"]),
+        resolved_organization_id: numberIsID().optional(),
+        resolution_note: stringNotBlank().optional(),
+      })
+    )
+    .mutation(async (opts) => {
+      const { id, resolution, resolution_note } = opts.input;
+
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const review = await tx.organizationDuplicateReview.findUnique({
+          where: { id },
+        });
+        if (!review) throw readFailedNotFound("duplicate review");
+        if (review.status !== "PENDING") {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "This duplicate review has already been resolved.",
+          });
+        }
+
+        let resolvedOrganizationId: number | null = null;
+
+        if (resolution === "LINKED_EXISTING") {
+          if (!opts.input.resolved_organization_id) {
+            throw new TRPCError({
+              code: STATUS_BAD_REQUEST,
+              message: "resolved_organization_id is required to link an existing organization.",
+            });
+          }
+          const target = await tx.b2BCompany.findUnique({
+            where: { id: opts.input.resolved_organization_id },
+            select: { id: true },
+          });
+          if (!target) throw readFailedNotFound("organization");
+          resolvedOrganizationId = target.id;
+        } else if (resolution === "CREATED_NEW") {
+          if (!review.proposed_industry_id) {
+            throw new TRPCError({
+              code: STATUS_BAD_REQUEST,
+              message: "This review has no proposed industry; edit it before creating the organization.",
+            });
+          }
+          const created = await tx.b2BCompany.create({
+            data: {
+              name: review.proposed_name,
+              normalized_name: normalizeOrgName(review.proposed_name),
+              industry_id: review.proposed_industry_id,
+              pic_name: review.proposed_pic_name,
+              pic_job_title: review.proposed_pic_job_title,
+              pic_wa: review.proposed_pic_wa,
+              pic_email: review.proposed_pic_email,
+            },
+          });
+          await upsertPrimaryContact(tx, created.id, {
+            pic_name: review.proposed_pic_name,
+            pic_job_title: review.proposed_pic_job_title,
+            pic_wa: review.proposed_pic_wa,
+            pic_email: review.proposed_pic_email,
+          });
+          resolvedOrganizationId = created.id;
+        }
+
+        await tx.organizationDuplicateReview.update({
+          where: { id },
+          data: {
+            status: resolution,
+            resolved_organization_id: resolvedOrganizationId,
+            resolved_by_id: opts.ctx.user.id,
+            resolved_at: new Date(),
+            resolution_note,
+          },
+        });
+
+        if (resolvedOrganizationId) {
+          await tx.masterDataAuditLog.create({
+            data: {
+              target_entity_type: "ORGANIZATION",
+              target_entity_id: resolvedOrganizationId,
+              actor_id: opts.ctx.user.id,
+              field_changed: "duplicate_review_resolved",
+              old_value: null,
+              new_value: resolution,
+              reason: resolution_note,
+            },
+          });
+        }
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Duplicate review resolved",
       };
     }),
 };

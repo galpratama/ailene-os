@@ -4,6 +4,12 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
+import AppSearchableSelect, {
+  AppSearchableOption,
+} from "@/components/fields/AppSearchableSelect";
+import OrganizationDuplicateModalOS, {
+  OrganizationDuplicateCandidate,
+} from "@/components/modals/OrganizationDuplicateModalOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
 import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
@@ -50,7 +56,7 @@ export default function CreateLeadFormOS({
   const utils = trpc.useUtils();
 
   const [useExistingCompany, setUseExistingCompany] = useState(false);
-  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [companyOption, setCompanyOption] = useState<AppSearchableOption | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
   const [picName, setPicName] = useState("");
@@ -69,6 +75,9 @@ export default function CreateLeadFormOS({
   const [ownerId, setOwnerId] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [duplicateMatches, setDuplicateMatches] = useState<OrganizationDuplicateCandidate[]>([]);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
   const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
     enabled: !!sessionToken,
@@ -78,10 +87,6 @@ export default function CreateLeadFormOS({
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
-  const { data: companyData } = trpc.list.b2b.companies.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen }
-  );
   const { data: userData } = trpc.list.users.useQuery(
     { page: 1, page_size: 200 },
     { enabled: !!sessionToken && isOpen && !isOwnScoped }
@@ -99,16 +104,26 @@ export default function CreateLeadFormOS({
     setOwnerId(sessionData.user.id);
   }
 
-  const companyOptions: AppSelectOption[] =
-    companyData?.list.map((c) => ({ value: c.id, label: c.name })) ?? [];
   const industryOptions: AppSelectOption[] =
     industryData?.list.map((i) => ({ value: i.id, label: i.name })) ?? [];
   const ownerOptions: AppSelectOption[] =
     userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
 
+  async function loadCompanyOptions(inputValue: string, page: number) {
+    const result = await utils.list.b2b.companies.fetch({
+      keyword: inputValue || undefined,
+      page,
+      page_size: 20,
+    });
+    return {
+      options: result.list.map((c) => ({ value: c.id, label: c.name })),
+      hasMore: page < result.metapaging.total_page!,
+    };
+  }
+
   function resetForm() {
     setUseExistingCompany(false);
-    setCompanyId(null);
+    setCompanyOption(null);
     setCompanyName("");
     setIndustryId(null);
     setPicName("");
@@ -124,6 +139,8 @@ export default function CreateLeadFormOS({
     setProjectEndMonth("");
     setOwnerId("");
     setError(null);
+    setDuplicateMatches([]);
+    setIsDuplicateModalOpen(false);
   }
 
   function handleClose() {
@@ -140,30 +157,17 @@ export default function CreateLeadFormOS({
     onError: (err) => setError(err.message),
   });
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
+  const requestReview = trpc.create.b2b.organizationDuplicateReview.useMutation({
+    onSuccess: () => {
+      setIsDuplicateModalOpen(false);
+      handleClose();
+    },
+    onError: (err) => setError(err.message),
+  });
 
-    if (!name.trim()) return setError("Program name is required.");
-    if (!ownerId) return setError("Owner is required.");
-    if (useExistingCompany && !companyId) return setError("Pick an existing company.");
-    if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
-    if (!useExistingCompany && !industryId) return setError("Industry is required.");
-
-    createPipeline.mutate({
+  function basePayload() {
+    return {
       name: name.trim(),
-      company_id: useExistingCompany ? (companyId as number) : undefined,
-      new_company: useExistingCompany
-        ? undefined
-        : {
-            name: companyName.trim(),
-            industry_id: industryId as number,
-            pic_name: picName.trim() || null,
-            pic_job_title: picJobTitle.trim() || null,
-            pic_wa: picWa.trim() || null,
-            pic_email: picEmail.trim() || null,
-            image_url: imageUrl.trim() || null,
-          },
       stage,
       probability: probability ? Number(probability) : undefined,
       probability_status: probabilityStatus || undefined,
@@ -171,10 +175,93 @@ export default function CreateLeadFormOS({
       project_start_month: projectStartMonth ? `${projectStartMonth}-01` : null,
       project_end_month: projectEndMonth ? `${projectEndMonth}-01` : null,
       owner_id: ownerId,
+    };
+  }
+
+  function newCompanyPayload() {
+    return {
+      name: companyName.trim(),
+      industry_id: industryId as number,
+      pic_name: picName.trim() || null,
+      pic_job_title: picJobTitle.trim() || null,
+      pic_wa: picWa.trim() || null,
+      pic_email: picEmail.trim() || null,
+      image_url: imageUrl.trim() || null,
+    };
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!name.trim()) return setError("Program name is required.");
+    if (!ownerId) return setError("Owner is required.");
+    if (useExistingCompany && !companyOption) return setError("Pick an existing company.");
+    if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
+    if (!useExistingCompany && !industryId) return setError("Industry is required.");
+
+    if (useExistingCompany) {
+      createPipeline.mutate({
+        ...basePayload(),
+        company_id: companyOption!.value as number,
+      });
+      return;
+    }
+
+    setIsCheckingDuplicate(true);
+    try {
+      const result = await utils.list.b2b.checkOrganizationDuplicate.fetch({
+        name: companyName.trim(),
+        email: picEmail.trim() || undefined,
+        phone: picWa.trim() || undefined,
+      });
+      if (result.matches.length > 0) {
+        setDuplicateMatches(result.matches);
+        setIsDuplicateModalOpen(true);
+      } else {
+        createPipeline.mutate({ ...basePayload(), new_company: newCompanyPayload() });
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to check for duplicate organizations."
+      );
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  }
+
+  function handleLinkExisting(organizationId: number) {
+    setIsDuplicateModalOpen(false);
+    setUseExistingCompany(true);
+    createPipeline.mutate({
+      ...basePayload(),
+      company_id: organizationId,
+    });
+  }
+
+  function handleCreateAnyway() {
+    setIsDuplicateModalOpen(false);
+    createPipeline.mutate({
+      ...basePayload(),
+      new_company: newCompanyPayload(),
+      force: true,
+    });
+  }
+
+  function handleRequestReview() {
+    requestReview.mutate({
+      proposed_name: companyName.trim(),
+      proposed_industry_id: industryId ?? undefined,
+      proposed_pic_name: picName.trim() || null,
+      proposed_pic_job_title: picJobTitle.trim() || null,
+      proposed_pic_wa: picWa.trim() || null,
+      proposed_pic_email: picEmail.trim() || null,
+      matched_organization_ids: duplicateMatches.map((m) => m.id),
     });
   }
 
   return (
+    <>
     <SheetOS
       title="Add New Lead"
       description="Capture a new B2B lead into the sales pipeline."
@@ -224,14 +311,14 @@ export default function CreateLeadFormOS({
             </div>
 
             {useExistingCompany ? (
-              <AppSelect
+              <AppSearchableSelect
                 selectId="lead-company"
                 label="Company"
                 required
-                placeholder="Pick a company"
-                value={companyId}
-                onChange={(v) => setCompanyId(v as number | null)}
-                options={companyOptions}
+                placeholder="Type to search organizations..."
+                value={companyOption}
+                onChange={setCompanyOption}
+                loadOptions={loadCompanyOptions}
               />
             ) : (
               <div className="flex flex-col gap-3">
@@ -373,13 +460,29 @@ export default function CreateLeadFormOS({
             type="submit"
             variant="primary"
             className="flex-1 justify-center"
-            disabled={createPipeline.isPending}
+            disabled={createPipeline.isPending || isCheckingDuplicate}
           >
-            {createPipeline.isPending && <Loader2 size={14} className="animate-spin" />}
+            {(createPipeline.isPending || isCheckingDuplicate) && (
+              <Loader2 size={14} className="animate-spin" />
+            )}
             Create Lead
           </AppButton>
         </div>
       </form>
     </SheetOS>
+
+    <OrganizationDuplicateModalOS
+      isOpen={isDuplicateModalOpen}
+      onClose={() => setIsDuplicateModalOpen(false)}
+      proposedName={companyName.trim()}
+      matches={duplicateMatches}
+      onLinkExisting={handleLinkExisting}
+      onCreateAnyway={handleCreateAnyway}
+      onRequestReview={handleRequestReview}
+      isLinking={createPipeline.isPending}
+      isCreating={createPipeline.isPending}
+      isRequestingReview={requestReview.isPending}
+    />
+    </>
   );
 }
