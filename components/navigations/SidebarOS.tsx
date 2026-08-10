@@ -4,7 +4,7 @@ import AppButton from "@/components/buttons/AppButton";
 import ThemeToggleOS from "@/components/buttons/ThemeToggleOS";
 import { LogoAileneStroke } from "@/components/svg/LogoAileneStroke";
 import { useSidebar } from "@/contexts/SidebarContext";
-import { OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
+import { OSNavItem, OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
 import { trpc, setSessionToken } from "@/trpc/client";
 import { LogOut, LucideIcon, Menu } from "lucide-react";
 import Image from "next/image";
@@ -173,6 +173,15 @@ function UserFooter({
 }
 
 export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
+  useEffect(() => {
+    if (sessionToken) setSessionToken(sessionToken);
+  }, [sessionToken]);
+
+  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+  const roleName = sessionData?.user.role_name;
+
   const {
     isCollapsed,
     toggleSidebar,
@@ -196,8 +205,24 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     localStorage.setItem("sidebar_segment", segment);
   }, [segment]);
 
-  const mainNav = osMainNav.filter((item) => item.segment === segment);
-  const toolsNav = osToolsNav.filter((item) => item.segment === segment);
+  const visibleToRole = (item: OSNavItem) =>
+    !item.minRoles || (!!roleName && item.minRoles.includes(roleName));
+  const mainNav = osMainNav.filter(
+    (item) => item.segment === segment && visibleToRole(item)
+  );
+  const toolsNav = osToolsNav.filter(
+    (item) => item.segment === segment && visibleToRole(item)
+  );
+
+  const ungroupedNav = mainNav.filter((item) => !item.group);
+  const navGroups = mainNav
+    .filter((item) => item.group)
+    .reduce<{ label: string; items: OSNavItem[] }[]>((groups, item) => {
+      const existing = groups.find((g) => g.label === item.group);
+      if (existing) existing.items.push(item);
+      else groups.push({ label: item.group!, items: [item] });
+      return groups;
+    }, []);
 
   // Safety net: if navigation ever happens without going through a NavItem's
   // onClick (e.g. browser back/forward), still close the mobile drawer.
@@ -297,10 +322,26 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         <nav
           className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
         >
-          {mainNav.map((item) => (
+          {ungroupedNav.map((item) => (
             <NavItem key={item.href} {...item} collapsed={isCollapsed} />
           ))}
         </nav>
+
+        {/* Grouped nav sections (Business Development, Trainer Pool, Administrator, ...) */}
+        {navGroups.map((group) => (
+          <div key={group.label} className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+            {!isCollapsed && (
+              <p className="font-display px-3 py-1 text-sm tracking-wider text-sb-text uppercase">
+                {group.label}
+              </p>
+            )}
+            <div className="flex flex-col gap-0.5 mt-0.5">
+              {group.items.map((item) => (
+                <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+              ))}
+            </div>
+          </div>
+        ))}
 
         {/* Tools */}
         {toolsNav.length > 0 && (

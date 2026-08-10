@@ -45,6 +45,29 @@ export default function SettingsPageOS({
     createSpecialization.mutate({ name: name.trim() });
   }
 
+  const [teamName, setTeamName] = useState("");
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const { data: teamData } = trpc.list.teams.useQuery(undefined, {
+    enabled: !!sessionToken,
+  });
+  const createTeam = trpc.create.userdata.team.useMutation({
+    onSuccess: () => {
+      setTeamName("");
+      setTeamError(null);
+      utils.list.teams.invalidate();
+    },
+    onError: (mutationError) => setTeamError(mutationError.message),
+  });
+  const deleteTeam = trpc.delete.userdata.team.useMutation({
+    onSuccess: () => utils.list.teams.invalidate(),
+  });
+
+  function submitTeam(event: FormEvent) {
+    event.preventDefault();
+    if (!teamName.trim()) return;
+    createTeam.mutate({ name: teamName.trim() });
+  }
+
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <div>
@@ -122,6 +145,70 @@ export default function SettingsPageOS({
           {!data?.list.length && (
             <p className="px-4 py-6 text-center text-sm text-gray-400">
               No specializations yet.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg p-5">
+        <h3 className="font-bold text-gray-900 dark:text-zinc-100">Teams</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Team membership is used to scope data access and ownership reassignment.
+        </p>
+        <form
+          onSubmit={submitTeam}
+          className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+        >
+          <AppInput
+            inputId="team-name"
+            label="New team"
+            placeholder="e.g. Business Development"
+            value={teamName}
+            onChange={(event) => setTeamName(event.target.value)}
+            errorMessage={teamError ?? undefined}
+          />
+          <AppButton type="submit" disabled={createTeam.isPending}>
+            {createTeam.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
+            Add
+          </AppButton>
+        </form>
+        <div className="mt-5 divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-zinc-800 dark:border-zinc-800">
+          {teamData?.list.map((entry) => (
+            <div
+              key={entry.id}
+              className="flex items-center justify-between gap-3 px-4 py-3"
+            >
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                  {entry.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {entry.user_count} user{entry.user_count === 1 ? "" : "s"}
+                </p>
+              </div>
+              <AppButton
+                type="button"
+                variant="ghost"
+                size="iconSm"
+                title={
+                  entry.user_count
+                    ? "Remove users from this team first"
+                    : "Delete team"
+                }
+                disabled={entry.user_count > 0}
+                onClick={() => deleteTeam.mutate({ id: entry.id })}
+              >
+                <Trash2 size={13} />
+              </AppButton>
+            </div>
+          ))}
+          {!teamData?.list.length && (
+            <p className="px-4 py-6 text-center text-sm text-gray-400">
+              No teams yet.
             </p>
           )}
         </div>

@@ -8,7 +8,7 @@ import {
 import { baseProcedure, createTRPCRouter, loggedInProcedure } from "@/trpc/init";
 import { GoogleTokenVerifier } from "@/trpc/utils/google_verifier";
 import { stringNotBlank } from "@/trpc/utils/validation";
-import { StatusEnum } from "@prisma/client";
+import { UserAccountStatusEnum } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
 import { z } from "zod";
@@ -38,10 +38,20 @@ export const authRouter = createTRPCRouter({
             avatar: userInfo.picture,
           },
         });
-      } else if (findUser.status === StatusEnum.INACTIVE) {
+      } else if (findUser.status === UserAccountStatusEnum.SUSPENDED) {
         throw new TRPCError({
           code: STATUS_FORBIDDEN,
-          message: "Your account has been inactivated.",
+          message: "Your account has been suspended.",
+        });
+      } else if (findUser.status === UserAccountStatusEnum.DEACTIVATED) {
+        throw new TRPCError({
+          code: STATUS_FORBIDDEN,
+          message: "Your account has been deactivated.",
+        });
+      } else if (findUser.status === UserAccountStatusEnum.ARCHIVED) {
+        throw new TRPCError({
+          code: STATUS_FORBIDDEN,
+          message: "Your account has been archived.",
         });
       } else if (findUser.deleted_at !== null) {
         throw new TRPCError({
@@ -49,8 +59,17 @@ export const authRouter = createTRPCRouter({
           message: `Your account has been deleted (${findUser.deleted_at}).`,
         });
       } else {
-        // Sync name/avatar from Google if stale
-        if (
+        // First sign-in for an invited account activates it; otherwise sync name/avatar from Google if stale.
+        if (findUser.status === UserAccountStatusEnum.INVITED) {
+          registeredUser = await opts.ctx.prisma.user.update({
+            where: { email: userInfo.email },
+            data: {
+              full_name: userInfo.name,
+              avatar: userInfo.picture,
+              status: UserAccountStatusEnum.ACTIVE,
+            },
+          });
+        } else if (
           findUser.full_name !== userInfo.name ||
           findUser.avatar !== userInfo.picture
         ) {

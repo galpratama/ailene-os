@@ -15,6 +15,7 @@ export const listRouter = createTRPCRouter({
   // User Data //
 
   users: listUserData.users,
+  teams: listUserData.teams,
 
   // B2B Sales Pipeline //
 

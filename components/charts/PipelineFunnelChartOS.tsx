@@ -24,13 +24,24 @@ type FunnelDatum = {
 // stays visible and the funnel reads proportionally even with small data.
 const MIN_WIDTH = 28;
 
-function FunnelTrapezoidShape(props: any) {
+interface FunnelTrapezoidShapeProps {
+  x?: number;
+  y?: number;
+  upperWidth?: number;
+  lowerWidth?: number;
+  height?: number;
+  stroke?: string;
+  strokeWidth?: number;
+  payload?: FunnelDatum;
+}
+
+function FunnelTrapezoidShape(props: FunnelTrapezoidShapeProps) {
   const {
     x,
-    y,
+    y = 0,
     upperWidth,
     lowerWidth,
-    height,
+    height = 0,
     stroke,
     strokeWidth,
     payload,

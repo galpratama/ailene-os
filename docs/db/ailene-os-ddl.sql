@@ -23,6 +23,38 @@ CREATE TYPE occupation_enum AS ENUM (
   'unemployed'
 );
 
+-- Account lifecycle for internal OS users — distinct from status_enum.
+CREATE TYPE user_account_status_enum AS ENUM (
+  'invited',
+  'active',
+  'suspended',
+  'deactivated',
+  'archived'
+);
+
+-- Job function is independent of access role (roles table).
+CREATE TYPE job_function_enum AS ENUM (
+  'bd',
+  'sales',
+  'operations',
+  'curriculum',
+  'finance',
+  'it'
+);
+
+CREATE TYPE data_scope_enum AS ENUM (
+  'own',
+  'team',
+  'organization',
+  'global'
+);
+
+-- Ownable entity types eligible for offboarding reassignment; only ones with a real owner FK today.
+CREATE TYPE ownable_entity_type_enum AS ENUM (
+  'b2b_pipeline',
+  'b2b_action'
+);
+
 -- Enumeration for the b2b_pipeline table (b2b_*)
 
 CREATE TYPE b2b_stage_enum AS ENUM (
@@ -249,6 +281,13 @@ CREATE TABLE roles (
   updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE teams (
+  id          SMALLSERIAL  PRIMARY KEY,
+  name        VARCHAR      NOT NULL  UNIQUE,
+  created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE phone_country_codes (
   id            SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   country_name  VARCHAR  NOT NULL,
@@ -266,20 +305,25 @@ CREATE TABLE trainer_specializations (
 -- User data
 
 CREATE TABLE users (
-  id                     UUID               PRIMARY KEY  DEFAULT gen_random_uuid(),
-  full_name              VARCHAR            NOT NULL,
-  email                  VARCHAR            NOT NULL     UNIQUE,
-  phone_country_id       SMALLINT               NULL,
-  phone_number           VARCHAR                NULL,
-  avatar                 VARCHAR                NULL,
-  role_id                SMALLINT           NOT NULL     DEFAULT 3, -- General User
-  status                 status_enum        NOT NULL     DEFAULT 'active',
-  date_of_birth          DATE                   NULL,
-  occupation             occupation_enum        NULL,
-  created_at             TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  updated_at             TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  last_login             TIMESTAMPTZ        NOT NULL     DEFAULT CURRENT_TIMESTAMP,
-  deleted_at             TIMESTAMPTZ            NULL
+  id                     UUID                       PRIMARY KEY  DEFAULT gen_random_uuid(),
+  full_name              VARCHAR                    NOT NULL,
+  email                  VARCHAR                    NOT NULL     UNIQUE,
+  phone_country_id       SMALLINT                       NULL,
+  phone_number           VARCHAR                        NULL,
+  avatar                 VARCHAR                        NULL,
+  role_id                SMALLINT                   NOT NULL     DEFAULT 3, -- General User
+  team_id                SMALLINT                       NULL,
+  job_function           job_function_enum              NULL,
+  data_scope             data_scope_enum            NOT NULL     DEFAULT 'own',
+  status                 user_account_status_enum   NOT NULL     DEFAULT 'active',
+  invited_by_id          UUID                           NULL,
+  invited_at             TIMESTAMPTZ                    NULL,
+  date_of_birth          DATE                           NULL,
+  occupation             occupation_enum                NULL,
+  created_at             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  updated_at             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  last_login             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+  deleted_at             TIMESTAMPTZ                    NULL
 );
 
 CREATE TABLE tokens (
@@ -288,6 +332,31 @@ CREATE TABLE tokens (
   is_active   BOOLEAN      NOT NULL  DEFAULT FALSE,
   token       TEXT         NOT NULL  UNIQUE,
   created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Append-only audit trail for user lifecycle/role/permission/scope changes, one row per changed field.
+CREATE TABLE user_audit_log (
+  id              SERIAL       PRIMARY KEY,
+  target_user_id  UUID         NOT NULL,
+  actor_id        UUID         NOT NULL,
+  field_changed   VARCHAR      NOT NULL,
+  old_value       VARCHAR          NULL,
+  new_value       VARCHAR          NULL,
+  reason          TEXT             NULL,
+  created_at      TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Append-only ownership-reassignment trail; original_creator_id approximates the creator from the first reassignment row.
+CREATE TABLE ownership_reassignments (
+  id                    SERIAL                    PRIMARY KEY,
+  entity_type           ownable_entity_type_enum  NOT NULL,
+  entity_id             INTEGER                   NOT NULL,
+  original_creator_id   UUID                      NOT NULL,
+  previous_owner_id     UUID                      NOT NULL,
+  new_owner_id          UUID                      NOT NULL,
+  actor_id              UUID                      NOT NULL,
+  reason                TEXT                      NOT NULL,
+  created_at            TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- B2B Sales Pipeline
@@ -737,10 +806,22 @@ CREATE TABLE lms_announcement (
 
 ALTER TABLE users
   ADD FOREIGN KEY (phone_country_id) REFERENCES phone_country_codes (id),
-  ADD FOREIGN KEY (role_id)          REFERENCES roles (id);
+  ADD FOREIGN KEY (role_id)          REFERENCES roles (id),
+  ADD FOREIGN KEY (team_id)          REFERENCES teams (id),
+  ADD FOREIGN KEY (invited_by_id)    REFERENCES users (id);
 
 ALTER TABLE tokens
   ADD FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE user_audit_log
+  ADD FOREIGN KEY (target_user_id) REFERENCES users (id),
+  ADD FOREIGN KEY (actor_id)       REFERENCES users (id);
+
+ALTER TABLE ownership_reassignments
+  ADD FOREIGN KEY (original_creator_id) REFERENCES users (id),
+  ADD FOREIGN KEY (previous_owner_id)   REFERENCES users (id),
+  ADD FOREIGN KEY (new_owner_id)        REFERENCES users (id),
+  ADD FOREIGN KEY (actor_id)            REFERENCES users (id);
 
 -- B2B Sales Pipeline
 
@@ -893,6 +974,11 @@ CREATE TRIGGER update_roles_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER update_teams_updated_at_trigger
+  BEFORE UPDATE ON teams
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
 -- User data
 
 CREATE TRIGGER update_users_updated_at_trigger
@@ -1021,6 +1107,13 @@ CREATE INDEX lms_coaching_notes_member_id_idx ON lms_coaching_notes (member_id);
 -- Pipeline stage history — per-lead lookups and weekly-dashboard time-window queries.
 CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_history (pipeline_id);
 CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
+
+-- User audit log — lookup a user's change history for the audit log page.
+CREATE INDEX user_audit_log_target_user_id_idx ON user_audit_log (target_user_id);
+
+-- Ownership reassignments — per-entity lookups (original creator chain) and time-window queries.
+CREATE INDEX ownership_reassignments_entity_idx ON ownership_reassignments (entity_type, entity_id);
+CREATE INDEX ownership_reassignments_created_at_idx ON ownership_reassignments (created_at);
 
 -- Announcement — enforce single-row table.
 CREATE UNIQUE INDEX lms_announcement_one_row_only ON lms_announcement ((TRUE));

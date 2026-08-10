@@ -2,8 +2,13 @@ import { createTRPCRouter } from "@/trpc/init";
 import { createB2B } from "./b2b/create.b2b";
 import { createLms } from "./lms/create.lms";
 import { createTrainerPool } from "./trainer-pool/create.trainer-pool";
+import { createUserData } from "./userdata/create.userdata";
 
 export const createRouter = createTRPCRouter({
+  userdata: {
+    user: createUserData.user,
+    team: createUserData.team,
+  },
   b2b: {
     company: createB2B.company,
     pipeline: createB2B.pipeline,

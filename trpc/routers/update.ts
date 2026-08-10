@@ -2,8 +2,14 @@ import { createTRPCRouter } from "@/trpc/init";
 import { updateB2B } from "./b2b/update.b2b";
 import { updateLms } from "./lms/update.lms";
 import { updateTrainerPool } from "./trainer-pool/update.trainer-pool";
+import { updateUserData } from "./userdata/update.userdata";
 
 export const updateRouter = createTRPCRouter({
+  userdata: {
+    profile: updateUserData.profile,
+    status: updateUserData.status,
+    reassignOwnership: updateUserData.reassignOwnership,
+  },
   b2b: {
     company: updateB2B.company,
     pipeline: updateB2B.pipeline,

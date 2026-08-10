@@ -34,6 +34,46 @@ enum OccupationEnum {
   @@map("occupation_enum")
 }
 
+// Account lifecycle for internal OS users — distinct from the shared StatusEnum.
+enum UserAccountStatusEnum {
+  INVITED     @map("invited")
+  ACTIVE      @map("active")
+  SUSPENDED   @map("suspended")
+  DEACTIVATED @map("deactivated")
+  ARCHIVED    @map("archived")
+
+  @@map("user_account_status_enum")
+}
+
+// Job function is independent of access role (Role model).
+enum JobFunctionEnum {
+  BD         @map("bd")
+  SALES      @map("sales")
+  OPERATIONS @map("operations")
+  CURRICULUM @map("curriculum")
+  FINANCE    @map("finance")
+  IT         @map("it")
+
+  @@map("job_function_enum")
+}
+
+enum DataScopeEnum {
+  OWN          @map("own")
+  TEAM         @map("team")
+  ORGANIZATION @map("organization")
+  GLOBAL       @map("global")
+
+  @@map("data_scope_enum")
+}
+
+// Ownable entity types eligible for offboarding reassignment; only ones with a real owner FK today.
+enum OwnableEntityTypeEnum {
+  B2B_PIPELINE @map("b2b_pipeline")
+  B2B_ACTION   @map("b2b_action")
+
+  @@map("ownable_entity_type_enum")
+}
+
 // Enumeration for the B2BPipeline model (b2b_*)
 
 enum B2BStageEnum {
@@ -317,6 +357,16 @@ model Role {
   @@map("roles")
 }
 
+model Team {
+  id         Int      @id @default(autoincrement()) @db.SmallInt
+  name       String   @unique @db.VarChar()
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz()
+  users      User[]
+
+  @@map("teams")
+}
+
 model PhoneCountryCode {
   id           Int     @id @default(autoincrement()) @db.SmallInt
   country_name String  @db.VarChar()
@@ -349,7 +399,15 @@ model User {
   avatar                          String?                    @db.VarChar()
   role                            Role                       @relation(fields: [role_id], references: [id])
   role_id                         Int                        @default(3) @db.SmallInt // General User
-  status                          StatusEnum                 @default(ACTIVE)
+  team                            Team?                      @relation(fields: [team_id], references: [id])
+  team_id                         Int?                       @db.SmallInt
+  job_function                    JobFunctionEnum?
+  data_scope                      DataScopeEnum              @default(OWN)
+  status                          UserAccountStatusEnum      @default(ACTIVE)
+  invited_by                      User?                      @relation("UserInvitedBy", fields: [invited_by_id], references: [id])
+  invited_by_id                   String?                    @db.Uuid
+  invited_at                      DateTime?                  @db.Timestamptz()
+  invited_users                   User[]                     @relation("UserInvitedBy")
   date_of_birth                   DateTime?                  @db.Date
   occupation                      OccupationEnum?
   created_at                      DateTime                   @default(now()) @db.Timestamptz()
@@ -364,6 +422,12 @@ model User {
   trainer_referrals               Trainer[]                  @relation("TrainerReferrer")
   trainer_scores                  TrainerScreening[]         @relation("TrainerScreeningScorer")
   chapter_trainer_request_reviews LmsChapterTrainerRequest[] @relation("LmsChapterTrainerRequestReviewer")
+  audit_log_entries               UserAuditLog[]             @relation("UserAuditLogTarget")
+  audit_log_actions               UserAuditLog[]             @relation("UserAuditLogActor")
+  reassignments_as_creator        OwnershipReassignment[]    @relation("OwnershipReassignmentOriginalCreator")
+  reassignments_as_previous_owner OwnershipReassignment[]    @relation("OwnershipReassignmentPreviousOwner")
+  reassignments_as_new_owner      OwnershipReassignment[]    @relation("OwnershipReassignmentNewOwner")
+  reassignments_as_actor          OwnershipReassignment[]    @relation("OwnershipReassignmentActor")
 
   @@map("users")
 }
@@ -377,6 +441,44 @@ model Token {
   created_at DateTime @default(now()) @db.Timestamptz()
 
   @@map("tokens")
+}
+
+// Append-only audit trail for user lifecycle/role/permission/scope changes, one row per changed field.
+model UserAuditLog {
+  id             Int      @id @default(autoincrement())
+  target_user    User     @relation("UserAuditLogTarget", fields: [target_user_id], references: [id])
+  target_user_id String   @db.Uuid
+  actor          User     @relation("UserAuditLogActor", fields: [actor_id], references: [id])
+  actor_id       String   @db.Uuid
+  field_changed  String   @db.VarChar()
+  old_value      String?  @db.VarChar()
+  new_value      String?  @db.VarChar()
+  reason         String?  @db.Text
+  created_at     DateTime @default(now()) @db.Timestamptz()
+
+  @@index([target_user_id])
+  @@map("user_audit_log")
+}
+
+// Append-only ownership-reassignment trail; original_creator_id approximates the creator from the first reassignment row.
+model OwnershipReassignment {
+  id                  Int                   @id @default(autoincrement())
+  entity_type         OwnableEntityTypeEnum
+  entity_id           Int
+  original_creator    User                  @relation("OwnershipReassignmentOriginalCreator", fields: [original_creator_id], references: [id])
+  original_creator_id String                @db.Uuid
+  previous_owner      User                  @relation("OwnershipReassignmentPreviousOwner", fields: [previous_owner_id], references: [id])
+  previous_owner_id   String                @db.Uuid
+  new_owner           User                  @relation("OwnershipReassignmentNewOwner", fields: [new_owner_id], references: [id])
+  new_owner_id        String                @db.Uuid
+  actor               User                  @relation("OwnershipReassignmentActor", fields: [actor_id], references: [id])
+  actor_id            String                @db.Uuid
+  reason              String                @db.Text
+  created_at          DateTime              @default(now()) @db.Timestamptz()
+
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+  @@map("ownership_reassignments")
 }
 
 // B2B Sales Pipeline
