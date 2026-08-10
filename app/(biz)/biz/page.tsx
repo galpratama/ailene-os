@@ -2,9 +2,9 @@ import HomePageBIZ from "@/components/pages/HomePageBIZ";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ailene B2B | Corporate AI Training Menu",
+  title: "Ailene | AI Adoption Training for Organizations",
   description:
-    "Corporate AI training menu untuk tim kamu — Foundation, Intensive, atau Transformation Sprint. Konsultasikan program yang paling relevan dengan kebutuhan tim.",
+    "Ailene membantu organisasi bergerak dari AI training menuju adopsi yang terlihat, terukur, dan berlanjut di pekerjaan sehari-hari.",
 };
 
 export default function HomePage() {

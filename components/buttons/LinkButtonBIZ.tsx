@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { AnchorHTMLAttributes, ReactNode } from "react";
 
-// Every CTA on the B2B training landing page is a navigational link (in-page
-// anchor or an external link), never a real <button> action — so unlike
-// AppButton (button-semantic only), this renders an <a>/<Link>, matching the
-// existing HeaderBIZ/FooterBIZ pattern of hand-styling link-CTAs directly.
-export type LinkButtonVariant = "dark" | "light";
+// Marketing CTAs navigate to in-page anchors or external destinations.
+export type LinkButtonVariant = "dark" | "light" | "lime" | "outlineDark";
 
 interface LinkButtonBIZProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
@@ -17,6 +14,9 @@ interface LinkButtonBIZProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
 const variantClasses: Record<LinkButtonVariant, string> = {
   dark: "bg-ink text-white hover:brightness-110",
   light: "bg-gray-100 text-ink hover:bg-gray-200",
+  lime: "border border-biz-lime bg-biz-lime text-biz-forest hover:bg-biz-lime/90",
+  outlineDark:
+    "border border-white/30 bg-transparent text-white hover:border-white hover:bg-white/10",
 };
 
 export default function LinkButtonBIZ({
@@ -27,7 +27,7 @@ export default function LinkButtonBIZ({
   ...rest
 }: LinkButtonBIZProps) {
   const classes = [
-    "inline-flex min-h-12.5 items-center justify-center gap-1.5 px-5.5 text-[13px] font-bold tracking-[0.06em] uppercase transition-[filter,transform] active:scale-[0.98]",
+    "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-4.5 text-[13px] font-semibold tracking-[-0.02em] transition-[filter,transform,background-color,border-color] hover:-translate-y-0.5 active:scale-[0.98]",
     variantClasses[variant],
     className,
   ]

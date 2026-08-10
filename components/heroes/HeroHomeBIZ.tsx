@@ -1,72 +1,62 @@
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
-
-const summaryRows = [
-  { label: "Bahasa", value: "Indonesia / English" },
-  { label: "Format", value: "Offline / Hybrid" },
-  { label: "Peserta", value: "Mulai 10 orang" },
-  { label: "Output", value: "Workflow + Action Plan" },
-];
+import Image from "next/image";
 
 export default function HeroHomeBIZ() {
   return (
-    <header id="top" className="overflow-hidden pt-22 pb-26">
-      <div className="mx-auto grid w-[min(1180px,calc(100%-48px))] grid-cols-1 items-center gap-11 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)] lg:gap-18">
+    <section className="relative isolate overflow-hidden bg-biz-forest text-white">
+      <Image
+        src="/biz/hero-training.jpg"
+        alt="Tim mengikuti sesi training AI bersama trainer"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[58%_center] md:object-center"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(1,24,17,0.97)_0%,rgba(1,24,17,0.86)_30%,rgba(1,24,17,0.42)_60%,rgba(1,24,17,0.12)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(1,24,17,0.82)_0%,rgba(1,24,17,0)_45%)]" />
+
+      <div className="relative z-10 mx-auto grid min-h-svh w-full max-w-315 items-center gap-10 px-4.5 pt-35 pb-12 sm:px-7.5 sm:pt-39 sm:pb-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1.1fr)] lg:gap-14 lg:pt-37 lg:pb-14">
         <div>
-          <div className="font-script mb-2.5 text-[34px] leading-none text-coral">
-            Ailene for Business
-          </div>
-          <h1 className="mb-7.5 text-[52px] leading-[0.93] font-light tracking-[-0.035em] sm:text-[clamp(50px,7.5vw,108px)]">
-            AI training yang <strong className="font-bold">langsung kepake</strong> di
-            kerjaan.
+          <span className="inline-flex items-center gap-2 rounded-md bg-biz-lime px-3.5 py-2 text-[11px] font-semibold text-biz-forest before:size-1.5 before:rounded-full before:bg-biz-forest before:content-['']">
+            Workshop AI + LMS dalam Satu Program
+          </span>
+          <h1 className="mt-6 max-w-150 text-[clamp(2.75rem,5vw,4.2rem)] leading-[0.98] font-medium tracking-[-0.055em] lg:mt-7">
+            AI yang benar-benar dipakai tim.
           </h1>
-          <p className="max-w-170 text-lg leading-relaxed font-light sm:text-[22px]">
-            Tiga package structured untuk membantu tim memahami AI, memakai
-            tools dengan aman, dan menghasilkan workflow yang bisa langsung
-            dipakai.
+          <p className="mt-6 max-w-125 text-[15px] leading-[1.65] text-white/78">
+            Workshop dipandu langsung per divisi, progress-nya kelihatan di
+            LMS, sampai tim presentasi solusinya sendiri di depan leadership.
           </p>
-          <div className="mt-8.5 flex flex-wrap gap-3.5">
-            <LinkButtonBIZ href="#packages" variant="dark">
-              Lihat Packages
+          <div className="mt-7.5 flex flex-wrap gap-3">
+            <LinkButtonBIZ
+              href="https://wa.me/6285110545698"
+              variant="lime"
+            >
+              Diskusikan kebutuhan tim
             </LinkButtonBIZ>
-            <LinkButtonBIZ href="#compare" variant="light">
-              Bandingkan Program
+            <LinkButtonBIZ href="#curriculum" variant="outlineDark">
+              Lihat kurikulum
             </LinkButtonBIZ>
           </div>
         </div>
 
-        <aside
-          aria-label="Ringkasan penawaran"
-          className="relative mt-5 max-w-155 bg-azure p-7 pb-8 shadow-[8px_8px_0_0_var(--color-ink)] lg:mt-0 lg:max-w-none"
-        >
-          <span className="absolute -top-5.5 -right-5.5 hidden rotate-6 rounded-full border-2 border-ink bg-amber px-4 py-1.75 text-xs font-bold tracking-wide uppercase shadow-[4px_4px_0_0_var(--color-ink)] sm:block">
-            Hands-on
-          </span>
-          <span className="absolute -bottom-5 -left-6.5 hidden -rotate-6 rounded-full border-2 border-ink bg-rose px-4 py-1.75 text-xs font-bold tracking-wide uppercase shadow-[4px_4px_0_0_var(--color-ink)] sm:block">
-            Demo Day
-          </span>
-          <div className="font-script text-[44px] leading-none text-white">
-            Pilih jalurnya
+        <figure className="w-full max-w-155 justify-self-center rotate-[0.35deg] overflow-hidden rounded-xl border border-white/15 bg-biz-dashboard shadow-2xl lg:justify-self-end lg:rounded-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 bg-biz-dashboard-bar px-3.5 py-2.5 font-mono text-[8px] tracking-[0.08em] text-white/70 uppercase">
+            <span className="flex items-center gap-1.5 before:h-1.5 before:w-7 before:bg-[radial-gradient(circle_at_3px_3px,currentColor_0_2px,transparent_2.5px),radial-gradient(circle_at_13px_3px,currentColor_0_2px,transparent_2.5px),radial-gradient(circle_at_23px_3px,currentColor_0_2px,transparent_2.5px)] before:text-white/25 before:content-['']">
+              Adoption Hub
+            </span>
+            <span>Preview</span>
           </div>
-          <strong className="my-4 block text-[30px] leading-tight font-bold text-white">
-            Foundation, Intensive, atau Sprint.
-          </strong>
-          <ul className="bg-white">
-            {summaryRows.map((row, index) => (
-              <li
-                key={row.label}
-                className={`flex items-center justify-between gap-5 px-3.5 py-3 text-[13px] ${
-                  index !== summaryRows.length - 1
-                    ? "border-b border-gray-200"
-                    : ""
-                }`}
-              >
-                <span>{row.label}</span>
-                <b className="font-bold">{row.value}</b>
-              </li>
-            ))}
-          </ul>
-        </aside>
+          <Image
+            src="/biz/hero-dashboard.jpg"
+            alt="Dashboard LMS yang menampilkan progres adopsi AI"
+            width={1400}
+            height={1050}
+            sizes="(max-width: 1024px) calc(100vw - 36px), 620px"
+            className="aspect-4/3 w-full object-cover object-top"
+          />
+        </figure>
       </div>
-    </header>
+    </section>
   );
 }

@@ -33,8 +33,7 @@
   --lime-bright: #d6ee30;
   --forest-deep: #062319;
 
-  /* B2B training landing palette (home page only) — distinct from the pastel
-     tokens above so existing pages keep their exact colors unchanged. */
+  /* B2B training palette stays separate from the existing marketing tokens. */
   --coral: #ff8556;
   --coral-t: #ffdcd7;
   --azure: #89b5fe;
@@ -46,6 +45,27 @@
   --amber: #f6d466;
   --cyan: #00c8f6;
   --charcoal: #202020;
+
+  /* Ailene BIZ v8 landing page */
+  --biz-forest: #011e16;
+  --biz-forest-mid: #064430;
+  --biz-forest-light: #126046;
+  --biz-lime: #d8f329;
+  --biz-paper: #f7f8ef;
+  --biz-ink: #071b14;
+  --biz-muted: #68766d;
+  --biz-sage: #e2ede4;
+  --biz-mint: #d5f487;
+  --biz-paper-end: #edf4ed;
+  --biz-panel: #f8faf7;
+  --biz-panel-soft: #eef3ed;
+  --biz-table-head: #f5f7f3;
+  --biz-line: #dfe7e0;
+  --biz-copy: #405048;
+  --biz-dot: #b6c3b9;
+  --biz-check: #dff0c9;
+  --biz-dashboard: #0c1513;
+  --biz-dashboard-bar: #0a1613;
 
   /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark; sidebar stays dark forest in both modes. */
   --dashboard-bg: #eef3ea;
@@ -120,6 +140,26 @@
   --color-cyan: var(--cyan);
   --color-charcoal: var(--charcoal);
 
+  --color-biz-forest: var(--biz-forest);
+  --color-biz-forest-mid: var(--biz-forest-mid);
+  --color-biz-forest-light: var(--biz-forest-light);
+  --color-biz-lime: var(--biz-lime);
+  --color-biz-paper: var(--biz-paper);
+  --color-biz-ink: var(--biz-ink);
+  --color-biz-muted: var(--biz-muted);
+  --color-biz-sage: var(--biz-sage);
+  --color-biz-mint: var(--biz-mint);
+  --color-biz-paper-end: var(--biz-paper-end);
+  --color-biz-panel: var(--biz-panel);
+  --color-biz-panel-soft: var(--biz-panel-soft);
+  --color-biz-table-head: var(--biz-table-head);
+  --color-biz-line: var(--biz-line);
+  --color-biz-copy: var(--biz-copy);
+  --color-biz-dot: var(--biz-dot);
+  --color-biz-check: var(--biz-check);
+  --color-biz-dashboard: var(--biz-dashboard);
+  --color-biz-dashboard-bar: var(--biz-dashboard-bar);
+
   --font-script: var(--font-caveat);
 
   --color-dashboard-bg: var(--dashboard-bg);
@@ -172,8 +212,7 @@ body {
   background-image: linear-gradient(180deg, #05120c 0%, #05120c 100%);
 }
 
-/* Subtle geometric (diamond lattice) texture over the OS background,
-   styled after campus.buildclub.ai. Two crossed diagonal hairlines. */
+/* Subtle diamond-lattice texture over the OS background. */
 .bg-geo-pattern {
   background-image:
     repeating-linear-gradient(45deg, rgba(26, 122, 82, 0.035) 0, rgba(26, 122, 82, 0.035) 1px, transparent 1px, transparent 48px),
@@ -183,4 +222,29 @@ body {
   background-image:
     repeating-linear-gradient(45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px),
     repeating-linear-gradient(-45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px);
+}
+
+@keyframes biz-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes biz-marquee-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biz-marquee {
+    animation: none !important;
+    transform: none !important;
+  }
 }
