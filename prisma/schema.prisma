@@ -69,8 +69,35 @@ enum DataScopeEnum {
 enum OwnableEntityTypeEnum {
   B2B_PIPELINE @map("b2b_pipeline")
   B2B_ACTION   @map("b2b_action")
+  B2B_MEETING  @map("b2b_meeting")
 
   @@map("ownable_entity_type_enum")
+}
+
+// Entity types a Notification can point at.
+enum NotificationEntityTypeEnum {
+  B2B_PIPELINE @map("b2b_pipeline")
+  B2B_ACTION   @map("b2b_action")
+  B2B_MEETING  @map("b2b_meeting")
+
+  @@map("notification_entity_type_enum")
+}
+
+enum NotificationTypeEnum {
+  NEW_ASSIGNMENT       @map("new_assignment")
+  MEETING_TIME_CHANGED @map("meeting_time_changed")
+  OVERDUE_NEXT_ACTION  @map("overdue_next_action")
+
+  @@map("notification_type_enum")
+}
+
+// Push-only sync state of a B2BMeeting into the organizer's connected Google Calendar.
+enum GoogleCalendarSyncStatusEnum {
+  NOT_SYNCED  @map("not_synced")
+  SYNCED      @map("synced")
+  SYNC_FAILED @map("sync_failed")
+
+  @@map("google_calendar_sync_status_enum")
 }
 
 // Enumeration for the B2BPipeline model (b2b_*)
@@ -154,6 +181,17 @@ enum B2BActionPriorityEnum {
   URGENT @map("urgent")
 
   @@map("b2ba_priority_enum")
+}
+
+// Enumeration for the B2BMeeting model (b2bm_*)
+
+enum B2BMeetingStatusEnum {
+  SCHEDULED @map("scheduled")
+  HELD      @map("held")
+  CANCELLED @map("cancelled")
+  NO_SHOW   @map("no_show")
+
+  @@map("b2bm_status_enum")
 }
 
 // Enumeration for the TrainerPool models (trainer_*, trnsc_*, trncert_*, trna_*)
@@ -457,6 +495,10 @@ model User {
   duplicate_reviews_requested     OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewRequester")
   duplicate_reviews_resolved      OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewResolver")
   master_data_audit_actions       MasterDataAuditLog[]
+  meetings_organized              B2BMeeting[]                  @relation("B2BMeetingOrganizer")
+  meetings_created                B2BMeeting[]                  @relation("B2BMeetingCreatedBy")
+  notifications                   Notification[]
+  google_calendar_connection      GoogleCalendarConnection?
 
   @@map("users")
 }
@@ -510,6 +552,37 @@ model OwnershipReassignment {
   @@map("ownership_reassignments")
 }
 
+// One row per connected Google account; refresh_token drives the one-way (Ailene OS ->
+// Google Calendar) push sync for B2BMeeting. No read-back from Google in this slice.
+model GoogleCalendarConnection {
+  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id            String    @id @db.Uuid
+  refresh_token      String    @db.Text
+  access_token       String?   @db.Text
+  token_expiry       DateTime? @db.Timestamptz()
+  google_calendar_id String    @default("primary") @db.VarChar()
+  connected_at       DateTime  @default(now()) @db.Timestamptz()
+  revoked_at         DateTime? @db.Timestamptz()
+
+  @@map("google_calendar_connections")
+}
+
+// In-app notification feed — new assignment, meeting time changed, overdue next action.
+model Notification {
+  id          Int                        @id @default(autoincrement())
+  user        User                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id     String                     @db.Uuid
+  type        NotificationTypeEnum
+  entity_type NotificationEntityTypeEnum
+  entity_id   Int
+  message     String                     @db.Text
+  read_at     DateTime?                  @db.Timestamptz()
+  created_at  DateTime                   @default(now()) @db.Timestamptz()
+
+  @@index([user_id])
+  @@map("notifications")
+}
+
 // B2B Sales Pipeline
 
 model B2BCompany {
@@ -548,6 +621,7 @@ model Contact {
   created_at    DateTime                          @default(now()) @db.Timestamptz()
   updated_at    DateTime                          @default(now()) @updatedAt @db.Timestamptz()
   organizations ContactOrganizationRelationship[]
+  meetings      B2BMeetingAttendee[]
 
   @@map("contacts")
 }
@@ -629,6 +703,7 @@ model B2BPipeline {
   created_at                DateTime                  @default(now()) @db.Timestamptz()
   updated_at                DateTime                  @default(now()) @updatedAt @db.Timestamptz()
   actions                   B2BAction[]
+  meetings                  B2BMeeting[]
   stage_history             B2BPipelineStageHistory[]
   lms_projects              LmsProject[]
 
@@ -636,18 +711,21 @@ model B2BPipeline {
 }
 
 model B2BAction {
-  id          Int                   @id @default(autoincrement())
-  pipeline    B2BPipeline           @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
-  pipeline_id Int
-  name        String                @db.VarChar()
-  summary     String?               @db.Text
-  status      B2BActionStatusEnum   @default(TO_DO)
-  priority    B2BActionPriorityEnum @default(MEDIUM)
-  due_date    DateTime?             @db.Date
-  assignee    User?                 @relation(fields: [assignee_id], references: [id], onDelete: SetNull)
-  assignee_id String?               @db.Uuid
-  created_at  DateTime              @default(now()) @db.Timestamptz()
-  updated_at  DateTime              @default(now()) @updatedAt @db.Timestamptz()
+  id                Int                   @id @default(autoincrement())
+  pipeline          B2BPipeline           @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline_id       Int
+  name              String                @db.VarChar()
+  summary           String?               @db.Text
+  status            B2BActionStatusEnum   @default(TO_DO)
+  priority          B2BActionPriorityEnum @default(MEDIUM)
+  due_date          DateTime?             @db.Date
+  assignee          User?                 @relation(fields: [assignee_id], references: [id], onDelete: SetNull)
+  assignee_id       String?               @db.Uuid
+  // Set when this action is the next action created/updated from a Meeting outcome (see B2BMeeting).
+  source_meeting    B2BMeeting?           @relation(fields: [source_meeting_id], references: [id], onDelete: SetNull)
+  source_meeting_id Int?
+  created_at        DateTime              @default(now()) @db.Timestamptz()
+  updated_at        DateTime              @default(now()) @updatedAt @db.Timestamptz()
 
   @@map("b2b_actions")
 }
@@ -666,6 +744,48 @@ model B2BPipelineStageHistory {
   @@index([pipeline_id])
   @@index([created_at])
   @@map("b2b_pipeline_stage_history")
+}
+
+// A held/scheduled meeting on a pipeline — the traceable source of first/second-meeting
+// conversion metrics. Conversion credit is attributed to the pipeline's *current* owner at
+// query time (see trpc dashboardAnalytics), not organizer_id here, so organizer_id only
+// records who actually ran the meeting.
+model B2BMeeting {
+  id                 Int                          @id @default(autoincrement())
+  pipeline           B2BPipeline                  @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline_id        Int
+  organizer          User                         @relation("B2BMeetingOrganizer", fields: [organizer_id], references: [id])
+  organizer_id       String                       @db.Uuid
+  scheduled_at       DateTime                     @db.Timestamptz()
+  held_at            DateTime?                    @db.Timestamptz()
+  status             B2BMeetingStatusEnum         @default(SCHEDULED)
+  location_or_link   String?                      @db.VarChar()
+  notes              String?                      @db.Text
+  // Push-only (Ailene OS -> Google Calendar) sync state on the organizer's connected calendar.
+  google_event_id    String?                      @db.VarChar()
+  google_sync_status GoogleCalendarSyncStatusEnum @default(NOT_SYNCED)
+  google_sync_error  String?                      @db.Text
+  last_synced_at     DateTime?                    @db.Timestamptz()
+  created_by         User                         @relation("B2BMeetingCreatedBy", fields: [created_by_id], references: [id])
+  created_by_id      String                       @db.Uuid
+  created_at         DateTime                     @default(now()) @db.Timestamptz()
+  updated_at         DateTime                     @default(now()) @updatedAt @db.Timestamptz()
+  attendees          B2BMeetingAttendee[]
+  next_actions       B2BAction[]
+
+  @@index([pipeline_id])
+  @@index([scheduled_at])
+  @@map("b2b_meetings")
+}
+
+model B2BMeetingAttendee {
+  meeting    B2BMeeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+  meeting_id Int
+  contact    Contact    @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  contact_id Int
+
+  @@id([meeting_id, contact_id])
+  @@map("b2b_meeting_attendees")
 }
 
 // Trainer Pool

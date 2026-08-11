@@ -7,6 +7,7 @@ import {
   GraduationCap,
   LayoutGrid,
   LucideIcon,
+  Settings,
   ShieldCheck,
   SquareCheckBig,
   Store,
@@ -88,4 +89,5 @@ export const osMainNav: OSNavItem[] = [
 
 export const osToolsNav: OSNavItem[] = [
   { href: "/pricing", label: "Pricing Calculator", icon: Calculator, segment: "B2B" },
+  { href: "/settings", label: "Settings", icon: Settings, segment: "B2B" },
 ];

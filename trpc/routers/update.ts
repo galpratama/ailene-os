@@ -14,6 +14,7 @@ export const updateRouter = createTRPCRouter({
     company: updateB2B.company,
     pipeline: updateB2B.pipeline,
     action: updateB2B.action,
+    meeting: updateB2B.meeting,
     contact: updateB2B.contact,
     resolveOrganizationDuplicateReview: updateB2B.resolveOrganizationDuplicateReview,
   },

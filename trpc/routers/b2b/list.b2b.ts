@@ -1,7 +1,11 @@
 import { Optional } from "@/lib/optional-type";
 import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
-import { actionDataScopeWhere, pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
+import {
+  actionDataScopeWhere,
+  meetingDataScopeWhere,
+  pipelineDataScopeWhere,
+} from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
 import { findOrganizationDuplicates } from "@/trpc/utils/organization_dedupe";
 import {
@@ -14,6 +18,7 @@ import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BLostReasonEnum,
+  B2BMeetingStatusEnum,
   B2BProbabilityStatusEnum,
   B2BStageEnum,
   DuplicateReviewStatusEnum,
@@ -518,6 +523,91 @@ export const listB2B = {
       };
     }),
 
+  // Same b2b_meetings data as a single pipeline's meetings would be, but across every
+  // pipeline/company at once — for a global Meetings board, mirroring allActions.
+  meetings: administratorProcedure
+    .input(
+      z.object({
+        keyword: stringNotBlank().optional(),
+        status: z.enum(B2BMeetingStatusEnum).optional(),
+        organizer_id: stringIsUUID().optional(),
+        company_id: numberIsID().optional(),
+        pipeline_id: numberIsID().optional(),
+        page: numberIsPosInt().optional(),
+        page_size: numberIsPosInt().optional(),
+      })
+    )
+    .query(async (opts) => {
+      const scopeWhere = meetingDataScopeWhere(opts.ctx.user);
+
+      const whereClause: Prisma.B2BMeetingWhereInput = {
+        status: opts.input.status,
+        organizer_id: opts.input.organizer_id,
+        pipeline_id: opts.input.pipeline_id,
+        pipeline: {
+          ...(scopeWhere.pipeline as Prisma.B2BPipelineWhereInput),
+          ...(opts.input.company_id && { company_id: opts.input.company_id }),
+        },
+        ...(opts.input.keyword && {
+          OR: [
+            { notes: { contains: opts.input.keyword, mode: "insensitive" } },
+            {
+              pipeline: {
+                name: { contains: opts.input.keyword, mode: "insensitive" },
+              },
+            },
+          ],
+        }),
+      };
+
+      const paging = calculatePage(
+        opts.input,
+        await opts.ctx.prisma.b2BMeeting.aggregate({
+          _count: true,
+          where: whereClause,
+        })
+      );
+
+      const meetingList = await opts.ctx.prisma.b2BMeeting.findMany({
+        include: {
+          organizer: { select: { id: true, full_name: true, avatar: true } },
+          pipeline: {
+            select: {
+              id: true,
+              name: true,
+              company: { select: { id: true, name: true } },
+            },
+          },
+        },
+        orderBy: [{ scheduled_at: "asc" }],
+        where: whereClause,
+        skip: paging.prisma.skip,
+        take: paging.prisma.take,
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        list: meetingList.map((entry) => ({
+          id: entry.id,
+          pipeline_id: entry.pipeline_id,
+          pipeline_name: entry.pipeline.name,
+          company_id: entry.pipeline.company.id,
+          company_name: entry.pipeline.company.name,
+          organizer_id: entry.organizer_id,
+          organizer_name: entry.organizer.full_name,
+          organizer_avatar: entry.organizer.avatar,
+          scheduled_at: entry.scheduled_at,
+          held_at: entry.held_at,
+          status: entry.status,
+          location_or_link: entry.location_or_link,
+          created_at: entry.created_at,
+          updated_at: entry.updated_at,
+        })),
+        metapaging: paging.metapaging,
+      };
+    }),
+
   calendar: administratorProcedure
     .input(
       z.object({
@@ -541,7 +631,7 @@ export const listB2B = {
         });
       }
 
-      const whereClause: Prisma.B2BActionWhereInput = {
+      const actionWhereClause: Prisma.B2BActionWhereInput = {
         due_date: { gte: startDate, lte: endDate },
         status: opts.input.status,
         priority: opts.input.priority,
@@ -552,51 +642,103 @@ export const listB2B = {
           : undefined,
       };
 
-      const actionList = await opts.ctx.prisma.b2BAction.findMany({
-        include: {
-          assignee: { select: { id: true, full_name: true, avatar: true } },
-          pipeline: {
-            select: {
-              id: true,
-              name: true,
-              company: { select: { id: true, name: true } },
+      // Meetings have no status/priority/assignee of their own (see B2BMeeting) — those
+      // filters only narrow actions; a meeting only respects the shared date/pipeline/company ones.
+      const meetingWhereClause: Prisma.B2BMeetingWhereInput = {
+        scheduled_at: { gte: startDate, lte: endDate },
+        pipeline_id: opts.input.pipeline_id,
+        pipeline: opts.input.company_id
+          ? { company_id: opts.input.company_id }
+          : undefined,
+      };
+
+      const [actionList, meetingList] = await Promise.all([
+        opts.ctx.prisma.b2BAction.findMany({
+          include: {
+            assignee: { select: { id: true, full_name: true, avatar: true } },
+            pipeline: {
+              select: {
+                id: true,
+                name: true,
+                company: { select: { id: true, name: true } },
+              },
             },
           },
-        },
-        orderBy: [
-          { due_date: "asc" },
-          { priority: "desc" },
-          { created_at: "asc" },
-        ],
-        where: whereClause,
-      });
+          orderBy: [
+            { due_date: "asc" },
+            { priority: "desc" },
+            { created_at: "asc" },
+          ],
+          where: actionWhereClause,
+        }),
+        opts.ctx.prisma.b2BMeeting.findMany({
+          include: {
+            organizer: { select: { id: true, full_name: true, avatar: true } },
+            pipeline: {
+              select: {
+                id: true,
+                name: true,
+                company: { select: { id: true, name: true } },
+              },
+            },
+          },
+          orderBy: [{ scheduled_at: "asc" }],
+          where: meetingWhereClause,
+        }),
+      ]);
+
+      const actionEvents = actionList.map((entry) => ({
+        id: entry.id,
+        type: "b2b_action" as const,
+        title: entry.name,
+        pipeline_id: entry.pipeline_id,
+        pipeline_name: entry.pipeline.name,
+        company_id: entry.pipeline.company.id,
+        company_name: entry.pipeline.company.name,
+        name: entry.name,
+        summary: entry.summary,
+        status: entry.status,
+        priority: entry.priority,
+        due_date: entry.due_date,
+        assignee_id: entry.assignee_id,
+        assignee_name: entry.assignee?.full_name ?? null,
+        assignee_avatar: entry.assignee?.avatar ?? null,
+        created_at: entry.created_at,
+        updated_at: entry.updated_at,
+      }));
+
+      const meetingEvents = meetingList.map((entry) => ({
+        id: entry.id,
+        type: "b2b_meeting" as const,
+        title: `Meeting: ${entry.pipeline.company.name}`,
+        pipeline_id: entry.pipeline_id,
+        pipeline_name: entry.pipeline.name,
+        company_id: entry.pipeline.company.id,
+        company_name: entry.pipeline.company.name,
+        // due_date is the calendar page's shared grouping field — holds scheduled_at for a meeting.
+        due_date: entry.scheduled_at,
+        status: entry.status,
+        location_or_link: entry.location_or_link,
+        organizer_id: entry.organizer_id,
+        organizer_name: entry.organizer.full_name,
+        organizer_avatar: entry.organizer.avatar,
+        created_at: entry.created_at,
+        updated_at: entry.updated_at,
+      }));
+
+      const combinedList = [...actionEvents, ...meetingEvents].sort(
+        (left, right) =>
+          (left.due_date?.getTime() ?? 0) - (right.due_date?.getTime() ?? 0)
+      );
 
       return {
         code: STATUS_OK,
         message: "Success",
-        list: actionList.map((entry) => ({
-          id: entry.id,
-          type: "b2b_action" as const,
-          title: entry.name,
-          pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.name,
-          company_id: entry.pipeline.company.id,
-          company_name: entry.pipeline.company.name,
-          name: entry.name,
-          summary: entry.summary,
-          status: entry.status,
-          priority: entry.priority,
-          due_date: entry.due_date,
-          assignee_id: entry.assignee_id,
-          assignee_name: entry.assignee?.full_name ?? null,
-          assignee_avatar: entry.assignee?.avatar ?? null,
-          created_at: entry.created_at,
-          updated_at: entry.updated_at,
-        })),
+        list: combinedList,
         meta: {
           start_date: opts.input.start_date,
           end_date: opts.input.end_date,
-          total_data: actionList.length,
+          total_data: combinedList.length,
         },
       };
     }),

@@ -48,7 +48,28 @@ CREATE TYPE data_scope_enum AS ENUM (
 -- Ownable entity types eligible for offboarding reassignment; only ones with a real owner FK today.
 CREATE TYPE ownable_entity_type_enum AS ENUM (
   'b2b_pipeline',
-  'b2b_action'
+  'b2b_action',
+  'b2b_meeting'
+);
+
+-- Entity types a notification can point at.
+CREATE TYPE notification_entity_type_enum AS ENUM (
+  'b2b_pipeline',
+  'b2b_action',
+  'b2b_meeting'
+);
+
+CREATE TYPE notification_type_enum AS ENUM (
+  'new_assignment',
+  'meeting_time_changed',
+  'overdue_next_action'
+);
+
+-- Push-only sync state of a b2b_meetings row into the organizer's connected Google Calendar.
+CREATE TYPE google_calendar_sync_status_enum AS ENUM (
+  'not_synced',
+  'synced',
+  'sync_failed'
 );
 
 -- Enumeration for the b2b_pipeline table (b2b_*)
@@ -118,6 +139,15 @@ CREATE TYPE b2ba_priority_enum AS ENUM (
   'medium',
   'high',
   'urgent'
+);
+
+-- Enumeration for the b2b_meetings table (b2bm_*)
+
+CREATE TYPE b2bm_status_enum AS ENUM (
+  'scheduled',
+  'held',
+  'cancelled',
+  'no_show'
 );
 
 -- Enumeration for the Trainer Pool tables
@@ -375,6 +405,30 @@ CREATE TABLE ownership_reassignments (
   created_at            TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
+-- One row per connected Google account; refresh_token drives the one-way (Ailene OS ->
+-- Google Calendar) push sync for b2b_meetings. No read-back from Google in this slice.
+CREATE TABLE google_calendar_connections (
+  user_id             UUID                    PRIMARY KEY,
+  refresh_token       TEXT                    NOT NULL,
+  access_token        TEXT                        NULL,
+  token_expiry        TIMESTAMPTZ                 NULL,
+  google_calendar_id  VARCHAR                 NOT NULL  DEFAULT 'primary',
+  connected_at        TIMESTAMPTZ             NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  revoked_at          TIMESTAMPTZ                 NULL
+);
+
+-- In-app notification feed — new assignment, meeting time changed, overdue next action.
+CREATE TABLE notifications (
+  id           SERIAL                          PRIMARY KEY,
+  user_id      UUID                            NOT NULL,
+  type         notification_type_enum          NOT NULL,
+  entity_type  notification_entity_type_enum   NOT NULL,
+  entity_id    INTEGER                         NOT NULL,
+  message      TEXT                            NOT NULL,
+  read_at      TIMESTAMPTZ                         NULL,
+  created_at   TIMESTAMPTZ                     NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
 -- B2B Sales Pipeline
 
 CREATE TABLE b2b_company (
@@ -471,19 +525,19 @@ CREATE TABLE b2b_pipeline (
 );
 
 CREATE TABLE b2b_actions (
-  id           SERIAL              PRIMARY KEY,
-  pipeline_id  INTEGER             NOT NULL,
-  name         VARCHAR             NOT NULL,
-  summary      TEXT                    NULL,
-  status       b2ba_status_enum    NOT NULL  DEFAULT 'to_do',
-  priority     b2ba_priority_enum  NOT NULL  DEFAULT 'medium',
-  due_date     DATE                    NULL,
-  assignee_id  UUID                    NULL,
-  created_at   TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at   TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP
+  id                 SERIAL              PRIMARY KEY,
+  pipeline_id        INTEGER             NOT NULL,
+  name               VARCHAR             NOT NULL,
+  summary            TEXT                    NULL,
+  status             b2ba_status_enum    NOT NULL  DEFAULT 'to_do',
+  priority           b2ba_priority_enum  NOT NULL  DEFAULT 'medium',
+  due_date           DATE                    NULL,
+  assignee_id        UUID                    NULL,
+  source_meeting_id  INTEGER                 NULL, -- meeting whose outcome created/updated this action
+  created_at         TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
--- Append-only log of every b2b_pipeline.stage change (b2b_pipeline only holds the current stage).
 CREATE TABLE b2b_pipeline_stage_history (
   id           SERIAL                PRIMARY KEY,
   pipeline_id  INTEGER               NOT NULL,
@@ -492,6 +546,33 @@ CREATE TABLE b2b_pipeline_stage_history (
   reason_code  b2b_lost_reason_enum      NULL,
   changed_by   UUID                  NOT NULL,
   created_at   TIMESTAMPTZ           NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+-- A held/scheduled meeting on a pipeline — the traceable source of first/second-meeting
+-- conversion metrics. Conversion credit is attributed to b2b_pipeline's *current* owner_id
+-- at query time, not organizer_id here, so organizer_id only records who actually ran it.
+CREATE TABLE b2b_meetings (
+  id                  SERIAL                              PRIMARY KEY,
+  pipeline_id         INTEGER                             NOT NULL,
+  organizer_id        UUID                                NOT NULL,
+  scheduled_at        TIMESTAMPTZ                         NOT NULL,
+  held_at             TIMESTAMPTZ                             NULL,
+  status              b2bm_status_enum                    NOT NULL  DEFAULT 'scheduled',
+  location_or_link    VARCHAR                                 NULL,
+  notes               TEXT                                    NULL,
+  google_event_id     VARCHAR                                 NULL,
+  google_sync_status  google_calendar_sync_status_enum    NOT NULL  DEFAULT 'not_synced',
+  google_sync_error   TEXT                                    NULL,
+  last_synced_at      TIMESTAMPTZ                             NULL,
+  created_by_id       UUID                                NOT NULL,
+  created_at          TIMESTAMPTZ                         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMPTZ                         NOT NULL  DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE b2b_meeting_attendees (
+  meeting_id  INTEGER  NOT NULL,
+  contact_id  INTEGER  NOT NULL,
+  PRIMARY KEY (meeting_id, contact_id)
 );
 
 -- Trainer Pool
@@ -903,6 +984,12 @@ ALTER TABLE ownership_reassignments
   ADD FOREIGN KEY (new_owner_id)        REFERENCES users (id),
   ADD FOREIGN KEY (actor_id)            REFERENCES users (id);
 
+ALTER TABLE google_calendar_connections
+  ADD FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
+
+ALTER TABLE notifications
+  ADD FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
+
 -- B2B Sales Pipeline
 
 ALTER TABLE b2b_company
@@ -913,12 +1000,22 @@ ALTER TABLE b2b_pipeline
   ADD FOREIGN KEY (company_id) REFERENCES b2b_company (id);
 
 ALTER TABLE b2b_actions
-  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (assignee_id) REFERENCES users (id)         ON DELETE SET NULL;
+  ADD FOREIGN KEY (pipeline_id)       REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (assignee_id)       REFERENCES users (id)        ON DELETE SET NULL,
+  ADD FOREIGN KEY (source_meeting_id) REFERENCES b2b_meetings (id) ON DELETE SET NULL;
 
 ALTER TABLE b2b_pipeline_stage_history
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (changed_by)  REFERENCES users (id);
+
+ALTER TABLE b2b_meetings
+  ADD FOREIGN KEY (pipeline_id)   REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (organizer_id)  REFERENCES users (id),
+  ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
+
+ALTER TABLE b2b_meeting_attendees
+  ADD FOREIGN KEY (meeting_id) REFERENCES b2b_meetings (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (contact_id) REFERENCES contacts (id)     ON DELETE CASCADE;
 
 ALTER TABLE contact_organization_relationships
   ADD FOREIGN KEY (contact_id)      REFERENCES contacts (id)    ON DELETE CASCADE,
@@ -1096,6 +1193,11 @@ CREATE TRIGGER update_b2b_actions_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER update_b2b_meetings_updated_at_trigger
+  BEFORE UPDATE ON b2b_meetings
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
 -- Trainer Pool
 
 CREATE TRIGGER update_trainers_updated_at_trigger
@@ -1200,6 +1302,13 @@ CREATE INDEX lms_coaching_notes_member_id_idx ON lms_coaching_notes (member_id);
 -- Pipeline stage history — per-lead lookups and weekly-dashboard time-window queries.
 CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_history (pipeline_id);
 CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
+
+-- Meetings — first/second-held-meeting conversion lookups per pipeline, and calendar range queries.
+CREATE INDEX b2b_meetings_pipeline_id_idx ON b2b_meetings (pipeline_id);
+CREATE INDEX b2b_meetings_scheduled_at_idx ON b2b_meetings (scheduled_at);
+
+-- Notifications — unread-feed lookup for the notification bell.
+CREATE INDEX notifications_user_id_idx ON notifications (user_id);
 
 -- Organizations — duplicate-name matching on create.
 CREATE INDEX b2b_company_normalized_name_idx ON b2b_company (normalized_name);

@@ -220,13 +220,17 @@ export const updateUserData = {
       }
 
       const result = await opts.ctx.prisma.$transaction(async (tx) => {
-        const [pipelines, actions] = await Promise.all([
+        const [pipelines, actions, meetings] = await Promise.all([
           tx.b2BPipeline.findMany({
             where: { owner_id: from_user_id },
             select: { id: true },
           }),
           tx.b2BAction.findMany({
             where: { assignee_id: from_user_id },
+            select: { id: true },
+          }),
+          tx.b2BMeeting.findMany({
+            where: { organizer_id: from_user_id },
             select: { id: true },
           }),
         ]);
@@ -277,7 +281,34 @@ export const updateUserData = {
           });
         }
 
-        return { pipelines: pipelines.length, actions: actions.length };
+        for (const { id: meetingId } of meetings) {
+          const firstReassignment = await tx.ownershipReassignment.findFirst({
+            where: { entity_type: "B2B_MEETING", entity_id: meetingId },
+            orderBy: { created_at: "asc" },
+          });
+          await tx.ownershipReassignment.create({
+            data: {
+              entity_type: "B2B_MEETING",
+              entity_id: meetingId,
+              original_creator_id:
+                firstReassignment?.original_creator_id ?? from_user_id,
+              previous_owner_id: from_user_id,
+              new_owner_id: to_user_id,
+              actor_id: opts.ctx.user.id,
+              reason,
+            },
+          });
+          await tx.b2BMeeting.update({
+            where: { id: meetingId },
+            data: { organizer_id: to_user_id },
+          });
+        }
+
+        return {
+          pipelines: pipelines.length,
+          actions: actions.length,
+          meetings: meetings.length,
+        };
       });
 
       return {

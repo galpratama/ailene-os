@@ -1,6 +1,7 @@
+import { deleteMeetingFromGoogleCalendar } from "@/lib/google-calendar";
 import { STATUS_BAD_REQUEST, STATUS_NO_CONTENT } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
-import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
+import { meetingDataScopeWhere, pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
 import { checkDeleteResult, checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 import { TRPCError } from "@trpc/server";
@@ -57,6 +58,31 @@ export const deleteB2B = {
         where: { id: opts.input.id },
       });
       await checkDeleteResult(deleted.count, "actions", "action");
+      return {
+        code: STATUS_NO_CONTENT,
+        message: "Success",
+      };
+    }),
+
+  // Cascades at the DB level to this meeting's attendees; linked next actions keep
+  // existing (source_meeting_id set to NULL) rather than being deleted.
+  meeting: administratorProcedure
+    .input(objectHasOnlyID())
+    .mutation(async (opts) => {
+      const existing = await opts.ctx.prisma.b2BMeeting.findFirst({
+        where: { id: opts.input.id, ...meetingDataScopeWhere(opts.ctx.user) },
+        select: { organizer_id: true, google_event_id: true },
+      });
+      if (!existing) {
+        throw readFailedNotFound("meeting");
+      }
+
+      await deleteMeetingFromGoogleCalendar(opts.ctx.prisma, existing);
+
+      const deleted = await opts.ctx.prisma.b2BMeeting.deleteMany({
+        where: { id: opts.input.id },
+      });
+      await checkDeleteResult(deleted.count, "meetings", "meeting");
       return {
         code: STATUS_NO_CONTENT,
         message: "Success",

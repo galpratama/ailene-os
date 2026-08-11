@@ -1,12 +1,18 @@
+import { pushMeetingToGoogleCalendar } from "@/lib/google-calendar";
 import { STATUS_BAD_REQUEST, STATUS_FORBIDDEN, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
-import { actionDataScopeWhere, isOwnerWithinScope } from "@/trpc/utils/data_scope";
+import {
+  actionDataScopeWhere,
+  isOwnerWithinScope,
+  meetingDataScopeWhere,
+} from "@/trpc/utils/data_scope";
 import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
 import { normalizeOrgName } from "@/trpc/utils/organization_dedupe";
 import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
 import {
   numberIsID,
   numberIsPosInt,
+  stringIsTimestampTz,
   stringIsUUID,
   stringNotBlank,
 } from "@/trpc/utils/validation";
@@ -14,6 +20,7 @@ import {
   B2BActionPriorityEnum,
   B2BActionStatusEnum,
   B2BLostReasonEnum,
+  B2BMeetingStatusEnum,
   B2BProbabilityStatusEnum,
   B2BStageEnum,
   OrganizationStatusEnum,
@@ -334,6 +341,93 @@ export const updateB2B = {
       return {
         code: STATUS_OK,
         message: "Action updated",
+      };
+    }),
+
+  meeting: administratorProcedure
+    .input(
+      z.object({
+        id: numberIsID(),
+        organizer_id: stringIsUUID().optional(),
+        scheduled_at: stringIsTimestampTz().optional(),
+        held_at: stringIsTimestampTz().nullable().optional(),
+        status: z.enum(B2BMeetingStatusEnum).optional(),
+        location_or_link: stringNotBlank().nullable().optional(),
+        notes: stringNotBlank().nullable().optional(),
+        attendee_contact_ids: z.array(numberIsID()).optional(),
+      })
+    )
+    .mutation(async (opts) => {
+      const {
+        id,
+        scheduled_at,
+        held_at,
+        organizer_id,
+        attendee_contact_ids,
+        status,
+        ...rest
+      } = opts.input;
+
+      // OWN-scoped users can only organize meetings they run — can't hand a meeting off to someone else.
+      if (
+        organizer_id !== undefined &&
+        opts.ctx.user.data_scope === "OWN" &&
+        organizer_id !== opts.ctx.user.id
+      ) {
+        throw new TRPCError({
+          code: STATUS_FORBIDDEN,
+          message: "You can't reassign this meeting to another organizer.",
+        });
+      }
+
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const updated = await tx.b2BMeeting.updateMany({
+          where: { id, ...meetingDataScopeWhere(opts.ctx.user) },
+          data: {
+            ...rest,
+            ...(organizer_id !== undefined && { organizer_id }),
+            ...(status !== undefined && { status }),
+            ...(scheduled_at !== undefined && {
+              scheduled_at: new Date(scheduled_at),
+            }),
+            ...(held_at !== undefined && {
+              held_at: held_at ? new Date(held_at) : null,
+            }),
+            // Marking a meeting Held without an explicit held_at defaults it to now.
+            ...(status === "HELD" &&
+              held_at === undefined && { held_at: new Date() }),
+          },
+        });
+        await checkUpdateResult(updated.count, "meeting", "meetings");
+
+        if (attendee_contact_ids !== undefined) {
+          await tx.b2BMeetingAttendee.deleteMany({ where: { meeting_id: id } });
+          if (attendee_contact_ids.length > 0) {
+            await tx.b2BMeetingAttendee.createMany({
+              data: attendee_contact_ids.map((contact_id) => ({
+                meeting_id: id,
+                contact_id,
+              })),
+            });
+          }
+        }
+      });
+
+      const updatedMeeting = await opts.ctx.prisma.b2BMeeting.findUnique({
+        where: { id },
+        include: { pipeline: { include: { company: { select: { name: true } } } } },
+      });
+      if (updatedMeeting) {
+        await pushMeetingToGoogleCalendar(opts.ctx.prisma, {
+          ...updatedMeeting,
+          pipeline_name: updatedMeeting.pipeline.name,
+          company_name: updatedMeeting.pipeline.company.name,
+        });
+      }
+
+      return {
+        code: STATUS_OK,
+        message: "Meeting updated",
       };
     }),
 

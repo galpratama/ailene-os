@@ -1,17 +1,20 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import CreateMeetingFormOS from "@/components/forms/CreateMeetingFormOS";
+import EditMeetingFormOS from "@/components/forms/EditMeetingFormOS";
 import CalendarActionModalOS, {
   CalendarActionModalEvent,
 } from "@/components/modals/CalendarActionModalOS";
 import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BActionPriorityEnum } from "@prisma/client";
+import type { B2BActionPriorityEnum, B2BMeetingStatusEnum } from "@prisma/client";
 import {
   CalendarClock,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -42,6 +45,55 @@ const priorityStyles: Record<
     chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
   },
 };
+
+const meetingStatusStyles: Record<
+  B2BMeetingStatusEnum,
+  { label: string; dot: string; chip: string }
+> = {
+  SCHEDULED: {
+    label: "Meeting: Scheduled",
+    dot: "bg-biru",
+    chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
+  },
+  HELD: {
+    label: "Meeting: Held",
+    dot: "bg-hijau",
+    chip: "bg-hijau-t text-green-700 hover:bg-hijau-t/80 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20",
+  },
+  CANCELLED: {
+    label: "Meeting: Cancelled",
+    dot: "bg-gray-400",
+    chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+  },
+  NO_SHOW: {
+    label: "Meeting: No Show",
+    dot: "bg-merah",
+    chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
+  },
+};
+
+// A calendar event is either a B2BAction (due_date, priority) or a B2BMeeting
+// (due_date here holds scheduled_at — see the calendar backend query, which
+// normalizes both into one shared field for grouping-by-day).
+type CalendarMeetingEvent = {
+  id: number;
+  type: "b2b_meeting";
+  title: string;
+  pipeline_id: number;
+  pipeline_name: string;
+  company_id: number;
+  company_name: string;
+  due_date: string | Date;
+  status: B2BMeetingStatusEnum;
+  location_or_link: string | null;
+  organizer_id: string;
+  organizer_name: string;
+  organizer_avatar: string | null;
+};
+
+type CalendarEvent =
+  | (CalendarActionModalEvent & { type: "b2b_action" })
+  | CalendarMeetingEvent;
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -102,6 +154,10 @@ export default function CalendarPageOS({
   });
   const [selectedEvent, setSelectedEvent] =
     useState<CalendarActionModalEvent | null>(null);
+  const [editingMeetingId, setEditingMeetingId] = useState<number | null>(
+    null
+  );
+  const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
 
   const visibleStart = useMemo(
     () => getVisibleStart(current.year, current.month),
@@ -122,7 +178,7 @@ export default function CalendarPageOS({
   );
 
   const eventsByDate = useMemo(() => {
-    const grouped = new Map<string, CalendarActionModalEvent[]>();
+    const grouped = new Map<string, CalendarEvent[]>();
     for (const event of data?.list ?? []) {
       const key = dateKeyFromValue(event.due_date);
       if (!key) continue;
@@ -169,6 +225,14 @@ export default function CalendarPageOS({
         <div className="flex flex-wrap items-center gap-2">
           <AppButton
             type="button"
+            size="sm"
+            onClick={() => setIsCreatingMeeting(true)}
+          >
+            <Plus size={13} />
+            Schedule Meeting
+          </AppButton>
+          <AppButton
+            type="button"
             variant="outline"
             size="sm"
             onClick={goToToday}
@@ -209,6 +273,15 @@ export default function CalendarPageOS({
         <div className="flex flex-wrap items-center gap-3">
           {Object.entries(priorityStyles).map(([priority, style]) => (
             <div key={priority} className="flex items-center gap-1.5">
+              <span className={`size-2 rounded-full ${style.dot}`} />
+              <span className="text-xs text-gray-600 dark:text-zinc-400">
+                {style.label}
+              </span>
+            </div>
+          ))}
+          <span className="h-4 w-px bg-gray-200 dark:bg-zinc-700" />
+          {Object.entries(meetingStatusStyles).map(([status, style]) => (
+            <div key={status} className="flex items-center gap-1.5">
               <span className={`size-2 rounded-full ${style.dot}`} />
               <span className="text-xs text-gray-600 dark:text-zinc-400">
                 {style.label}
@@ -281,15 +354,22 @@ export default function CalendarPageOS({
 
                   <div className="mt-2 flex flex-col gap-1.5">
                     {events.map((event) => {
-                      const style = priorityStyles[event.priority];
+                      const style =
+                        event.type === "b2b_meeting"
+                          ? meetingStatusStyles[event.status]
+                          : priorityStyles[event.priority];
                       return (
                         <AppButton
-                          key={event.id}
+                          key={`${event.type}-${event.id}`}
                           type="button"
                           variant="ghost"
                           size="sm"
                           className={`h-auto min-h-7 w-full justify-start rounded-md px-1.5 py-1 ${style.chip}`}
-                          onClick={() => setSelectedEvent(event)}
+                          onClick={() =>
+                            event.type === "b2b_meeting"
+                              ? setEditingMeetingId(event.id)
+                              : setSelectedEvent(event)
+                          }
                         >
                           <span
                             className={`mt-1 size-1.5 shrink-0 rounded-full ${style.dot}`}
@@ -318,6 +398,19 @@ export default function CalendarPageOS({
       <CalendarActionModalOS
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+      />
+
+      <EditMeetingFormOS
+        sessionToken={sessionToken}
+        meetingId={editingMeetingId}
+        isOpen={editingMeetingId !== null}
+        onClose={() => setEditingMeetingId(null)}
+      />
+
+      <CreateMeetingFormOS
+        sessionToken={sessionToken}
+        isOpen={isCreatingMeeting}
+        onClose={() => setIsCreatingMeeting(false)}
       />
     </div>
   );

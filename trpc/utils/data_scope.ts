@@ -24,6 +24,13 @@ export function actionDataScopeWhere(
   return { pipeline: pipelineDataScopeWhere(actor) };
 }
 
+// Same restriction, applied through a B2BMeeting's parent pipeline (meetings have no owner of their own).
+export function meetingDataScopeWhere(
+  actor: ScopedActor
+): Prisma.B2BMeetingWhereInput {
+  return { pipeline: pipelineDataScopeWhere(actor) };
+}
+
 // For single-record mutations: is this specific pipeline owner within the actor's scope?
 export function isOwnerWithinScope(
   actor: ScopedActor,
