@@ -5,7 +5,7 @@ These are project-specific conventions. Follow them exactly — don't fall back 
 ## Database (Prisma, DDL, migrations)
 
 - `prisma/schema.prisma` mirrors `docs/db/ailene-os-ddl.sql` (see the comment at the top of the schema file). **Any schema change must update both files** — the `.sql` file is the human-readable source of truth for the actual DDL, the Prisma schema is the generated-client source of truth. They drift silently if you only touch one.
-- The database is a **live shared Supabase Postgres instance** (see `DATABASE_URL`/`DIRECT_URL` in `.env` — it's a real `supabase.co` host, not a local Postgres). Treat migrations and any destructive query as production actions: confirm with the user before running `prisma migrate`, `prisma db push`, or raw `DROP`/`TRUNCATE`/`DELETE` without a `WHERE`.
+- The database is a **live shared Neon Postgres instance** (see `DATABASE_URL`/`DIRECT_URL` in `.env` — it's a real `neon.tech` host, not a local Postgres). Treat migrations and any destructive query as production actions: confirm with the user before running `prisma migrate`, `prisma db push`, or raw `DROP`/`TRUNCATE`/`DELETE` without a `WHERE`.
 - **Never run `prisma migrate reset` or any destructive database commands without explicit user confirmation.** This will wipe all data from the database. Always check for backups and consider the impact before running such commands.
 - **Do not commit and push database migration files without user review and approval.** Especially avoid force pushes that could affect production data.
 - **Never commit and push directly to production branches without explicit user approval.** Always verify changes with the user before pushing to remote repositories, especially when database operations are involved.
