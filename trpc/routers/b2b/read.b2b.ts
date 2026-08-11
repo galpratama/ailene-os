@@ -139,6 +139,7 @@ export const readB2B = {
           company_image_url: thePipeline.company.image_url,
           stage: thePipeline.stage,
           current_stage_reason_code: thePipeline.current_stage_reason_code,
+          on_hold_review_date: thePipeline.on_hold_review_date,
           probability: thePipeline.probability,
           probability_status: thePipeline.probability_status,
           project_value: thePipeline.project_value,

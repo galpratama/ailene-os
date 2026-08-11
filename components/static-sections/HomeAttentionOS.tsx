@@ -12,6 +12,7 @@ import {
   CircleAlert,
   Clock3,
   SearchX,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,12 @@ type StaleLead = {
   stage: B2BStageEnum;
   last_activity_at: string | Date;
   inactive_days: number;
+};
+
+type OwnershipConflict = {
+  company_id: number;
+  company_name: string;
+  pipelines: { id: number; name: string; owner_name: string }[];
 };
 
 function formatDueDate(value: string | Date | null) {
@@ -116,11 +123,13 @@ export default function HomeAttentionOS({
       overdue_tasks: number;
       due_today_tasks: number;
       stale_leads: number;
+      ownership_conflicts: number;
     };
     approvals: AttentionAction[];
     overdue_tasks: AttentionAction[];
     due_today_tasks: AttentionAction[];
     stale_leads: StaleLead[];
+    ownership_conflicts: OwnershipConflict[];
   };
   staleLeadDays: number;
   isLoading: boolean;
@@ -129,7 +138,8 @@ export default function HomeAttentionOS({
     attention.totals.approvals +
     attention.totals.overdue_tasks +
     attention.totals.due_today_tasks +
-    attention.totals.stale_leads;
+    attention.totals.stale_leads +
+    attention.totals.ownership_conflicts;
 
   return (
     <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
@@ -216,6 +226,31 @@ export default function HomeAttentionOS({
                   </p>
                 </div>
                 <StageLabel stage={lead.stage} />
+              </Link>
+            ))}
+          </AttentionGroup>
+
+          <AttentionGroup
+            title="Ownership conflicts"
+            description="Same organization has active leads under different owners."
+            count={attention.totals.ownership_conflicts}
+            icon={Users}
+            iconClass="text-ungu"
+          >
+            {attention.ownership_conflicts.map((conflict) => (
+              <Link
+                key={conflict.company_id}
+                href="/leads"
+                className="flex flex-col gap-1 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
+              >
+                <p className="truncate text-sm font-medium text-gray-700 dark:text-zinc-300">
+                  {conflict.company_name}
+                </p>
+                <p className="truncate text-xs text-gray-400 dark:text-zinc-500">
+                  {conflict.pipelines
+                    .map((p) => `${p.name} (${p.owner_name})`)
+                    .join(" · ")}
+                </p>
               </Link>
             ))}
           </AttentionGroup>

@@ -5,6 +5,7 @@ import PipelineFunnelChartOS from "@/components/charts/PipelineFunnelChartOS";
 import StageDistributionChartOS from "@/components/charts/StageDistributionChartOS";
 import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
 import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
+import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { useEffect } from "react";
 
@@ -31,7 +32,11 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data, isError } = trpc.list.b2b.homeSummary.useQuery(undefined, {
+  const {
+    data,
+    isError,
+    isLoading: isSummaryLoading,
+  } = trpc.list.b2b.homeSummary.useQuery(undefined, {
     enabled: !!sessionToken,
   });
 
@@ -73,6 +78,27 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
             Dashboard data could not be loaded. Please refresh the page.
           </div>
         )}
+
+        <HomeAttentionOS
+          attention={
+            data?.attention ?? {
+              totals: {
+                approvals: 0,
+                overdue_tasks: 0,
+                due_today_tasks: 0,
+                stale_leads: 0,
+                ownership_conflicts: 0,
+              },
+              approvals: [],
+              overdue_tasks: [],
+              due_today_tasks: [],
+              stale_leads: [],
+              ownership_conflicts: [],
+            }
+          }
+          staleLeadDays={data?.meta.stale_lead_days ?? 0}
+          isLoading={isSummaryLoading}
+        />
 
         {/* This week's trend + leads by stage */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">

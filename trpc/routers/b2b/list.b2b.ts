@@ -661,6 +661,7 @@ export const listB2B = {
       staleLeads,
       recentActions,
       recentPipelines,
+      activePipelinesForConflictCheck,
     ] = await Promise.all([
       opts.ctx.prisma.b2BAction.count({ where: approvalWhere }),
       opts.ctx.prisma.b2BAction.count({
@@ -748,7 +749,48 @@ export const listB2B = {
         orderBy: [{ updated_at: "desc" }],
         take: 12,
       }),
+      // Active pipelines within this actor's data_scope, for the ownership-conflict check below —
+      // two different owners both holding an active lead against the same company.
+      opts.ctx.prisma.b2BPipeline.findMany({
+        where: {
+          ...pipelineDataScopeWhere(opts.ctx.user),
+          stage: { notIn: [B2BStageEnum.CLOSED_WON, B2BStageEnum.CLOSED_LOST] },
+        },
+        select: {
+          id: true,
+          name: true,
+          company_id: true,
+          company: { select: { name: true } },
+          owner_id: true,
+          owner: { select: { full_name: true } },
+        },
+      }),
     ]);
+
+    const ownershipConflictsByCompany = new Map<
+      number,
+      {
+        company_id: number;
+        company_name: string;
+        pipelines: { id: number; name: string; owner_name: string }[];
+      }
+    >();
+    for (const entry of activePipelinesForConflictCheck) {
+      const bucket = ownershipConflictsByCompany.get(entry.company_id) ?? {
+        company_id: entry.company_id,
+        company_name: entry.company.name,
+        pipelines: [],
+      };
+      bucket.pipelines.push({
+        id: entry.id,
+        name: entry.name,
+        owner_name: entry.owner.full_name,
+      });
+      ownershipConflictsByCompany.set(entry.company_id, bucket);
+    }
+    const ownershipConflicts = [...ownershipConflictsByCompany.values()].filter(
+      (bucket) => new Set(bucket.pipelines.map((p) => p.owner_name)).size > 1
+    );
 
     const activity = [
       ...recentActions.map((entry) => {
@@ -809,10 +851,12 @@ export const listB2B = {
           overdue_tasks: overdueTaskCount,
           due_today_tasks: dueTodayTaskCount,
           stale_leads: staleLeadCount,
+          ownership_conflicts: ownershipConflicts.length,
         },
         approvals: approvalsWaiting.map(mapAction),
         overdue_tasks: overdueTasks.map(mapAction),
         due_today_tasks: dueTodayTasks.map(mapAction),
+        ownership_conflicts: ownershipConflicts.slice(0, 5),
         stale_leads: staleLeads
           .map((entry) => {
             const lastActivityAt =

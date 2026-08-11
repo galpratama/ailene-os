@@ -465,6 +465,7 @@ CREATE TABLE b2b_pipeline (
   project_end_month           DATE                              NULL,
   owner_id                    UUID                          NOT NULL,
   current_stage_reason_code   b2b_lost_reason_enum              NULL, -- why the lead is currently On Hold / Closed Lost
+  on_hold_review_date         DATE                              NULL, -- required when stage enters On Hold
   created_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );

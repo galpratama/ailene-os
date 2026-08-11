@@ -1,4 +1,4 @@
-import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
+import { STATUS_BAD_REQUEST, STATUS_FORBIDDEN, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
 import { actionDataScopeWhere, isOwnerWithinScope } from "@/trpc/utils/data_scope";
 import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
@@ -123,12 +123,16 @@ export const updateB2B = {
         stage: z.enum(B2BStageEnum).optional(),
         // Only recorded when `stage` moves into CLOSED_LOST/ON_HOLD (REASON_STAGES below) — ignored otherwise.
         reason_code: z.enum(B2BLostReasonEnum).optional(),
+        // Only recorded when `stage` moves into ON_HOLD, or corrected while already ON_HOLD — ignored otherwise.
+        on_hold_review_date: monthDate.nullable().optional(),
         probability: z.number().int().min(0).max(100).optional(),
         probability_status: z.enum(B2BProbabilityStatusEnum).optional(),
         project_value: z.number().nonnegative().optional(),
         project_start_month: monthDate.nullable().optional(),
         project_end_month: monthDate.nullable().optional(),
         owner_id: stringIsUUID().optional(),
+        // Required when owner_id actually changes the pipeline's owner — the reason recorded on the append-only OwnershipReassignment trail.
+        reassignment_reason: stringNotBlank().optional(),
       })
     )
     .mutation(async (opts) => {
@@ -137,6 +141,8 @@ export const updateB2B = {
         project_start_month,
         project_end_month,
         reason_code,
+        on_hold_review_date,
+        reassignment_reason,
         ...rest
       } = opts.input;
 
@@ -185,11 +191,45 @@ export const updateB2B = {
           stageChanged &&
           !entersReasonStage &&
           REASON_STAGES.includes(existing.stage);
-        // Correcting the reason on an already On Hold/Closed Lost lead — no history row, since nothing transitioned.
+        // Correcting the reason/review date on an already On Hold/Closed Lost lead — no history row, since nothing transitioned.
         const correctsReasonInPlace =
           !stageChanged &&
-          reason_code !== undefined &&
+          (reason_code !== undefined || on_hold_review_date !== undefined) &&
           REASON_STAGES.includes(existing.stage);
+
+        if (entersReasonStage && nextStage === "CLOSED_LOST" && !reason_code) {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "A lost reason is required when moving a lead to Closed Lost.",
+          });
+        }
+        if (
+          entersReasonStage &&
+          nextStage === "ON_HOLD" &&
+          !on_hold_review_date
+        ) {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "A review date is required when putting a lead on hold.",
+          });
+        }
+
+        // Owner reassignment: require a reason and record it on the append-only trail, mirroring
+        // the bulk offboarding reassignment in userdata/update.userdata.ts.
+        const ownerChanged =
+          rest.owner_id !== undefined && rest.owner_id !== existing.owner_id;
+        if (ownerChanged && opts.ctx.user.data_scope === "OWN") {
+          throw new TRPCError({
+            code: STATUS_FORBIDDEN,
+            message: "You can't reassign a lead to another owner.",
+          });
+        }
+        if (ownerChanged && !reassignment_reason) {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "A reason is required when reassigning a lead's owner.",
+          });
+        }
 
         const row = await tx.b2BPipeline.update({
           where: { id },
@@ -209,6 +249,12 @@ export const updateB2B = {
               current_stage_reason_code: reason_code ?? null,
             }),
             ...(leavesReasonStage && { current_stage_reason_code: null }),
+            ...((entersReasonStage || correctsReasonInPlace) && {
+              on_hold_review_date: on_hold_review_date
+                ? new Date(on_hold_review_date)
+                : null,
+            }),
+            ...(leavesReasonStage && { on_hold_review_date: null }),
           },
         });
 
@@ -220,6 +266,25 @@ export const updateB2B = {
               to_stage: nextStage,
               reason_code: entersReasonStage ? (reason_code ?? null) : null,
               changed_by_id: opts.ctx.user.id,
+            },
+          });
+        }
+
+        if (ownerChanged) {
+          const firstReassignment = await tx.ownershipReassignment.findFirst({
+            where: { entity_type: "B2B_PIPELINE", entity_id: id },
+            orderBy: { created_at: "asc" },
+          });
+          await tx.ownershipReassignment.create({
+            data: {
+              entity_type: "B2B_PIPELINE",
+              entity_id: id,
+              original_creator_id:
+                firstReassignment?.original_creator_id ?? existing.owner_id,
+              previous_owner_id: existing.owner_id,
+              new_owner_id: rest.owner_id!,
+              actor_id: opts.ctx.user.id,
+              reason: reassignment_reason!,
             },
           });
         }

@@ -4,6 +4,7 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
+import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
@@ -53,6 +54,13 @@ function toMonthInputValue(value: string | Date | null) {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}`;
 }
 
+function toDateInputValue(value: string | Date | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
 interface EditLeadFormOSProps {
   sessionToken: string;
   pipelineId: number | null;
@@ -84,6 +92,7 @@ export default function EditLeadFormOS({
   const [name, setName] = useState("");
   const [stage, setStage] = useState<B2BStageEnum>("LEAD_IDENTIFIED");
   const [reasonCode, setReasonCode] = useState<B2BLostReasonEnum | null>(null);
+  const [onHoldReviewDate, setOnHoldReviewDate] = useState("");
   const [probability, setProbability] = useState("");
   const [probabilityStatus, setProbabilityStatus] =
     useState<B2BProbabilityStatusEnum>("COLD");
@@ -91,6 +100,7 @@ export default function EditLeadFormOS({
   const [projectStartMonth, setProjectStartMonth] = useState("");
   const [projectEndMonth, setProjectEndMonth] = useState("");
   const [ownerId, setOwnerId] = useState("");
+  const [reassignmentReason, setReassignmentReason] = useState("");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -123,6 +133,8 @@ export default function EditLeadFormOS({
     setName(pipeline.name);
     setStage(pipeline.stage);
     setReasonCode(pipeline.current_stage_reason_code);
+    setOnHoldReviewDate(toDateInputValue(pipeline.on_hold_review_date));
+    setReassignmentReason("");
     setProbability(String(pipeline.probability));
     setProbabilityStatus(pipeline.probability_status);
     setProjectValue(String(Number(pipeline.project_value)));
@@ -183,6 +195,13 @@ export default function EditLeadFormOS({
     if (!industryId) return setError("Industry is required.");
     if (!ownerId) return setError("Owner is required.");
     if (pipeline == null) return;
+    if (stage === "CLOSED_LOST" && !reasonCode)
+      return setError("A lost reason is required when closing a lead as lost.");
+    if (stage === "ON_HOLD" && !onHoldReviewDate)
+      return setError("A review date is required when putting a lead on hold.");
+    const isReassigningOwner = ownerId !== pipeline.owner_id;
+    if (isReassigningOwner && !reassignmentReason.trim())
+      return setError("A reason is required when reassigning this lead's owner.");
 
     try {
       await Promise.all([
@@ -193,6 +212,8 @@ export default function EditLeadFormOS({
           reason_code: REASON_STAGES.has(stage)
             ? (reasonCode ?? undefined)
             : undefined,
+          on_hold_review_date:
+            stage === "ON_HOLD" ? onHoldReviewDate || null : undefined,
           probability: probability ? Number(probability) : undefined,
           probability_status: probabilityStatus,
           project_value: projectValue ? Number(projectValue) : undefined,
@@ -201,6 +222,9 @@ export default function EditLeadFormOS({
             : null,
           project_end_month: projectEndMonth ? `${projectEndMonth}-01` : null,
           owner_id: ownerId,
+          reassignment_reason: isReassigningOwner
+            ? reassignmentReason.trim()
+            : undefined,
         }),
         updateCompany.mutateAsync({
           id: pipeline.company_id,
@@ -335,10 +359,22 @@ export default function EditLeadFormOS({
               <AppSelect
                 selectId="edit-lead-reason"
                 label={stage === "CLOSED_LOST" ? "Lost Reason" : "Hold Reason"}
+                required
                 placeholder="Pick a reason"
                 value={reasonCode}
                 onChange={(v) => setReasonCode(v as B2BLostReasonEnum)}
                 options={reasonOptions}
+              />
+            )}
+
+            {stage === "ON_HOLD" && (
+              <AppInput
+                inputId="edit-lead-on-hold-review-date"
+                label="Review Date"
+                type="date"
+                required
+                value={onHoldReviewDate}
+                onChange={(e) => setOnHoldReviewDate(e.target.value)}
               />
             )}
 
@@ -387,6 +423,18 @@ export default function EditLeadFormOS({
                 value={ownerId}
                 onChange={(v) => setOwnerId((v as string) ?? "")}
                 options={ownerOptions}
+              />
+            )}
+
+            {!isOwnScoped && pipeline && ownerId !== pipeline.owner_id && (
+              <AppTextArea
+                textAreaId="edit-lead-reassignment-reason"
+                label="Reassignment Reason"
+                required
+                rows={2}
+                placeholder="Why is this lead moving to a new owner?"
+                value={reassignmentReason}
+                onChange={(e) => setReassignmentReason(e.target.value)}
               />
             )}
           </div>
