@@ -175,7 +175,7 @@ export default function QuotationsPageOS({
                     </td>
                     <td className="p-0">
                       <Link
-                        href={`/pricing?quotation_id=${quotation.id}`}
+                        href={`/quotations/${quotation.id}`}
                         className="flex items-center px-5 py-3.5 text-gray-600 dark:text-zinc-300"
                       >
                         {quotation.company_name} · {quotation.pipeline_name}
@@ -249,7 +249,7 @@ export default function QuotationsPageOS({
                           )}
                           Unduh
                         </AppButton>
-                        <Link href={`/pricing?quotation_id=${quotation.id}`}>
+                        <Link href={`/quotations/${quotation.id}`}>
                           <AppButton
                             type="button"
                             variant="outline"
