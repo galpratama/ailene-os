@@ -21,9 +21,12 @@ export default function HeroHomeBIZ() {
             Workshop AI + LMS dalam Satu Program
           </span>
           <h1 className="mt-6 max-w-150 text-[clamp(2.75rem,5vw,4.2rem)] leading-[0.98] font-medium tracking-[-0.055em] lg:mt-7">
-            AI yang benar-benar dipakai tim.
+            Solusi terbaik untuk transformasi AI tim kamu
           </h1>
-          <p className="mt-6 max-w-125 text-[15px] leading-[1.65] text-white/78">
+          <p className="mt-4 max-w-125 text-lg leading-[1.4] font-medium text-biz-lime sm:text-xl">
+            dari training sampai adopsi yang kelihatan hasilnya.
+          </p>
+          <p className="mt-4 max-w-125 text-[15px] leading-[1.65] text-white/78">
             Workshop dipandu langsung per divisi, progress-nya kelihatan di
             LMS, sampai tim presentasi solusinya sendiri di depan leadership.
           </p>
