@@ -1,4 +1,4 @@
-import type { InvoicePDFProps } from "@/components/pdf/InvoicePDF";
+import type { QuotationPDFProps } from "@/components/pdf/QuotationPDF";
 import {
   calculatePricing,
   MateriLevel,
@@ -35,9 +35,9 @@ export type QuotationForPdf = {
 };
 
 // Shared by the Pricing Calculator and the Quotations list so both produce identical PDFs.
-export function buildInvoicePDFPropsFromQuotation(
+export function buildQuotationPDFPropsFromQuotation(
   quotation: QuotationForPdf
-): InvoicePDFProps {
+): QuotationPDFProps {
   const days: PricingDay[] = quotation.line_items.map((item) => ({
     format: item.format.toLowerCase() as SessionFormat,
     sesi: item.sesi as 1 | 2 | 3,
@@ -61,8 +61,8 @@ export function buildInvoicePDFPropsFromQuotation(
 
   return {
     clientName: quotation.company_name,
-    invoiceNumber: `INV/${dayjs(quotation.created_at).format("YYYYMMDD")}/${String(quotation.id).padStart(4, "0")}v${quotation.version}`,
-    invoiceDate: dayjs().format("D MMMM YYYY"),
+    quotationNumber: `QUO/${dayjs(quotation.created_at).format("YYYYMMDD")}/${String(quotation.id).padStart(4, "0")}v${quotation.version}`,
+    quotationDate: dayjs().format("D MMMM YYYY"),
     days,
     materi,
     addons,
