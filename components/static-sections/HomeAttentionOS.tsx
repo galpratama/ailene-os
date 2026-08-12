@@ -1,9 +1,12 @@
 "use client";
 
 import PriorityLabel from "@/components/labels/PriorityLabel";
+import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
+import { getRupiahCurrency } from "@/lib/currency";
 import type {
   B2BActionPriorityEnum,
+  B2BQuotationStatusEnum,
   B2BStageEnum,
 } from "@prisma/client";
 import {
@@ -11,6 +14,7 @@ import {
   CheckCircle2,
   CircleAlert,
   Clock3,
+  FileText,
   SearchX,
   Users,
   type LucideIcon,
@@ -40,6 +44,16 @@ type OwnershipConflict = {
   company_id: number;
   company_name: string;
   pipelines: { id: number; name: string; owner_name: string }[];
+};
+
+type PendingQuotation = {
+  id: number;
+  pipeline_id: number;
+  pipeline_name: string;
+  company_name: string;
+  version: number;
+  status: B2BQuotationStatusEnum;
+  net_value: string | number;
 };
 
 function formatDueDate(value: string | Date | null) {
@@ -124,12 +138,14 @@ export default function HomeAttentionOS({
       due_today_tasks: number;
       stale_leads: number;
       ownership_conflicts: number;
+      quotations_pending: number;
     };
     approvals: AttentionAction[];
     overdue_tasks: AttentionAction[];
     due_today_tasks: AttentionAction[];
     stale_leads: StaleLead[];
     ownership_conflicts: OwnershipConflict[];
+    quotations_pending: PendingQuotation[];
   };
   staleLeadDays: number;
   isLoading: boolean;
@@ -139,7 +155,8 @@ export default function HomeAttentionOS({
     attention.totals.overdue_tasks +
     attention.totals.due_today_tasks +
     attention.totals.stale_leads +
-    attention.totals.ownership_conflicts;
+    attention.totals.ownership_conflicts +
+    attention.totals.quotations_pending;
 
   return (
     <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
@@ -163,7 +180,7 @@ export default function HomeAttentionOS({
             All clear
           </p>
           <p className="mt-0.5 text-xs text-gray-500">
-            No approvals, overdue tasks, due-today tasks, or stale leads.
+            No approvals, overdue tasks, due-today tasks, stale leads, or quotations.
           </p>
         </div>
       ) : (
@@ -226,6 +243,32 @@ export default function HomeAttentionOS({
                   </p>
                 </div>
                 <StageLabel stage={lead.stage} />
+              </Link>
+            ))}
+          </AttentionGroup>
+
+          <AttentionGroup
+            title="Quotations"
+            description="Your Needs Revision drafts, plus anything awaiting your Manager Review."
+            count={attention.totals.quotations_pending}
+            icon={FileText}
+            iconClass="text-ungu"
+          >
+            {attention.quotations_pending.map((quotation) => (
+              <Link
+                key={quotation.id}
+                href="/quotations"
+                className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-700 dark:text-zinc-300">
+                    {quotation.company_name} · {quotation.pipeline_name}
+                  </p>
+                  <p className="truncate text-xs text-gray-400 dark:text-zinc-500">
+                    v{quotation.version} · {getRupiahCurrency(Number(quotation.net_value))}
+                  </p>
+                </div>
+                <QuotationStatusLabel status={quotation.status} />
               </Link>
             ))}
           </AttentionGroup>

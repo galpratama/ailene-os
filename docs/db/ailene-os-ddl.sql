@@ -150,6 +150,54 @@ CREATE TYPE b2bm_status_enum AS ENUM (
   'no_show'
 );
 
+-- Enumeration for the b2b_quotations table (b2bq_*)
+
+CREATE TYPE b2bq_status_enum AS ENUM (
+  'draft',
+  'manager_review',
+  'needs_revision',
+  'approved',
+  'sent',
+  'accepted',
+  'rejected',
+  'expired'
+);
+
+CREATE TYPE b2bq_source_type_enum AS ENUM (
+  'package',
+  'custom'
+);
+
+-- Only set when source_type = 'package' — mirrors PRESETS in lib/pricing-b2b.ts ('blank' = custom, not a package).
+CREATE TYPE b2bq_package_enum AS ENUM (
+  'foundation',
+  'intensive',
+  'sprint'
+);
+
+CREATE TYPE b2bq_session_format_enum AS ENUM (
+  'offline',
+  'online'
+);
+
+CREATE TYPE b2bq_trainer_tier_enum AS ENUM (
+  'certified',
+  'specialist',
+  'lead'
+);
+
+CREATE TYPE b2bq_materi_level_enum AS ENUM (
+  'std',
+  'ringan',
+  'dalam'
+);
+
+CREATE TYPE b2bq_approval_decision_enum AS ENUM (
+  'approved',
+  'rejected',
+  'needs_revision'
+);
+
 -- Enumeration for the Trainer Pool tables
 
 CREATE TYPE trainer_level_enum AS ENUM (
@@ -573,6 +621,70 @@ CREATE TABLE b2b_meeting_attendees (
   meeting_id  INTEGER  NOT NULL,
   contact_id  INTEGER  NOT NULL,
   PRIMARY KEY (meeting_id, contact_id)
+);
+
+-- A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
+CREATE TABLE b2b_quotations (
+  id                    SERIAL                        PRIMARY KEY,
+  pipeline_id           INTEGER                       NOT NULL,
+  version               INTEGER                       NOT NULL,
+  is_current            BOOLEAN                       NOT NULL  DEFAULT TRUE,
+  status                b2bq_status_enum              NOT NULL  DEFAULT 'draft',
+  source_type           b2bq_source_type_enum         NOT NULL,
+  package_type          b2bq_package_enum                 NULL,
+  materi                b2bq_materi_level_enum        NOT NULL  DEFAULT 'std',
+  bd_pct                DECIMAL(5, 2)                 NOT NULL  DEFAULT 5,
+  dc_pct                DECIMAL(5, 2)                 NOT NULL  DEFAULT 0,
+  addon_assessment      BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  addon_klinik          BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  addon_klinik_sesi     INTEGER                       NOT NULL  DEFAULT 1,
+  addon_rekaman         BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  addon_sertifikat      BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  addon_sertifikat_qty  INTEGER                       NOT NULL  DEFAULT 0,
+  addon_perjalanan      BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  addon_perjalanan_rp   DECIMAL(15, 2)                NOT NULL  DEFAULT 0,
+  -- Client-facing figures — safe for BD/staff and for any export/PDF they can reach.
+  subtotal              DECIMAL(15, 2)                NOT NULL,
+  discount              DECIMAL(15, 2)                NOT NULL,
+  net_value             DECIMAL(15, 2)                NOT NULL,
+  invoice_amount        DECIMAL(15, 2)                NOT NULL,
+  pph_tax               DECIMAL(15, 2)                NOT NULL,
+  -- Internal-only figures — redact for BD/staff at the API layer (never just hidden client-side).
+  trainer_cost          DECIMAL(15, 2)                NOT NULL,
+  addons_cost           DECIMAL(15, 2)                NOT NULL,
+  bd_fee                DECIMAL(15, 2)                NOT NULL,
+  ops_fee               DECIMAL(15, 2)                NOT NULL,
+  amo_fee               DECIMAL(15, 2)                NOT NULL,
+  total_cost            DECIMAL(15, 2)                NOT NULL,
+  net_profit            DECIMAL(15, 2)                NOT NULL,
+  margin_pct            DECIMAL(5, 4)                 NOT NULL,
+  -- Computed at submit time: source_type = 'custom' or margin_pct below the still-provisional floor (MARGIN_FLOOR in lib/pricing-b2b.ts).
+  requires_review       BOOLEAN                       NOT NULL  DEFAULT FALSE,
+  created_by_id         UUID                          NOT NULL,
+  created_at            TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  updated_at            TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (pipeline_id, version)
+);
+
+-- One row per training day in a quotation — mirrors PricingDay in lib/pricing-b2b.ts.
+CREATE TABLE b2b_quotation_line_items (
+  id            SERIAL                          PRIMARY KEY,
+  quotation_id  INTEGER                         NOT NULL,
+  order_index   SMALLINT                        NOT NULL  DEFAULT 0,
+  format        b2bq_session_format_enum        NOT NULL,
+  sesi          SMALLINT                        NOT NULL,
+  peserta       INTEGER                         NOT NULL,
+  trainer       b2bq_trainer_tier_enum          NOT NULL
+);
+
+-- Append-only, mirrors b2b_pipeline_stage_history — one row per Manager Review decision.
+CREATE TABLE b2b_quotation_approvals (
+  id            SERIAL                            PRIMARY KEY,
+  quotation_id  INTEGER                           NOT NULL,
+  decision      b2bq_approval_decision_enum       NOT NULL,
+  reason        TEXT                                  NULL,
+  actor_id      UUID                              NOT NULL,
+  created_at    TIMESTAMPTZ                       NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Trainer Pool
@@ -1017,6 +1129,17 @@ ALTER TABLE b2b_meeting_attendees
   ADD FOREIGN KEY (meeting_id) REFERENCES b2b_meetings (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (contact_id) REFERENCES contacts (id)     ON DELETE CASCADE;
 
+ALTER TABLE b2b_quotations
+  ADD FOREIGN KEY (pipeline_id)   REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
+
+ALTER TABLE b2b_quotation_line_items
+  ADD FOREIGN KEY (quotation_id) REFERENCES b2b_quotations (id) ON DELETE CASCADE;
+
+ALTER TABLE b2b_quotation_approvals
+  ADD FOREIGN KEY (quotation_id) REFERENCES b2b_quotations (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (actor_id)     REFERENCES users (id);
+
 ALTER TABLE contact_organization_relationships
   ADD FOREIGN KEY (contact_id)      REFERENCES contacts (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (organization_id) REFERENCES b2b_company (id) ON DELETE CASCADE;
@@ -1198,6 +1321,11 @@ CREATE TRIGGER update_b2b_meetings_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER update_b2b_quotations_updated_at_trigger
+  BEFORE UPDATE ON b2b_quotations
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
 -- Trainer Pool
 
 CREATE TRIGGER update_trainers_updated_at_trigger
@@ -1306,6 +1434,11 @@ CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_his
 -- Meetings — first/second-held-meeting conversion lookups per pipeline, and calendar range queries.
 CREATE INDEX b2b_meetings_pipeline_id_idx ON b2b_meetings (pipeline_id);
 CREATE INDEX b2b_meetings_scheduled_at_idx ON b2b_meetings (scheduled_at);
+
+-- Quotations — per-pipeline lookups (current version, version history) and the Manager Review queue.
+CREATE INDEX b2b_quotations_pipeline_id_idx ON b2b_quotations (pipeline_id);
+CREATE INDEX b2b_quotations_status_idx ON b2b_quotations (status);
+CREATE INDEX b2b_quotation_approvals_quotation_id_idx ON b2b_quotation_approvals (quotation_id);
 
 -- Notifications — unread-feed lookup for the notification bell.
 CREATE INDEX notifications_user_id_idx ON notifications (user_id);

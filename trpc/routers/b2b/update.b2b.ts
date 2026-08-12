@@ -1,14 +1,21 @@
 import { pushMeetingToGoogleCalendar } from "@/lib/google-calendar";
+import { calculatePricing } from "@/lib/pricing-b2b";
 import { STATUS_BAD_REQUEST, STATUS_FORBIDDEN, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
 import {
   actionDataScopeWhere,
   isOwnerWithinScope,
   meetingDataScopeWhere,
+  quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
 import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
 import { normalizeOrgName } from "@/trpc/utils/organization_dedupe";
 import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
+import {
+  quotationInputShape,
+  requirePackageType,
+} from "@/trpc/routers/b2b/create.b2b";
+import { computeRequiresReview, toPricingState } from "@/trpc/utils/quotation";
 import {
   numberIsID,
   numberIsPosInt,
@@ -22,6 +29,8 @@ import {
   B2BLostReasonEnum,
   B2BMeetingStatusEnum,
   B2BProbabilityStatusEnum,
+  B2BQuotationApprovalDecisionEnum,
+  B2BQuotationStatusEnum,
   B2BStageEnum,
   OrganizationStatusEnum,
 } from "@prisma/client";
@@ -428,6 +437,211 @@ export const updateB2B = {
       return {
         code: STATUS_OK,
         message: "Meeting updated",
+      };
+    }),
+
+  // Full re-save of a Draft/Needs Revision quotation, same shape as create.b2b.quotation.
+  quotation: administratorProcedure
+    .input(requirePackageType(quotationInputShape.extend({ id: numberIsID() })))
+    .mutation(async (opts) => {
+      const { id, days, ...rest } = opts.input;
+
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const existing = await tx.b2BQuotation.findFirst({
+          where: { id, ...quotationDataScopeWhere(opts.ctx.user) },
+          select: { status: true },
+        });
+        if (!existing) {
+          throw readFailedNotFound("quotation");
+        }
+        if (existing.status !== "DRAFT" && existing.status !== "NEEDS_REVISION") {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "Only a Draft or Needs Revision quotation can be edited.",
+          });
+        }
+
+        const result = calculatePricing(toPricingState({ ...rest, days }));
+        const requiresReview = computeRequiresReview(
+          rest.source_type,
+          result.margin
+        );
+
+        await tx.b2BQuotation.update({
+          where: { id },
+          data: {
+            source_type: rest.source_type,
+            package_type: rest.package_type ?? null,
+            materi: rest.materi,
+            bd_pct: rest.bd_pct,
+            dc_pct: rest.dc_pct,
+            addon_assessment: rest.addon_assessment,
+            addon_klinik: rest.addon_klinik,
+            addon_klinik_sesi: rest.addon_klinik_sesi,
+            addon_rekaman: rest.addon_rekaman,
+            addon_sertifikat: rest.addon_sertifikat,
+            addon_sertifikat_qty: rest.addon_sertifikat_qty,
+            addon_perjalanan: rest.addon_perjalanan,
+            addon_perjalanan_rp: rest.addon_perjalanan_rp,
+            subtotal: result.subtotal,
+            discount: result.discount,
+            net_value: result.netValue,
+            invoice_amount: result.invoice,
+            pph_tax: result.pphTax,
+            trainer_cost: result.trainerCost,
+            addons_cost: result.addonsCost,
+            bd_fee: result.bdFee,
+            ops_fee: result.opsFee,
+            amo_fee: result.amoFee,
+            total_cost: result.totalCost,
+            net_profit: result.genesis,
+            margin_pct: result.margin,
+            requires_review: requiresReview,
+          },
+        });
+
+        await tx.b2BQuotationLineItem.deleteMany({ where: { quotation_id: id } });
+        await tx.b2BQuotationLineItem.createMany({
+          data: days.map((day, index) => ({
+            quotation_id: id,
+            order_index: index,
+            format: day.format,
+            sesi: day.sesi,
+            peserta: day.peserta,
+            trainer: day.trainer,
+          })),
+        });
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Quotation updated",
+      };
+    }),
+
+  // Draft/Needs Revision -> Manager Review, or straight to Approved if it doesn't need review.
+  submitQuotation: administratorProcedure
+    .input(z.object({ id: numberIsID() }))
+    .mutation(async (opts) => {
+      const existing = await opts.ctx.prisma.b2BQuotation.findFirst({
+        where: { id: opts.input.id, ...quotationDataScopeWhere(opts.ctx.user) },
+        select: { status: true, requires_review: true },
+      });
+      if (!existing) {
+        throw readFailedNotFound("quotation");
+      }
+      if (existing.status !== "DRAFT" && existing.status !== "NEEDS_REVISION") {
+        throw new TRPCError({
+          code: STATUS_BAD_REQUEST,
+          message: "Only a Draft or Needs Revision quotation can be submitted.",
+        });
+      }
+
+      const nextStatus: B2BQuotationStatusEnum = existing.requires_review
+        ? "MANAGER_REVIEW"
+        : "APPROVED";
+      await opts.ctx.prisma.b2BQuotation.update({
+        where: { id: opts.input.id },
+        data: { status: nextStatus },
+      });
+
+      return {
+        code: STATUS_OK,
+        message:
+          nextStatus === "APPROVED"
+            ? "Quotation auto-approved"
+            : "Quotation sent for manager review",
+      };
+    }),
+
+  // Manager Review decision — the only path that writes a B2BQuotationApproval row.
+  decideQuotation: roleBasedProcedure(["Manager", "Administrator", "Super Admin"])
+    .input(
+      z.object({
+        id: numberIsID(),
+        decision: z.enum(B2BQuotationApprovalDecisionEnum),
+        reason: stringNotBlank().optional(),
+      })
+    )
+    .mutation(async (opts) => {
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const existing = await tx.b2BQuotation.findFirst({
+          where: { id: opts.input.id, ...quotationDataScopeWhere(opts.ctx.user) },
+          select: { status: true },
+        });
+        if (!existing) {
+          throw readFailedNotFound("quotation");
+        }
+        if (existing.status !== "MANAGER_REVIEW") {
+          throw new TRPCError({
+            code: STATUS_BAD_REQUEST,
+            message: "Only a quotation in Manager Review can be decided.",
+          });
+        }
+
+        const nextStatus: B2BQuotationStatusEnum =
+          opts.input.decision === "APPROVED"
+            ? "APPROVED"
+            : opts.input.decision === "NEEDS_REVISION"
+              ? "NEEDS_REVISION"
+              : "REJECTED";
+
+        await tx.b2BQuotation.update({
+          where: { id: opts.input.id },
+          data: { status: nextStatus },
+        });
+        await tx.b2BQuotationApproval.create({
+          data: {
+            quotation_id: opts.input.id,
+            decision: opts.input.decision,
+            reason: opts.input.reason,
+            actor_id: opts.ctx.user.id,
+          },
+        });
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Decision recorded",
+      };
+    }),
+
+  // Post-approval client-facing lifecycle: Approved -> Sent -> Accepted/Rejected/Expired.
+  updateQuotationOutcome: administratorProcedure
+    .input(
+      z.object({
+        id: numberIsID(),
+        status: z.enum(["SENT", "ACCEPTED", "REJECTED", "EXPIRED"]),
+      })
+    )
+    .mutation(async (opts) => {
+      const existing = await opts.ctx.prisma.b2BQuotation.findFirst({
+        where: { id: opts.input.id, ...quotationDataScopeWhere(opts.ctx.user) },
+        select: { status: true },
+      });
+      if (!existing) {
+        throw readFailedNotFound("quotation");
+      }
+
+      const legalTransitions: Record<string, string[]> = {
+        APPROVED: ["SENT"],
+        SENT: ["ACCEPTED", "REJECTED", "EXPIRED"],
+      };
+      if (!legalTransitions[existing.status]?.includes(opts.input.status)) {
+        throw new TRPCError({
+          code: STATUS_BAD_REQUEST,
+          message: `Cannot move a quotation from ${existing.status} to ${opts.input.status}.`,
+        });
+      }
+
+      await opts.ctx.prisma.b2BQuotation.update({
+        where: { id: opts.input.id },
+        data: { status: opts.input.status },
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Quotation status updated",
       };
     }),
 

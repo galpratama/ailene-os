@@ -194,6 +194,68 @@ enum B2BMeetingStatusEnum {
   @@map("b2bm_status_enum")
 }
 
+// Enumeration for the B2BQuotation model (b2bq_*)
+
+enum B2BQuotationStatusEnum {
+  DRAFT          @map("draft")
+  MANAGER_REVIEW @map("manager_review")
+  NEEDS_REVISION @map("needs_revision")
+  APPROVED       @map("approved")
+  SENT           @map("sent")
+  ACCEPTED       @map("accepted")
+  REJECTED       @map("rejected")
+  EXPIRED        @map("expired")
+
+  @@map("b2bq_status_enum")
+}
+
+enum B2BQuotationSourceTypeEnum {
+  PACKAGE @map("package")
+  CUSTOM  @map("custom")
+
+  @@map("b2bq_source_type_enum")
+}
+
+// Only set when source_type = PACKAGE — mirrors PRESETS in lib/pricing-b2b.ts ("blank" = CUSTOM, not a package).
+enum B2BQuotationPackageEnum {
+  FOUNDATION @map("foundation")
+  INTENSIVE  @map("intensive")
+  SPRINT     @map("sprint")
+
+  @@map("b2bq_package_enum")
+}
+
+enum B2BQuotationSessionFormatEnum {
+  OFFLINE @map("offline")
+  ONLINE  @map("online")
+
+  @@map("b2bq_session_format_enum")
+}
+
+enum B2BQuotationTrainerTierEnum {
+  CERTIFIED  @map("certified")
+  SPECIALIST @map("specialist")
+  LEAD       @map("lead")
+
+  @@map("b2bq_trainer_tier_enum")
+}
+
+enum B2BQuotationMateriLevelEnum {
+  STD    @map("std")
+  RINGAN @map("ringan")
+  DALAM  @map("dalam")
+
+  @@map("b2bq_materi_level_enum")
+}
+
+enum B2BQuotationApprovalDecisionEnum {
+  APPROVED       @map("approved")
+  REJECTED       @map("rejected")
+  NEEDS_REVISION @map("needs_revision")
+
+  @@map("b2bq_approval_decision_enum")
+}
+
 // Enumeration for the TrainerPool models (trainer_*, trnsc_*, trncert_*, trna_*)
 
 enum TrainerLevelEnum {
@@ -499,6 +561,8 @@ model User {
   meetings_created                B2BMeeting[]                  @relation("B2BMeetingCreatedBy")
   notifications                   Notification[]
   google_calendar_connection      GoogleCalendarConnection?
+  quotations_created              B2BQuotation[]                @relation("B2BQuotationCreatedBy")
+  quotation_approvals             B2BQuotationApproval[]        @relation("B2BQuotationApprovalActor")
 
   @@map("users")
 }
@@ -704,6 +768,7 @@ model B2BPipeline {
   updated_at                DateTime                  @default(now()) @updatedAt @db.Timestamptz()
   actions                   B2BAction[]
   meetings                  B2BMeeting[]
+  quotations                B2BQuotation[]
   stage_history             B2BPipelineStageHistory[]
   lms_projects              LmsProject[]
 
@@ -786,6 +851,84 @@ model B2BMeetingAttendee {
 
   @@id([meeting_id, contact_id])
   @@map("b2b_meeting_attendees")
+}
+
+// A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
+model B2BQuotation {
+  id                   Int                         @id @default(autoincrement())
+  pipeline             B2BPipeline                 @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline_id          Int
+  version              Int
+  is_current           Boolean                     @default(true)
+  status               B2BQuotationStatusEnum      @default(DRAFT)
+  source_type          B2BQuotationSourceTypeEnum
+  package_type         B2BQuotationPackageEnum?
+  materi               B2BQuotationMateriLevelEnum @default(STD)
+  bd_pct               Decimal                     @default(5) @db.Decimal(5, 2)
+  dc_pct               Decimal                     @default(0) @db.Decimal(5, 2)
+  addon_assessment     Boolean                     @default(false)
+  addon_klinik         Boolean                     @default(false)
+  addon_klinik_sesi    Int                         @default(1)
+  addon_rekaman        Boolean                     @default(false)
+  addon_sertifikat     Boolean                     @default(false)
+  addon_sertifikat_qty Int                         @default(0)
+  addon_perjalanan     Boolean                     @default(false)
+  addon_perjalanan_rp  Decimal                     @default(0) @db.Decimal(15, 2)
+  // Client-facing figures — safe for BD/staff and for any export/PDF they can reach.
+  subtotal             Decimal                     @db.Decimal(15, 2)
+  discount             Decimal                     @db.Decimal(15, 2)
+  net_value            Decimal                     @db.Decimal(15, 2)
+  invoice_amount       Decimal                     @db.Decimal(15, 2)
+  pph_tax              Decimal                     @db.Decimal(15, 2)
+  // Internal-only figures — redact for BD/staff at the API layer (never just hidden client-side).
+  trainer_cost         Decimal                     @db.Decimal(15, 2)
+  addons_cost          Decimal                     @db.Decimal(15, 2)
+  bd_fee               Decimal                     @db.Decimal(15, 2)
+  ops_fee              Decimal                     @db.Decimal(15, 2)
+  amo_fee              Decimal                     @db.Decimal(15, 2)
+  total_cost           Decimal                     @db.Decimal(15, 2)
+  net_profit           Decimal                     @db.Decimal(15, 2)
+  margin_pct           Decimal                     @db.Decimal(5, 4)
+  // Computed at submit time: source_type = CUSTOM or margin_pct below the still-provisional floor (MARGIN_FLOOR in lib/pricing-b2b.ts).
+  requires_review      Boolean                     @default(false)
+  created_by           User                        @relation("B2BQuotationCreatedBy", fields: [created_by_id], references: [id])
+  created_by_id        String                      @db.Uuid
+  created_at           DateTime                    @default(now()) @db.Timestamptz()
+  updated_at           DateTime                    @default(now()) @updatedAt @db.Timestamptz()
+  line_items           B2BQuotationLineItem[]
+  approvals            B2BQuotationApproval[]
+
+  @@unique([pipeline_id, version])
+  @@map("b2b_quotations")
+}
+
+// One row per training day in a quotation — mirrors PricingDay in lib/pricing-b2b.ts.
+model B2BQuotationLineItem {
+  id           Int                           @id @default(autoincrement())
+  quotation    B2BQuotation                  @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  quotation_id Int
+  order_index  Int                           @default(0) @db.SmallInt
+  format       B2BQuotationSessionFormatEnum
+  sesi         Int                           @db.SmallInt
+  peserta      Int
+  trainer      B2BQuotationTrainerTierEnum
+
+  @@map("b2b_quotation_line_items")
+}
+
+// Append-only, mirrors B2BPipelineStageHistory — one row per Manager Review decision.
+model B2BQuotationApproval {
+  id           Int                              @id @default(autoincrement())
+  quotation    B2BQuotation                     @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  quotation_id Int
+  decision     B2BQuotationApprovalDecisionEnum
+  reason       String?                          @db.Text
+  actor        User                             @relation("B2BQuotationApprovalActor", fields: [actor_id], references: [id])
+  actor_id     String                           @db.Uuid
+  created_at   DateTime                         @default(now()) @db.Timestamptz()
+
+  @@index([quotation_id])
+  @@map("b2b_quotation_approvals")
 }
 
 // Trainer Pool

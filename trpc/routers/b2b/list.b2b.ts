@@ -5,9 +5,11 @@ import {
   actionDataScopeWhere,
   meetingDataScopeWhere,
   pipelineDataScopeWhere,
+  quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
 import { findOrganizationDuplicates } from "@/trpc/utils/organization_dedupe";
+import { canViewQuotationInternals } from "@/trpc/utils/quotation";
 import {
   numberIsID,
   numberIsPosInt,
@@ -20,6 +22,7 @@ import {
   B2BLostReasonEnum,
   B2BMeetingStatusEnum,
   B2BProbabilityStatusEnum,
+  B2BQuotationStatusEnum,
   B2BStageEnum,
   DuplicateReviewStatusEnum,
   OrganizationStatusEnum,
@@ -608,6 +611,129 @@ export const listB2B = {
       };
     }),
 
+  quotations: administratorProcedure
+    .input(
+      z.object({
+        pipeline_id: numberIsID().optional(),
+        status: z.enum(B2BQuotationStatusEnum).optional(),
+        page: numberIsPosInt().optional(),
+        page_size: numberIsPosInt().optional(),
+      })
+    )
+    .query(async (opts) => {
+      const canViewInternals = canViewQuotationInternals(opts.ctx.user);
+      const whereClause: Prisma.B2BQuotationWhereInput = {
+        pipeline_id: opts.input.pipeline_id,
+        status: opts.input.status,
+        ...quotationDataScopeWhere(opts.ctx.user),
+      };
+
+      const paging = calculatePage(
+        opts.input,
+        await opts.ctx.prisma.b2BQuotation.aggregate({
+          _count: true,
+          where: whereClause,
+        })
+      );
+
+      const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
+        include: {
+          pipeline: {
+            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+          },
+          created_by: { select: { id: true, full_name: true } },
+        },
+        orderBy: [{ created_at: "desc" }],
+        where: whereClause,
+        skip: paging.prisma.skip,
+        take: paging.prisma.take,
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        list: quotationList.map((entry) => ({
+          id: entry.id,
+          pipeline_id: entry.pipeline.id,
+          pipeline_name: entry.pipeline.name,
+          company_id: entry.pipeline.company.id,
+          company_name: entry.pipeline.company.name,
+          version: entry.version,
+          is_current: entry.is_current,
+          status: entry.status,
+          source_type: entry.source_type,
+          package_type: entry.package_type,
+          net_value: entry.net_value,
+          invoice_amount: entry.invoice_amount,
+          requires_review: entry.requires_review,
+          created_by_name: entry.created_by.full_name,
+          created_at: entry.created_at,
+          ...(canViewInternals && { margin_pct: entry.margin_pct }),
+        })),
+        metapaging: paging.metapaging,
+      };
+    }),
+
+  // Manager Review queue — every quotation currently awaiting a decision.
+  quotationApprovalQueue: roleBasedProcedure([
+    "Manager",
+    "Administrator",
+    "Super Admin",
+  ])
+    .input(
+      z.object({
+        page: numberIsPosInt().optional(),
+        page_size: numberIsPosInt().optional(),
+      })
+    )
+    .query(async (opts) => {
+      const whereClause: Prisma.B2BQuotationWhereInput = {
+        status: "MANAGER_REVIEW",
+        ...quotationDataScopeWhere(opts.ctx.user),
+      };
+
+      const paging = calculatePage(
+        opts.input,
+        await opts.ctx.prisma.b2BQuotation.aggregate({
+          _count: true,
+          where: whereClause,
+        })
+      );
+
+      const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
+        include: {
+          pipeline: {
+            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+          },
+          created_by: { select: { id: true, full_name: true } },
+        },
+        orderBy: [{ created_at: "asc" }],
+        where: whereClause,
+        skip: paging.prisma.skip,
+        take: paging.prisma.take,
+      });
+
+      return {
+        code: STATUS_OK,
+        message: "Success",
+        list: quotationList.map((entry) => ({
+          id: entry.id,
+          pipeline_id: entry.pipeline.id,
+          pipeline_name: entry.pipeline.name,
+          company_id: entry.pipeline.company.id,
+          company_name: entry.pipeline.company.name,
+          version: entry.version,
+          source_type: entry.source_type,
+          package_type: entry.package_type,
+          net_value: entry.net_value,
+          margin_pct: entry.margin_pct,
+          created_by_name: entry.created_by.full_name,
+          created_at: entry.created_at,
+        })),
+        metapaging: paging.metapaging,
+      };
+    }),
+
   calendar: administratorProcedure
     .input(
       z.object({
@@ -789,6 +915,14 @@ export const listB2B = {
       },
     };
 
+    // This actor's own kicked-back drafts, plus (for reviewers) the Manager Review queue.
+    const quotationsPendingWhere: Prisma.B2BQuotationWhereInput = {
+      OR: [
+        { status: "NEEDS_REVISION", created_by_id: userId },
+        { status: "MANAGER_REVIEW", ...quotationDataScopeWhere(opts.ctx.user) },
+      ],
+    };
+
     const [
       pendingApprovals,
       myTasksToday,
@@ -804,6 +938,8 @@ export const listB2B = {
       recentActions,
       recentPipelines,
       activePipelinesForConflictCheck,
+      quotationsPendingCount,
+      quotationsPending,
     ] = await Promise.all([
       opts.ctx.prisma.b2BAction.count({ where: approvalWhere }),
       opts.ctx.prisma.b2BAction.count({
@@ -907,6 +1043,17 @@ export const listB2B = {
           owner: { select: { full_name: true } },
         },
       }),
+      opts.ctx.prisma.b2BQuotation.count({ where: quotationsPendingWhere }),
+      opts.ctx.prisma.b2BQuotation.findMany({
+        where: quotationsPendingWhere,
+        include: {
+          pipeline: {
+            select: { id: true, name: true, company: { select: { name: true } } },
+          },
+        },
+        orderBy: [{ created_at: "asc" }],
+        take: 5,
+      }),
     ]);
 
     const ownershipConflictsByCompany = new Map<
@@ -994,11 +1141,21 @@ export const listB2B = {
           due_today_tasks: dueTodayTaskCount,
           stale_leads: staleLeadCount,
           ownership_conflicts: ownershipConflicts.length,
+          quotations_pending: quotationsPendingCount,
         },
         approvals: approvalsWaiting.map(mapAction),
         overdue_tasks: overdueTasks.map(mapAction),
         due_today_tasks: dueTodayTasks.map(mapAction),
         ownership_conflicts: ownershipConflicts.slice(0, 5),
+        quotations_pending: quotationsPending.map((entry) => ({
+          id: entry.id,
+          pipeline_id: entry.pipeline_id,
+          pipeline_name: entry.pipeline.name,
+          company_name: entry.pipeline.company.name,
+          version: entry.version,
+          status: entry.status,
+          net_value: entry.net_value,
+        })),
         stale_leads: staleLeads
           .map((entry) => {
             const lastActivityAt =

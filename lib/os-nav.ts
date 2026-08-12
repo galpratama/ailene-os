@@ -3,6 +3,7 @@ import {
   Calculator,
   Calendar,
   ChartNoAxesCombined,
+  FileText,
   FolderKanban,
   GraduationCap,
   LayoutGrid,
@@ -57,6 +58,20 @@ export const osMainNav: OSNavItem[] = [
     group: "Business Development",
   },
   {
+    href: "/quotations",
+    label: "Quotations",
+    icon: FileText,
+    segment: "B2B",
+    group: "Business Development",
+  },
+  {
+    href: "/pricing",
+    label: "Pricing Calculator",
+    icon: Calculator,
+    segment: "B2B",
+    group: "Business Development",
+  },
+  {
     href: "/lms/projects",
     label: "Corporate Training",
     icon: FolderKanban,
@@ -88,6 +103,5 @@ export const osMainNav: OSNavItem[] = [
 ];
 
 export const osToolsNav: OSNavItem[] = [
-  { href: "/pricing", label: "Pricing Calculator", icon: Calculator, segment: "B2B" },
   { href: "/settings", label: "Settings", icon: Settings, segment: "B2B" },
 ];

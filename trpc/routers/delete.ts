@@ -17,6 +17,7 @@ export const deleteRouter = createTRPCRouter({
     pipeline: deleteB2B.pipeline,
     action: deleteB2B.action,
     meeting: deleteB2B.meeting,
+    quotation: deleteB2B.quotation,
   },
   trainerPool: {
     trainer: deleteTrainerPool.trainer,

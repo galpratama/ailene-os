@@ -88,12 +88,14 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
                 due_today_tasks: 0,
                 stale_leads: 0,
                 ownership_conflicts: 0,
+                quotations_pending: 0,
               },
               approvals: [],
               overdue_tasks: [],
               due_today_tasks: [],
               stale_leads: [],
               ownership_conflicts: [],
+              quotations_pending: [],
             }
           }
           staleLeadDays={data?.meta.stale_lead_days ?? 0}

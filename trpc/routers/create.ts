@@ -18,6 +18,7 @@ export const createRouter = createTRPCRouter({
     pipeline: createB2B.pipeline,
     action: createB2B.action,
     meeting: createB2B.meeting,
+    quotation: createB2B.quotation,
     contact: createB2B.contact,
     organizationDuplicateReview: createB2B.organizationDuplicateReview,
   },

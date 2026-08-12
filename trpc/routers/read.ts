@@ -17,6 +17,7 @@ export const readRouter = createTRPCRouter({
     pipeline: readB2B.pipeline,
     action: readB2B.action,
     meeting: readB2B.meeting,
+    quotation: readB2B.quotation,
     contact: readB2B.contact,
   },
   trainerPool: {

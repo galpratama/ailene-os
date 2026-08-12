@@ -3,11 +3,11 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
-import AppSelect from "@/components/fields/AppSelect";
+import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import Label from "@/components/labels/Label";
+import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { getRupiahCurrency } from "@/lib/currency";
-import { setSessionToken, trpc } from "@/trpc/client";
 import {
   ADDON_PRICE,
   CAP,
@@ -26,22 +26,32 @@ import {
   defaultAddons,
   uniquePax,
 } from "@/lib/pricing-b2b";
-import {
-  downloadInvoicePDF,
-  InvoicePDFProps,
-} from "@/components/pdf/InvoicePDF";
-import dayjs from "dayjs";
+import { setSessionToken, trpc } from "@/trpc/client";
+import type {
+  B2BQuotationPackageEnum,
+  B2BQuotationSourceTypeEnum,
+} from "@prisma/client";
 import {
   Check,
   CircleAlert,
   CircleCheck,
   CircleX,
   Copy,
-  Download,
+  Loader2,
   Plus,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
+
+const REVIEW_ROLES = ["Manager", "Administrator", "Super Admin"];
+
+const PACKAGE_BY_PRESET: Record<string, B2BQuotationPackageEnum> = {
+  foundation: "FOUNDATION",
+  intensive: "INTENSIVE",
+  sprint: "SPRINT",
+};
 
 type LocalDay = PricingDay & { id: number };
 type PresetKey = keyof typeof PRESETS;
@@ -125,18 +135,21 @@ function ChoiceCard({
   label,
   sub,
   active,
+  disabled,
   onClick,
 }: {
   label: string;
   sub: string;
   active: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors ${
+      className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
         active
           ? "border-claude bg-claude/10"
           : "border-gray-300 bg-gray-50 hover:border-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-zinc-600"
@@ -269,35 +282,6 @@ function CopyButton({
   );
 }
 
-function DownloadInvoiceButton({
-  getProps,
-  getFilename,
-}: {
-  getProps: () => InvoicePDFProps;
-  getFilename: () => string;
-}) {
-  const [downloading, setDownloading] = useState(false);
-
-  return (
-    <AppButton
-      variant="primary"
-      size="md"
-      className="w-full justify-center"
-      disabled={downloading}
-      onClick={async () => {
-        setDownloading(true);
-        try {
-          await downloadInvoicePDF(getProps(), getFilename());
-        } finally {
-          setDownloading(false);
-        }
-      }}
-    >
-      <Download size={14} />
-      {downloading ? "Menyiapkan..." : "Download Invoice (PDF)"}
-    </AppButton>
-  );
-}
 
 export default function PricingCalculatorPageOS({
   sessionToken,
@@ -314,6 +298,42 @@ export default function PricingCalculatorPageOS({
 
   const canViewCostDetails =
     !!sessionData && sessionData.user.role_name !== "Business Development";
+  const canDecide =
+    !!sessionData && REVIEW_ROLES.includes(sessionData.user.role_name);
+
+  const utils = trpc.useUtils();
+  // Deep-linked via ?pipeline_id= (new) or ?quotation_id= (existing), like /tasks?pipeline_id=.
+  const searchParams = useSearchParams();
+  const [quotationId, setQuotationId] = useState<number | null>(() => {
+    const linked = searchParams.get("quotation_id");
+    return linked ? Number(linked) : null;
+  });
+  const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
+    () => {
+      const linked = searchParams.get("pipeline_id");
+      return linked ? Number(linked) : null;
+    }
+  );
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const needsPipelinePicker = quotationId === null && selectedPipelineId === null;
+  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
+    { page: 1, page_size: 200 },
+    { enabled: !!sessionToken && needsPipelinePicker }
+  );
+  const pipelineOptions: AppSelectOption[] =
+    pipelineData?.list.map((p) => ({
+      value: p.id,
+      label: `${p.company_name} - ${p.name}`,
+    })) ?? [];
+
+  const { data: quotationData } = trpc.read.b2b.quotation.useQuery(
+    { id: quotationId ?? 0 },
+    { enabled: !!sessionToken && quotationId != null }
+  );
+  const quotation = quotationData?.quotation;
+  const isEditable =
+    !quotation || quotation.status === "DRAFT" || quotation.status === "NEEDS_REVISION";
 
   const [activePreset, setActivePreset] = useState<PresetKey>("blank");
   const [days, setDays] = useState<LocalDay[]>(() => withIds(PRESETS.blank));
@@ -321,7 +341,6 @@ export default function PricingCalculatorPageOS({
   const [addons, setAddons] = useState<PricingAddons>(defaultAddons());
   const [bdPct, setBdPct] = useState(5);
   const [dcPct, setDcPct] = useState(0);
-  const [clientName, setClientName] = useState("");
 
   const result = useMemo(
     () => calculatePricing({ days, materi, addons, bdPct, dcPct }),
@@ -338,11 +357,154 @@ export default function PricingCalculatorPageOS({
     setAddons((a) => ({ ...a, sertifikatQty: pax }));
   }
 
-  const [invoiceNumber] = useState(
-    () =>
-      `INV/${dayjs().format("YYYYMMDD")}/${Math.floor(1000 + Math.random() * 9000)}`
+  // Seed the builder once per loaded quotation, adjusting state during render (this project's pattern).
+  const [seededQuotationId, setSeededQuotationId] = useState<number | null>(
+    null
   );
-  const invoiceDate = dayjs().format("D MMMM YYYY");
+  if (quotation && quotation.id !== seededQuotationId) {
+    setSeededQuotationId(quotation.id);
+    setDays(
+      withIds(
+        quotation.line_items.map((item) => ({
+          format: item.format.toLowerCase() as SessionFormat,
+          sesi: item.sesi as 1 | 2 | 3,
+          peserta: item.peserta,
+          trainer: item.trainer.toLowerCase() as TrainerTier,
+        }))
+      )
+    );
+    setMateri(quotation.materi.toLowerCase() as keyof typeof MN);
+    setAddons({
+      assessment: quotation.addon_assessment,
+      klinik: quotation.addon_klinik,
+      klinikSesi: quotation.addon_klinik_sesi,
+      rekaman: quotation.addon_rekaman,
+      sertifikat: quotation.addon_sertifikat,
+      sertifikatQty: quotation.addon_sertifikat_qty,
+      perjalanan: quotation.addon_perjalanan,
+      perjalananRp: Number(quotation.addon_perjalanan_rp),
+    });
+    setBdPct(Number(quotation.bd_pct));
+    setDcPct(Number(quotation.dc_pct));
+    setActivePreset(
+      quotation.source_type === "CUSTOM"
+        ? "blank"
+        : ((quotation.package_type?.toLowerCase() ?? "blank") as PresetKey)
+    );
+  }
+
+  function invalidateQuotationQueries() {
+    utils.list.b2b.quotations.invalidate();
+    utils.list.b2b.quotationApprovalQueue.invalidate();
+    utils.list.b2b.homeSummary.invalidate();
+    if (quotationId != null) {
+      utils.read.b2b.quotation.invalidate({ id: quotationId });
+    }
+  }
+
+  const createQuotation = trpc.create.b2b.quotation.useMutation();
+  const updateQuotation = trpc.update.b2b.quotation.useMutation();
+  const submitQuotationMutation = trpc.update.b2b.submitQuotation.useMutation();
+  const outcomeQuotationMutation =
+    trpc.update.b2b.updateQuotationOutcome.useMutation({
+      onError: (err) => setSaveError(err.message),
+    });
+
+  function buildQuotationPayload() {
+    const sourceType: B2BQuotationSourceTypeEnum =
+      activePreset === "blank" ? "CUSTOM" : "PACKAGE";
+    return {
+      source_type: sourceType,
+      package_type:
+        sourceType === "PACKAGE" ? PACKAGE_BY_PRESET[activePreset] : undefined,
+      materi: materi.toUpperCase() as "STD" | "RINGAN" | "DALAM",
+      bd_pct: bdPct,
+      dc_pct: dcPct,
+      addon_assessment: addons.assessment,
+      addon_klinik: addons.klinik,
+      addon_klinik_sesi: addons.klinikSesi,
+      addon_rekaman: addons.rekaman,
+      addon_sertifikat: addons.sertifikat,
+      addon_sertifikat_qty: addons.sertifikatQty,
+      addon_perjalanan: addons.perjalanan,
+      addon_perjalanan_rp: addons.perjalananRp,
+      days: days.map((d) => ({
+        format: d.format.toUpperCase() as "OFFLINE" | "ONLINE",
+        sesi: d.sesi,
+        peserta: d.peserta,
+        trainer: d.trainer.toUpperCase() as "CERTIFIED" | "SPECIALIST" | "LEAD",
+      })),
+    };
+  }
+
+  // Separate flags since Simpan Draft and Buat Quotation share the same underlying mutation.
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSubmittingQuotation, setIsSubmittingQuotation] = useState(false);
+
+  async function handleSaveDraft() {
+    setSaveError(null);
+    setIsSavingDraft(true);
+    try {
+      const payload = buildQuotationPayload();
+      if (quotationId != null) {
+        await updateQuotation.mutateAsync({ id: quotationId, ...payload });
+      } else {
+        if (!selectedPipelineId) {
+          setSaveError("Pilih lead untuk menyimpan ini sebagai Quotation.");
+          return;
+        }
+        const created = await createQuotation.mutateAsync({
+          pipeline_id: selectedPipelineId,
+          ...payload,
+        });
+        setQuotationId(created.id);
+      }
+      invalidateQuotationQueries();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Gagal menyimpan draft.");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }
+
+  async function handleSubmit() {
+    setSaveError(null);
+    setIsSubmittingQuotation(true);
+    try {
+      const payload = buildQuotationPayload();
+      let targetId = quotationId;
+      if (targetId != null) {
+        await updateQuotation.mutateAsync({ id: targetId, ...payload });
+      } else {
+        if (!selectedPipelineId) {
+          setSaveError("Pilih lead untuk menyimpan ini sebagai Quotation.");
+          return;
+        }
+        const created = await createQuotation.mutateAsync({
+          pipeline_id: selectedPipelineId,
+          ...payload,
+        });
+        targetId = created.id;
+        setQuotationId(created.id);
+      }
+      await submitQuotationMutation.mutateAsync({ id: targetId });
+      invalidateQuotationQueries();
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Gagal membuat quotation."
+      );
+    } finally {
+      setIsSubmittingQuotation(false);
+    }
+  }
+
+  function handleOutcome(status: "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED") {
+    if (!quotation) return;
+    outcomeQuotationMutation.mutate(
+      { id: quotation.id, status },
+      { onSuccess: invalidateQuotationQueries }
+    );
+  }
 
   function applyPreset(key: PresetKey) {
     setActivePreset(key);
@@ -432,13 +594,6 @@ export default function PricingCalculatorPageOS({
     });
   }
 
-  function invoiceFilename() {
-    const slug = clientName.trim()
-      ? clientName.trim().replace(/[^a-z0-9]+/gi, "-")
-      : "invoice";
-    return `${slug}-${invoiceNumber}.pdf`;
-  }
-
   function internalText() {
     let t = "RINGKASAN INTERNAL\n\n";
     t += `Nilai program : ${getRupiahCurrency(result.netValue)}\n`;
@@ -466,6 +621,40 @@ export default function PricingCalculatorPageOS({
         description="Susun penawaran program AI per hari. Harga, biaya, dan net margin dihitung langsung."
       />
 
+      {quotation ? (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-gray-300 bg-card-bg px-4 py-3 dark:border-zinc-700">
+          <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+            {quotation.company_name} · {quotation.pipeline_name}
+          </span>
+          <span className="text-xs text-gray-400">v{quotation.version}</span>
+          <QuotationStatusLabel status={quotation.status} />
+          {!isEditable && (
+            <span className="text-xs text-gray-400 dark:text-zinc-500">
+              Sudah tidak bisa diubah — versi ini terkunci.
+            </span>
+          )}
+        </div>
+      ) : (
+        needsPipelinePicker && (
+          <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+            <AppSelect
+              selectId="quotation-pipeline-picker"
+              label="Pilih Lead"
+              placeholder="Pilih lead supaya tersimpan sebagai Quotation"
+              value={selectedPipelineId}
+              onChange={(v) => setSelectedPipelineId(v as number | null)}
+              options={pipelineOptions}
+            />
+            <p className="mt-2 text-xs text-gray-400 dark:text-zinc-500">
+              Kosongkan kalau cuma mau hitung-hitungan cepat — ringkasan
+              tetap bisa disalin, tapi hasilnya tidak tersimpan, tidak masuk
+              approval Manager, dan PDF-nya baru bisa diunduh setelah
+              tersimpan sebagai Quotation (dari halaman Quotations).
+            </p>
+          </div>
+        )
+      )}
+
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
         {/* Left: builder */}
         <div className="flex min-w-0 flex-col gap-4">
@@ -477,6 +666,7 @@ export default function PricingCalculatorPageOS({
                   label={p.label}
                   sub={p.sub}
                   active={activePreset === p.key}
+                  disabled={!isEditable}
                   onClick={() => applyPreset(p.key)}
                 />
               ))}
@@ -507,21 +697,23 @@ export default function PricingCalculatorPageOS({
                     <div className="flex rounded-md border border-gray-900/15 bg-white p-0.5 dark:border-white/10 dark:bg-zinc-900">
                       <button
                         type="button"
+                        disabled={!isEditable}
                         onClick={() =>
                           updateDay(d.id, {
                             format: "offline" as SessionFormat,
                           })
                         }
-                        className={segmentClass(d.format === "offline")}
+                        className={`${segmentClass(d.format === "offline")} disabled:cursor-not-allowed disabled:opacity-60`}
                       >
                         Offline
                       </button>
                       <button
                         type="button"
+                        disabled={!isEditable}
                         onClick={() =>
                           updateDay(d.id, { format: "online" as SessionFormat })
                         }
-                        className={segmentClass(d.format === "online")}
+                        className={`${segmentClass(d.format === "online")} disabled:cursor-not-allowed disabled:opacity-60`}
                       >
                         Online
                       </button>
@@ -529,7 +721,7 @@ export default function PricingCalculatorPageOS({
                     <span className="ml-auto font-mono text-sm font-bold text-gray-900 dark:text-zinc-100">
                       {getRupiahCurrency(dayPrice(d, materi))}
                     </span>
-                    {days.length > 1 && (
+                    {days.length > 1 && isEditable && (
                       <button
                         type="button"
                         onClick={() => removeDay(d.id)}
@@ -546,6 +738,7 @@ export default function PricingCalculatorPageOS({
                       label="Durasi"
                       placeholder="Pilih durasi"
                       value={d.sesi}
+                      disabled={!isEditable}
                       options={sesiOptions}
                       onChange={(v) =>
                         updateDay(d.id, { sesi: Number(v) as 1 | 2 | 3 })
@@ -555,6 +748,7 @@ export default function PricingCalculatorPageOS({
                       inputId={`day-${d.id}-peserta`}
                       label="Peserta"
                       value={String(d.peserta)}
+                      disabled={!isEditable}
                       onValueChange={(v) =>
                         updateDay(d.id, {
                           peserta: Math.max(1, parseInt(v || "1", 10)),
@@ -566,6 +760,7 @@ export default function PricingCalculatorPageOS({
                       label="Trainer"
                       placeholder="Pilih trainer"
                       value={d.trainer}
+                      disabled={!isEditable}
                       options={
                         canViewCostDetails
                           ? trainerOptions
@@ -579,13 +774,15 @@ export default function PricingCalculatorPageOS({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={addDay}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:border-claude hover:text-claude dark:border-zinc-700 dark:text-zinc-400"
-            >
-              <Plus size={14} /> Tambah hari
-            </button>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={addDay}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:border-claude hover:text-claude dark:border-zinc-700 dark:text-zinc-400"
+              >
+                <Plus size={14} /> Tambah hari
+              </button>
+            )}
           </Block>
 
           <Block
@@ -600,6 +797,7 @@ export default function PricingCalculatorPageOS({
                   label={m.label}
                   sub={m.sub}
                   active={materi === m.key}
+                  disabled={!isEditable}
                   onClick={() => setMateri(m.key)}
                 />
               ))}
@@ -627,10 +825,11 @@ export default function PricingCalculatorPageOS({
                 <input
                   type="checkbox"
                   checked={addons.assessment}
+                  disabled={!isEditable}
                   onChange={(e) =>
                     setAddons((a) => ({ ...a, assessment: e.target.checked }))
                   }
-                  className="size-4 shrink-0 accent-claude"
+                  className="size-4 shrink-0 accent-claude disabled:opacity-60"
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 dark:text-zinc-200">
@@ -652,10 +851,11 @@ export default function PricingCalculatorPageOS({
                 <input
                   type="checkbox"
                   checked={addons.klinik}
+                  disabled={!isEditable}
                   onChange={(e) =>
                     setAddons((a) => ({ ...a, klinik: e.target.checked }))
                   }
-                  className="size-4 shrink-0 accent-claude"
+                  className="size-4 shrink-0 accent-claude disabled:opacity-60"
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 dark:text-zinc-200">
@@ -668,6 +868,7 @@ export default function PricingCalculatorPageOS({
                 <AppNumberInput
                   inputId="addon-klinik-sesi"
                   value={String(addons.klinikSesi)}
+                  disabled={!isEditable}
                   onValueChange={(v) =>
                     setAddons((a) => ({
                       ...a,
@@ -689,10 +890,11 @@ export default function PricingCalculatorPageOS({
                 <input
                   type="checkbox"
                   checked={addons.rekaman}
+                  disabled={!isEditable}
                   onChange={(e) =>
                     setAddons((a) => ({ ...a, rekaman: e.target.checked }))
                   }
-                  className="size-4 shrink-0 accent-claude"
+                  className="size-4 shrink-0 accent-claude disabled:opacity-60"
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 dark:text-zinc-200">
@@ -714,10 +916,11 @@ export default function PricingCalculatorPageOS({
                 <input
                   type="checkbox"
                   checked={addons.sertifikat}
+                  disabled={!isEditable}
                   onChange={(e) =>
                     setAddons((a) => ({ ...a, sertifikat: e.target.checked }))
                   }
-                  className="size-4 shrink-0 accent-claude"
+                  className="size-4 shrink-0 accent-claude disabled:opacity-60"
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 dark:text-zinc-200">
@@ -730,6 +933,7 @@ export default function PricingCalculatorPageOS({
                 <AppNumberInput
                   inputId="addon-sertifikat-qty"
                   value={String(addons.sertifikatQty)}
+                  disabled={!isEditable}
                   onValueChange={(v) =>
                     setAddons((a) => ({
                       ...a,
@@ -750,10 +954,11 @@ export default function PricingCalculatorPageOS({
                 <input
                   type="checkbox"
                   checked={addons.perjalanan}
+                  disabled={!isEditable}
                   onChange={(e) =>
                     setAddons((a) => ({ ...a, perjalanan: e.target.checked }))
                   }
-                  className="size-4 shrink-0 accent-claude"
+                  className="size-4 shrink-0 accent-claude disabled:opacity-60"
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-gray-800 dark:text-zinc-200">
@@ -767,6 +972,7 @@ export default function PricingCalculatorPageOS({
                 <AppNumberInput
                   inputId="addon-perjalanan-rp"
                   value={String(addons.perjalananRp)}
+                  disabled={!isEditable}
                   onValueChange={(v) =>
                     setAddons((a) => ({
                       ...a,
@@ -793,6 +999,7 @@ export default function PricingCalculatorPageOS({
                 min={0}
                 max={25}
                 step={0.5}
+                disabled={!isEditable}
                 value={bdPct}
                 onChange={(e) =>
                   setBdPct(
@@ -807,6 +1014,7 @@ export default function PricingCalculatorPageOS({
                 min={0}
                 max={30}
                 step={1}
+                disabled={!isEditable}
                 value={dcPct}
                 onChange={(e) =>
                   setDcPct(
@@ -820,14 +1028,6 @@ export default function PricingCalculatorPageOS({
 
         {/* Right: live quote */}
         <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-6">
-          <AppInput
-            inputId="client-name"
-            label="Nama Klien / Perusahaan"
-            placeholder="PT Contoh Sejahtera"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-          />
-
           <div className="rounded-xl border border-gray-900 bg-gray-900 p-5 text-white dark:border-zinc-700 dark:bg-zinc-800">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
               Nilai program
@@ -1019,25 +1219,134 @@ export default function PricingCalculatorPageOS({
           </div>
 
           <div className="flex flex-col gap-2">
-            <DownloadInvoiceButton
-              getProps={() => ({
-                clientName,
-                invoiceNumber,
-                invoiceDate,
-                days,
-                materi,
-                addons,
-                dcPct,
-                result,
-              })}
-              getFilename={invoiceFilename}
-            />
             <CopyButton
               label="Salin ringkasan internal"
               getText={internalText}
               variant="outline"
             />
           </div>
+
+          {saveError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+              {saveError}
+            </p>
+          )}
+
+          {quotation && quotation.approvals.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Riwayat approval
+              </h4>
+              {quotation.approvals.map((approval) => (
+                <div
+                  key={approval.id}
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
+                >
+                  <p className="font-semibold text-gray-700 dark:text-zinc-300">
+                    {approval.decision} · {approval.actor_name}
+                  </p>
+                  {approval.reason && (
+                    <p className="mt-0.5 text-gray-500 dark:text-zinc-400">
+                      {approval.reason}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isEditable && (
+            <div className="flex gap-2">
+              <AppButton
+                type="button"
+                variant="outline"
+                className="flex-1 justify-center"
+                disabled={isSavingDraft || isSubmittingQuotation}
+                onClick={handleSaveDraft}
+              >
+                {isSavingDraft && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
+                Simpan Draft
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="primary"
+                className="flex-1 justify-center"
+                disabled={isSavingDraft || isSubmittingQuotation}
+                onClick={handleSubmit}
+              >
+                {isSubmittingQuotation && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
+                Buat Quotation
+              </AppButton>
+            </div>
+          )}
+
+          {/* Approve/Needs Revision/Reject now happens from the Quotations
+              list's review queue, not here — this is just a status note. */}
+          {quotation?.status === "MANAGER_REVIEW" && (
+            <p className="rounded-lg border border-kuning/40 bg-kuning-t px-3 py-2 text-sm text-gray-700">
+              {canDecide ? (
+                <>
+                  Menunggu keputusan Manager — kelola dari halaman{" "}
+                  <Link href="/quotations" className="font-semibold underline">
+                    Quotations
+                  </Link>
+                  .
+                </>
+              ) : (
+                "Menunggu keputusan Manager."
+              )}
+            </p>
+          )}
+
+          {quotation?.status === "APPROVED" && (
+            <AppButton
+              type="button"
+              variant="primary"
+              disabled={outcomeQuotationMutation.isPending}
+              onClick={() => handleOutcome("SENT")}
+            >
+              Mark as Sent
+            </AppButton>
+          )}
+
+          {quotation?.status === "SENT" && (
+            <div className="flex gap-2">
+              <AppButton
+                type="button"
+                variant="primary"
+                size="sm"
+                className="flex-1 justify-center"
+                disabled={outcomeQuotationMutation.isPending}
+                onClick={() => handleOutcome("ACCEPTED")}
+              >
+                Accepted
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 justify-center"
+                disabled={outcomeQuotationMutation.isPending}
+                onClick={() => handleOutcome("REJECTED")}
+              >
+                Rejected
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 justify-center"
+                disabled={outcomeQuotationMutation.isPending}
+                onClick={() => handleOutcome("EXPIRED")}
+              >
+                Expired
+              </AppButton>
+            </div>
+          )}
         </div>
       </div>
     </div>

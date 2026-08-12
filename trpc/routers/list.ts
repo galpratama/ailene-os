@@ -24,6 +24,8 @@ export const listRouter = createTRPCRouter({
     pipelines: listB2B.pipelines,
     allActions: listB2B.allActions,
     meetings: listB2B.meetings,
+    quotations: listB2B.quotations,
+    quotationApprovalQueue: listB2B.quotationApprovalQueue,
     calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,
     dashboardAnalytics: listB2B.dashboardAnalytics,
