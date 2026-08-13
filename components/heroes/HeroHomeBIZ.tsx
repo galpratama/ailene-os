@@ -1,6 +1,7 @@
 "use client";
 
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
+import { sendLeadEvent } from "@/lib/fbq";
 import { sendConversionEvent } from "@/lib/gtag";
 import Image from "next/image";
 
@@ -37,7 +38,10 @@ export default function HeroHomeBIZ() {
             <LinkButtonBIZ
               href="https://wa.me/6285110545698"
               variant="lime"
-              onClick={() => sendConversionEvent()}
+              onClick={() => {
+                sendConversionEvent();
+                sendLeadEvent();
+              }}
             >
               Diskusikan kebutuhan tim
             </LinkButtonBIZ>

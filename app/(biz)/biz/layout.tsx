@@ -1,4 +1,5 @@
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
+import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Text } from "next/font/google";
 import type { ReactNode } from "react";
@@ -13,6 +14,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       <GoogleAdsTagBIZ />
+      <MetaPixelBIZ />
       <div className={stackSansText.className}>{children}</div>
     </ThemeProvider>
   );
