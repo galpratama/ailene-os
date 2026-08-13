@@ -1,3 +1,4 @@
+import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Text } from "next/font/google";
 import type { ReactNode } from "react";
@@ -11,6 +12,7 @@ const stackSansText = Stack_Sans_Text({
 export default function BizLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
+      <GoogleAdsTagBIZ />
       <div className={stackSansText.className}>{children}</div>
     </ThemeProvider>
   );

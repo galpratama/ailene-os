@@ -1,6 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { sendConversionEvent } from "@/lib/gtag";
 import { Check } from "lucide-react";
 import type { FormEvent } from "react";
 
@@ -19,6 +20,7 @@ export default function LeadFormHomeBIZ() {
     ].join("\n");
 
     window.open(`https://wa.me/6285110545698?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    sendConversionEvent();
   };
 
   return (
