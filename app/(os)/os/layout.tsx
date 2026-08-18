@@ -1,4 +1,5 @@
 import AppToaster from "@/components/elements/AppToaster";
+import HeaderOS from "@/components/navigations/HeaderOS";
 import SidebarOS from "@/components/navigations/SidebarOS";
 import AppPageState from "@/components/states/AppPageState";
 import { SidebarProvider } from "@/contexts/SidebarContext";
@@ -52,6 +53,7 @@ export default async function OSLayout({ children }: { children: ReactNode }) {
         >
           <SidebarOS sessionToken={sessionToken} />
           <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
+            <HeaderOS sessionToken={sessionToken} />
             <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">
               {children}
             </main>

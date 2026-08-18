@@ -7,6 +7,7 @@ import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
+import RecordTimelineOS from "@/components/elements/RecordTimelineOS";
 import { trpc } from "@/trpc/client";
 import {
   B2BLostReasonEnum,
@@ -437,6 +438,15 @@ export default function EditLeadFormOS({
                 onChange={(e) => setReassignmentReason(e.target.value)}
               />
             )}
+
+            <div>
+              <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                Timeline
+              </p>
+              <div className="mt-2">
+                <RecordTimelineOS entries={data?.timeline ?? []} />
+              </div>
+            </div>
           </div>
 
           <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">

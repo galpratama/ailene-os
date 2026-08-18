@@ -4,6 +4,7 @@ import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import OrganizationStatusLabel from "@/components/labels/OrganizationStatusLabel";
 import SheetOS from "@/components/modals/SheetOS";
 import AppButton from "@/components/buttons/AppButton";
+import RecordTimelineOS from "@/components/elements/RecordTimelineOS";
 import { trpc } from "@/trpc/client";
 import { Archive, Loader2, Mail, Phone, User } from "lucide-react";
 import { useState } from "react";
@@ -90,30 +91,8 @@ export default function OrganizationDetailDrawerOS({
                 <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
                   Timeline
                 </p>
-                <div className="mt-2 flex flex-col gap-2">
-                  {data.timeline.length === 0 && (
-                    <p className="text-sm text-gray-400">No edits recorded yet.</p>
-                  )}
-                  {data.timeline.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
-                    >
-                      <p className="text-gray-700 dark:text-zinc-300">
-                        <span className="font-semibold">{entry.actor_name}</span> changed{" "}
-                        <span className="font-mono">{entry.field_changed}</span>
-                        {entry.old_value || entry.new_value
-                          ? `: ${entry.old_value ?? "—"} → ${entry.new_value ?? "—"}`
-                          : ""}
-                      </p>
-                      {entry.reason && (
-                        <p className="mt-0.5 text-gray-400">Reason: {entry.reason}</p>
-                      )}
-                      <p className="mt-0.5 text-gray-400">
-                        {new Date(entry.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
+                <div className="mt-2">
+                  <RecordTimelineOS entries={data.timeline} />
                 </div>
               </div>
             </div>

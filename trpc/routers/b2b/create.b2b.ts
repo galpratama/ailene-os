@@ -9,6 +9,7 @@ import {
 } from "@/trpc/utils/organization_dedupe";
 import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
 import { readFailedNotFound } from "@/trpc/utils/errors";
+import { notifyUsers } from "@/trpc/utils/notification";
 import { computeRequiresReview, toPricingState } from "@/trpc/utils/quotation";
 import {
   numberIsID,
@@ -242,17 +243,32 @@ export const createB2B = {
         throw readFailedNotFound("pipeline");
       }
 
-      const created = await opts.ctx.prisma.b2BAction.create({
-        data: {
-          pipeline_id: opts.input.pipeline_id,
-          name: opts.input.name,
-          summary: opts.input.summary ?? null,
-          status: opts.input.status,
-          priority: opts.input.priority,
-          due_date: opts.input.due_date ? new Date(opts.input.due_date) : null,
-          assignee_id: opts.input.assignee_id ?? null,
-          source_meeting_id: opts.input.source_meeting_id,
-        },
+      const created = await opts.ctx.prisma.$transaction(async (tx) => {
+        const row = await tx.b2BAction.create({
+          data: {
+            pipeline_id: opts.input.pipeline_id,
+            name: opts.input.name,
+            summary: opts.input.summary ?? null,
+            status: opts.input.status,
+            priority: opts.input.priority,
+            due_date: opts.input.due_date ? new Date(opts.input.due_date) : null,
+            assignee_id: opts.input.assignee_id ?? null,
+            source_meeting_id: opts.input.source_meeting_id,
+          },
+        });
+
+        if (row.assignee_id) {
+          await notifyUsers(tx, {
+            userIds: [row.assignee_id],
+            actorId: opts.ctx.user.id,
+            type: "NEW_ASSIGNMENT",
+            entityType: "B2B_ACTION",
+            entityId: row.id,
+            message: `You were assigned to "${row.name}".`,
+          });
+        }
+
+        return row;
       });
       return {
         code: STATUS_CREATED,

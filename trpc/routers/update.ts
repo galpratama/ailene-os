@@ -1,6 +1,7 @@
 import { createTRPCRouter } from "@/trpc/init";
 import { updateB2B } from "./b2b/update.b2b";
 import { updateLms } from "./lms/update.lms";
+import { updateNotification } from "./notification/update.notification";
 import { updateTrainerPool } from "./trainer-pool/update.trainer-pool";
 import { updateUserData } from "./userdata/update.userdata";
 
@@ -33,5 +34,9 @@ export const updateRouter = createTRPCRouter({
     level: updateLms.level,
     chapter: updateLms.chapter,
     selectChapterTrainer: updateLms.selectChapterTrainer,
+  },
+  notification: {
+    markRead: updateNotification.markRead,
+    markAllRead: updateNotification.markAllRead,
   },
 });

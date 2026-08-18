@@ -8,6 +8,7 @@ import {
 } from "@/trpc/utils/data_scope";
 import { canViewQuotationInternals } from "@/trpc/utils/quotation";
 import { readFailedNotFound } from "@/trpc/utils/errors";
+import { getMasterDataTimeline, getPipelineTimeline } from "@/trpc/utils/timeline";
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 
 export const readB2B = {
@@ -25,12 +26,11 @@ export const readB2B = {
         throw readFailedNotFound("company");
       }
 
-      const timeline = await opts.ctx.prisma.masterDataAuditLog.findMany({
-        where: { target_entity_type: "ORGANIZATION", target_entity_id: theCompany.id },
-        include: { actor: { select: { full_name: true } } },
-        orderBy: { created_at: "desc" },
-        take: 50,
-      });
+      const timeline = await getMasterDataTimeline(
+        opts.ctx.prisma,
+        "ORGANIZATION",
+        theCompany.id
+      );
 
       return {
         code: STATUS_OK,
@@ -60,15 +60,7 @@ export const readB2B = {
           job_title: rel.contact.job_title,
           is_primary: rel.is_primary,
         })),
-        timeline: timeline.map((entry) => ({
-          id: entry.id,
-          field_changed: entry.field_changed,
-          old_value: entry.old_value,
-          new_value: entry.new_value,
-          reason: entry.reason,
-          actor_name: entry.actor.full_name,
-          created_at: entry.created_at,
-        })),
+        timeline,
       };
     }),
 
@@ -86,6 +78,13 @@ export const readB2B = {
       if (!theContact) {
         throw readFailedNotFound("contact");
       }
+
+      const timeline = await getMasterDataTimeline(
+        opts.ctx.prisma,
+        "CONTACT",
+        theContact.id
+      );
+
       return {
         code: STATUS_OK,
         message: "Success",
@@ -105,6 +104,7 @@ export const readB2B = {
           effective_from: rel.effective_from,
           effective_to: rel.effective_to,
         })),
+        timeline,
       };
     }),
 
@@ -128,6 +128,9 @@ export const readB2B = {
       if (!thePipeline) {
         throw readFailedNotFound("pipeline");
       }
+
+      const timeline = await getPipelineTimeline(opts.ctx.prisma, thePipeline.id);
+
       return {
         code: STATUS_OK,
         message: "Success",
@@ -157,6 +160,7 @@ export const readB2B = {
           created_at: thePipeline.created_at,
           updated_at: thePipeline.updated_at,
         },
+        timeline,
       };
     }),
 

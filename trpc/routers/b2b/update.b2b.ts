@@ -11,6 +11,7 @@ import {
 import { upsertPrimaryContact } from "@/trpc/utils/organization_contact";
 import { normalizeOrgName } from "@/trpc/utils/organization_dedupe";
 import { checkUpdateResult, readFailedNotFound } from "@/trpc/utils/errors";
+import { notifyUsers } from "@/trpc/utils/notification";
 import {
   quotationInputShape,
   requirePackageType,
@@ -337,16 +338,41 @@ export const updateB2B = {
     )
     .mutation(async (opts) => {
       const { id, due_date, ...rest } = opts.input;
-      const updated = await opts.ctx.prisma.b2BAction.updateMany({
-        where: { id, ...actionDataScopeWhere(opts.ctx.user) },
-        data: {
-          ...rest,
-          ...(due_date !== undefined && {
-            due_date: due_date ? new Date(due_date) : null,
-          }),
-        },
+
+      await opts.ctx.prisma.$transaction(async (tx) => {
+        const existing = await tx.b2BAction.findFirst({
+          where: { id, ...actionDataScopeWhere(opts.ctx.user) },
+          select: { assignee_id: true },
+        });
+        if (!existing) {
+          throw readFailedNotFound("action");
+        }
+
+        const row = await tx.b2BAction.update({
+          where: { id },
+          data: {
+            ...rest,
+            ...(due_date !== undefined && {
+              due_date: due_date ? new Date(due_date) : null,
+            }),
+          },
+        });
+
+        const assigneeChanged =
+          rest.assignee_id !== undefined &&
+          rest.assignee_id !== existing.assignee_id;
+        if (assigneeChanged && row.assignee_id) {
+          await notifyUsers(tx, {
+            userIds: [row.assignee_id],
+            actorId: opts.ctx.user.id,
+            type: "NEW_ASSIGNMENT",
+            entityType: "B2B_ACTION",
+            entityId: row.id,
+            message: `You were assigned to "${row.name}".`,
+          });
+        }
       });
-      await checkUpdateResult(updated.count, "action", "actions");
+
       return {
         code: STATUS_OK,
         message: "Action updated",
@@ -390,8 +416,16 @@ export const updateB2B = {
       }
 
       await opts.ctx.prisma.$transaction(async (tx) => {
-        const updated = await tx.b2BMeeting.updateMany({
+        const existing = await tx.b2BMeeting.findFirst({
           where: { id, ...meetingDataScopeWhere(opts.ctx.user) },
+          select: { scheduled_at: true, organizer_id: true, created_by_id: true },
+        });
+        if (!existing) {
+          throw readFailedNotFound("meeting");
+        }
+
+        const updated = await tx.b2BMeeting.update({
+          where: { id },
           data: {
             ...rest,
             ...(organizer_id !== undefined && { organizer_id }),
@@ -407,7 +441,20 @@ export const updateB2B = {
               held_at === undefined && { held_at: new Date() }),
           },
         });
-        await checkUpdateResult(updated.count, "meeting", "meetings");
+
+        if (
+          scheduled_at !== undefined &&
+          updated.scheduled_at.getTime() !== existing.scheduled_at.getTime()
+        ) {
+          await notifyUsers(tx, {
+            userIds: [updated.organizer_id, existing.created_by_id],
+            actorId: opts.ctx.user.id,
+            type: "MEETING_TIME_CHANGED",
+            entityType: "B2B_MEETING",
+            entityId: updated.id,
+            message: `Meeting time changed to ${updated.scheduled_at.toISOString()}.`,
+          });
+        }
 
         if (attendee_contact_ids !== undefined) {
           await tx.b2BMeetingAttendee.deleteMany({ where: { meeting_id: id } });

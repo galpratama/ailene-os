@@ -3,6 +3,7 @@ import { listAnalytics } from "./analytics/list.analytics";
 import { listB2B } from "./b2b/list.b2b";
 import { listLms } from "./lms/list.lms";
 import { listLookup } from "./lookup/list.lookup";
+import { listNotification } from "./notification/list.notification";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
 import { listUserData } from "./userdata/list.userdata";
 
@@ -56,5 +57,12 @@ export const listRouter = createTRPCRouter({
 
   analytics: {
     ga4Dashboard: listAnalytics.ga4Dashboard,
+  },
+
+  // Notifications //
+
+  notification: {
+    mine: listNotification.mine,
+    unreadCount: listNotification.unreadCount,
   },
 });
