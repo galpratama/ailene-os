@@ -235,74 +235,66 @@ export const updateUserData = {
           }),
         ]);
 
-        for (const { id: pipelineId } of pipelines) {
-          const firstReassignment = await tx.ownershipReassignment.findFirst({
-            where: { entity_type: "B2B_PIPELINE", entity_id: pipelineId },
+        // Batched per entity type — a per-record loop here blew past Prisma's transaction timeout at 60+ records.
+        async function reassignEntities(
+          entityType: "B2B_PIPELINE" | "B2B_ACTION" | "B2B_MEETING",
+          entityIds: number[]
+        ) {
+          if (entityIds.length === 0) return;
+
+          const existingReassignments = await tx.ownershipReassignment.findMany({
+            where: { entity_type: entityType, entity_id: { in: entityIds } },
             orderBy: { created_at: "asc" },
+            select: { entity_id: true, original_creator_id: true },
           });
-          await tx.ownershipReassignment.create({
-            data: {
-              entity_type: "B2B_PIPELINE",
-              entity_id: pipelineId,
+          const earliestCreatorByEntity = new Map<number, string>();
+          for (const row of existingReassignments) {
+            if (!earliestCreatorByEntity.has(row.entity_id)) {
+              earliestCreatorByEntity.set(row.entity_id, row.original_creator_id);
+            }
+          }
+
+          await tx.ownershipReassignment.createMany({
+            data: entityIds.map((entityId) => ({
+              entity_type: entityType,
+              entity_id: entityId,
               original_creator_id:
-                firstReassignment?.original_creator_id ?? from_user_id,
+                earliestCreatorByEntity.get(entityId) ?? from_user_id,
               previous_owner_id: from_user_id,
               new_owner_id: to_user_id,
               actor_id: opts.ctx.user.id,
               reason,
-            },
+            })),
           });
-          await tx.b2BPipeline.update({
-            where: { id: pipelineId },
+        }
+
+        await reassignEntities(
+          "B2B_PIPELINE",
+          pipelines.map((p) => p.id)
+        );
+        await reassignEntities(
+          "B2B_ACTION",
+          actions.map((a) => a.id)
+        );
+        await reassignEntities(
+          "B2B_MEETING",
+          meetings.map((m) => m.id)
+        );
+
+        await Promise.all([
+          tx.b2BPipeline.updateMany({
+            where: { owner_id: from_user_id },
             data: { owner_id: to_user_id },
-          });
-        }
-
-        for (const { id: actionId } of actions) {
-          const firstReassignment = await tx.ownershipReassignment.findFirst({
-            where: { entity_type: "B2B_ACTION", entity_id: actionId },
-            orderBy: { created_at: "asc" },
-          });
-          await tx.ownershipReassignment.create({
-            data: {
-              entity_type: "B2B_ACTION",
-              entity_id: actionId,
-              original_creator_id:
-                firstReassignment?.original_creator_id ?? from_user_id,
-              previous_owner_id: from_user_id,
-              new_owner_id: to_user_id,
-              actor_id: opts.ctx.user.id,
-              reason,
-            },
-          });
-          await tx.b2BAction.update({
-            where: { id: actionId },
+          }),
+          tx.b2BAction.updateMany({
+            where: { assignee_id: from_user_id },
             data: { assignee_id: to_user_id },
-          });
-        }
-
-        for (const { id: meetingId } of meetings) {
-          const firstReassignment = await tx.ownershipReassignment.findFirst({
-            where: { entity_type: "B2B_MEETING", entity_id: meetingId },
-            orderBy: { created_at: "asc" },
-          });
-          await tx.ownershipReassignment.create({
-            data: {
-              entity_type: "B2B_MEETING",
-              entity_id: meetingId,
-              original_creator_id:
-                firstReassignment?.original_creator_id ?? from_user_id,
-              previous_owner_id: from_user_id,
-              new_owner_id: to_user_id,
-              actor_id: opts.ctx.user.id,
-              reason,
-            },
-          });
-          await tx.b2BMeeting.update({
-            where: { id: meetingId },
+          }),
+          tx.b2BMeeting.updateMany({
+            where: { organizer_id: from_user_id },
             data: { organizer_id: to_user_id },
-          });
-        }
+          }),
+        ]);
 
         return {
           pipelines: pipelines.length,
