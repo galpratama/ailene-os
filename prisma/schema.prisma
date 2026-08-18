@@ -909,7 +909,7 @@ model B2BQuotationLineItem {
   quotation_id Int
   order_index  Int                           @default(0) @db.SmallInt
   format       B2BQuotationSessionFormatEnum
-  sesi         Int                           @db.SmallInt
+  sesi         Decimal                       @db.Decimal(3, 1)
   peserta      Int
   trainer      B2BQuotationTrainerTierEnum
 

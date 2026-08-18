@@ -16,6 +16,7 @@ import {
   PricingResult,
   TRN,
   dayPrice,
+  sesiFullLabel,
 } from "@/lib/pricing-b2b";
 import { getRupiahCurrency } from "@/lib/currency";
 
@@ -186,14 +187,6 @@ export interface QuotationPDFProps {
   result: PricingResult;
 }
 
-function durasiLabel(sesi: PricingDay["sesi"]) {
-  return sesi === 1
-    ? "Setengah hari (3 jam)"
-    : sesi === 2
-      ? "Sehari penuh (6 jam)"
-      : "Diperpanjang (9 jam)";
-}
-
 export function QuotationPDF({
   clientName,
   quotationNumber,
@@ -235,7 +228,7 @@ export function QuotationPDF({
                   Hari {i + 1} · {d.format === "offline" ? "Offline" : "Online"} · {TRN[d.trainer]}
                 </Text>
                 <Text style={styles.itemSub}>
-                  {durasiLabel(d.sesi)}, {d.peserta} peserta, materi {MN[materi]}
+                  {sesiFullLabel(d.sesi)}, {d.peserta} peserta, materi {MN[materi]}
                 </Text>
               </View>
               <Text style={[styles.itemName, styles.colQty]}>1</Text>

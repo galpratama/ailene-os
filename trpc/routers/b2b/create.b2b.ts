@@ -1,5 +1,5 @@
 import { pushMeetingToGoogleCalendar } from "@/lib/google-calendar";
-import { calculatePricing } from "@/lib/pricing-b2b";
+import { SESI_VALUES, calculatePricing } from "@/lib/pricing-b2b";
 import { STATUS_BAD_REQUEST, STATUS_CONFLICT, STATUS_CREATED } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
@@ -35,7 +35,7 @@ import z from "zod";
 
 const quotationDayInput = z.object({
   format: z.enum(B2BQuotationSessionFormatEnum),
-  sesi: z.number().int().min(1).max(3),
+  sesi: z.literal(SESI_VALUES),
   peserta: numberIsPosInt(),
   trainer: z.enum(B2BQuotationTrainerTierEnum),
 });

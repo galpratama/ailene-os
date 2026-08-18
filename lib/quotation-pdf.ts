@@ -5,6 +5,7 @@ import {
   PricingAddons,
   PricingDay,
   SessionFormat,
+  SesiValue,
   TrainerTier,
 } from "@/lib/pricing-b2b";
 import dayjs from "dayjs";
@@ -27,7 +28,7 @@ export type QuotationForPdf = {
   addon_perjalanan_rp: number | string;
   line_items: {
     format: string;
-    sesi: number;
+    sesi: number | string;
     peserta: number;
     trainer: string;
   }[];
@@ -40,7 +41,7 @@ export function buildQuotationPDFPropsFromQuotation(
 ): QuotationPDFProps {
   const days: PricingDay[] = quotation.line_items.map((item) => ({
     format: item.format.toLowerCase() as SessionFormat,
-    sesi: item.sesi as 1 | 2 | 3,
+    sesi: Number(item.sesi) as SesiValue,
     peserta: item.peserta,
     trainer: item.trainer.toLowerCase() as TrainerTier,
   }));

@@ -672,7 +672,7 @@ CREATE TABLE b2b_quotation_line_items (
   quotation_id  INTEGER                         NOT NULL,
   order_index   SMALLINT                        NOT NULL  DEFAULT 0,
   format        b2bq_session_format_enum        NOT NULL,
-  sesi          SMALLINT                        NOT NULL,
+  sesi          NUMERIC(3, 1)                   NOT NULL, -- 1 sesi = 3 jam; e.g. 0.5 = 1,5 jam, 3 = 9 jam
   peserta       INTEGER                         NOT NULL,
   trainer       b2bq_trainer_tier_enum          NOT NULL
 );

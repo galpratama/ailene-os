@@ -4,9 +4,28 @@ export type SessionFormat = "offline" | "online";
 export type TrainerTier = "certified" | "specialist" | "lead";
 export type MateriLevel = "std" | "ringan" | "dalam";
 
+// Canonical durations (1 sesi = 3 jam) — single source of truth for the DB column, tRPC validators, and the UI.
+export const SESI_VALUES = [0.5, 1, 2, 3] as const;
+export type SesiValue = (typeof SESI_VALUES)[number];
+
+export const SESI_OPTIONS: { value: SesiValue; label: string; short: string }[] = [
+  { value: 0.5, label: "Sesi pendek (1,5 jam)", short: "1,5 jam" },
+  { value: 1, label: "Setengah hari (3 jam)", short: "3 jam" },
+  { value: 2, label: "Sehari penuh (6 jam)", short: "6 jam" },
+  { value: 3, label: "Diperpanjang (9 jam)", short: "9 jam" },
+];
+
+// Shared duration labels, so the breakdown card and the PDF never disagree.
+export function sesiShortLabel(sesi: SesiValue): string {
+  return SESI_OPTIONS.find((o) => o.value === sesi)?.short ?? `${sesi * 3} jam`;
+}
+export function sesiFullLabel(sesi: SesiValue): string {
+  return SESI_OPTIONS.find((o) => o.value === sesi)?.label ?? `${sesi * 3} jam`;
+}
+
 export interface PricingDay {
   format: SessionFormat;
-  sesi: 1 | 2 | 3;
+  sesi: SesiValue;
   peserta: number;
   trainer: TrainerTier;
 }

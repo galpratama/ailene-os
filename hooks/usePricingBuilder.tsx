@@ -15,17 +15,31 @@ import {
   PRESETS,
   PricingAddons,
   PricingDay,
+  SESI_OPTIONS,
   SessionFormat,
+  SesiValue,
   TRN,
   TrainerTier,
   addonsTotal,
   calculatePricing,
   dayPrice,
   defaultAddons,
+  sesiShortLabel,
   uniquePax,
 } from "@/lib/pricing-b2b";
-import type { B2BQuotationPackageEnum, B2BQuotationSourceTypeEnum } from "@prisma/client";
-import { Check, CircleAlert, CircleCheck, CircleX, Copy, Plus, Trash2 } from "lucide-react";
+import type {
+  B2BQuotationPackageEnum,
+  B2BQuotationSourceTypeEnum,
+} from "@prisma/client";
+import {
+  Check,
+  CircleAlert,
+  CircleCheck,
+  CircleX,
+  Copy,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { ReactNode, useMemo, useState } from "react";
 
 export const PACKAGE_BY_PRESET: Record<string, B2BQuotationPackageEnum> = {
@@ -85,12 +99,6 @@ const materiOptions: { key: keyof typeof MN; label: string; sub: string }[] = [
     label: "Deep Learning",
     sub: "Modul baru dibuat mengikuti workflow internal klien",
   },
-];
-
-const sesiOptions = [
-  { value: 1, label: "Setengah hari (3 jam)" },
-  { value: 2, label: "Sehari penuh (6 jam)" },
-  { value: 3, label: "Diperpanjang (9 jam)" },
 ];
 
 const trainerOptions = [
@@ -247,7 +255,7 @@ export interface PricingSeed {
   addon_perjalanan_rp: number | string;
   line_items: {
     format: string;
-    sesi: number;
+    sesi: number | string;
     peserta: number;
     trainer: string;
   }[];
@@ -292,7 +300,7 @@ export function usePricingBuilder({
       withIds(
         seed.line_items.map((item) => ({
           format: item.format.toLowerCase() as SessionFormat,
-          sesi: item.sesi as 1 | 2 | 3,
+          sesi: Number(item.sesi) as SesiValue,
           peserta: item.peserta,
           trainer: item.trainer.toLowerCase() as TrainerTier,
         }))
@@ -355,7 +363,9 @@ export function usePricingBuilder({
   }
 
   function removeDay(id: number) {
-    setDays((prev) => (prev.length > 1 ? prev.filter((d) => d.id !== id) : prev));
+    setDays((prev) =>
+      prev.length > 1 ? prev.filter((d) => d.id !== id) : prev
+    );
   }
 
   function addDay() {
@@ -375,7 +385,11 @@ export function usePricingBuilder({
   const margin = result.margin;
   const marginPct = Math.max(0, Math.min(100, margin * 100));
   const marginColor =
-    margin < MARGIN_FLOOR ? "bg-merah" : margin < 0.5 ? "bg-kuning" : "bg-hijau";
+    margin < MARGIN_FLOOR
+      ? "bg-merah"
+      : margin < 0.5
+        ? "bg-kuning"
+        : "bg-hijau";
   const marginMessage =
     margin < MARGIN_FLOOR
       ? "Di bawah batas 45%. Tidak bisa dikirim tanpa persetujuan Genesis."
@@ -411,7 +425,8 @@ export function usePricingBuilder({
     });
   }
   const isMixed =
-    days.some((d) => d.format === "offline") && days.some((d) => d.format === "online");
+    days.some((d) => d.format === "offline") &&
+    days.some((d) => d.format === "online");
   if (isMixed) {
     flags.push({
       type: "ok",
@@ -420,7 +435,10 @@ export function usePricingBuilder({
     });
   }
   if (flags.length === 0) {
-    flags.push({ type: "ok", message: "Semua aman. Penawaran bisa langsung dikirim." });
+    flags.push({
+      type: "ok",
+      message: "Semua aman. Penawaran bisa langsung dikirim.",
+    });
   }
 
   function internalText() {
@@ -523,8 +541,10 @@ export function usePricingBuilder({
                 placeholder="Pilih durasi"
                 value={d.sesi}
                 disabled={!isEditable}
-                options={sesiOptions}
-                onChange={(v) => updateDay(d.id, { sesi: Number(v) as 1 | 2 | 3 })}
+                options={SESI_OPTIONS}
+                onChange={(v) =>
+                  updateDay(d.id, { sesi: Number(v) as SesiValue })
+                }
               />
               <AppNumberInput
                 inputId={`day-${d.id}-peserta`}
@@ -532,7 +552,9 @@ export function usePricingBuilder({
                 value={String(d.peserta)}
                 disabled={!isEditable}
                 onValueChange={(v) =>
-                  updateDay(d.id, { peserta: Math.max(1, parseInt(v || "1", 10)) })
+                  updateDay(d.id, {
+                    peserta: Math.max(1, parseInt(v || "1", 10)),
+                  })
                 }
               />
               <AppSelect
@@ -541,7 +563,11 @@ export function usePricingBuilder({
                 placeholder="Pilih trainer"
                 value={d.trainer}
                 disabled={!isEditable}
-                options={canViewCostDetails ? trainerOptions : trainerOptionsWithoutCost}
+                options={
+                  canViewCostDetails
+                    ? trainerOptions
+                    : trainerOptionsWithoutCost
+                }
                 onChange={(v) => updateDay(d.id, { trainer: v as TrainerTier })}
               />
             </div>
@@ -586,19 +612,25 @@ export function usePricingBuilder({
         <span className="text-right">Harga</span>
       </div>
 
-      <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+      <div
+        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+      >
         <input
           type="checkbox"
           checked={addons.assessment}
           disabled={!isEditable}
-          onChange={(e) => setAddons((a) => ({ ...a, assessment: e.target.checked }))}
+          onChange={(e) =>
+            setAddons((a) => ({ ...a, assessment: e.target.checked }))
+          }
           className="size-4 shrink-0 accent-claude disabled:opacity-60"
         />
         <div className="min-w-0">
           <p className="text-sm text-gray-800 dark:text-zinc-200">
             AI Readiness Assessment
           </p>
-          <p className="text-xs text-gray-400">survei dan wawancara sebelum program</p>
+          <p className="text-xs text-gray-400">
+            survei dan wawancara sebelum program
+          </p>
         </div>
         <span />
         <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
@@ -606,16 +638,22 @@ export function usePricingBuilder({
         </span>
       </div>
 
-      <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+      <div
+        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+      >
         <input
           type="checkbox"
           checked={addons.klinik}
           disabled={!isEditable}
-          onChange={(e) => setAddons((a) => ({ ...a, klinik: e.target.checked }))}
+          onChange={(e) =>
+            setAddons((a) => ({ ...a, klinik: e.target.checked }))
+          }
           className="size-4 shrink-0 accent-claude disabled:opacity-60"
         />
         <div className="min-w-0">
-          <p className="text-sm text-gray-800 dark:text-zinc-200">Klinik lanjutan</p>
+          <p className="text-sm text-gray-800 dark:text-zinc-200">
+            Klinik lanjutan
+          </p>
           <p className="text-xs text-gray-400">pendampingan setelah training</p>
         </div>
         <AppNumberInput
@@ -623,7 +661,10 @@ export function usePricingBuilder({
           value={String(addons.klinikSesi)}
           disabled={!isEditable}
           onValueChange={(v) =>
-            setAddons((a) => ({ ...a, klinikSesi: Math.max(1, parseInt(v || "1", 10)) }))
+            setAddons((a) => ({
+              ...a,
+              klinikSesi: Math.max(1, parseInt(v || "1", 10)),
+            }))
           }
           className="py-1.5 text-center"
         />
@@ -632,16 +673,22 @@ export function usePricingBuilder({
         </span>
       </div>
 
-      <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+      <div
+        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+      >
         <input
           type="checkbox"
           checked={addons.rekaman}
           disabled={!isEditable}
-          onChange={(e) => setAddons((a) => ({ ...a, rekaman: e.target.checked }))}
+          onChange={(e) =>
+            setAddons((a) => ({ ...a, rekaman: e.target.checked }))
+          }
           className="size-4 shrink-0 accent-claude disabled:opacity-60"
         />
         <div className="min-w-0">
-          <p className="text-sm text-gray-800 dark:text-zinc-200">Rekaman + akses LMS</p>
+          <p className="text-sm text-gray-800 dark:text-zinc-200">
+            Rekaman + akses LMS
+          </p>
           <p className="text-xs text-gray-400">6 bulan untuk semua peserta</p>
         </div>
         <span />
@@ -650,17 +697,23 @@ export function usePricingBuilder({
         </span>
       </div>
 
-      <div className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}>
+      <div
+        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+      >
         <input
           type="checkbox"
           checked={addons.sertifikat}
           disabled={!isEditable}
-          onChange={(e) => setAddons((a) => ({ ...a, sertifikat: e.target.checked }))}
+          onChange={(e) =>
+            setAddons((a) => ({ ...a, sertifikat: e.target.checked }))
+          }
           className="size-4 shrink-0 accent-claude disabled:opacity-60"
         />
         <div className="min-w-0">
           <p className="text-sm text-gray-800 dark:text-zinc-200">Sertifikat</p>
-          <p className="text-xs text-gray-400">per peserta unik, mengikuti Susunan hari</p>
+          <p className="text-xs text-gray-400">
+            per peserta unik, mengikuti Susunan hari
+          </p>
         </div>
         <AppNumberInput
           inputId="addon-sertifikat-qty"
@@ -676,7 +729,9 @@ export function usePricingBuilder({
           className="py-1.5 text-center"
         />
         <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
-          {getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
+          {getRupiahCurrency(
+            ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty
+          )}
         </span>
       </div>
 
@@ -685,11 +740,15 @@ export function usePricingBuilder({
           type="checkbox"
           checked={addons.perjalanan}
           disabled={!isEditable}
-          onChange={(e) => setAddons((a) => ({ ...a, perjalanan: e.target.checked }))}
+          onChange={(e) =>
+            setAddons((a) => ({ ...a, perjalanan: e.target.checked }))
+          }
           className="size-4 shrink-0 accent-claude disabled:opacity-60"
         />
         <div className="min-w-0">
-          <p className="text-sm text-gray-800 dark:text-zinc-200">Perjalanan luar kota</p>
+          <p className="text-sm text-gray-800 dark:text-zinc-200">
+            Perjalanan luar kota
+          </p>
           <p className="text-xs text-gray-400">
             tiket, hotel, transport lokal, isi total sesuai kebutuhan
           </p>
@@ -758,9 +817,12 @@ export function usePricingBuilder({
   const packageSummary =
     presetOptions.find((p) => p.key === activePreset)?.label ?? "Custom";
   const daysSummary = `${days.length} hari · ${totalSesi} sesi · ${pax} peserta`;
-  const materiSummary = materiOptions.find((m) => m.key === materi)?.label ?? "";
+  const materiSummary =
+    materiOptions.find((m) => m.key === materi)?.label ?? "";
   const addonsSummary =
-    activeAddonLabels.length > 0 ? activeAddonLabels.join(", ") : "Tidak ada add-on";
+    activeAddonLabels.length > 0
+      ? activeAddonLabels.join(", ")
+      : "Tidak ada add-on";
   const commercialSummary = `Komisi BD ${bdPct}% · Diskon ${dcPct}%`;
 
   const totalValueBox = (
@@ -772,7 +834,9 @@ export function usePricingBuilder({
         {getRupiahCurrency(result.netValue)}
       </p>
       <p className="mt-1.5 text-xs text-white/60">
-        {dcPct > 0 ? `sebelum diskon ${getRupiahCurrency(result.subtotal)} · ` : ""}
+        {dcPct > 0
+          ? `sebelum diskon ${getRupiahCurrency(result.subtotal)} · `
+          : ""}
         {days.length} hari · {totalSesi} sesi
       </p>
       <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-2.5 text-sm">
@@ -814,7 +878,9 @@ export function usePricingBuilder({
       >
         batas 45%
       </p>
-      <p className="mt-2.5 text-sm text-gray-700 dark:text-zinc-300">{marginMessage}</p>
+      <p className="mt-2.5 text-sm text-gray-700 dark:text-zinc-300">
+        {marginMessage}
+      </p>
     </div>
   );
 
@@ -835,9 +901,7 @@ export function usePricingBuilder({
                 Hari {i + 1}
               </span>
               <span className="text-xs text-gray-400">
-                ·{" "}
-                {d.sesi === 1 ? "½ hari" : d.sesi === 2 ? "1 hari" : "1½ hari"}{" "}
-                · {d.peserta} org · {TRN[d.trainer]}
+                · {sesiShortLabel(d.sesi)} · {d.peserta} org · {TRN[d.trainer]}
               </span>
             </span>
           }
@@ -853,7 +917,9 @@ export function usePricingBuilder({
       {addons.klinik && (
         <BreakdownRow
           label={`Klinik lanjutan ×${addons.klinikSesi}`}
-          value={getRupiahCurrency(ADDON_PRICE.klinikPerSesi * addons.klinikSesi)}
+          value={getRupiahCurrency(
+            ADDON_PRICE.klinikPerSesi * addons.klinikSesi
+          )}
         />
       )}
       {addons.rekaman && (
@@ -865,7 +931,9 @@ export function usePricingBuilder({
       {addons.sertifikat && (
         <BreakdownRow
           label={`Sertifikat ×${addons.sertifikatQty}`}
-          value={getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
+          value={getRupiahCurrency(
+            ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty
+          )}
         />
       )}
       {addons.perjalanan && (
@@ -881,7 +949,11 @@ export function usePricingBuilder({
           negative
         />
       )}
-      <BreakdownRow label="Nilai program" value={getRupiahCurrency(result.netValue)} bold />
+      <BreakdownRow
+        label="Nilai program"
+        value={getRupiahCurrency(result.netValue)}
+        bold
+      />
     </div>
   );
 
@@ -919,10 +991,18 @@ export function usePricingBuilder({
             value={getRupiahCurrency(result.amoFee)}
             negative
           />
-          <BreakdownRow label="Net Profit" value={getRupiahCurrency(result.genesis)} bold />
+          <BreakdownRow
+            label="Net Profit"
+            value={getRupiahCurrency(result.genesis)}
+            bold
+          />
         </>
       ) : (
-        <BreakdownRow label="Total biaya" value={getRupiahCurrency(result.totalCost)} bold />
+        <BreakdownRow
+          label="Total biaya"
+          value={getRupiahCurrency(result.totalCost)}
+          bold
+        />
       )}
     </div>
   );
@@ -939,7 +1019,11 @@ export function usePricingBuilder({
 
   const copyButtonBlock = (
     <div className="flex flex-col gap-2">
-      <CopyButton label="Salin ringkasan internal" getText={internalText} variant="outline" />
+      <CopyButton
+        label="Salin ringkasan internal"
+        getText={internalText}
+        variant="outline"
+      />
     </div>
   );
 

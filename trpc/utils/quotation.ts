@@ -2,6 +2,7 @@ import type {
   MateriLevel,
   PricingState,
   SessionFormat,
+  SesiValue,
   TrainerTier,
 } from "@/lib/pricing-b2b";
 import { MARGIN_FLOOR } from "@/lib/pricing-b2b";
@@ -46,7 +47,7 @@ export function toPricingState(input: QuotationPricingInput): PricingState {
   return {
     days: input.days.map((day) => ({
       format: day.format.toLowerCase() as SessionFormat,
-      sesi: day.sesi as 1 | 2 | 3,
+      sesi: day.sesi as SesiValue,
       peserta: day.peserta,
       trainer: day.trainer.toLowerCase() as TrainerTier,
     })),
