@@ -1,6 +1,8 @@
 "use client";
 
-import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
+import AppSearchableSelect, {
+  AppSearchableOption,
+} from "@/components/fields/AppSearchableSelect";
 import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
@@ -49,6 +51,7 @@ export default function PricingCalculatorPageOS({
   }, [sessionToken]);
 
   const router = useRouter();
+  const utils = trpc.useUtils();
 
   const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
     enabled: !!sessionToken,
@@ -64,17 +67,29 @@ export default function PricingCalculatorPageOS({
       return linked ? Number(linked) : null;
     }
   );
+  const [selectedPipelineOption, setSelectedPipelineOption] =
+    useState<AppSearchableOption | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && selectedPipelineId === null }
-  );
-  const pipelineOptions: AppSelectOption[] =
-    pipelineData?.list.map((p) => ({
-      value: p.id,
-      label: `${p.company_name} - ${p.name}`,
-    })) ?? [];
+  async function loadPipelineOptions(inputValue: string, page: number) {
+    const result = await utils.list.b2b.pipelines.fetch({
+      keyword: inputValue || undefined,
+      page,
+      page_size: 20,
+    });
+    return {
+      options: result.list.map((p) => ({
+        value: p.id,
+        label: `${p.company_name} - ${p.name}`,
+      })),
+      hasMore: page < result.metapaging.total_page!,
+    };
+  }
+
+  function handlePipelineChange(option: AppSearchableOption | null) {
+    setSelectedPipelineOption(option);
+    setSelectedPipelineId(option ? (option.value as number) : null);
+  }
 
   const builder = usePricingBuilder({
     isEditable: true,
@@ -168,13 +183,13 @@ export default function PricingCalculatorPageOS({
 
       {selectedPipelineId === null && (
         <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
-          <AppSelect
+          <AppSearchableSelect
             selectId="quotation-pipeline-picker"
             label="Pilih Lead"
-            placeholder="Pilih lead supaya tersimpan sebagai Quotation"
-            value={selectedPipelineId}
-            onChange={(v) => setSelectedPipelineId(v as number | null)}
-            options={pipelineOptions}
+            placeholder="Ketik untuk cari lead supaya tersimpan sebagai Quotation"
+            value={selectedPipelineOption}
+            onChange={handlePipelineChange}
+            loadOptions={loadPipelineOptions}
           />
           <p className="mt-2 text-xs text-gray-400 dark:text-zinc-500">
             Kosongkan kalau cuma mau hitung-hitungan cepat — ringkasan tetap

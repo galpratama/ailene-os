@@ -73,6 +73,7 @@ export default function AppSearchableSelect({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const requestIdRef = useRef(0);
+  const hasLoadedRef = useRef(defaultOptions.length > 0);
 
   async function fetchPage(query: string, pageToLoad: number) {
     const requestId = ++requestIdRef.current;
@@ -106,6 +107,12 @@ export default function AppSearchableSelect({
   function handleMenuScrollToBottom() {
     if (!hasMore || isLoading || isLoadingMore) return;
     fetchPage(inputValue, page + 1);
+  }
+
+  function handleMenuOpen() {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    fetchPage(inputValue, 1);
   }
 
   function handleChange(option: AppSearchableOption | null) {
@@ -142,6 +149,7 @@ export default function AppSearchableSelect({
             options={options}
             filterOption={null}
             isLoading={isLoading}
+            onMenuOpen={handleMenuOpen}
             onMenuScrollToBottom={handleMenuScrollToBottom}
             placeholder={placeholder}
             loadingMessage={() => "Searching..."}
