@@ -38,8 +38,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // No session cookie on os (prod) -> bounce to the login page on the main domain.
+      // /api/cron/* is exempt: Vercel Cron authenticates with the CRON_SECRET
+      // bearer token inside the route handler and never sends a session cookie.
       {
-        source: "/(.*)",
+        source: "/:path((?!api/cron).*)",
         has: [
           {
             type: "header",
