@@ -28,11 +28,11 @@ export default function HeroHomeBIZ() {
             Solusi terbaik untuk transformasi AI tim kamu
           </h1>
           <p className="mt-4 max-w-125 text-lg leading-[1.4] font-medium text-biz-lime sm:text-xl">
-            dari training sampai adopsi yang kelihatan hasilnya.
+            Dari training sampai adopsi yang kelihatan hasilnya.
           </p>
           <p className="mt-4 max-w-125 text-[15px] leading-[1.65] text-white/78">
-            Workshop dipandu langsung per divisi, progress-nya kelihatan di
-            LMS, sampai tim presentasi solusinya sendiri di depan leadership.
+            Workshop dipandu langsung per divisi, progress-nya kelihatan di LMS,
+            sampai tim presentasi solusinya sendiri di depan leadership.
           </p>
           <div className="mt-7.5 flex flex-wrap gap-3">
             <LinkButtonBIZ
