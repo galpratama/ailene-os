@@ -137,7 +137,7 @@ const outcomes = [
   {
     label: "Efisiensi operasional",
     title: <>Kerja selesai lebih cepat, tanpa <span className="text-biz-forest-light">tambah orang.</span></>,
-    copy: "Tim mengurangi pekerjaan berulang dan memindahkan waktu ke tugas yang menghasilkan dampak lebih besar.",
+    copy: "AI mengurangi pekerjaan berulang sehingga tim dapat bekerja untuk hal yang lebih strategis.",
     tone: "bg-biz-mint",
     visual: <EfficiencyVisual />,
   },
@@ -192,7 +192,7 @@ export default function OutcomesHomeBIZ() {
         <aside className="mt-5.5 flex flex-col gap-5 rounded-xl bg-biz-forest p-5.5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <p className="text-[12px] font-medium tracking-[0.08em] text-biz-lime uppercase">Langkah berikutnya</p>
-            <h3 className="mt-1.5 text-[clamp(1.45rem,2.5vw,2.1rem)] leading-none font-medium tracking-[-0.055em]">Ubah cara kerja tim. Buka ruang untuk pertumbuhan.</h3>
+            <h3 className="mt-1.5 text-[clamp(1.45rem,2.5vw,2.1rem)] leading-none font-medium tracking-[-0.055em]">Buka ruang untuk berkembang.</h3>
           </div>
           <LinkButtonBIZ href="#adoption-gap" variant="lime" className="shrink-0">Lihat dampak untuk bisnis Anda</LinkButtonBIZ>
         </aside>

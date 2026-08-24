@@ -3,9 +3,13 @@
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 import { sendLeadEvent } from "@/lib/fbq";
 import { sendConversionEvent } from "@/lib/gtag";
+import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 
 export default function HeroHomeBIZ() {
+  const shouldReduceMotion = useReducedMotion();
+  const riseY = shouldReduceMotion ? 0 : 12;
+
   return (
     <section className="relative isolate overflow-hidden bg-biz-forest text-white">
       <Image
@@ -20,7 +24,11 @@ export default function HeroHomeBIZ() {
       <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(1,24,17,0.82)_0%,rgba(1,24,17,0)_45%)]" />
 
       <div className="relative z-10 mx-auto grid min-h-svh w-full max-w-315 items-center gap-10 px-4.5 pt-35 pb-12 sm:px-7.5 sm:pt-39 sm:pb-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1.1fr)] lg:gap-14 lg:pt-37 lg:pb-14">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: riseY }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <span className="inline-flex items-center gap-2 rounded-md bg-biz-lime px-3.5 py-2 text-[11px] font-semibold text-biz-forest before:size-1.5 before:rounded-full before:bg-biz-forest before:content-['']">
             Workshop AI + LMS dalam Satu Program
           </span>
@@ -49,9 +57,14 @@ export default function HeroHomeBIZ() {
               Lihat kurikulum
             </LinkButtonBIZ>
           </div>
-        </div>
+        </motion.div>
 
-        <figure className="w-full max-w-155 justify-self-center rotate-[0.35deg] overflow-hidden rounded-xl border border-white/15 bg-biz-dashboard shadow-2xl lg:justify-self-end lg:rounded-2xl">
+        <motion.figure
+          className="w-full max-w-155 justify-self-center overflow-hidden rounded-xl border border-white/15 bg-biz-dashboard shadow-2xl lg:justify-self-end lg:rounded-2xl"
+          initial={{ opacity: 0, y: riseY, rotate: 0.35 }}
+          animate={{ opacity: 1, y: 0, rotate: 0.35 }}
+          transition={{ duration: 0.4, delay: 0.08, ease: "easeOut" }}
+        >
           <div className="flex items-center justify-between border-b border-white/10 bg-biz-dashboard-bar px-3.5 py-2.5 font-mono text-[8px] tracking-[0.08em] text-white/70 uppercase">
             <span className="flex items-center gap-1.5 before:h-1.5 before:w-7 before:bg-[radial-gradient(circle_at_3px_3px,currentColor_0_2px,transparent_2.5px),radial-gradient(circle_at_13px_3px,currentColor_0_2px,transparent_2.5px),radial-gradient(circle_at_23px_3px,currentColor_0_2px,transparent_2.5px)] before:text-white/25 before:content-['']">
               Adoption Hub
@@ -66,7 +79,7 @@ export default function HeroHomeBIZ() {
             sizes="(max-width: 1024px) calc(100vw - 36px), 620px"
             className="aspect-4/3 w-full object-cover object-top"
           />
-        </figure>
+        </motion.figure>
       </div>
     </section>
   );

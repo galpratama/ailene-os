@@ -1,9 +1,5 @@
-"use client";
-
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 import { Check, Minus, X } from "lucide-react";
-import type { ReactNode } from "react";
-import { useState } from "react";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
 
 const programs = [
@@ -66,19 +62,6 @@ const checklistRows: Array<{ section?: string; label?: string; value?: (program:
   { label: "Output utama", value: (program) => program.output },
 ];
 
-const textRows: Array<{ section?: string; label?: string; value?: (program: Program) => string }> = [
-  { section: "Cara memilih" },
-  { label: "Cocok untuk", value: (program) => program.fit },
-  { label: "Durasi & format", value: (program) => `${program.duration} · ${program.format}` },
-  { label: "Fokus praktik", value: (program) => ({ foundation: "Email, recap, report, research", intensive: "Workflow sesuai peran", sprint: "Workflow lintas departemen", custom: "Workflow sesuai scope" })[program.id] },
-  { label: "Implementasi", value: (program) => ({ foundation: "Belum termasuk clinic", intensive: "1 use case", sprint: "Multi-departemen", custom: "Sesuai scope" })[program.id] },
-  { label: "Follow-through", value: (program) => ({ foundation: "—", intensive: "Clinic 2 minggu", sprint: "Workshop mingguan", custom: "Sesuai scope" })[program.id] },
-  { label: "Visibility", value: (program) => ({ foundation: "—", intensive: "—", sprint: "LMS & tracking", custom: "LMS sesuai scope" })[program.id] },
-  { section: "Hasil yang dibawa pulang" },
-  { label: "Output utama", value: (program) => program.output },
-  { label: "Trainer", value: (program) => ({ foundation: "Lead trainer", intensive: "Lead + specialist", sprint: "Lead + strategy + specialists", custom: "Lead + specialist sesuai kebutuhan" })[program.id] },
-];
-
 function Capability({ value }: { value: CellValue }) {
   if (value === "included") return <span aria-label="Termasuk" className="inline-grid size-6 place-items-center rounded-full bg-biz-forest-light text-white"><Check size={14} strokeWidth={2.5} /></span>;
   if (value === "off") return <span aria-label="Tidak termasuk" className="inline-grid size-6 place-items-center rounded-full bg-biz-forest/7 text-biz-muted"><X size={13} /></span>;
@@ -86,8 +69,8 @@ function Capability({ value }: { value: CellValue }) {
   return value;
 }
 
-function ProgramTable({ mode }: { mode: "checklist" | "text" }) {
-  const rows = mode === "checklist" ? checklistRows : textRows;
+function ProgramTable() {
+  const rows = checklistRows;
 
   return (
     <div className="overflow-x-auto rounded-xl border border-biz-forest/12 bg-white">
@@ -119,7 +102,7 @@ function ProgramTable({ mode }: { mode: "checklist" | "text" }) {
                   const value = row.value?.(program) ?? "";
                   return (
                     <td key={program.id} className={`border-b border-biz-forest/10 px-4 py-4 align-top text-xs leading-[1.5] ${program.recommended ? "bg-biz-lime/12 font-medium text-biz-forest" : "text-biz-muted"}`}>
-                      {mode === "checklist" ? <Capability value={value} /> : value as ReactNode}
+                      <Capability value={value} />
                     </td>
                   );
                 })}
@@ -133,8 +116,6 @@ function ProgramTable({ mode }: { mode: "checklist" | "text" }) {
 }
 
 export default function ProgramsHomeBIZ() {
-  const [mode, setMode] = useState<"checklist" | "text">("checklist");
-
   return (
     <section id="programs" className="bg-biz-paper py-18 sm:py-28">
       <div className="mx-auto w-full max-w-315 px-4.5 sm:px-7.5">
@@ -144,12 +125,7 @@ export default function ProgramsHomeBIZ() {
           copy="Bandingkan format, benefit, pendampingan, dan hasil setiap jalur—termasuk opsi custom untuk kebutuhan yang lebih spesifik."
           className="mb-5"
         />
-        <div role="tablist" aria-label="Pilihan format perbandingan program" className="mb-4 flex w-fit gap-1 rounded-lg border border-biz-forest/12 bg-white p-1">
-          {([ ["checklist", "A · Checklist"], ["text", "B · Text"] ] as const).map(([value, label]) => (
-            <button key={value} type="button" role="tab" aria-selected={mode === value} onClick={() => setMode(value)} className={`cursor-pointer rounded-md px-3 py-2 text-[10px] font-semibold tracking-[0.07em] uppercase ${mode === value ? "bg-biz-forest text-white" : "text-biz-muted hover:bg-biz-forest/5"}`}>{label}</button>
-          ))}
-        </div>
-        <ProgramTable mode={mode} />
+        <ProgramTable />
 
         <aside className="mt-5 flex flex-col gap-5 rounded-xl bg-biz-forest p-5.5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-7">
           <div>

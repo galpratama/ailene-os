@@ -12,6 +12,7 @@ import TrainersHomeBIZ from "../static-sections/TrainersHomeBIZ";
 import FAQHomeBIZ from "../static-sections/FAQHomeBIZ";
 import LeadFormHomeBIZ from "../static-sections/LeadFormHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
+import RevealOnScroll from "../motion/RevealOnScroll";
 
 export default function HomePageBIZ() {
   return (
@@ -19,19 +20,41 @@ export default function HomePageBIZ() {
       <HeaderHomeBIZ />
       <main>
         <HeroHomeBIZ />
-        <CompaniesHomeBIZ />
-        <OutcomesHomeBIZ />
-        <ToolsHomeBIZ />
+        <RevealOnScroll>
+          <CompaniesHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <OutcomesHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <ToolsHomeBIZ />
+        </RevealOnScroll>
         <div className="bg-[linear-gradient(180deg,var(--color-biz-forest)_0%,var(--color-biz-forest-mid)_52%,var(--color-biz-forest-light)_100%)] text-white">
-          <AdoptionProofHomeBIZ />
-          <LMSHomeBIZ />
+          <RevealOnScroll>
+            <AdoptionProofHomeBIZ />
+          </RevealOnScroll>
+          <RevealOnScroll>
+            <LMSHomeBIZ />
+          </RevealOnScroll>
         </div>
-        <CurriculumHomeBIZ />
-        <ProgramsHomeBIZ />
-        <TrainersHomeBIZ />
-        <FAQHomeBIZ />
-        <LeadFormHomeBIZ />
-        <CTAHomeBIZ />
+        <RevealOnScroll>
+          <CurriculumHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <ProgramsHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <TrainersHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <FAQHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <LeadFormHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <CTAHomeBIZ />
+        </RevealOnScroll>
       </main>
       <FooterHomeBIZ />
     </div>

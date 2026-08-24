@@ -5,7 +5,7 @@ import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 import { LogoAilene } from "@/components/svg/LogoAilene";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { label: "How We Work", href: "#how-we-work" },
@@ -32,33 +32,26 @@ const announcement = (
 
 export default function HeaderHomeBIZ() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const updateHeader = () => {
-      const currentScrollY = Math.max(window.scrollY, 0);
-      const delta = currentScrollY - lastScrollY.current;
-
-      setIsScrolled(currentScrollY > 20);
-      setIsHidden(currentScrollY > 20 && delta > 2 && !menuOpen);
-      lastScrollY.current = currentScrollY;
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener("scroll", updateHeader, { passive: true });
     return () => window.removeEventListener("scroll", updateHeader);
-  }, [menuOpen]);
+  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
   return (
     <header
-      className={`left-0 z-50 w-full transition-[transform,background-color,color] duration-300 ${
+      className={`left-0 z-50 w-full transition-[background-color,color] duration-300 ${
         isScrolled
           ? "fixed top-0 bg-biz-paper/92 text-biz-ink shadow-sm backdrop-blur-xl"
           : "absolute top-0 text-white"
-      } ${isHidden ? "pointer-events-none -translate-y-full" : "translate-y-0"}`}
+      }`}
     >
       <aside className="overflow-hidden border-b border-biz-forest/25 bg-biz-lime text-biz-forest">
         <div className="biz-marquee flex w-max [animation:biz-marquee_30s_linear_infinite] hover:[animation-play-state:paused]">
