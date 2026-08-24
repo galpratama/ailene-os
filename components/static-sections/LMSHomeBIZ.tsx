@@ -1,197 +1,273 @@
 "use client";
 
-import { Check } from "lucide-react";
-import { useState } from "react";
+import { motion, useInView, useReducedMotion, type Variants } from "motion/react";
+import {
+  BarChart3,
+  Check,
+  ClipboardCheck,
+  Cog,
+  MessageSquare,
+  Radar,
+  Target,
+  TrendingUp,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
 
-type RoleId = "leadership" | "manager" | "employee";
-
-const roles: Array<{
-  id: RoleId;
-  label: string;
-  navCopy: string;
-  eyebrow: string;
-  title: string;
-  body: string;
-  points: string[];
-  metrics: Array<[string, string]>;
-}> = [
+const stages: Array<{ num: string; icon: LucideIcon; title: string; desc: string; delay: number }> = [
   {
-    id: "leadership",
-    label: "Leadership",
-    navCopy: "Lihat dampak & ambil keputusan",
-    eyebrow: "Use case untuk leadership",
-    title: "Visibilitas yang jelas untuk keputusan yang lebih cepat.",
-    body: "Semua insight penting dalam satu tempat, dari progres tim hingga dampak bisnis.",
-    points: [
-      "Lihat progres adopsi AI lintas tim dan departemen",
-      "Identifikasi use case prioritas dan dampaknya",
-      "Dapatkan laporan siap untuk stakeholder",
-      "Pantau ROI dan arah investasi",
-    ],
-    metrics: [["68%", "Total adoption"], ["12 / 18", "Active teams"], ["28", "Use cases"]],
+    num: "01",
+    icon: Users,
+    title: "Pre-Training Alignment",
+    desc: "Diagnostic singkat dengan C-Level & champion internal — selaraskan target kompetensi dan divisi prioritas sebelum sesi pertama dimulai.",
+    delay: 0.15,
   },
   {
-    id: "manager",
-    label: "Manager",
-    navCopy: "Gerakkan tim dengan mudah",
-    eyebrow: "Use case untuk manager",
-    title: "Gerakkan tim dengan konteks yang lebih jelas.",
-    body: "Manager dapat melihat workflow yang bergerak, hambatan yang muncul, dan dukungan yang perlu diberikan.",
-    points: [
-      "Lihat workflow yang membutuhkan coaching",
-      "Prioritaskan dukungan untuk anggota tim",
-      "Pantau progres per fungsi dan peran",
-      "Jaga ritme follow-up setelah training",
-    ],
-    metrics: [["8", "Workflow aktif"], ["3", "Butuh coaching"], ["74%", "Rata-rata tim"]],
+    num: "02",
+    icon: ClipboardCheck,
+    title: "8 Sesi Workshop, di-track LMS",
+    desc: "Materi dari praktisi, bukan template. Setiap progres masuk LMS — jadi terlihat siapa aktif dan siapa masih butuh coaching.",
+    delay: 0.55,
   },
   {
-    id: "employee",
-    label: "Employee",
-    navCopy: "Belajar, praktik, berkembang",
-    eyebrow: "Use case untuk karyawan",
-    title: "Tahu apa yang harus dicoba berikutnya.",
-    body: "Karyawan mendapat latihan yang relevan, aset yang bisa dipakai, dan langkah berikutnya yang jelas dalam rutinitas kerja.",
-    points: [
-      "Lihat modul dan latihan sesuai peran",
-      "Praktik pada workflow kerja sendiri",
-      "Simpan prompt dan aset kerja yang siap dipakai",
-      "Ikuti progres sampai menjadi kebiasaan",
-    ],
-    metrics: [["3 / 5", "Gate level selesai"], ["12", "Minggu streak"], ["4,2j", "Estimasi dihemat"]],
+    num: "03",
+    icon: Radar,
+    title: "3 Bulan Adoption — Lintas Divisi",
+    desc: "Follow-up jalan terus lewat LMS sampai AI jadi kebiasaan kerja, bukan cuma ramai di minggu pertama.",
+    delay: 1,
   },
 ];
 
-const chartBars: Record<Exclude<RoleId, "employee">, Array<[string, number]>> = {
-  leadership: [["Product", 78], ["Marketing", 72], ["Operations", 68], ["HR", 61], ["Finance", 54]],
-  manager: [["Email", 82], ["Report", 68], ["Riset", 61], ["Meeting", 47], ["Review", 39]],
-};
+const divisions: Array<{ name: string; icon: LucideIcon; target: number; impact: string }> = [
+  { name: "Marketing", icon: BarChart3, target: 88, impact: "10+ konten baru/minggu, tanpa tambah headcount" },
+  { name: "HR", icon: Users, target: 76, impact: "Reporting payroll otomatis nyampe ke WhatsApp" },
+  { name: "Finance", icon: TrendingUp, target: 82, impact: "Forecast harian, bukan lagi berminggu-minggu" },
+  { name: "Sales", icon: Target, target: 90, impact: "Draft proposal personalized ke 20+ prospek sekaligus" },
+  { name: "Operations", icon: Cog, target: 71, impact: "SOP akhirnya terdokumentasi, bukan cuma di kepala senior" },
+  { name: "Customer Service", icon: MessageSquare, target: 85, impact: "Draft respon keluhan turun ke di bawah 2 menit" },
+];
 
-function DashboardShell({ role }: { role: (typeof roles)[number] }) {
+const adoptionScore = Math.round(divisions.reduce((sum, division) => sum + division.target, 0) / divisions.length);
+
+const DASHBOARD_DELAY = 1.5;
+
+const fadeUp: Variants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
+
+function ScoreRing({ inView, shouldReduceMotion }: { inView: boolean; shouldReduceMotion: boolean }) {
+  const [display, setDisplay] = useState(shouldReduceMotion ? adoptionScore : 0);
+  const r = 30;
+  const circumference = 2 * Math.PI * r;
+
+  useEffect(() => {
+    if (!inView || shouldReduceMotion) return;
+    const duration = 1400;
+    let raf = 0;
+    const start = performance.now() + DASHBOARD_DELAY * 1000;
+    const tick = (now: number) => {
+      const progress = Math.min(1, Math.max(0, (now - start) / duration));
+      setDisplay(Math.round(adoptionScore * (1 - (1 - progress) ** 3)));
+      if (now < start + duration) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, shouldReduceMotion]);
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-biz-line bg-white">
-      <div className="flex items-center gap-2 border-b border-biz-line bg-biz-panel-soft px-4 py-3">
-        <span className="size-2 rounded-full bg-biz-dot" />
-        <span className="size-2 rounded-full bg-biz-dot" />
-        <span className="size-2 rounded-full bg-biz-dot" />
-        <span className="ml-1 font-mono text-[10px] text-biz-muted">Ailene LMS · {role.label}</span>
-      </div>
-      <div className="p-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <strong className="text-base font-medium tracking-[-0.035em] text-biz-forest">{role.id === "employee" ? "Progress saya" : "Overview"}</strong>
-          <span className="font-mono text-[8px] tracking-[0.08em] text-biz-muted uppercase">Contoh snapshot · minggu ke-4</span>
-        </div>
-        <div className="mt-3.5 grid grid-cols-3 gap-2">
-          {role.metrics.map(([value, label]) => (
-            <div key={label} className="rounded-xl border border-biz-line bg-biz-panel p-3">
-              <strong className="block text-2xl leading-none font-medium tracking-[-0.05em] text-biz-forest">{value}</strong>
-              <span className="mt-1.5 block font-mono text-[8px] leading-snug tracking-[0.05em] text-biz-muted uppercase">{label}</span>
-            </div>
-          ))}
-        </div>
-        {role.id === "employee" ? <EmployeeRadar /> : <DepartmentBars role={role.id} />}
-        <p className="mt-3 font-mono text-[9px] leading-relaxed text-biz-muted/80">Data ilustratif untuk menunjukkan bentuk outcome dan bukan benchmark statistik.</p>
-      </div>
+    <div className="relative size-19 shrink-0">
+      <svg viewBox="0 0 76 76" className="size-full -rotate-90">
+        <circle cx="38" cy="38" r={r} strokeWidth="7" className="fill-none stroke-biz-panel-soft" />
+        <motion.circle
+          cx="38"
+          cy="38"
+          r={r}
+          strokeWidth="7"
+          strokeLinecap="round"
+          className="fill-none stroke-biz-lime"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={inView ? { strokeDashoffset: circumference - (circumference * adoptionScore) / 100 } : {}}
+          transition={{ duration: shouldReduceMotion ? 0 : 1.4, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY, ease: [0.4, 0, 0.2, 1] }}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-[15px] font-bold tracking-[-0.02em] text-biz-forest">{display}%</div>
     </div>
   );
 }
 
-function DepartmentBars({ role }: { role: Exclude<RoleId, "employee"> }) {
-  const bars = chartBars[role];
+function DivisionRow({
+  division,
+  index,
+  inView,
+  shouldReduceMotion,
+}: {
+  division: (typeof divisions)[number];
+  index: number;
+  inView: boolean;
+  shouldReduceMotion: boolean;
+}) {
+  const [status, setStatus] = useState<"loading" | "done">(shouldReduceMotion ? "done" : "loading");
+  const barDelay = DASHBOARD_DELAY + index * 0.15;
+  const barDuration = 0.95;
+
+  useEffect(() => {
+    if (!inView || shouldReduceMotion) return;
+    const timer = setTimeout(() => setStatus("done"), (barDelay + barDuration) * 1000);
+    return () => clearTimeout(timer);
+  }, [inView, shouldReduceMotion, barDelay]);
+
+  const Icon = division.icon;
+
   return (
-    <div className="mt-3.5 rounded-xl border border-biz-line p-4">
-      <div className="flex justify-between gap-3">
-        <strong className="text-[15px] font-medium tracking-[-0.035em] text-biz-forest">{role === "leadership" ? "Adopsi per departemen" : "Status workflow tim"}</strong>
-        <span className="font-mono text-[8px] text-biz-muted uppercase">Illustrative data</span>
+    <div className="grid grid-cols-[18px_100px_1fr_60px] items-center gap-3 border-b border-biz-line py-2.5 last:border-0 sm:grid-cols-[20px_128px_1fr_72px]">
+      <Icon size={16} className="text-biz-forest-light" />
+      <span className="truncate text-[13px] font-semibold text-biz-ink">{division.name}</span>
+      <div className="h-1.5 overflow-hidden rounded-full bg-biz-panel-soft">
+        <motion.div
+          className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-biz-forest),var(--color-biz-forest-light))]"
+          initial={{ width: "0%" }}
+          animate={inView ? { width: `${division.target}%` } : {}}
+          transition={{ duration: shouldReduceMotion ? 0 : barDuration, delay: shouldReduceMotion ? 0 : barDelay, ease: [0.5, 0, 0.15, 1] }}
+        />
       </div>
-      <div className="mt-5 flex h-43 items-end justify-between gap-2" role="img" aria-label="Grafik progres ilustratif">
-        {bars.map(([label, value]) => (
-          <div key={label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-            <strong className="text-[9px] text-biz-forest-light">{value}%</strong>
-            <i className="w-full max-w-9 rounded-t-md bg-biz-forest-light/70" style={{ height: `${value}%` }} />
-            <span className="max-w-full truncate text-[8px] text-biz-muted">{label}</span>
-          </div>
-        ))}
-      </div>
+      <span className={`text-right font-mono text-[10px] whitespace-nowrap ${status === "done" ? "text-biz-forest-light" : "text-biz-muted"}`}>
+        {status === "done" ? "aktif" : "memuat…"}
+      </span>
     </div>
   );
 }
 
-function EmployeeRadar() {
-  const legend = [
-    ["AI Foundation", "3,5 / 5"], ["Prompting Quality", "3,0 / 5"],
-    ["Tool Fluency", "2,0 / 5 ↓"], ["Use Case Diversity", "2,5 / 5"],
-    ["AI Habit", "3,5 / 5 ↑"], ["Agentic Capabilities", "0,5 / 5"],
-  ];
+function ActivityItem({
+  division,
+  index,
+  inView,
+  shouldReduceMotion,
+}: {
+  division: (typeof divisions)[number];
+  index: number;
+  inView: boolean;
+  shouldReduceMotion: boolean;
+}) {
   return (
-    <div className="mt-3.5 rounded-xl border border-biz-line p-4">
-      <div className="flex justify-between gap-3"><strong className="text-[15px] font-medium text-biz-forest">Peta kompetensi AI</strong><span className="font-mono text-[8px] text-biz-muted uppercase">6 dimensi · skala 0–5</span></div>
-      <div className="mt-3 grid items-center gap-3 sm:grid-cols-[1.05fr_0.95fr]">
-        <svg viewBox="0 0 260 238" className="h-auto w-full" role="img" aria-label="Spider chart kompetensi AI karyawan">
-          {["130,22 207,67 207,157 130,202 53,157 53,67", "130,58 176,85 176,139 130,166 84,139 84,85", "130,94 145,103 145,121 130,130 115,121 115,103"].map((points) => <polygon key={points} points={points} fill="none" className="stroke-biz-forest/12" />)}
-          <path d="M130 22V202M53 67L207 157M207 67L53 157" className="stroke-biz-forest/12" />
-          <polygon points="130,49 176,85 161,130 130,157 76,143 122,108" className="fill-biz-lime/35 stroke-biz-forest-light" strokeWidth="2" />
-          {[ [130,49], [176,85], [161,130], [130,157], [76,143], [122,108] ].map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="3.5" className="fill-biz-forest-light" />)}
-        </svg>
-        <div className="grid gap-1.5">
-          {legend.map(([label, value]) => (
-            <div key={label} className={`flex justify-between gap-3 rounded-md px-2 py-1.5 text-[9px] ${label === "Tool Fluency" ? "bg-biz-lime/25" : "bg-biz-paper"}`}>
-              <span className="text-biz-muted">{label}</span><strong className="font-semibold text-biz-forest">{value}</strong>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <motion.div
+      className="mb-2 flex items-start gap-2.5 rounded-lg bg-biz-panel-soft px-3 py-2.5 last:mb-0"
+      variants={fadeUp}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.4, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY + 1.3 + index * 0.22 }}
+    >
+      <Check size={15} className="mt-0.5 shrink-0 text-biz-forest-light" />
+      <p className="text-[12.5px] leading-[1.45] text-biz-copy">
+        <strong className="font-semibold text-biz-ink">{division.name}</strong> — {division.impact}
+      </p>
+    </motion.div>
   );
 }
 
 export default function LMSHomeBIZ() {
-  const [activeRole, setActiveRole] = useState<RoleId>("employee");
-  const role = roles.find((item) => item.id === activeRole) ?? roles[2];
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.25 });
+  const shouldReduceMotion = !!useReducedMotion();
 
   return (
     <section id="lms" className="pt-9 pb-18 sm:pb-28">
       <div className="mx-auto w-full max-w-315 px-4.5 sm:px-7.5">
         <SectionHeaderHomeBIZ
           dark
-          eyebrow="AI-native LMS"
-          title="Satu platform."
-          copy="Satu platform terpusat untuk memantau progres penggunaan AI, melihat area yang perlu diperkuat, dan mengarahkan langkah berikutnya."
+          eyebrow="Perjalanan 3 bulan"
+          title="Dari ruang meeting C-Level, sampai jadi kebiasaan kerja lintas divisi."
+          copy={'Satu alur yang sama, tiga tahap. Setiap tahap punya PIC dan output yang jelas — bukan cuma "kelas AI" yang selesai lalu dilupakan.'}
         />
-        <div className="grid items-stretch gap-4 lg:grid-cols-[230px_minmax(0,1fr)]">
-          <div role="tablist" aria-label="Tampilan LMS berdasarkan peran" className="grid content-start gap-2.5 sm:grid-cols-3 lg:grid-cols-1">
-            {roles.map((item) => {
-              const active = item.id === activeRole;
+
+        <div ref={ref} className="mx-auto max-w-245">
+          <div className="relative h-px w-full overflow-hidden rounded-full bg-white/15">
+            <motion.div
+              className="h-full rounded-full bg-biz-lime"
+              initial={{ width: "0%" }}
+              animate={inView ? { width: "100%" } : {}}
+              transition={{ duration: shouldReduceMotion ? 0 : 1.4, delay: shouldReduceMotion ? 0 : 0.1, ease: [0.5, 0, 0.15, 1] }}
+            />
+          </div>
+
+          <div className="mt-8.5 grid gap-6 sm:grid-cols-3">
+            {stages.map((stage) => {
+              const Icon = stage.icon;
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setActiveRole(item.id)}
-                  className={`group relative grid min-h-19 cursor-pointer gap-1 rounded-xl border px-4 py-3.5 pr-9 text-left transition-all after:absolute after:top-1/2 after:right-4 after:size-2 after:-translate-y-1/2 after:rotate-45 after:border-t after:border-r after:border-current after:content-[''] ${active ? "border-biz-lime bg-biz-lime text-biz-forest shadow-lg" : "border-white/15 bg-white/5 text-white/82 hover:-translate-y-px hover:border-white/30 hover:bg-white/10"}`}
+                <motion.div
+                  key={stage.title}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate={inView ? "visible" : "hidden"}
+                  transition={{ duration: shouldReduceMotion ? 0 : 0.5, delay: shouldReduceMotion ? 0 : stage.delay }}
                 >
-                  <strong className="text-base font-medium tracking-[-0.035em]">{item.label}</strong>
-                  <span className={`text-[11px] leading-snug ${active ? "text-biz-forest/68" : "text-white/58"}`}>{item.navCopy}</span>
-                </button>
+                  <span className="inline-block rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] tracking-[0.08em] text-biz-lime">
+                    {stage.num}
+                  </span>
+                  <Icon size={26} strokeWidth={1.5} className="mt-3.5 text-white" />
+                  <p className="mt-3 text-[16.5px] font-semibold tracking-[-0.02em] text-white">{stage.title}</p>
+                  <p className="mt-2 text-[13.5px] leading-[1.55] text-white/62">{stage.desc}</p>
+                </motion.div>
               );
             })}
           </div>
-          <div role="tabpanel" className="min-w-0 rounded-2xl border border-white/15 bg-white p-4 text-biz-ink shadow-2xl sm:p-7">
-            <div className="grid items-start gap-7 xl:grid-cols-[minmax(250px,0.78fr)_minmax(0,1.22fr)]">
-              <div className="py-2">
-                <span className="text-[11px] font-semibold tracking-[0.08em] text-biz-forest-light uppercase">{role.eyebrow}</span>
-                <h3 className="mt-3.5 max-w-125 text-[clamp(2rem,3.3vw,3.55rem)] leading-[0.98] font-medium tracking-[-0.06em] text-biz-forest">{role.title}</h3>
-                <p className="mt-4.5 max-w-130 text-sm leading-[1.65] text-biz-muted">{role.body}</p>
-                <ul className="mt-6 grid gap-3">
-                  {role.points.map((point) => (
-                    <li key={point} className="grid grid-cols-[19px_1fr] gap-2.5 text-[13px] leading-[1.5] text-biz-copy"><span className="grid size-4.75 place-items-center rounded-full bg-biz-check text-biz-forest"><Check size={12} strokeWidth={2.5} /></span>{point}</li>
-                  ))}
-                </ul>
+
+          <div className="mt-14 border-t border-dashed border-white/15 pt-8">
+            <p className="mb-4 font-mono text-[11px] tracking-[0.1em] text-white/55 uppercase">
+              Bulan ke-3 — cuplikan dashboard adopsi lintas divisi
+            </p>
+
+            <motion.div
+              className="overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl"
+              variants={fadeUp}
+              initial="hidden"
+              animate={inView ? "visible" : "hidden"}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.5, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY }}
+            >
+              <div className="flex items-center justify-between border-b border-biz-line bg-biz-panel-soft px-4.5 py-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-biz-dot" />
+                  <span className="size-2 rounded-full bg-biz-dot" />
+                  <span className="size-2 rounded-full bg-biz-dot" />
+                </div>
+                <span className="font-mono text-[10px] text-biz-muted">ailene-lms.app/dashboard</span>
+                <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.06em] text-biz-forest-light uppercase">
+                  <span className="relative flex size-1.5">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-biz-lime opacity-60" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-biz-lime" />
+                  </span>
+                  Live
+                </span>
               </div>
-              <DashboardShell role={role} />
-            </div>
+
+              <div className="p-5 sm:p-7">
+                <div className="flex items-center gap-5 border-b border-dashed border-biz-line pb-6">
+                  <ScoreRing inView={inView} shouldReduceMotion={shouldReduceMotion} />
+                  <div>
+                    <p className="font-mono text-[10px] tracking-[0.08em] text-biz-muted uppercase">Adoption score</p>
+                    <p className="text-base font-semibold text-biz-ink">Rata-rata lintas divisi</p>
+                    <p className="mt-0.5 text-[12.5px] text-biz-muted">Naik dari sesi terakhir workshop, terus ter-update lewat LMS.</p>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  {divisions.map((division, index) => (
+                    <DivisionRow key={division.name} division={division} index={index} inView={inView} shouldReduceMotion={shouldReduceMotion} />
+                  ))}
+                </div>
+
+                <p className="mt-5 font-mono text-[10px] tracking-[0.08em] text-biz-muted uppercase">Aktivitas terbaru</p>
+                <div className="mt-2.5">
+                  {divisions.map((division, index) => (
+                    <ActivityItem key={division.name} division={division} index={index} inView={inView} shouldReduceMotion={shouldReduceMotion} />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            <p className="mt-4 font-mono text-[10px] text-white/45 italic">
+              Ilustrasi peran &amp; dampak per divisi — bukan data klien aktual.
+            </p>
           </div>
         </div>
       </div>
