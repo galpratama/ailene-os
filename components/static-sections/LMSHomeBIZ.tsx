@@ -3,7 +3,6 @@
 import { motion, useInView, useReducedMotion, type Variants } from "motion/react";
 import {
   BarChart3,
-  Check,
   ClipboardCheck,
   Cog,
   MessageSquare,
@@ -55,113 +54,111 @@ const DASHBOARD_DELAY = 1.5;
 
 const fadeUp: Variants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
 
-function ScoreRing({ inView, shouldReduceMotion }: { inView: boolean; shouldReduceMotion: boolean }) {
-  const [display, setDisplay] = useState(shouldReduceMotion ? adoptionScore : 0);
-  const r = 30;
-  const circumference = 2 * Math.PI * r;
+// Layout numbers mirror the "ailene-journey-particleflow-v7" HTML reference 1:1.
+const FLOW_HUB_CX = 590;
+const FLOW_HUB_CY = 260;
+const FLOW_HUB_R = 66;
+const FLOW_NODE_CX = 62;
+const FLOW_NODE_R = 27;
+const FLOW_Y_SPACING = 88;
+const FLOW_Y_START = 44;
+
+function JourneyParticleFlow({ inView, shouldReduceMotion }: { inView: boolean; shouldReduceMotion: boolean }) {
+  // Must start at 0 on both server and client's first render since `shouldReduceMotion` can differ between them.
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
-    if (!inView || shouldReduceMotion) return;
-    const duration = 1400;
+    if (!inView) return;
+    const duration = shouldReduceMotion ? 0 : 1200;
+    const start = performance.now() + (shouldReduceMotion ? 0 : DASHBOARD_DELAY * 1000);
     let raf = 0;
-    const start = performance.now() + DASHBOARD_DELAY * 1000;
     const tick = (now: number) => {
-      const progress = Math.min(1, Math.max(0, (now - start) / duration));
-      setDisplay(Math.round(adoptionScore * (1 - (1 - progress) ** 3)));
-      if (now < start + duration) raf = requestAnimationFrame(tick);
+      const progress = duration === 0 ? 1 : Math.min(1, Math.max(0, (now - start) / duration));
+      setScore(Math.round(adoptionScore * (1 - (1 - progress) ** 3)));
+      if (progress < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [inView, shouldReduceMotion]);
 
   return (
-    <div className="relative size-19 shrink-0">
-      <svg viewBox="0 0 76 76" className="size-full -rotate-90">
-        <circle cx="38" cy="38" r={r} strokeWidth="7" className="fill-none stroke-biz-panel-soft" />
-        <motion.circle
-          cx="38"
-          cy="38"
-          r={r}
-          strokeWidth="7"
-          strokeLinecap="round"
-          className="fill-none stroke-biz-lime"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={inView ? { strokeDashoffset: circumference - (circumference * adoptionScore) / 100 } : {}}
-          transition={{ duration: shouldReduceMotion ? 0 : 1.4, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY, ease: [0.4, 0, 0.2, 1] }}
-        />
+    <div className="flex justify-center">
+      <svg
+        viewBox="0 0 700 520"
+        className="h-auto w-full max-w-170"
+        role="img"
+        aria-label={`Alur adopsi AI dari enam divisi menuju skor adopsi gabungan, ilustrasi ${adoptionScore} persen`}
+      >
+        {divisions.map((division, index) => {
+          const nodeY = FLOW_Y_START + index * FLOW_Y_SPACING;
+          const startX = FLOW_NODE_CX + FLOW_NODE_R + 5;
+          const endX = FLOW_HUB_CX - FLOW_HUB_R - 5;
+          const midX = (startX + endX) / 2;
+          const pathId = `journey-flow-${index}`;
+          const Icon = division.icon;
+
+          return (
+            <g key={division.name}>
+              <path
+                id={pathId}
+                d={`M ${startX} ${nodeY} C ${midX} ${nodeY} ${midX} ${FLOW_HUB_CY} ${endX} ${FLOW_HUB_CY}`}
+                className="stroke-biz-line"
+                strokeWidth={1.5}
+                fill="none"
+              />
+
+              {inView &&
+                !shouldReduceMotion &&
+                [0, 1, 2].map((k) => (
+                  <circle key={k} r={3.6} className="fill-biz-lime" opacity={0}>
+                    <animateMotion dur="3.2s" begin={`${index * 0.22 + k * (3.2 / 3)}s`} repeatCount="indefinite">
+                      <mpath href={`#${pathId}`} xlinkHref={`#${pathId}`} />
+                    </animateMotion>
+                    <animate
+                      attributeName="opacity"
+                      values="0;1;1;0"
+                      keyTimes="0;0.06;0.9;1"
+                      dur="3.2s"
+                      begin={`${index * 0.22 + k * (3.2 / 3)}s`}
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                ))}
+
+              <circle cx={FLOW_NODE_CX} cy={nodeY} r={FLOW_NODE_R} className="fill-white stroke-biz-line" strokeWidth={1.5} />
+              <Icon x={FLOW_NODE_CX - 11} y={nodeY - 11} width={22} height={22} strokeWidth={1.7} className="text-biz-forest" />
+              <title>{`${division.name} — ${division.impact}`}</title>
+
+              <text x={FLOW_NODE_CX + FLOW_NODE_R + 14} y={nodeY + 5} className="fill-biz-ink text-[15px] font-semibold">
+                {division.name}
+              </text>
+            </g>
+          );
+        })}
+
+        <circle cx={FLOW_HUB_CX} cy={FLOW_HUB_CY} r={FLOW_HUB_R} className="fill-biz-forest" />
+
+        {inView && !shouldReduceMotion && (
+          <motion.circle
+            cx={FLOW_HUB_CX}
+            cy={FLOW_HUB_CY}
+            fill="none"
+            className="stroke-biz-lime"
+            strokeWidth={2}
+            initial={{ r: FLOW_HUB_R, opacity: 0 }}
+            animate={{ r: [FLOW_HUB_R, FLOW_HUB_R, FLOW_HUB_R * 1.045], opacity: [0, 0.4, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+
+        <text x={FLOW_HUB_CX} y={FLOW_HUB_CY - 11} textAnchor="middle" className="fill-biz-lime font-mono text-[11px] tracking-[0.05em] uppercase">
+          Adoption score
+        </text>
+        <text x={FLOW_HUB_CX} y={FLOW_HUB_CY + 18} textAnchor="middle" className="fill-white text-[26px] font-bold tracking-[-0.02em]">
+          {score}%
+        </text>
       </svg>
-      <div className="absolute inset-0 grid place-items-center text-[15px] font-bold tracking-[-0.02em] text-biz-forest">{display}%</div>
     </div>
-  );
-}
-
-function DivisionRow({
-  division,
-  index,
-  inView,
-  shouldReduceMotion,
-}: {
-  division: (typeof divisions)[number];
-  index: number;
-  inView: boolean;
-  shouldReduceMotion: boolean;
-}) {
-  const [status, setStatus] = useState<"loading" | "done">(shouldReduceMotion ? "done" : "loading");
-  const barDelay = DASHBOARD_DELAY + index * 0.15;
-  const barDuration = 0.95;
-
-  useEffect(() => {
-    if (!inView || shouldReduceMotion) return;
-    const timer = setTimeout(() => setStatus("done"), (barDelay + barDuration) * 1000);
-    return () => clearTimeout(timer);
-  }, [inView, shouldReduceMotion, barDelay]);
-
-  const Icon = division.icon;
-
-  return (
-    <div className="grid grid-cols-[18px_100px_1fr_60px] items-center gap-3 border-b border-biz-line py-2.5 last:border-0 sm:grid-cols-[20px_128px_1fr_72px]">
-      <Icon size={16} className="text-biz-forest-light" />
-      <span className="truncate text-[13px] font-semibold text-biz-ink">{division.name}</span>
-      <div className="h-1.5 overflow-hidden rounded-full bg-biz-panel-soft">
-        <motion.div
-          className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-biz-forest),var(--color-biz-forest-light))]"
-          initial={{ width: "0%" }}
-          animate={inView ? { width: `${division.target}%` } : {}}
-          transition={{ duration: shouldReduceMotion ? 0 : barDuration, delay: shouldReduceMotion ? 0 : barDelay, ease: [0.5, 0, 0.15, 1] }}
-        />
-      </div>
-      <span className={`text-right font-mono text-[10px] whitespace-nowrap ${status === "done" ? "text-biz-forest-light" : "text-biz-muted"}`}>
-        {status === "done" ? "aktif" : "memuat…"}
-      </span>
-    </div>
-  );
-}
-
-function ActivityItem({
-  division,
-  index,
-  inView,
-  shouldReduceMotion,
-}: {
-  division: (typeof divisions)[number];
-  index: number;
-  inView: boolean;
-  shouldReduceMotion: boolean;
-}) {
-  return (
-    <motion.div
-      className="mb-2 flex items-start gap-2.5 rounded-lg bg-biz-panel-soft px-3 py-2.5 last:mb-0"
-      variants={fadeUp}
-      initial="hidden"
-      animate={inView ? "visible" : "hidden"}
-      transition={{ duration: shouldReduceMotion ? 0 : 0.4, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY + 1.3 + index * 0.22 }}
-    >
-      <Check size={15} className="mt-0.5 shrink-0 text-biz-forest-light" />
-      <p className="text-[12.5px] leading-[1.45] text-biz-copy">
-        <strong className="font-semibold text-biz-ink">{division.name}</strong> — {division.impact}
-      </p>
-    </motion.div>
   );
 }
 
@@ -213,60 +210,21 @@ export default function LMSHomeBIZ() {
           </div>
 
           <div className="mt-14 border-t border-dashed border-white/15 pt-8">
-            <p className="mb-4 font-mono text-[11px] tracking-[0.1em] text-white/55 uppercase">
-              Bulan ke-3 — cuplikan dashboard adopsi lintas divisi
-            </p>
-
             <motion.div
-              className="overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl"
+              className="rounded-2xl border border-biz-line bg-biz-panel-soft p-5 sm:p-6"
               variants={fadeUp}
               initial="hidden"
               animate={inView ? "visible" : "hidden"}
               transition={{ duration: shouldReduceMotion ? 0 : 0.5, delay: shouldReduceMotion ? 0 : DASHBOARD_DELAY }}
             >
-              <div className="flex items-center justify-between border-b border-biz-line bg-biz-panel-soft px-4.5 py-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-biz-dot" />
-                  <span className="size-2 rounded-full bg-biz-dot" />
-                  <span className="size-2 rounded-full bg-biz-dot" />
-                </div>
-                <span className="font-mono text-[10px] text-biz-muted">ailene-lms.app/dashboard</span>
-                <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.06em] text-biz-forest-light uppercase">
-                  <span className="relative flex size-1.5">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-biz-lime opacity-60" />
-                    <span className="relative inline-flex size-1.5 rounded-full bg-biz-lime" />
-                  </span>
-                  Live
-                </span>
-              </div>
-
-              <div className="p-5 sm:p-7">
-                <div className="flex items-center gap-5 border-b border-dashed border-biz-line pb-6">
-                  <ScoreRing inView={inView} shouldReduceMotion={shouldReduceMotion} />
-                  <div>
-                    <p className="font-mono text-[10px] tracking-[0.08em] text-biz-muted uppercase">Adoption score</p>
-                    <p className="text-base font-semibold text-biz-ink">Rata-rata lintas divisi</p>
-                    <p className="mt-0.5 text-[12.5px] text-biz-muted">Naik dari sesi terakhir workshop, terus ter-update lewat LMS.</p>
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  {divisions.map((division, index) => (
-                    <DivisionRow key={division.name} division={division} index={index} inView={inView} shouldReduceMotion={shouldReduceMotion} />
-                  ))}
-                </div>
-
-                <p className="mt-5 font-mono text-[10px] tracking-[0.08em] text-biz-muted uppercase">Aktivitas terbaru</p>
-                <div className="mt-2.5">
-                  {divisions.map((division, index) => (
-                    <ActivityItem key={division.name} division={division} index={index} inView={inView} shouldReduceMotion={shouldReduceMotion} />
-                  ))}
-                </div>
-              </div>
+              <JourneyParticleFlow inView={inView} shouldReduceMotion={shouldReduceMotion} />
+              <p className="mt-3.5 text-center font-mono text-[10.5px] tracking-[0.06em] text-biz-muted uppercase">
+                Pemakaian AI dari tiap divisi, mengalir terus ke LMS
+              </p>
             </motion.div>
 
             <p className="mt-4 font-mono text-[10px] text-white/45 italic">
-              Ilustrasi peran &amp; dampak per divisi — bukan data klien aktual.
+              Ilustrasi alur &amp; skor adopsi per divisi — bukan data klien aktual.
             </p>
           </div>
         </div>
