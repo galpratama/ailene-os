@@ -24,9 +24,10 @@ export default function HeroHomeBIZ() {
       <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(1,24,17,0.82)_0%,rgba(1,24,17,0)_45%)]" />
 
       <div className="relative z-10 mx-auto grid min-h-svh w-full max-w-315 items-center gap-10 px-4.5 pt-35 pb-12 sm:px-7.5 sm:pt-39 sm:pb-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1.1fr)] lg:gap-14 lg:pt-37 lg:pb-14">
+        {/* Rise only, no fade: the h1 is the LCP element and opacity 0 defers it. */}
         <motion.div
-          initial={{ opacity: 0, y: riseY }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: riseY }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <span className="inline-flex items-center gap-2 rounded-md bg-biz-lime px-3.5 py-2 text-[11px] font-semibold text-biz-forest before:size-1.5 before:rounded-full before:bg-biz-forest before:content-['']">

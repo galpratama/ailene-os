@@ -37,9 +37,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // No session cookie on os -> bounce to /auth/login; /auth and /api authenticate on their own.
+      // No session cookie on os -> bounce to /auth/login; /auth and /api authenticate on their own, robots/sitemap must stay fetchable.
       {
-        source: "/:path((?!api|auth).*)",
+        source: "/:path((?!api|auth|robots|sitemap).*)",
         has: [
           {
             type: "header",

@@ -1,11 +1,4 @@
-const questions = [
-  ["Program mana yang paling tepat untuk organisasi kami?", "Foundation menyamakan baseline. Intensive membawa AI ke satu fungsi. Sprint membantu tim menjalankan satu use case prioritas. Kebutuhan lintas fungsi bisa dimulai dari Custom AI Adoption Program."],
-  ["Apakah kami harus sudah punya use case AI?", "Tidak. Kita bisa mulai dari pekerjaan yang berulang, hambatan yang terasa, dan peluang yang paling masuk akal untuk diuji bersama."],
-  ["Siapa yang sebaiknya ikut?", "Libatkan orang yang dekat dengan pekerjaan sehari-hari, manager yang dapat memberi coaching, dan sponsor yang membantu menjaga tindak lanjut."],
-  ["Apa yang dibawa pulang setelah program?", "Tim membawa workflow, contoh kerja, use-case shortlist, owner, dan langkah berikutnya sesuai format program yang dipilih."],
-  ["Bagaimana memastikan adoption berlanjut setelah training?", "Setiap program ditutup dengan praktik, artifact, dan next step yang jelas. Scope yang lebih besar dapat ditambah coaching dan progress visibility."],
-  ["Apakah program bisa disesuaikan untuk tim developer?", "Bisa. Contoh kerja, tools, cohort, dan kedalaman teknis dapat dibuat khusus untuk engineering team atau fungsi tertentu."],
-];
+import { faqs } from "@/lib/biz-content";
 
 export default function FAQHomeBIZ() {
   return (
@@ -17,7 +10,7 @@ export default function FAQHomeBIZ() {
           <p className="mt-5 max-w-140 text-[15px] leading-[1.65] text-white/62">Pilih starting point yang sesuai dengan kesiapan organisasi dan pekerjaan yang ingin digerakkan.</p>
         </div>
         <div className="overflow-hidden rounded-2xl border border-biz-forest/10 bg-white text-biz-ink shadow-2xl">
-          {questions.map(([question, answer], index) => (
+          {faqs.map(({ question, answer }, index) => (
             <details key={question} open={index === 0} className="group border-b border-biz-forest/10 last:border-b-0">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-5 text-[17px] font-semibold tracking-[-0.035em] marker:hidden sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
                 {question}

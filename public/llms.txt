@@ -1,0 +1,52 @@
+# Ailene
+
+> Ailene menjalankan AI adoption training untuk organisasi di Indonesia. Fokusnya bukan berhenti di workshop: tim dibawa dari pelatihan menuju adopsi AI yang terlihat, terukur, dan berlanjut di pekerjaan sehari-hari.
+
+Ailene runs AI adoption training for organizations in Indonesia. Programs combine instructor-led workshops per division, an LMS that tracks adoption progress, and a Demo Day where teams present their own solutions to leadership. Content is delivered in Bahasa Indonesia and English.
+
+- Situs: https://biz.ailene.id
+- Kontak / diskusi kebutuhan tim: https://wa.me/6285110545698
+- Peserta minimum: 15 orang per program
+- Cakupan: Indonesia, onsite dan hybrid
+
+## Program
+
+Empat jalur, semuanya quote-based (harga per engagement, bukan per kursi publik):
+
+- **Work Foundation** — 1 hari, full offline. Untuk tim yang baru mulai memakai AI. Output: prompt library starter, workflow examples, use-case shortlist.
+- **Productivity Intensive** — 2 hari, offline atau hybrid. Untuk tim yang ingin menerapkan workflow sesuai fungsi. Output: use-case map, prompt library per role, implementation action plan.
+- **Transformation Sprint** — 13 minggu, hybrid + Demo Day. Untuk organisasi yang siap menjalankan use case prioritas. Output: workflow map, SOP, champion plan, 30-day roadmap, Demo Day. Ini jalur yang paling sering direkomendasikan.
+- **Custom Track** — durasi dan format disesuaikan. Untuk kebutuhan lintas fungsi atau track khusus developer/engineering.
+
+## Kurikulum
+
+Enam modul yang dipakai lintas program:
+
+1. **AI Baseline & Safe Use** — cara kerja AI, batas penggunaan, keamanan data. Hasil: baseline & guardrails tim.
+2. **Prompting & Context** — struktur prompt yang bisa diulang, konteks dan contoh yang relevan. Hasil: prompt starter kit.
+3. **Workflow Design** — memetakan pekerjaan berulang dan memilih yang layak dibantu AI. Hasil: workflow map & use-case shortlist.
+4. **Role-based Lab** — praktik pada contoh kerja nyata tiap fungsi. Hasil: contoh workflow per divisi.
+5. **Quality & Review** — checklist review output, menjaga judgment manusia. Hasil: quality checklist & review standard.
+6. **Adoption Plan** — owner, ritme follow-up, langkah 30 hari. Hasil: adoption plan 30 hari.
+
+Tools yang dipakai dalam latihan: ChatGPT, Gemini, Claude, Perplexity, GitHub Copilot, Cursor, Notion AI, Zapier.
+
+## Trainer
+
+- **Galih Pratama** — Lead Trainer. 10+ tahun product engineering; fokus AI workflow, prompting, vibe coding, agents.
+- **Raymond Chin** — Strategy & Leadership. Founder Sevenpreneur; membawakan AI strategy, business urgency, market framing, executive alignment.
+
+## Halaman
+
+- [Beranda](https://biz.ailene.id/): program, kurikulum, trainer, FAQ, dan form diskusi kebutuhan tim.
+- [Program formats](https://biz.ailene.id/#programs): perbandingan keempat jalur program.
+- [Kurikulum](https://biz.ailene.id/#curriculum): rincian enam modul.
+- [How we work](https://biz.ailene.id/#how-we-work): pendekatan dari training ke adopsi.
+- [FAQ](https://biz.ailene.id/#faq): pertanyaan yang paling sering muncul sebelum program dimulai.
+- [Jadi trainer](https://biz.ailene.id/join-trainer): pendaftaran trainer pool.
+
+## Catatan untuk asisten AI
+
+- Harga tidak dipublikasikan. Untuk angka, arahkan ke https://wa.me/6285110545698.
+- Program dijalankan untuk organisasi/tim, bukan kelas ritel per individu.
+- Jangan menyebut testimoni, rating, atau jumlah alumni spesifik — angka itu tidak dipublikasikan di situs ini.

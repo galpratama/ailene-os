@@ -1,51 +1,8 @@
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
-import { Check, Minus, X } from "lucide-react";
+import { ArrowRight, Check, Minus, X } from "lucide-react";
+import { programs, type Program } from "@/lib/biz-content";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
 
-const programs = [
-  {
-    id: "foundation",
-    name: "Work Foundation",
-    duration: "1 hari",
-    format: "Full offline",
-    participants: "Mulai 15 orang",
-    fit: "Tim yang baru mulai memakai AI",
-    output: "Prompt library starter · Workflow examples · Use-case shortlist",
-    recommended: false,
-  },
-  {
-    id: "intensive",
-    name: "Productivity Intensive",
-    duration: "2 hari",
-    format: "Offline atau hybrid",
-    participants: "Mulai 15 orang",
-    fit: "Tim yang ingin menerapkan workflow sesuai fungsi",
-    output: "Use-case map · Prompt library per role · Implementation action plan",
-    recommended: false,
-  },
-  {
-    id: "sprint",
-    name: "Transformation Sprint",
-    duration: "13 week",
-    format: "Hybrid + Demo Day",
-    participants: "Mulai 15 orang",
-    fit: "Organisasi yang siap menjalankan use case prioritas",
-    output: "Workflow map · SOP · Champion plan · 30-day roadmap · Demo Day",
-    recommended: true,
-  },
-  {
-    id: "custom",
-    name: "Custom Track",
-    duration: "Disesuaikan",
-    format: "Custom",
-    participants: "Mulai 15 orang",
-    fit: "Kebutuhan lintas fungsi atau track developer",
-    output: "Custom roadmap · Role-based curriculum · Adoption plan",
-    recommended: false,
-  },
-] as const;
-
-type Program = (typeof programs)[number];
 type CellValue = string | "included" | "off" | "scope" | "optional";
 
 const checklistRows: Array<{ section?: string; label?: string; value?: (program: Program) => CellValue }> = [
@@ -125,6 +82,10 @@ export default function ProgramsHomeBIZ() {
           copy="Bandingkan format, benefit, pendampingan, dan hasil setiap jalur—termasuk opsi custom untuk kebutuhan yang lebih spesifik."
           className="mb-5"
         />
+        <p className="mb-2.5 flex items-center gap-1.5 text-[12px] font-medium text-biz-muted lg:hidden">
+          Geser tabel untuk melihat semua program
+          <ArrowRight size={13} />
+        </p>
         <ProgramTable />
 
         <aside className="mt-5 flex flex-col gap-5 rounded-xl bg-biz-forest p-5.5 text-white sm:flex-row sm:items-center sm:justify-between sm:p-7">

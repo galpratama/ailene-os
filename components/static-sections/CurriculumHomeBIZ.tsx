@@ -3,58 +3,8 @@
 import { ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { curriculumModules as modules } from "@/lib/biz-content";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
-
-const modules = [
-  {
-    title: "AI Baseline & Safe Use",
-    copy: "Memahami peluang, batasan, dan prinsip penggunaan AI yang bertanggung jawab.",
-    kicker: "Fondasi bersama",
-    lead: "Samakan cara kerja AI sebelum tim mulai bereksperimen.",
-    points: ["Cara kerja AI dan batas penggunaannya", "Keamanan data dan prinsip penggunaan yang aman", "Standar prompt awal untuk seluruh tim"],
-    result: "Baseline & guardrails tim",
-  },
-  {
-    title: "Prompting & Context",
-    copy: "Menyusun instruksi yang jelas dengan konteks kerja yang cukup.",
-    kicker: "Instruksi yang jelas",
-    lead: "Ubah kebutuhan kerja menjadi instruksi yang menghasilkan output lebih konsisten.",
-    points: ["Struktur prompt yang mudah diulang", "Konteks, format, dan contoh yang relevan", "Prompt starter untuk workflow prioritas"],
-    result: "Prompt starter kit",
-  },
-  {
-    title: "Workflow Design",
-    copy: "Memetakan pekerjaan berulang dan memilih bagian yang layak dibantu AI.",
-    kicker: "Pemetaan workflow",
-    lead: "Temukan titik kerja yang paling masuk akal untuk dibantu AI.",
-    points: ["Peta alur kerja dan pekerjaan berulang", "Shortlist use case yang relevan", "Batas antara judgment manusia dan bantuan AI"],
-    result: "Workflow map & use-case shortlist",
-  },
-  {
-    title: "Role-based Lab",
-    copy: "Menguji workflow pada contoh nyata dari fungsi yang ikut program.",
-    kicker: "Praktik per role",
-    lead: "Latihan langsung menggunakan konteks dan contoh kerja tiap fungsi.",
-    points: ["Studi kasus sesuai tanggung jawab role", "Praktik menggunakan tools AI yang relevan", "Feedback untuk memperbaiki workflow"],
-    result: "Contoh workflow per divisi",
-  },
-  {
-    title: "Quality & Review",
-    copy: "Memeriksa output, menjaga judgment, dan membuat standar kerja sederhana.",
-    kicker: "Standar kualitas",
-    lead: "Pastikan output AI tetap akurat, relevan, dan siap digunakan.",
-    points: ["Checklist review untuk kualitas dan fakta", "Cara menjaga judgment manusia", "Standar output yang bisa dipakai bersama"],
-    result: "Quality checklist & review standard",
-  },
-  {
-    title: "Adoption Plan",
-    copy: "Menentukan owner, ritme follow-up, dan langkah implementasi berikutnya.",
-    kicker: "Langkah adopsi",
-    lead: "Tutup program dengan langkah nyata agar penggunaan AI terus bergerak.",
-    points: ["Owner dan workflow prioritas", "Ritme follow-up dan coaching", "Langkah implementasi 30 hari"],
-    result: "Adoption plan 30 hari",
-  },
-];
 
 export default function CurriculumHomeBIZ() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -102,7 +52,7 @@ export default function CurriculumHomeBIZ() {
                 sizes="(max-width: 1024px) 100vw, 44vw"
                 className="h-80 w-full object-cover lg:h-135"
               />
-              <figcaption className="px-4.5 pt-3.5 pb-4 text-xs leading-relaxed text-white/72">
+              <figcaption className="px-4.5 pt-3.5 pb-16 text-xs leading-relaxed text-white/72 lg:pb-4">
                 Latihan dirancang untuk bergerak dari pemahaman ke workflow yang dipakai.
               </figcaption>
             </figure>

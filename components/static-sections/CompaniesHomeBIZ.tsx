@@ -36,7 +36,7 @@ export default function CompaniesHomeBIZ() {
                   <Image
                     fill
                     src={company.src}
-                    alt={company.name}
+                    alt={`Logo ${company.name}`}
                     sizes="(min-width: 640px) 170px, 150px"
                     className="object-contain opacity-75 [filter:grayscale(1)_brightness(0)_invert(.72)] transition-[filter,opacity] hover:opacity-100 hover:[filter:grayscale(1)_brightness(0)_invert(.88)]"
                   />

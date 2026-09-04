@@ -1,8 +1,37 @@
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
+import { siteProfile } from "@/lib/site";
+import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Text } from "next/font/google";
 import type { ReactNode } from "react";
+
+export const metadata: Metadata = {
+  title: {
+    default: `${siteProfile.name} | ${siteProfile.tagline}`,
+    template: `%s | ${siteProfile.name}`,
+  },
+  description: siteProfile.description,
+  applicationName: siteProfile.name,
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: siteProfile.name,
+    locale: siteProfile.locale,
+    images: [
+      {
+        url: "/biz/hero-training.jpg",
+        width: 1400,
+        height: 700,
+        alt: "Sesi AI adoption training Ailene bersama tim perusahaan",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/biz/hero-training.jpg"],
+  },
+};
 
 const stackSansText = Stack_Sans_Text({
   subsets: ["latin"],
@@ -13,6 +42,9 @@ const stackSansText = Stack_Sans_Text({
 export default function BizLayout({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
+      {/* Third-party image hosts used below the fold; warm the connections early. */}
+      <link rel="preconnect" href="https://cdn.simpleicons.org" />
+      <link rel="dns-prefetch" href="https://cdn.simpleicons.org" />
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
       <div className={stackSansText.className}>{children}</div>
