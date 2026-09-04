@@ -24,7 +24,7 @@ These are project-specific conventions. Follow them exactly — don't fall back 
 
 ## Auth / session flow (the part that's easy to get wrong)
 
-- Login happens on `biz.*`; the session token is set as an **httpOnly cookie** (`SESSION_COOKIE_NAME` from `lib/constants.ts`) on the root domain, shared across `os.*` / `api.*` / `biz.*`.
+- Login happens on `os.*` (`/auth/login`, outside the `(protected)` route group so it renders without a session); the session token is set as an **httpOnly cookie** (`SESSION_COOKIE_NAME` from `lib/constants.ts`) on the root domain, shared across `os.*` / `api.*` / `biz.*`. `biz.*` only links across to it.
 - The OS app's tRPC client talks to a **different subdomain** (`api.*`), which is a real cross-origin request from the browser's point of view. httpOnly cookies are not readable by client JS, and aren't auto-sent cross-origin without extra config — so the session has to be bridged manually:
   1. The page's `page.tsx` (server component) reads the cookie via `cookies()` and passes `sessionToken` as a prop to its client component.
   2. That client component calls `setSessionToken(token)` (from `@/trpc/client`) inside a `useEffect`, **declared before any `useQuery` call in the same component** — effects run in source order within a component, and the query's own internal fetch-effect must not fire before the token is set.

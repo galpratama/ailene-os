@@ -47,11 +47,6 @@ function SegmentToggle({
   );
 }
 
-const bizLoginURL =
-  process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
-    ? "https://biz.example.com:3000/auth/login"
-    : "https://biz.ailene.id/auth/login";
-
 function NavItem({
   href,
   label,
@@ -121,7 +116,7 @@ function UserFooter({
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
-      window.location.href = bizLoginURL;
+      window.location.href = "/auth/login";
     }
   }
 

@@ -1,6 +1,12 @@
 import { LogoAilene } from "@/components/svg/LogoAilene";
 import Link from "next/link";
 
+// Login lives on the os app, not here, so these have to be absolute.
+const osLoginURL =
+  process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
+    ? "https://os.example.com:3000/auth/login"
+    : "https://os.ailene.id/auth/login";
+
 const navLinks = [
   { label: "Kurikulum", href: "/#kurikulum" },
   { label: "Komunitas", href: "/#komunitas" },
@@ -28,13 +34,13 @@ export default function HeaderBIZ() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/auth/login"
+            href={osLoginURL}
             className="text-[14.5px] font-semibold text-ink-soft hover:text-ink"
           >
             Masuk
           </Link>
           <Link
-            href="/auth/login"
+            href={osLoginURL}
             className="rounded-[10px] bg-ink px-4.5 py-2.25 text-sm font-bold text-white"
           >
             Mulai belajar

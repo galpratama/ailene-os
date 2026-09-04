@@ -17,13 +17,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Force revalidation on the marketing domains so a cookie-dependent response never gets served stale.
+        // Force revalidation so a cookie-dependent response never gets served stale.
         source: "/:all*",
         has: [
           {
             type: "header",
             key: "host",
-            value: "biz.(ailene.id|example.com).*",
+            value: "(biz|os).(ailene.id|example.com).*",
           },
         ],
         headers: [
@@ -37,16 +37,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // No session cookie on os (prod) -> bounce to the login page on the main domain.
-      // /api/cron/* is exempt: Vercel Cron authenticates with the CRON_SECRET
-      // bearer token inside the route handler and never sends a session cookie.
+      // No session cookie on os -> bounce to /auth/login; /auth and /api authenticate on their own.
       {
-        source: "/:path((?!api/cron).*)",
+        source: "/:path((?!api|auth).*)",
         has: [
           {
             type: "header",
             key: "host",
-            value: "os.ailene.id.*",
+            value: "os.(ailene.id|example.com).*",
           },
         ],
         missing: [
@@ -55,27 +53,7 @@ const nextConfig: NextConfig = {
             key: SESSION_TOKEN,
           },
         ],
-        destination: "https://biz.ailene.id/auth/login",
-        basePath: false,
-        permanent: false,
-      },
-      // Same, but for the local dev host running on :3000.
-      {
-        source: "/(.*)",
-        has: [
-          {
-            type: "header",
-            key: "host",
-            value: "os.example.com:3000.*",
-          },
-        ],
-        missing: [
-          {
-            type: "cookie",
-            key: SESSION_TOKEN,
-          },
-        ],
-        destination: "https://biz.example.com:3000/auth/login",
+        destination: "/auth/login",
         basePath: false,
         permanent: false,
       },
@@ -86,7 +64,7 @@ const nextConfig: NextConfig = {
           {
             type: "header",
             key: "host",
-            value: "biz.(ailene.id|example.com).*",
+            value: "os.(ailene.id|example.com).*",
           },
           {
             type: "cookie",

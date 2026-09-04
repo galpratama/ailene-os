@@ -23,28 +23,17 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const domain =
-    process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
-      ? "biz.example.com:3000"
-      : "biz.ailene.id";
-  const osRoute =
-    process.env.NEXT_PUBLIC_DOMAIN_MODE === "local"
-      ? "https://os.example.com:3000"
-      : "https://os.ailene.id";
-
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch(
-          `https://${domain}/api/auth/callback/google`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tokenResponse }),
-          }
-        );
+        // Same-origin: this page and the callback both live on the os domain.
+        const response = await fetch("/api/auth/callback/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tokenResponse }),
+        });
 
         if (!response.ok) {
           throw new Error("Login request failed");
@@ -52,7 +41,7 @@ function LoginForm() {
 
         const result = await response.json();
         if (result.status === 200) {
-          window.location.assign(osRoute);
+          window.location.assign("/");
         } else {
           setError("Login failed. Please try again.");
         }
