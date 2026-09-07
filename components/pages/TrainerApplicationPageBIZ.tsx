@@ -79,10 +79,7 @@ export default function TrainerApplicationPageBIZ() {
     onSuccess: () => {
       setSubmitted(true);
       // Only fires on a persisted application, so GTM never counts failed submits.
-      trackFormSubmit({
-        formName: "trainer_application",
-        placement: "trainer_application",
-      });
+      trackFormSubmit({ placement: "trainer_application" });
     },
     onError: (mutationError) => setError(mutationError.message),
   });

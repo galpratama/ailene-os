@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  trackCTAClick,
-  trackWhatsAppLead,
-  type ConversionPlacement,
-} from "@/lib/conversion";
+import { trackCTAClick, trackWhatsAppLead } from "@/lib/conversion";
+import type { BizBlock } from "@/lib/feature-tracking";
 import Link from "next/link";
 import { AnchorHTMLAttributes, MouseEvent, ReactNode } from "react";
 
@@ -16,10 +13,8 @@ interface LinkButtonBIZProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   variant?: LinkButtonVariant;
   children: ReactNode;
   className?: string;
-  // Section this CTA lives in; a wa.me href reports a lead, anything else a CTA click.
-  trackPlacement?: ConversionPlacement;
-  // Only needed when children aren't plain text — otherwise the label is the text.
-  trackLabel?: string;
+  // Block this CTA lives in; a wa.me href reports a lead, anything else a CTA click.
+  trackPlacement?: BizBlock;
 }
 
 const variantClasses: Record<LinkButtonVariant, string> = {
@@ -36,7 +31,6 @@ export default function LinkButtonBIZ({
   children,
   className,
   trackPlacement,
-  trackLabel,
   onClick,
   ...rest
 }: LinkButtonBIZProps) {
@@ -50,11 +44,10 @@ export default function LinkButtonBIZ({
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (trackPlacement) {
-      const label = trackLabel ?? (typeof children === "string" ? children : undefined);
       if (href.includes("wa.me")) {
-        trackWhatsAppLead({ placement: trackPlacement, label });
+        trackWhatsAppLead({ placement: trackPlacement });
       } else {
-        trackCTAClick({ placement: trackPlacement, label, href });
+        trackCTAClick({ placement: trackPlacement });
       }
     }
     onClick?.(event);

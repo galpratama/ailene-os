@@ -1,5 +1,6 @@
 "use client";
 
+import { trackFeatureView, type BizBlock } from "@/lib/feature-tracking";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ReactNode } from "react";
 
@@ -7,10 +8,13 @@ export default function RevealOnScroll({
   children,
   delay = 0,
   className,
+  viewBlock,
 }: {
   children: ReactNode;
   delay?: number;
   className?: string;
+  // Set it to report a GTM view event when this section scrolls in.
+  viewBlock?: BizBlock;
 }) {
   const shouldReduceMotion = useReducedMotion();
 
@@ -24,6 +28,11 @@ export default function RevealOnScroll({
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-80px" }}
+      onViewportEnter={
+        viewBlock
+          ? () => trackFeatureView({ name: "home_section", block: viewBlock })
+          : undefined
+      }
       variants={variants}
       transition={{ duration: 0.55, ease: "easeOut", delay }}
     >

@@ -20,39 +20,39 @@ export default function HomePageBIZ() {
       <HeaderHomeBIZ />
       <main>
         <HeroHomeBIZ />
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="companies">
           <CompaniesHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="outcomes">
           <OutcomesHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="tools">
           <ToolsHomeBIZ />
         </RevealOnScroll>
         <div className="bg-[linear-gradient(180deg,var(--color-biz-forest)_0%,var(--color-biz-forest-mid)_52%,var(--color-biz-forest-light)_100%)] text-white">
-          <RevealOnScroll>
+          <RevealOnScroll viewBlock="adoption_proof">
             <AdoptionProofHomeBIZ />
           </RevealOnScroll>
-          <RevealOnScroll>
+          <RevealOnScroll viewBlock="lms">
             <LMSHomeBIZ />
           </RevealOnScroll>
         </div>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="curriculum">
           <CurriculumHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="programs">
           <ProgramsHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="trainers">
           <TrainersHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="faq">
           <FAQHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="lead_form">
           <LeadFormHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll>
+        <RevealOnScroll viewBlock="final_cta">
           <CTAHomeBIZ />
         </RevealOnScroll>
       </main>

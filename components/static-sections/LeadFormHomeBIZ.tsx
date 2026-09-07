@@ -20,7 +20,7 @@ export default function LeadFormHomeBIZ() {
     ].join("\n");
 
     window.open(`https://wa.me/6285110545698?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-    trackFormLead({ formName: "lead_form_home", placement: "lead_form" });
+    trackFormLead({ placement: "lead_form" });
   };
 
   return (

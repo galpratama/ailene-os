@@ -1,12 +1,18 @@
 "use client";
 
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
+import { trackFeatureView } from "@/lib/feature-tracking";
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function HeroHomeBIZ() {
   const shouldReduceMotion = useReducedMotion();
   const riseY = shouldReduceMotion ? 0 : 12;
+
+  useEffect(() => {
+    trackFeatureView({ name: "home_section", block: "hero" });
+  }, []);
 
   return (
     <section className="relative isolate overflow-hidden bg-biz-forest text-white">

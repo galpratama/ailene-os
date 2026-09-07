@@ -24,12 +24,7 @@ const announcement = (
       href="https://wa.me/6285110545698"
       target="_blank"
       rel="noreferrer"
-      onClick={() =>
-        trackWhatsAppLead({
-          placement: "header_announcement",
-          label: "Amankan slot",
-        })
-      }
+      onClick={() => trackWhatsAppLead({ placement: "header_announcement" })}
       className="border-b border-current text-xs font-bold"
     >
       Amankan slot →
