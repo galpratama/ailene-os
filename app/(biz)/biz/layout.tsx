@@ -1,6 +1,7 @@
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import { siteProfile } from "@/lib/site";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Text } from "next/font/google";
@@ -40,11 +41,15 @@ const stackSansText = Stack_Sans_Text({
 
 // Keep the marketing site on the light brand palette; dark mode belongs to the OS app.
 export default function BizLayout({ children }: { children: ReactNode }) {
+  const googleAnalyticsId =
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-5PC86LTSJ9";
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       {/* Third-party image hosts used below the fold; warm the connections early. */}
       <link rel="preconnect" href="https://cdn.simpleicons.org" />
       <link rel="dns-prefetch" href="https://cdn.simpleicons.org" />
+      {googleAnalyticsId && <GoogleAnalytics gaId={googleAnalyticsId} />}
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
       <div className={stackSansText.className}>{children}</div>
