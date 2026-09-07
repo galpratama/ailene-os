@@ -1,8 +1,6 @@
 "use client";
 
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
-import { sendLeadEvent } from "@/lib/fbq";
-import { sendConversionEvent } from "@/lib/gtag";
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 
@@ -47,14 +45,15 @@ export default function HeroHomeBIZ() {
             <LinkButtonBIZ
               href="https://wa.me/6285110545698"
               variant="lime"
-              onClick={() => {
-                sendConversionEvent();
-                sendLeadEvent();
-              }}
+              trackPlacement="hero"
             >
               Diskusikan kebutuhan tim
             </LinkButtonBIZ>
-            <LinkButtonBIZ href="#curriculum" variant="outlineDark">
+            <LinkButtonBIZ
+              href="#curriculum"
+              variant="outlineDark"
+              trackPlacement="hero"
+            >
               Lihat kurikulum
             </LinkButtonBIZ>
           </div>

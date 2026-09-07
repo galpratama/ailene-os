@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^6.1.0",
+    "@next/third-parties": "^16.3.4",
     "@prisma/client": "^6.19.3",
     "@react-oauth/google": "^0.13.5",
     "@react-pdf/renderer": "^4.5.1",

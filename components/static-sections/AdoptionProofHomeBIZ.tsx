@@ -34,7 +34,7 @@ export default function AdoptionProofHomeBIZ() {
               </li>
             ))}
           </ul>
-          <LinkButtonBIZ href="#how-we-work" variant="outlineDark" className="mt-7.5">
+          <LinkButtonBIZ href="#how-we-work" variant="outlineDark" trackPlacement="adoption_proof" className="mt-7.5">
             Lihat cara Ailene bekerja
           </LinkButtonBIZ>
         </div>

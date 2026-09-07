@@ -94,7 +94,7 @@ export default function ProgramsHomeBIZ() {
             <h3 className="mt-1.5 max-w-162.5 text-[clamp(1.45rem,2.5vw,2.05rem)] leading-[1.02] font-medium tracking-[-0.055em]">Ceritakan tim dan targetnya. Kami bantu pilih format yang tepat.</h3>
             <p className="mt-2 max-w-150 text-[13px] leading-[1.55] text-white/68">Mulai dari jumlah peserta, target kerja, dan bentuk pendampingan yang Anda butuhkan.</p>
           </div>
-          <LinkButtonBIZ href="https://wa.me/6285110545698" variant="lime" className="shrink-0">Bahas program untuk tim Anda</LinkButtonBIZ>
+          <LinkButtonBIZ href="https://wa.me/6285110545698" variant="lime" trackPlacement="programs" className="shrink-0">Bahas program untuk tim Anda</LinkButtonBIZ>
         </aside>
       </div>
     </section>

@@ -1,4 +1,7 @@
+"use client";
+
 import { LogoAilene } from "@/components/svg/LogoAilene";
+import { trackWhatsAppLead } from "@/lib/conversion";
 
 const columns = [
   {
@@ -22,13 +25,13 @@ export default function FooterHomeBIZ() {
         <div>
           <LogoAilene variant="white" className="h-8 w-auto" />
           <p className="mt-5 max-w-100 text-sm leading-[1.8] text-white/65">Membantu organisasi bergerak dari AI training menuju adopsi yang terlihat, terukur, dan berlanjut di pekerjaan sehari-hari.</p>
-          <p className="mt-4"><a href="https://wa.me/6285110545698" target="_blank" rel="noreferrer" className="text-sm font-medium text-biz-lime hover:text-white">Diskusikan Kebutuhan Tim</a></p>
+          <p className="mt-4"><a href="https://wa.me/6285110545698" target="_blank" rel="noreferrer" onClick={() => trackWhatsAppLead({ placement: "footer", label: "Diskusikan Kebutuhan Tim" })} className="text-sm font-medium text-biz-lime hover:text-white">Diskusikan Kebutuhan Tim</a></p>
         </div>
         <div className="grid grid-cols-2 gap-7 sm:grid-cols-3">
           {columns.map((column) => (
             <div key={column.title}>
               <h3 className="font-mono text-[10px] tracking-[0.2em] text-white/42 uppercase">{column.title}</h3>
-              {column.links.map(([label, href]) => <a key={label} href={href} className="mt-3 block text-[13px] text-white/68 transition-colors hover:text-white">{label}</a>)}
+              {column.links.map(([label, href]) => <a key={label} href={href} onClick={href.includes("wa.me") ? () => trackWhatsAppLead({ placement: "footer", label }) : undefined} className="mt-3 block text-[13px] text-white/68 transition-colors hover:text-white">{label}</a>)}
             </div>
           ))}
         </div>

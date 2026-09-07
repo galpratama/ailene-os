@@ -1,5 +1,12 @@
+"use client";
+
+import {
+  trackCTAClick,
+  trackWhatsAppLead,
+  type ConversionPlacement,
+} from "@/lib/conversion";
 import Link from "next/link";
-import { AnchorHTMLAttributes, ReactNode } from "react";
+import { AnchorHTMLAttributes, MouseEvent, ReactNode } from "react";
 
 // Marketing CTAs navigate to in-page anchors or external destinations.
 export type LinkButtonVariant = "dark" | "light" | "lime" | "outlineDark";
@@ -9,6 +16,10 @@ interface LinkButtonBIZProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   variant?: LinkButtonVariant;
   children: ReactNode;
   className?: string;
+  // Section this CTA lives in; a wa.me href reports a lead, anything else a CTA click.
+  trackPlacement?: ConversionPlacement;
+  // Only needed when children aren't plain text — otherwise the label is the text.
+  trackLabel?: string;
 }
 
 const variantClasses: Record<LinkButtonVariant, string> = {
@@ -24,6 +35,9 @@ export default function LinkButtonBIZ({
   variant = "dark",
   children,
   className,
+  trackPlacement,
+  trackLabel,
+  onClick,
   ...rest
 }: LinkButtonBIZProps) {
   const classes = [
@@ -34,6 +48,18 @@ export default function LinkButtonBIZ({
     .filter(Boolean)
     .join(" ");
 
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (trackPlacement) {
+      const label = trackLabel ?? (typeof children === "string" ? children : undefined);
+      if (href.includes("wa.me")) {
+        trackWhatsAppLead({ placement: trackPlacement, label });
+      } else {
+        trackCTAClick({ placement: trackPlacement, label, href });
+      }
+    }
+    onClick?.(event);
+  };
+
   if (href.startsWith("http")) {
     return (
       <a
@@ -41,6 +67,7 @@ export default function LinkButtonBIZ({
         target="_blank"
         rel="noopener noreferrer"
         className={classes}
+        onClick={handleClick}
         {...rest}
       >
         {children}
@@ -49,7 +76,7 @@ export default function LinkButtonBIZ({
   }
 
   return (
-    <Link href={href} className={classes} {...rest}>
+    <Link href={href} className={classes} onClick={handleClick} {...rest}>
       {children}
     </Link>
   );

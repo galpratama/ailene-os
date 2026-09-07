@@ -3,6 +3,7 @@
 import AppButton from "@/components/buttons/AppButton";
 import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 import { LogoAilene } from "@/components/svg/LogoAilene";
+import { trackWhatsAppLead } from "@/lib/conversion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,6 +24,12 @@ const announcement = (
       href="https://wa.me/6285110545698"
       target="_blank"
       rel="noreferrer"
+      onClick={() =>
+        trackWhatsAppLead({
+          placement: "header_announcement",
+          label: "Amankan slot",
+        })
+      }
       className="border-b border-current text-xs font-bold"
     >
       Amankan slot →
@@ -91,6 +98,7 @@ export default function HeaderHomeBIZ() {
           <LinkButtonBIZ
             href="https://wa.me/6285110545698"
             variant="lime"
+            trackPlacement="header"
             className="min-h-10 rounded-[7px]"
           >
             Diskusikan Kebutuhan Tim
@@ -130,6 +138,8 @@ export default function HeaderHomeBIZ() {
           <LinkButtonBIZ
             href="https://wa.me/6285110545698"
             variant="lime"
+            trackPlacement="header_mobile"
+            onClick={closeMenu}
             className="mt-1 w-full"
           >
             Diskusikan Kebutuhan Tim

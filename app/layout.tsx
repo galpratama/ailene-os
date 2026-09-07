@@ -1,3 +1,4 @@
+import { GoogleTagManager } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -37,13 +38,28 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Single container for every sub-app; renders nothing until BD/Marketing supplies the ID.
+  const googleTagManagerId = process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID;
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      {googleTagManagerId && <GoogleTagManager gtmId={googleTagManagerId} />}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {/* GoogleTagManager only emits the <head> script, so the no-JS fallback is hand-written here. */}
+        {googleTagManagerId && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${googleTagManagerId}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        )}
         <GoogleOAuthProvider
           clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ID!}
         >

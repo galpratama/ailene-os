@@ -9,6 +9,7 @@ import AppSelect, {
 import AppTextArea from "@/components/fields/AppTextArea";
 import FooterBIZ from "@/components/navigations/FooterBIZ";
 import HeaderBIZ from "@/components/navigations/HeaderBIZ";
+import { trackFormSubmit } from "@/lib/conversion";
 import { trpc } from "@/trpc/client";
 import type { TrainerSourceEnum } from "@prisma/client";
 import {
@@ -75,7 +76,14 @@ export default function TrainerApplicationPageBIZ() {
   const { data: optionsData, isLoading: isLoadingOptions } =
     trpc.list.trainerPool.applicationOptions.useQuery();
   const apply = trpc.create.trainerPool.candidate.useMutation({
-    onSuccess: () => setSubmitted(true),
+    onSuccess: () => {
+      setSubmitted(true);
+      // Only fires on a persisted application, so GTM never counts failed submits.
+      trackFormSubmit({
+        formName: "trainer_application",
+        placement: "trainer_application",
+      });
+    },
     onError: (mutationError) => setError(mutationError.message),
   });
 

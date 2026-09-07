@@ -194,7 +194,7 @@ export default function OutcomesHomeBIZ() {
             <p className="text-[12px] font-medium tracking-[0.08em] text-biz-lime uppercase">Langkah berikutnya</p>
             <h3 className="mt-1.5 text-[clamp(1.45rem,2.5vw,2.1rem)] leading-none font-medium tracking-[-0.055em]">Buka ruang untuk berkembang.</h3>
           </div>
-          <LinkButtonBIZ href="#adoption-gap" variant="lime" className="shrink-0">Lihat dampak untuk bisnis Anda</LinkButtonBIZ>
+          <LinkButtonBIZ href="#adoption-gap" variant="lime" trackPlacement="outcomes" className="shrink-0">Lihat dampak untuk bisnis Anda</LinkButtonBIZ>
         </aside>
       </div>
     </section>

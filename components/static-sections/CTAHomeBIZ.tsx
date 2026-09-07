@@ -10,7 +10,7 @@ export default function CTAHomeBIZ() {
             <h2 className="mt-2 max-w-162.5 text-[clamp(1.8rem,2.8vw,2.45rem)] leading-[1.02] font-medium tracking-[-0.055em] text-biz-forest">Mulai dari satu workflow yang ingin dibuat lebih baik.</h2>
             <p className="mt-2 max-w-155 text-[13px] leading-[1.65] text-biz-muted">Kami bantu tim memilih langkah adopsi AI yang jelas, relevan, dan siap dicoba.</p>
           </div>
-          <LinkButtonBIZ href="#contact" variant="dark" className="!rounded-lg !bg-biz-forest normal-case">Mulai dari kebutuhan tim</LinkButtonBIZ>
+          <LinkButtonBIZ href="#contact" variant="dark" trackPlacement="final_cta" className="!rounded-lg !bg-biz-forest normal-case">Mulai dari kebutuhan tim</LinkButtonBIZ>
         </div>
       </div>
     </section>
