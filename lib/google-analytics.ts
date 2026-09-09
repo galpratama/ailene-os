@@ -7,6 +7,12 @@ type ServiceAccountCredentials = {
   private_key: string;
 };
 
+// Env var name (for error messages) plus its value, read at the call site to avoid a dynamic key.
+type CredentialSource = {
+  variable: string;
+  rawCredentials: string | undefined;
+};
+
 function parseCredentialsJSON(rawCredentials: string) {
   try {
     return JSON.parse(rawCredentials) as Partial<ServiceAccountCredentials>;
@@ -32,14 +38,15 @@ function parseCredentialsJSON(rawCredentials: string) {
   }
 }
 
-function getInlineCredentials(): ServiceAccountCredentials | undefined {
-  const rawCredentials = process.env.GA4_SERVICE_ACCOUNT_JSON;
-  if (!rawCredentials) return undefined;
+function getInlineCredentials(
+  source: CredentialSource
+): ServiceAccountCredentials | undefined {
+  if (!source.rawCredentials) return undefined;
 
-  const parsed = parseCredentialsJSON(rawCredentials);
+  const parsed = parseCredentialsJSON(source.rawCredentials);
   if (!parsed.client_email || !parsed.private_key) {
     throw new Error(
-      "GA4_SERVICE_ACCOUNT_JSON must include client_email and private_key."
+      `${source.variable} must include client_email and private_key.`
     );
   }
 
@@ -49,28 +56,70 @@ function getInlineCredentials(): ServiceAccountCredentials | undefined {
   };
 }
 
-function createAnalyticsClient() {
-  const credentials = getInlineCredentials();
-  return new BetaAnalyticsDataClient(
-    credentials ? { credentials } : undefined
-  );
+// First source that is set wins; with none set the client uses Application Default Credentials.
+function createAnalyticsClient(sources: CredentialSource[]) {
+  for (const source of sources) {
+    const credentials = getInlineCredentials(source);
+    if (credentials) return new BetaAnalyticsDataClient({ credentials });
+  }
+  return new BetaAnalyticsDataClient();
 }
 
 const globalForAnalytics = globalThis as unknown as {
   ga4AnalyticsDataClient?: BetaAnalyticsDataClient;
+  ga4BizAnalyticsDataClient?: BetaAnalyticsDataClient;
 };
 
-export const analyticsDataClient =
-  globalForAnalytics.ga4AnalyticsDataClient ?? createAnalyticsClient();
+// Built on first use, so a malformed credential JSON fails one query instead of the whole build.
+function memoizedClient(
+  cacheKey: "ga4AnalyticsDataClient" | "ga4BizAnalyticsDataClient",
+  sources: CredentialSource[]
+) {
+  const cached = globalForAnalytics[cacheKey];
+  if (cached) return cached;
 
-if (process.env.NODE_ENV !== "production") {
-  globalForAnalytics.ga4AnalyticsDataClient = analyticsDataClient;
+  const client = createAnalyticsClient(sources);
+  globalForAnalytics[cacheKey] = client;
+  return client;
+}
+
+// B2C — the product sites' GA4 property, behind the OS "Tracking" tab.
+export function getAnalyticsClient() {
+  return memoizedClient("ga4AnalyticsDataClient", [
+    {
+      variable: "GA4_SERVICE_ACCOUNT_JSON",
+      rawCredentials: process.env.GA4_SERVICE_ACCOUNT_JSON,
+    },
+  ]);
+}
+
+// B2B — the biz.* marketing property, usually with its own service account.
+export function getBizAnalyticsClient() {
+  return memoizedClient("ga4BizAnalyticsDataClient", [
+    {
+      variable: "GA4_BIZ_SERVICE_ACCOUNT_JSON",
+      rawCredentials: process.env.GA4_BIZ_SERVICE_ACCOUNT_JSON,
+    },
+    {
+      variable: "GA4_SERVICE_ACCOUNT_JSON",
+      rawCredentials: process.env.GA4_SERVICE_ACCOUNT_JSON,
+    },
+  ]);
 }
 
 export function getGA4Property() {
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) {
     throw new Error("GA4_PROPERTY_ID is not configured.");
+  }
+  return `properties/${propertyId}`;
+}
+
+// The marketing site reports into its own GA4 property, separate from the B2C product sites.
+export function getGA4BizProperty() {
+  const propertyId = process.env.GA4_BIZ_PROPERTY_ID;
+  if (!propertyId) {
+    throw new Error("GA4_BIZ_PROPERTY_ID is not configured.");
   }
   return `properties/${propertyId}`;
 }

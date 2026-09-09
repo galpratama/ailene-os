@@ -1,35 +1,13 @@
+import {
+  BIZ_BLOCKS,
+  type BizBlock,
+  type FeatureName,
+} from "@/lib/biz-blocks";
 import { pushGTMEvent } from "@/lib/gtm";
 
-// Every tracked block on the marketing site, ordered top to bottom — the index is feature_position.
-export const BIZ_BLOCKS = [
-  "header_announcement",
-  "header",
-  "header_mobile",
-  "hero",
-  "companies",
-  "outcomes",
-  "tools",
-  "adoption_proof",
-  "lms",
-  "curriculum",
-  "programs",
-  "trainers",
-  "faq",
-  "lead_form",
-  "final_cta",
-  "footer",
-  "footer_nav",
-  "trainer_application",
-] as const;
-
-export type BizBlock = (typeof BIZ_BLOCKS)[number];
-
-// What kind of element fired the event; feature_id says which block it sits in.
-export type FeatureName =
-  | "home_section"
-  | "whatsapp_cta"
-  | "anchor_cta"
-  | "form_submit";
+// The taxonomy lives in lib/biz-blocks.ts so the OS analytics router can read it too.
+export { BIZ_BLOCKS };
+export type { BizBlock, FeatureName };
 
 interface Feature {
   name: FeatureName;

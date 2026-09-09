@@ -35,6 +35,14 @@
   --ailene-logo-start: #439f4d;
   --ailene-logo-end: #dfff6c;
 
+  /* Ordered forest -> lime ramp for directional series; categorical charts use the pastel tokens. */
+  --chart-1: #0f5c3c;
+  --chart-2: #1a7a52;
+  --chart-3: #3f9a5f;
+  --chart-4: #74b95f;
+  --chart-5: #a8d24a;
+  --chart-6: #d6ee30;
+
   /* B2B training palette stays separate from the existing marketing tokens. */
   --coral: #ff8556;
   --coral-t: #ffdcd7;
@@ -98,6 +106,14 @@
   --sb-item-hover: #123526;
   --sb-item-active-bg: #123526;
   --sb-item-active-text: #d6ee30;
+
+  /* Same ramp lifted off the dark page background. */
+  --chart-1: #1d7a55;
+  --chart-2: #2b9463;
+  --chart-3: #4dae6b;
+  --chart-4: #7fc766;
+  --chart-5: #afd854;
+  --chart-6: #d6ee30;
 }
 
 @theme inline {
@@ -131,6 +147,13 @@
   --color-forest-deep: var(--forest-deep);
   --color-ailene-logo-start: var(--ailene-logo-start);
   --color-ailene-logo-end: var(--ailene-logo-end);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
 
   --color-coral: var(--coral);
   --color-coral-t: var(--coral-t);

@@ -11,14 +11,14 @@ import {
   YAxis,
 } from "recharts";
 
-type TrendPoint = {
-  date: string;
-  sessions: number;
-  users: number;
-  revenue: number;
-};
+type TrendPoint = { date: string } & Record<string, number | string>;
 
-type TrendMetric = "sessions" | "users";
+export type TrendMetric = { key: string; label: string };
+
+const defaultMetrics: TrendMetric[] = [
+  { key: "sessions", label: "Sessions" },
+  { key: "users", label: "Active Users" },
+];
 
 function compactNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -46,36 +46,44 @@ function longDate(value: string) {
 
 export default function AnalyticsTrendChartOS({
   data,
+  metrics = defaultMetrics,
+  title = "Traffic trend",
+  description = "Daily movement across the selected websites.",
 }: {
   data: TrendPoint[];
+  // Toggle buttons above the chart, in order; the first one is selected on mount.
+  metrics?: TrendMetric[];
+  title?: string;
+  description?: string;
 }) {
-  const [metric, setMetric] = useState<TrendMetric>("sessions");
-  const metricLabel = metric === "sessions" ? "Sessions" : "Active Users";
+  const [metricKey, setMetricKey] = useState(metrics[0].key);
+  const activeMetric =
+    metrics.find((entry) => entry.key === metricKey) ?? metrics[0];
 
   return (
     <div className="rounded-xl border border-gray-300 bg-card-bg p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-            Traffic trend
+            {title}
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-            Daily movement across the selected websites.
+            {description}
           </p>
         </div>
         <div className="flex rounded-lg border border-gray-300 bg-gray-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-          {(["sessions", "users"] as const).map((value) => (
+          {metrics.map((entry) => (
             <button
-              key={value}
+              key={entry.key}
               type="button"
-              onClick={() => setMetric(value)}
+              onClick={() => setMetricKey(entry.key)}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${
-                metric === value
+                activeMetric.key === entry.key
                   ? "bg-lime-bright text-forest-deep"
                   : "text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               }`}
             >
-              {value}
+              {entry.key}
             </button>
           ))}
         </div>
@@ -137,14 +145,14 @@ export default function AnalyticsTrendChartOS({
               labelFormatter={(label) => longDate(String(label))}
               formatter={(value) => [
                 compactNumber(Number(value)),
-                metricLabel,
+                activeMetric.label,
               ]}
             />
             <Area
-              key={metric}
+              key={activeMetric.key}
               type="monotone"
-              dataKey={metric}
-              name={metricLabel}
+              dataKey={activeMetric.key}
+              name={activeMetric.label}
               stroke="var(--claude)"
               strokeWidth={3}
               fill="url(#trackingTrendFill)"
