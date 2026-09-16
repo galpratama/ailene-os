@@ -3,6 +3,7 @@ import {
   type BizBlock,
   type FeatureName,
 } from "@/lib/biz-blocks";
+import { sendFeatureEvent } from "@/lib/fbq";
 import { pushGTMEvent } from "@/lib/gtm";
 
 // The taxonomy lives in lib/biz-blocks.ts so the OS analytics router can read it too.
@@ -17,12 +18,16 @@ interface Feature {
 // A block reports its view once per session, matching the reveal animation's `once`.
 const viewedBlocks = new Set<BizBlock>();
 
+// One payload, two destinations: GA4 through GTM and the Meta pixel.
 function pushFeature(event: "view" | "click", feature: Feature) {
-  pushGTMEvent(event, {
+  const payload = {
     feature_name: feature.name,
     feature_id: feature.block,
     feature_position: BIZ_BLOCKS.indexOf(feature.block) + 1,
-  });
+  };
+
+  pushGTMEvent(event, payload);
+  sendFeatureEvent(event, payload);
 }
 
 export function trackFeatureView(feature: Feature) {
