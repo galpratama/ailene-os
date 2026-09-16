@@ -33,3 +33,29 @@ export function getShortRupiahCurrency(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return `${isNegative ? "-" : ""}Rp${rounded}${units[unitIndex]}`;
 }
+
+// Ad platforms report in the ad account's own currency, which is not always IDR.
+export function getAccountCurrency(value: number, currency: string): string {
+  if (currency === "IDR") {
+    return getRupiahCurrency(value);
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function getShortAccountCurrency(value: number, currency: string): string {
+  if (currency === "IDR") {
+    return getShortRupiahCurrency(value);
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}

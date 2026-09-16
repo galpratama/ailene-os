@@ -14,6 +14,18 @@ import {
   getGA4Property,
 } from "@/lib/google-analytics";
 import {
+  fetchMetaAdCreatives,
+  fetchMetaInsights,
+  getMetaAdAccount,
+  getMetaAdsCredentials,
+  isMetaAdsConfigured,
+  MetaAdsError,
+  redactToken,
+  type MetaActionRow,
+  type MetaAdCreative,
+  type MetaInsightsRow,
+} from "@/lib/meta-ads";
+import {
   STATUS_BAD_REQUEST,
   STATUS_INTERNAL_SERVER_ERROR,
   STATUS_OK,
@@ -344,6 +356,250 @@ const bizInputSchema = z
       });
     }
   });
+
+// --- Meta Ads (Marketing API) ----------------------------------------------
+
+// Account, campaign and ad rows all read the same core metrics.
+const ACCOUNT_INSIGHT_FIELDS = [
+  "spend",
+  "impressions",
+  "reach",
+  "clicks",
+  "inline_link_clicks",
+  "actions",
+  "cost_per_action_type",
+];
+
+const AD_INSIGHT_FIELDS = [
+  "ad_id",
+  "ad_name",
+  "adset_name",
+  "campaign_name",
+  "quality_ranking",
+  "engagement_rate_ranking",
+  "conversion_rate_ranking",
+];
+
+// Breakdown rows drop the per-ad fields; ranking metrics are not valid there.
+const BREAKDOWN_INSIGHT_FIELDS = [
+  "spend",
+  "impressions",
+  "reach",
+  "clicks",
+  "inline_link_clicks",
+  "actions",
+];
+
+const MAX_CREATIVES = 50;
+
+// Below this, one lucky click produces a flattering rate that should not win a badge.
+const MIN_RANKING_IMPRESSIONS = 500;
+
+// These three do not overlap; Meta's rolled-up `lead` already contains two of them.
+const META_RESULT_BREAKDOWN = [
+  {
+    key: "pixel_lead",
+    label: "Website leads (Pixel)",
+    action_type: "offsite_conversion.fb_pixel_lead",
+  },
+  {
+    key: "instant_form_lead",
+    label: "Instant form leads",
+    action_type: "onsite_conversion.lead_grouped",
+  },
+  {
+    key: "messaging_started",
+    label: "Messaging conversations",
+    action_type: "onsite_conversion.messaging_conversation_started_7d",
+  },
+] as const;
+
+const LINK_CLICK_ACTION = "link_click";
+const LANDING_PAGE_VIEW_ACTION = "landing_page_view";
+
+function metaNumber(value: string | undefined) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sumActionValue(actions: MetaActionRow[], actionType: string) {
+  return actions
+    .filter((action) => action.action_type === actionType)
+    .reduce((total, action) => total + metaNumber(action.value), 0);
+}
+
+type MetaTotals = {
+  spend: number;
+  impressions: number;
+  reach: number;
+  clicks: number;
+  link_clicks: number;
+  landing_page_views: number;
+  results: number;
+};
+
+// Reach is deduplicated, so a summed figure is an upper bound, which the UI labels.
+function sumMetaRows(rows: MetaInsightsRow[]): MetaTotals {
+  const totals: MetaTotals = {
+    spend: 0,
+    impressions: 0,
+    reach: 0,
+    clicks: 0,
+    link_clicks: 0,
+    landing_page_views: 0,
+    results: 0,
+  };
+
+  for (const row of rows) {
+    const actions = row.actions ?? [];
+    totals.spend += metaNumber(row.spend);
+    totals.impressions += metaNumber(row.impressions);
+    totals.reach += metaNumber(row.reach);
+    totals.clicks += metaNumber(row.clicks);
+    totals.link_clicks +=
+      row.inline_link_clicks !== undefined
+        ? metaNumber(row.inline_link_clicks)
+        : sumActionValue(actions, LINK_CLICK_ACTION);
+    totals.landing_page_views += sumActionValue(
+      actions,
+      LANDING_PAGE_VIEW_ACTION
+    );
+    for (const entry of META_RESULT_BREAKDOWN) {
+      totals.results += sumActionValue(actions, entry.action_type);
+    }
+  }
+
+  return totals;
+}
+
+// Recomputed from raw totals so a row and the summary above it can never disagree.
+function deriveMetaMetrics(totals: MetaTotals) {
+  return {
+    ...totals,
+    ctr: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : null,
+    link_ctr:
+      totals.impressions > 0
+        ? (totals.link_clicks / totals.impressions) * 100
+        : null,
+    cpc: totals.clicks > 0 ? totals.spend / totals.clicks : null,
+    cost_per_link_click:
+      totals.link_clicks > 0 ? totals.spend / totals.link_clicks : null,
+    cpm:
+      totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : null,
+    cpp: totals.reach > 0 ? (totals.spend / totals.reach) * 1000 : null,
+    frequency: totals.reach > 0 ? totals.impressions / totals.reach : null,
+    cost_per_result: totals.results > 0 ? totals.spend / totals.results : null,
+    result_rate:
+      totals.link_clicks > 0 ? (totals.results / totals.link_clicks) * 100 : null,
+  };
+}
+
+type MetaCreativeMetrics = ReturnType<typeof deriveMetaMetrics> & { id: string };
+
+// Best first: most results, then cheapest per result, then biggest spend.
+function compareCreatives(a: MetaCreativeMetrics, b: MetaCreativeMetrics) {
+  if (b.results !== a.results) return b.results - a.results;
+  if (a.cost_per_result !== null && b.cost_per_result !== null) {
+    return a.cost_per_result - b.cost_per_result;
+  }
+  return b.spend - a.spend;
+}
+
+// One row per day in the period, so a day with no delivery still plots as zero.
+function normalizeMetaDailyRows(
+  rows: MetaInsightsRow[],
+  startDate: string,
+  endDate: string
+) {
+  const rowMap = new Map(
+    rows.map((row) => [row.date_start ?? "", deriveMetaMetrics(sumMetaRows([row]))])
+  );
+
+  const days = [];
+  let cursor = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  while (cursor <= end) {
+    const key = formatDate(cursor);
+    const entry = rowMap.get(key);
+    days.push({
+      date: key,
+      spend: entry?.spend ?? 0,
+      impressions: entry?.impressions ?? 0,
+      reach: entry?.reach ?? 0,
+      clicks: entry?.clicks ?? 0,
+      link_clicks: entry?.link_clicks ?? 0,
+      results: entry?.results ?? 0,
+      cpm: entry?.cpm ?? 0,
+      cpc: entry?.cpc ?? 0,
+      ctr: entry?.ctr ?? 0,
+      cost_per_result: entry?.cost_per_result ?? 0,
+    });
+    cursor = addDays(cursor, 1);
+  }
+  return days;
+}
+
+// Several rows can share one label once normalized, so fold them before deriving rates.
+function groupMetaBreakdown(
+  rows: MetaInsightsRow[],
+  identify: (row: MetaInsightsRow) => { key: string; platform: string; label: string }
+) {
+  const groups = new Map<
+    string,
+    { key: string; platform: string; label: string; rows: MetaInsightsRow[] }
+  >();
+
+  for (const row of rows) {
+    const identity = identify(row);
+    const existing = groups.get(identity.key);
+    if (existing) {
+      existing.rows.push(row);
+    } else {
+      groups.set(identity.key, { ...identity, rows: [row] });
+    }
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      key: group.key,
+      platform: group.platform,
+      label: group.label,
+      ...deriveMetaMetrics(sumMetaRows(group.rows)),
+    }))
+    .sort((a, b) => b.spend - a.spend);
+}
+
+function titleCase(value: string) {
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function formatPlacement(value: string | undefined) {
+  if (!value) return "Unknown";
+  if (value === "facebook") return "Facebook";
+  if (value === "instagram") return "Instagram";
+  if (value === "audience_network") return "Audience Network";
+  if (value === "messenger") return "Messenger";
+  return titleCase(value);
+}
+
+function formatGender(value: string | undefined) {
+  if (!value || value === "unknown") return "Unknown";
+  return titleCase(value);
+}
+
+function formatObjective(value: string | undefined) {
+  if (!value) return "—";
+  return titleCase(value.replace(/^OUTCOME_/, "").toLowerCase());
+}
+
+// Meta reports "UNKNOWN" while a creative has too little delivery to be graded.
+function normalizeRanking(value: string | undefined) {
+  if (!value || value === "UNKNOWN") return null;
+  return titleCase(value.toLowerCase());
+}
 
 export const listAnalytics = {
   ga4Dashboard: administratorProcedure
@@ -949,5 +1205,304 @@ export const listAnalytics = {
             metric(row, 0) > 0 ? (metric(row, 2) / metric(row, 0)) * 100 : null,
         })),
       };
+    }),
+
+  metaAdsDashboard: administratorProcedure
+    .input(bizInputSchema)
+    .query(async ({ input }) => {
+      const periodDays = daysBetween(input.start_date, input.end_date);
+      if (periodDays < 1 || periodDays > 366) {
+        throw new TRPCError({
+          code: STATUS_BAD_REQUEST,
+          message: "Invalid reporting period.",
+        });
+      }
+
+      const previousEnd = addDays(
+        new Date(`${input.start_date}T00:00:00.000Z`),
+        -1
+      );
+      const previousStart = addDays(previousEnd, -(periodDays - 1));
+      const period = {
+        start_date: input.start_date,
+        end_date: input.end_date,
+        previous_start_date: formatDate(previousStart),
+        previous_end_date: formatDate(previousEnd),
+        days: periodDays,
+      };
+
+      // Not an error: the tab renders setup instructions rather than a red failure card.
+      if (!isMetaAdsConfigured()) {
+        return {
+          code: STATUS_OK,
+          message: "Meta Ads is not connected.",
+          configured: false as const,
+          period,
+        };
+      }
+
+      const credentials = getMetaAdsCredentials();
+
+      try {
+        const [
+          account,
+          currentRows,
+          previousRows,
+          dailyRows,
+          campaignRows,
+          adRows,
+          placementRows,
+          demographicRows,
+        ] = await Promise.all([
+          getMetaAdAccount(credentials),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "account",
+            fields: ACCOUNT_INSIGHT_FIELDS,
+          }),
+          fetchMetaInsights(credentials, {
+            since: period.previous_start_date,
+            until: period.previous_end_date,
+            level: "account",
+            fields: ACCOUNT_INSIGHT_FIELDS,
+          }),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "account",
+            fields: ACCOUNT_INSIGHT_FIELDS,
+            timeIncrement: 1,
+            limit: 366,
+            maxPages: 2,
+          }),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "campaign",
+            fields: [
+              ...ACCOUNT_INSIGHT_FIELDS,
+              "campaign_id",
+              "campaign_name",
+              "objective",
+            ],
+            sort: "spend_descending",
+            limit: 50,
+            maxPages: 1,
+          }),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "ad",
+            fields: [...ACCOUNT_INSIGHT_FIELDS, ...AD_INSIGHT_FIELDS],
+            sort: "spend_descending",
+            limit: MAX_CREATIVES,
+            maxPages: 1,
+          }),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "account",
+            fields: BREAKDOWN_INSIGHT_FIELDS,
+            breakdowns: ["publisher_platform", "platform_position"],
+            limit: 100,
+            maxPages: 2,
+          }),
+          fetchMetaInsights(credentials, {
+            since: input.start_date,
+            until: input.end_date,
+            level: "account",
+            fields: BREAKDOWN_INSIGHT_FIELDS,
+            breakdowns: ["age", "gender"],
+            limit: 100,
+            maxPages: 2,
+          }),
+        ]);
+
+        // Thumbnails hang off the ad object, so only the ids that actually spent are looked up.
+        const adIds = adRows
+          .map((row) => row.ad_id)
+          .filter((id): id is string => Boolean(id));
+        let creativeAssets: Record<string, MetaAdCreative> = {};
+        try {
+          creativeAssets = await fetchMetaAdCreatives(credentials, adIds);
+        } catch (error) {
+          // A creative the token cannot read costs a thumbnail, not the table.
+          console.error(
+            "Meta Ads creative lookup failed:",
+            redactToken(
+              error instanceof Error ? error.message : "Unknown error"
+            )
+          );
+        }
+
+        const current = deriveMetaMetrics(sumMetaRows(currentRows));
+        const previous = deriveMetaMetrics(sumMetaRows(previousRows));
+
+        const creatives = adRows
+          .map((row) => {
+            const asset = row.ad_id ? creativeAssets[row.ad_id] : undefined;
+            return {
+              ...deriveMetaMetrics(sumMetaRows([row])),
+              id: row.ad_id ?? "",
+              name: row.ad_name || "(unnamed ad)",
+              campaign: row.campaign_name || "—",
+              adset: row.adset_name || "—",
+              thumbnail_url: asset?.creative?.thumbnail_url ?? null,
+              headline: asset?.creative?.title ?? null,
+              status: asset?.effective_status
+                ? titleCase(asset.effective_status.toLowerCase())
+                : null,
+              quality_ranking: normalizeRanking(row.quality_ranking),
+              engagement_ranking: normalizeRanking(row.engagement_rate_ranking),
+              conversion_ranking: normalizeRanking(row.conversion_rate_ranking),
+            };
+          })
+          // Meta returns every ad that was live, including ones that never served.
+          .filter((creative) => creative.impressions > 0 || creative.spend > 0)
+          .sort(compareCreatives);
+
+        // Only creatives with real delivery are eligible for a "best" badge.
+        const rankable = creatives.filter(
+          (creative) => creative.impressions >= MIN_RANKING_IMPRESSIONS
+        );
+        function bestCreative(
+          value: (creative: (typeof rankable)[number]) => number | null,
+          isBetter: (candidate: number, best: number) => boolean
+        ) {
+          let bestId: string | null = null;
+          let bestValue: number | null = null;
+          for (const creative of rankable) {
+            const candidate = value(creative);
+            if (candidate === null) continue;
+            if (bestValue === null || isBetter(candidate, bestValue)) {
+              bestValue = candidate;
+              bestId = creative.id;
+            }
+          }
+          return bestId;
+        }
+
+        return {
+          code: STATUS_OK,
+          message: "Success",
+          configured: true as const,
+          period,
+          account: {
+            id: account.account_id ?? credentials.accountId,
+            name: account.name ?? `act_${credentials.accountId}`,
+            currency: account.currency ?? "IDR",
+            timezone: account.timezone_name ?? "Asia/Jakarta",
+          },
+          metadata: {
+            generated_at: new Date().toISOString(),
+            attribution: "7-day click, 1-day view",
+            min_ranking_impressions: MIN_RANKING_IMPRESSIONS,
+          },
+          summary: {
+            current,
+            previous,
+            changes: {
+              spend: percentChange(current.spend, previous.spend),
+              impressions: percentChange(
+                current.impressions,
+                previous.impressions
+              ),
+              reach: percentChange(current.reach, previous.reach),
+              clicks: percentChange(current.clicks, previous.clicks),
+              link_clicks: percentChange(
+                current.link_clicks,
+                previous.link_clicks
+              ),
+              results: percentChange(current.results, previous.results),
+              ctr: percentChange(current.ctr ?? 0, previous.ctr ?? 0),
+              cpc: percentChange(current.cpc ?? 0, previous.cpc ?? 0),
+              cpm: percentChange(current.cpm ?? 0, previous.cpm ?? 0),
+              cost_per_result: percentChange(
+                current.cost_per_result ?? 0,
+                previous.cost_per_result ?? 0
+              ),
+            },
+          },
+          daily: normalizeMetaDailyRows(
+            dailyRows,
+            input.start_date,
+            input.end_date
+          ),
+          campaigns: campaignRows
+            .map((row) => ({
+              ...deriveMetaMetrics(sumMetaRows([row])),
+              id: row.campaign_id ?? "",
+              name: row.campaign_name || "(unnamed campaign)",
+              objective: formatObjective(row.objective),
+            }))
+            .filter((campaign) => campaign.impressions > 0 || campaign.spend > 0)
+            .sort((a, b) => b.spend - a.spend),
+          creatives,
+          highlights: {
+            // Lower is better for a cost, higher for every rate.
+            best_cost_per_result: bestCreative(
+              (creative) => creative.cost_per_result,
+              (candidate, best) => candidate < best
+            ),
+            best_link_ctr: bestCreative(
+              (creative) => creative.link_ctr,
+              (candidate, best) => candidate > best
+            ),
+            best_result_rate: bestCreative(
+              (creative) => creative.result_rate,
+              (candidate, best) => candidate > best
+            ),
+            top_spend: creatives[0]?.id ?? null,
+          },
+          placements: groupMetaBreakdown(placementRows, (row) => ({
+            key: `${row.publisher_platform ?? "unknown"}|${
+              row.platform_position ?? "unknown"
+            }`,
+            platform: formatPlacement(row.publisher_platform),
+            label: `${formatPlacement(
+              row.publisher_platform
+            )} · ${formatPlacement(row.platform_position)}`,
+          })),
+          demographics: groupMetaBreakdown(demographicRows, (row) => ({
+            key: `${row.age ?? "unknown"}|${row.gender ?? "unknown"}`,
+            platform: row.age ?? "unknown",
+            label: `${row.age ?? "unknown"} · ${formatGender(row.gender)}`,
+          })).map((entry) => ({
+            ...entry,
+            age: entry.key.split("|")[0],
+            gender: formatGender(entry.key.split("|")[1]),
+          })),
+          // What "Results" is actually made of, so the headline number stays auditable.
+          result_mix: META_RESULT_BREAKDOWN.map((entry) => {
+            const results = sumActionValue(
+              currentRows.flatMap((row) => row.actions ?? []),
+              entry.action_type
+            );
+            const cost = sumActionValue(
+              currentRows.flatMap((row) => row.cost_per_action_type ?? []),
+              entry.action_type
+            );
+            return {
+              key: entry.key,
+              label: entry.label,
+              results,
+              cost_per_result: results > 0 && cost > 0 ? cost : null,
+            };
+          }),
+        };
+      } catch (error) {
+        const reason = redactToken(
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        console.error("Meta Ads dashboard query failed:", reason);
+        throw new TRPCError({
+          code: STATUS_INTERNAL_SERVER_ERROR,
+          message:
+            error instanceof MetaAdsError
+              ? `Meta Ads data could not be loaded: ${reason}`
+              : "Meta Ads data could not be loaded. Check META_ADS_ACCOUNT_ID, META_ADS_ACCESS_TOKEN, and that the token still has ads_read access on the account.",
+        });
+      }
     }),
 };

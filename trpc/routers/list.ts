@@ -58,6 +58,7 @@ export const listRouter = createTRPCRouter({
   analytics: {
     ga4Dashboard: listAnalytics.ga4Dashboard,
     bizDashboard: listAnalytics.bizDashboard,
+    metaAdsDashboard: listAnalytics.metaAdsDashboard,
   },
 
   // Notifications //

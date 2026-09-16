@@ -12,7 +12,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     unoptimized: true,
-    remotePatterns: [],
+    // Meta Ads creative thumbnails, served from its own CDN with signed URLs.
+    remotePatterns: [
+      { protocol: "https", hostname: "**.fbcdn.net" },
+      { protocol: "https", hostname: "**.facebook.com" },
+    ],
   },
   async headers() {
     return [
