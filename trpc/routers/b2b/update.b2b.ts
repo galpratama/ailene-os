@@ -231,8 +231,7 @@ export const updateB2B = {
           });
         }
 
-        // Owner reassignment: require a reason and record it on the append-only trail, mirroring
-        // the bulk offboarding reassignment in userdata/update.userdata.ts.
+        // Owner reassignment needs a reason on the append-only trail, like the users API's bulk offboarding.
         const ownerChanged =
           rest.owner_id !== undefined && rest.owner_id !== existing.owner_id;
         if (ownerChanged && opts.ctx.user.data_scope === "OWN") {

@@ -5,12 +5,19 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import UserStatusLabel from "@/components/labels/UserStatusLabel";
 import SheetOS from "@/components/modals/SheetOS";
-import { trpc } from "@/trpc/client";
+import {
+  getUserDetails,
+  listUsers,
+  reassignOwnership,
+  updateUserStatus,
+} from "@/lib/actions";
+import { isSuccessStatus } from "@/lib/status_code";
+import type { UserEntry, UserOwnership } from "@/apis/users";
 import { Briefcase, ClipboardList, Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 interface OffboardUserDrawerOSProps {
-  sessionToken: string;
   userId: string | null;
   isOpen: boolean;
   onClose: () => void;
@@ -18,46 +25,63 @@ interface OffboardUserDrawerOSProps {
 
 // Shows a departing user's active work and lets an admin/manager reassign it before deactivating.
 export default function OffboardUserDrawerOS({
-  sessionToken,
   userId,
   isOpen,
   onClose,
 }: OffboardUserDrawerOSProps) {
-  const utils = trpc.useUtils();
+  const router = useRouter();
 
   const [newOwnerId, setNewOwnerId] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<UserEntry | null>(null);
+  const [ownership, setOwnership] = useState<UserOwnership | null>(null);
+  const [candidates, setCandidates] = useState<UserEntry[]>([]);
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
-  const { data, isLoading } = trpc.read.userdata.user.useQuery(
-    { id: userId ?? "" },
-    { enabled: !!sessionToken && isOpen && userId != null }
-  );
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen }
-  );
+  const loadDetails = useCallback(async (id: string) => {
+    const result = await getUserDetails(id);
+    setUser(result.data?.user ?? null);
+    setOwnership(result.data?.ownership ?? null);
+  }, []);
 
-  const user = data?.user;
-  const ownership = data?.ownership;
+  useEffect(() => {
+    if (!isOpen || !userId) return;
+    let active = true;
+    Promise.all([
+      getUserDetails(userId),
+      listUsers({ page: 1, page_size: 100 }),
+    ]).then(([detail, list]) => {
+      if (!active) return;
+      setUser(detail.data?.user ?? null);
+      setOwnership(detail.data?.ownership ?? null);
+      setCandidates(list.data?.list ?? []);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, userId]);
+
   const hasActiveWork =
     !!ownership && ownership.pipelines_owned + ownership.actions_assigned > 0;
 
-  const ownerOptions: AppSelectOption[] =
-    userData?.list
-      .filter((u) => u.id !== userId)
-      .map((u) => ({ value: u.id, label: u.full_name, image: u.avatar ?? undefined })) ??
-    [];
+  const ownerOptions: AppSelectOption[] = candidates
+    .filter((u) => u.id !== userId)
+    .map((u) => ({
+      value: u.id,
+      label: u.full_name,
+      image: u.avatar ?? undefined,
+    }));
 
   function handleClose() {
     setNewOwnerId("");
     setReason("");
     setError(null);
+    setUser(null);
+    setOwnership(null);
     onClose();
   }
-
-  const reassignOwnership = trpc.update.userdata.reassignOwnership.useMutation();
-  const updateStatus = trpc.update.userdata.status.useMutation();
 
   async function handleReassign(e: FormEvent) {
     e.preventDefault();
@@ -66,38 +90,45 @@ export default function OffboardUserDrawerOS({
     if (!newOwnerId) return setError("Pick a replacement owner.");
     if (!reason.trim()) return setError("A reason is required.");
 
-    try {
-      await reassignOwnership.mutateAsync({
-        from_user_id: user.id,
-        to_user_id: newOwnerId,
-        reason: reason.trim(),
-      });
-      setNewOwnerId("");
-      setReason("");
-      utils.read.userdata.user.invalidate({ id: user.id });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reassign ownership.");
+    setIsReassigning(true);
+    const result = await reassignOwnership({
+      from_user_id: user.id,
+      to_user_id: newOwnerId,
+      reason: reason.trim(),
+    });
+    setIsReassigning(false);
+
+    if (!isSuccessStatus(result.status)) {
+      return setError(result.message ?? "Failed to reassign ownership.");
     }
+
+    setNewOwnerId("");
+    setReason("");
+    await loadDetails(user.id);
+    router.refresh();
   }
 
   async function handleDeactivate() {
     if (!user) return;
     setError(null);
-    try {
-      await updateStatus.mutateAsync({
-        id: user.id,
-        status: "DEACTIVATED",
-        reason: reason.trim() || undefined,
-      });
-      utils.list.users.invalidate();
-      utils.read.userdata.user.invalidate({ id: user.id });
-      handleClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to deactivate user.");
+
+    setIsDeactivating(true);
+    const result = await updateUserStatus({
+      id: user.id,
+      status: "DEACTIVATED",
+      reason: reason.trim() || undefined,
+    });
+    setIsDeactivating(false);
+
+    if (!isSuccessStatus(result.status)) {
+      return setError(result.message ?? "Failed to deactivate user.");
     }
+
+    router.refresh();
+    handleClose();
   }
 
-  const isReady = !isLoading && !!user && !!ownership;
+  const isReady = !!user && !!ownership;
 
   return (
     <SheetOS
@@ -180,9 +211,9 @@ export default function OffboardUserDrawerOS({
                 type="submit"
                 variant="primary"
                 className="justify-center"
-                disabled={reassignOwnership.isPending || !hasActiveWork}
+                disabled={isReassigning || !hasActiveWork}
               >
-                {reassignOwnership.isPending && (
+                {isReassigning && (
                   <Loader2 size={14} className="animate-spin" />
                 )}
                 Reassign ownership
@@ -211,10 +242,10 @@ export default function OffboardUserDrawerOS({
               type="button"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={updateStatus.isPending || user.status === "DEACTIVATED"}
+              disabled={isDeactivating || user.status === "DEACTIVATED"}
               onClick={handleDeactivate}
             >
-              {updateStatus.isPending && (
+              {isDeactivating && (
                 <Loader2 size={14} className="animate-spin" />
               )}
               Deactivate user

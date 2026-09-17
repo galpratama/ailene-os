@@ -3,15 +3,22 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import GoogleCalendarConnectionOS from "@/components/settings/GoogleCalendarConnectionOS";
+import { createTeam } from "@/lib/actions";
+import { isSuccessStatus } from "@/lib/status_code";
+import type { TeamEntry } from "@/apis/teams";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function SettingsPageOS({
   sessionToken,
+  teams,
 }: {
   sessionToken: string;
+  teams: TeamEntry[];
 }) {
+  const router = useRouter();
   useEffect(() => {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
@@ -48,25 +55,23 @@ export default function SettingsPageOS({
 
   const [teamName, setTeamName] = useState("");
   const [teamError, setTeamError] = useState<string | null>(null);
-  const { data: teamData } = trpc.list.teams.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const createTeam = trpc.create.userdata.team.useMutation({
-    onSuccess: () => {
-      setTeamName("");
-      setTeamError(null);
-      utils.list.teams.invalidate();
-    },
-    onError: (mutationError) => setTeamError(mutationError.message),
-  });
-  const deleteTeam = trpc.delete.userdata.team.useMutation({
-    onSuccess: () => utils.list.teams.invalidate(),
-  });
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
-  function submitTeam(event: FormEvent) {
+  async function submitTeam(event: FormEvent) {
     event.preventDefault();
     if (!teamName.trim()) return;
-    createTeam.mutate({ name: teamName.trim() });
+
+    setIsCreatingTeam(true);
+    const result = await createTeam(teamName.trim());
+    setIsCreatingTeam(false);
+
+    if (!isSuccessStatus(result.status)) {
+      return setTeamError(result.message ?? "Failed to create team.");
+    }
+
+    setTeamName("");
+    setTeamError(null);
+    router.refresh();
   }
 
   return (
@@ -170,8 +175,8 @@ export default function SettingsPageOS({
             onChange={(event) => setTeamName(event.target.value)}
             errorMessage={teamError ?? undefined}
           />
-          <AppButton type="submit" disabled={createTeam.isPending}>
-            {createTeam.isPending ? (
+          <AppButton type="submit" disabled={isCreatingTeam}>
+            {isCreatingTeam ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Plus size={14} />
@@ -180,7 +185,7 @@ export default function SettingsPageOS({
           </AppButton>
         </form>
         <div className="mt-5 divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-zinc-800 dark:border-zinc-800">
-          {teamData?.list.map((entry) => (
+          {teams.map((entry) => (
             <div
               key={entry.id}
               className="flex items-center justify-between gap-3 px-4 py-3"
@@ -193,23 +198,9 @@ export default function SettingsPageOS({
                   {entry.user_count} user{entry.user_count === 1 ? "" : "s"}
                 </p>
               </div>
-              <AppButton
-                type="button"
-                variant="ghost"
-                size="iconSm"
-                title={
-                  entry.user_count
-                    ? "Remove users from this team first"
-                    : "Delete team"
-                }
-                disabled={entry.user_count > 0}
-                onClick={() => deleteTeam.mutate({ id: entry.id })}
-              >
-                <Trash2 size={13} />
-              </AppButton>
             </div>
           ))}
-          {!teamData?.list.length && (
+          {!teams.length && (
             <p className="px-4 py-6 text-center text-sm text-gray-400">
               No teams yet.
             </p>

@@ -11,8 +11,9 @@ import UserStatusLabel from "@/components/labels/UserStatusLabel";
 import OffboardUserDrawerOS from "@/components/modals/OffboardUserDrawerOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
-import { setSessionToken, trpc } from "@/trpc/client";
-import { UserAccountStatusEnum } from "@prisma/client";
+import { updateUserStatus } from "@/lib/actions";
+import type { MetaPaging, UserEntry, UserStatus } from "@/apis/users";
+import type { TeamEntry } from "@/apis/teams";
 import {
   Archive,
   LogOut,
@@ -23,7 +24,8 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 const statusOptions: AppSelectOption[] = [
   { value: "", label: "All statuses" },
@@ -44,15 +46,25 @@ const jobFunctionLabels: Record<string, string> = {
 };
 
 export default function UsersAccessPageOS({
-  sessionToken,
+  users,
+  metapaging,
+  teams,
+  initialKeyword,
+  initialTeam,
+  initialStatus,
+  loadError,
 }: {
-  sessionToken: string;
+  users: UserEntry[];
+  metapaging: MetaPaging | null;
+  teams: TeamEntry[];
+  initialKeyword: string;
+  initialTeam: string;
+  initialStatus: string;
+  loadError: string | null;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -60,49 +72,48 @@ export default function UsersAccessPageOS({
     null
   );
 
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState<
-    string | undefined
-  >();
-  const [teamFilter, setTeamFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const pageSize = 20;
+  // Adjust state during render when the server hands back a new keyword, rather than syncing in an effect.
+  const [seenKeyword, setSeenKeyword] = useState(initialKeyword);
+  const [keyword, setKeyword] = useState(initialKeyword);
+  if (initialKeyword !== seenKeyword) {
+    setSeenKeyword(initialKeyword);
+    setKeyword(initialKeyword);
+  }
+
+  function pushParams(next: Record<string, string>, resetPage = true) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(next)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    if (resetPage) params.set("page", "1");
+    startTransition(() => router.push(`?${params.toString()}`));
+  }
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedKeyword(keyword.trim() === "" ? undefined : keyword.trim());
-      setPage(1);
+      if (keyword.trim() === initialKeyword) return;
+      pushParams({ keyword: keyword.trim() });
     }, 400);
     return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword]);
 
-  const { data: teamData } = trpc.list.teams.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
   const teamOptions: AppSelectOption[] = [
     { value: "", label: "Filter by team" },
-    ...(teamData?.list.map((team) => ({ value: team.id, label: team.name })) ??
-      []),
+    ...teams.map((team) => ({ value: team.id, label: team.name })),
   ];
 
-  const { data, isLoading, isError } = trpc.list.users.useQuery(
-    {
-      page,
-      page_size: pageSize,
-      keyword: debouncedKeyword,
-      team_id: teamFilter ? Number(teamFilter) : undefined,
-      status: (statusFilter || undefined) as UserAccountStatusEnum | undefined,
-    },
-    { enabled: !!sessionToken }
-  );
+  const userList = users;
+  const totalPage = metapaging?.total_page ?? 1;
+  const currentPage = metapaging?.current_page ?? 1;
 
-  const userList = data?.list;
-  const totalPage = data?.metapaging.total_page ?? 1;
-
-  const updateStatus = trpc.update.userdata.status.useMutation({
-    onSuccess: () => utils.list.users.invalidate(),
-  });
+  function changeStatus(id: string, status: UserStatus) {
+    startTransition(async () => {
+      await updateUserStatus({ id, status });
+      router.refresh();
+    });
+  }
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 sm:px-8">
@@ -129,41 +140,25 @@ export default function UsersAccessPageOS({
           <AppSelect
             selectId="users-team-filter"
             placeholder="Filter by team"
-            value={teamFilter}
+            value={initialTeam}
             options={teamOptions}
-            onChange={(value) => {
-              setTeamFilter(value ? String(value) : "");
-              setPage(1);
-            }}
+            onChange={(value) => pushParams({ team: value ? String(value) : "" })}
           />
         </div>
         <div className="w-full max-w-48">
           <AppSelect
             selectId="users-status-filter"
             placeholder="Filter by status"
-            value={statusFilter}
+            value={initialStatus}
             options={statusOptions}
-            onChange={(value) => {
-              setStatusFilter((value as string) ?? "");
-              setPage(1);
-            }}
+            onChange={(value) => pushParams({ status: (value as string) ?? "" })}
           />
         </div>
       </div>
 
-      {isLoading && (
-        <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">
-          Loading users...
-        </p>
-      )}
-      {isError && (
-        <p className="text-sm text-red-500 py-8 text-center">
-          Failed to load users. You may not have access to this data.
-        </p>
-      )}
-
-      {userList && !isLoading && !isError && (
-        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+      <div
+        className={`overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 ${isPending ? "opacity-60" : ""}`}
+      >
           <div className="overflow-x-auto">
             <table className="w-full min-w-240 text-sm">
               <thead>
@@ -235,10 +230,7 @@ export default function UsersAccessPageOS({
                             size="iconSm"
                             title="Revoke invite"
                             onClick={() =>
-                              updateStatus.mutate({
-                                id: entry.id,
-                                status: "DEACTIVATED",
-                              })
+                              changeStatus(entry.id, "DEACTIVATED")
                             }
                           >
                             <X size={13} />
@@ -252,10 +244,7 @@ export default function UsersAccessPageOS({
                               size="iconSm"
                               title="Suspend"
                               onClick={() =>
-                                updateStatus.mutate({
-                                  id: entry.id,
-                                  status: "SUSPENDED",
-                                })
+                                changeStatus(entry.id, "SUSPENDED")
                               }
                             >
                               <PauseCircle size={13} />
@@ -278,10 +267,7 @@ export default function UsersAccessPageOS({
                               size="iconSm"
                               title="Reactivate"
                               onClick={() =>
-                                updateStatus.mutate({
-                                  id: entry.id,
-                                  status: "ACTIVE",
-                                })
+                                changeStatus(entry.id, "ACTIVE")
                               }
                             >
                               <RotateCcw size={13} />
@@ -304,10 +290,7 @@ export default function UsersAccessPageOS({
                               size="iconSm"
                               title="Reactivate"
                               onClick={() =>
-                                updateStatus.mutate({
-                                  id: entry.id,
-                                  status: "ACTIVE",
-                                })
+                                changeStatus(entry.id, "ACTIVE")
                               }
                             >
                               <RotateCcw size={13} />
@@ -317,10 +300,7 @@ export default function UsersAccessPageOS({
                               size="iconSm"
                               title="Archive"
                               onClick={() =>
-                                updateStatus.mutate({
-                                  id: entry.id,
-                                  status: "ARCHIVED",
-                                })
+                                changeStatus(entry.id, "ARCHIVED")
                               }
                             >
                               <Archive size={13} />
@@ -334,37 +314,38 @@ export default function UsersAccessPageOS({
               </tbody>
             </table>
             {userList.length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
-                {debouncedKeyword
-                  ? `No users found for "${debouncedKeyword}"`
-                  : "No users yet."}
+              <p
+                className={`text-sm text-center py-10 ${loadError ? "text-merah" : "text-gray-400 dark:text-zinc-500"}`}
+              >
+                {loadError ??
+                  (initialKeyword
+                    ? `No users found for "${initialKeyword}"`
+                    : "No users yet.")}
               </p>
             )}
           </div>
-        </div>
-      )}
+      </div>
 
       <AppPaginationOS
-        currentPage={page}
+        currentPage={currentPage}
         totalPages={totalPage}
-        onPageChange={setPage}
+        onPageChange={(next) => pushParams({ page: String(next) }, false)}
       />
 
       <InviteUserFormOS
-        sessionToken={sessionToken}
+        teams={teams}
         isOpen={isInviteOpen}
         onClose={() => setIsInviteOpen(false)}
       />
 
       <EditUserFormOS
-        sessionToken={sessionToken}
+        teams={teams}
         userId={editingUserId}
         isOpen={editingUserId !== null}
         onClose={() => setEditingUserId(null)}
       />
 
       <OffboardUserDrawerOS
-        sessionToken={sessionToken}
         userId={offboardingUserId}
         isOpen={offboardingUserId !== null}
         onClose={() => setOffboardingUserId(null)}

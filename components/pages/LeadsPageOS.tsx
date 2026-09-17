@@ -16,6 +16,7 @@ import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useSession } from "@/contexts/SessionContext";
 import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import type { B2BLostReasonEnum, B2BStageEnum } from "@prisma/client";
 import {
   Building2,
@@ -126,13 +127,10 @@ export default function LeadsPageOS({
     { enabled: !!sessionToken }
   );
 
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && !isOwnScoped }
-  );
+  const userList = useUserList(!isOwnScoped);
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
-    ...(userData?.list.map((u) => ({
+    ...(userList.map((u) => ({
       value: u.id,
       label: u.full_name,
       image: u.avatar ?? undefined,

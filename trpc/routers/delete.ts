@@ -3,12 +3,8 @@ import { deleteB2B } from "./b2b/delete.b2b";
 import { deleteIntegrations } from "./integrations/delete.integrations";
 import { deleteLms } from "./lms/delete.lms";
 import { deleteTrainerPool } from "./trainer-pool/delete.trainer-pool";
-import { deleteUserData } from "./userdata/delete.userdata";
 
 export const deleteRouter = createTRPCRouter({
-  userdata: {
-    team: deleteUserData.team,
-  },
   integrations: {
     googleCalendarConnection: deleteIntegrations.googleCalendarConnection,
   },

@@ -5,17 +5,11 @@ import { listLms } from "./lms/list.lms";
 import { listLookup } from "./lookup/list.lookup";
 import { listNotification } from "./notification/list.notification";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
-import { listUserData } from "./userdata/list.userdata";
 
 export const listRouter = createTRPCRouter({
   // Lookup Tables //
 
   industries: listLookup.industries,
-
-  // User Data //
-
-  users: listUserData.users,
-  teams: listUserData.teams,
 
   // B2B Sales Pipeline //
 

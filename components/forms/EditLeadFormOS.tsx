@@ -10,6 +10,7 @@ import SheetOS from "@/components/modals/SheetOS";
 import RecordTimelineOS from "@/components/elements/RecordTimelineOS";
 import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import {
   B2BLostReasonEnum,
   B2BProbabilityStatusEnum,
@@ -147,15 +148,12 @@ export default function EditLeadFormOS({
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen && !isOwnScoped }
-  );
+  const userList = useUserList(isOpen && !isOwnScoped);
 
   const industryOptions: AppSelectOption[] =
     industryData?.list.map((i) => ({ value: i.id, label: i.name })) ?? [];
   const ownerOptions: AppSelectOption[] =
-    userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
+    userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
 
   function handleClose() {
     setError(null);

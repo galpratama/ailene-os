@@ -5,9 +5,12 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { USER_ROLE_OPTIONS } from "@/lib/constants";
-import { trpc } from "@/trpc/client";
-import { DataScopeEnum, JobFunctionEnum, UserRoleEnum } from "@prisma/client";
+import { inviteUser } from "@/lib/actions";
+import { isSuccessStatus } from "@/lib/status_code";
+import type { TeamEntry } from "@/apis/teams";
+import type { UserDataScope, UserJobFunction, UserRole } from "@/apis/users";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 const jobFunctionOptions: AppSelectOption[] = [
@@ -27,29 +30,26 @@ const dataScopeOptions: AppSelectOption[] = [
 ];
 
 interface InviteUserFormOSProps {
-  sessionToken: string;
+  teams: TeamEntry[];
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function InviteUserFormOS({
-  sessionToken,
+  teams,
   isOpen,
   onClose,
 }: InviteUserFormOSProps) {
-  const utils = trpc.useUtils();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<UserRoleEnum | "">("");
+  const [role, setRole] = useState<UserRole | "">("");
   const [teamId, setTeamId] = useState<number | null>(null);
-  const [jobFunction, setJobFunction] = useState<JobFunctionEnum | "">("");
-  const [dataScope, setDataScope] = useState<DataScopeEnum>("OWN");
+  const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
+  const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
   const [error, setError] = useState<string | null>(null);
-
-  const { data: teamData } = trpc.list.teams.useQuery(undefined, {
-    enabled: !!sessionToken && isOpen,
-  });
 
   const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
     value: option.value,
@@ -57,8 +57,7 @@ export default function InviteUserFormOS({
   }));
   const teamOptions: AppSelectOption[] = [
     { value: "", label: "No team" },
-    ...(teamData?.list.map((team) => ({ value: team.id, label: team.name })) ??
-      []),
+    ...teams.map((team) => ({ value: team.id, label: team.name })),
   ];
 
   function reset() {
@@ -76,8 +75,6 @@ export default function InviteUserFormOS({
     onClose();
   }
 
-  const inviteUser = trpc.create.userdata.user.useMutation();
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -86,20 +83,23 @@ export default function InviteUserFormOS({
     if (!email.trim()) return setError("Email is required.");
     if (!role) return setError("Access role is required.");
 
-    try {
-      await inviteUser.mutateAsync({
-        full_name: fullName.trim(),
-        email: email.trim(),
-        role,
-        team_id: teamId,
-        job_function: jobFunction || null,
-        data_scope: dataScope,
-      });
-      utils.list.users.invalidate();
-      handleClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to invite user.");
+    setIsSubmitting(true);
+    const result = await inviteUser({
+      full_name: fullName.trim(),
+      email: email.trim(),
+      role,
+      team_id: teamId,
+      job_function: jobFunction || null,
+      data_scope: dataScope,
+    });
+    setIsSubmitting(false);
+
+    if (!isSuccessStatus(result.status)) {
+      return setError(result.message ?? "Failed to invite user.");
     }
+
+    router.refresh();
+    handleClose();
   }
 
   return (
@@ -140,7 +140,7 @@ export default function InviteUserFormOS({
             required
             placeholder="Select access role"
             value={role}
-            onChange={(v) => setRole(v as UserRoleEnum)}
+            onChange={(v) => setRole(v as UserRole)}
             options={roleOptions}
           />
           <AppSelect
@@ -156,7 +156,7 @@ export default function InviteUserFormOS({
             label="Job function"
             placeholder="Select job function"
             value={jobFunction}
-            onChange={(v) => setJobFunction((v as JobFunctionEnum) ?? "")}
+            onChange={(v) => setJobFunction((v as UserJobFunction) ?? "")}
             options={jobFunctionOptions}
           />
           <AppSelect
@@ -164,7 +164,7 @@ export default function InviteUserFormOS({
             label="Data scope"
             placeholder="Select data scope"
             value={dataScope}
-            onChange={(v) => setDataScope(v as DataScopeEnum)}
+            onChange={(v) => setDataScope(v as UserDataScope)}
             options={dataScopeOptions}
           />
         </div>
@@ -182,9 +182,9 @@ export default function InviteUserFormOS({
             type="submit"
             variant="primary"
             className="flex-1 justify-center"
-            disabled={inviteUser.isPending}
+            disabled={isSubmitting}
           >
-            {inviteUser.isPending && <Loader2 size={14} className="animate-spin" />}
+            {isSubmitting && <Loader2 size={14} className="animate-spin" />}
             Send invite
           </AppButton>
         </div>

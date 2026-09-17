@@ -13,6 +13,7 @@ import OrganizationDuplicateModalOS, {
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -86,10 +87,7 @@ export default function CreateLeadFormOS({
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen && !isOwnScoped }
-  );
+  const userList = useUserList(isOpen && !isOwnScoped);
 
   // OWN-scoped users can only own their own leads, so auto-assign instead of showing a picker.
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -106,7 +104,7 @@ export default function CreateLeadFormOS({
   const industryOptions: AppSelectOption[] =
     industryData?.list.map((i) => ({ value: i.id, label: i.name })) ?? [];
   const ownerOptions: AppSelectOption[] =
-    userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
+    userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
 
   async function loadCompanyOptions(inputValue: string, page: number) {
     const result = await utils.list.b2b.companies.fetch({

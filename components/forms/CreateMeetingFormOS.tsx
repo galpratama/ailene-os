@@ -7,6 +7,7 @@ import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -39,13 +40,10 @@ export default function CreateMeetingFormOS({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen && !isOwnScoped }
-  );
+  const userList = useUserList(isOpen);
   const organizerOptions: AppSelectOption[] = [
     { value: "", label: "Me" },
-    ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
   const needsPipelinePicker = pipelineId === undefined;

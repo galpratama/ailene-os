@@ -6,6 +6,7 @@ import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import { trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import { B2BActionPriorityEnum, B2BActionStatusEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -67,14 +68,11 @@ export default function CreateActionFormOS({
     if (isOpen) setStatus(defaultStatus);
   }
 
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen }
-  );
+  const userList = useUserList(isOpen);
 
   const assigneeOptions: AppSelectOption[] = [
     { value: "", label: "Unassigned" },
-    ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
   const needsPipelinePicker = pipelineId === undefined;

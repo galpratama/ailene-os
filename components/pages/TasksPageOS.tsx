@@ -15,6 +15,7 @@ import PriorityLabel from "@/components/labels/PriorityLabel";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useSession } from "@/contexts/SessionContext";
 import { setSessionToken, trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import type { B2BActionStatusEnum } from "@prisma/client";
 import {
   Building2,
@@ -111,13 +112,10 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     { enabled: !!sessionToken }
   );
 
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && !isOwnScoped }
-  );
+  const userList = useUserList(!isOwnScoped);
   const assigneeOptions: AppSelectOption[] = [
     { value: "", label: "All PICs" },
-    ...(userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
   const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(

@@ -8,6 +8,7 @@ import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
+import { useUserList } from "@/hooks/useUserList";
 import { B2BMeetingStatusEnum } from "@prisma/client";
 import { Loader2, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -78,12 +79,9 @@ export default function EditMeetingFormOS({
     setNotes(meeting.notes ?? "");
   }
 
-  const { data: userData } = trpc.list.users.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen && !isOwnScoped }
-  );
+  const userList = useUserList(isOpen && !isOwnScoped);
   const organizerOptions: AppSelectOption[] =
-    userData?.list.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
+    userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
 
   function handleClose() {
     setError(null);

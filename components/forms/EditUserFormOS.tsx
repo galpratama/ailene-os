@@ -4,10 +4,18 @@ import AppButton from "@/components/buttons/AppButton";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { USER_ROLE_OPTIONS } from "@/lib/constants";
-import { trpc } from "@/trpc/client";
-import { DataScopeEnum, JobFunctionEnum, UserRoleEnum } from "@prisma/client";
+import { getUserDetails, updateUser } from "@/lib/actions";
+import { isSuccessStatus } from "@/lib/status_code";
+import type { TeamEntry } from "@/apis/teams";
+import type {
+  UserDataScope,
+  UserEntry,
+  UserJobFunction,
+  UserRole,
+} from "@/apis/users";
 import { Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
 const jobFunctionOptions: AppSelectOption[] = [
   { value: "", label: "No job function" },
@@ -26,50 +34,47 @@ const dataScopeOptions: AppSelectOption[] = [
 ];
 
 interface EditUserFormOSProps {
-  sessionToken: string;
+  teams: TeamEntry[];
   userId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function EditUserFormOS({
-  sessionToken,
+  teams,
   userId,
   isOpen,
   onClose,
 }: EditUserFormOSProps) {
-  const utils = trpc.useUtils();
+  const router = useRouter();
 
-  const [role, setRole] = useState<UserRoleEnum | "">("");
+  const [role, setRole] = useState<UserRole | "">("");
   const [teamId, setTeamId] = useState<number | null>(null);
-  const [jobFunction, setJobFunction] = useState<JobFunctionEnum | "">("");
-  const [dataScope, setDataScope] = useState<DataScopeEnum>("OWN");
+  const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
+  const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<UserEntry | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: teamData } = trpc.list.teams.useQuery(undefined, {
-    enabled: !!sessionToken && isOpen,
-  });
-  const { data, isLoading: isLoadingUser } = trpc.read.userdata.user.useQuery(
-    { id: userId ?? "" },
-    { enabled: !!sessionToken && isOpen && userId != null }
-  );
-
-  // Seed the form once per user, adjusting state during render (same pattern as EditLeadFormOS).
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  const [seededUserId, setSeededUserId] = useState<string | null>(null);
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (!isOpen) setSeededUserId(null);
-  }
-
-  const user = data?.user;
-  if (isOpen && user && user.id !== seededUserId) {
-    setSeededUserId(user.id);
-    setRole(user.role);
-    setTeamId(user.team_id);
-    setJobFunction(user.job_function ?? "");
-    setDataScope(user.data_scope);
-  }
+  // The sheet mounts before a row is picked, so the detail is fetched per opened user rather than up front.
+  useEffect(() => {
+    if (!isOpen || !userId) return;
+    let active = true;
+    getUserDetails(userId).then((result) => {
+      if (!active) return;
+      const entry = result.data?.user ?? null;
+      setUser(entry);
+      if (entry) {
+        setRole(entry.role);
+        setTeamId(entry.team_id);
+        setJobFunction(entry.job_function ?? "");
+        setDataScope(entry.data_scope);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, userId]);
 
   const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
     value: option.value,
@@ -77,16 +82,14 @@ export default function EditUserFormOS({
   }));
   const teamOptions: AppSelectOption[] = [
     { value: "", label: "No team" },
-    ...(teamData?.list.map((team) => ({ value: team.id, label: team.name })) ??
-      []),
+    ...teams.map((team) => ({ value: team.id, label: team.name })),
   ];
 
   function handleClose() {
     setError(null);
+    setUser(null);
     onClose();
   }
-
-  const updateProfile = trpc.update.userdata.profile.useMutation();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -94,23 +97,25 @@ export default function EditUserFormOS({
     if (!user) return;
     if (!role) return setError("Access role is required.");
 
-    try {
-      await updateProfile.mutateAsync({
-        id: user.id,
-        role,
-        team_id: teamId,
-        job_function: jobFunction || null,
-        data_scope: dataScope,
-      });
-      utils.list.users.invalidate();
-      utils.read.userdata.user.invalidate({ id: user.id });
-      handleClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user.");
+    setIsSubmitting(true);
+    const result = await updateUser({
+      id: user.id,
+      role,
+      team_id: teamId,
+      job_function: jobFunction || null,
+      data_scope: dataScope,
+    });
+    setIsSubmitting(false);
+
+    if (!isSuccessStatus(result.status)) {
+      return setError(result.message ?? "Failed to update user.");
     }
+
+    router.refresh();
+    handleClose();
   }
 
-  const isReady = !isLoadingUser && !!user;
+  const isReady = !!user;
 
   return (
     <SheetOS
@@ -138,7 +143,7 @@ export default function EditUserFormOS({
               required
               placeholder="Select access role"
               value={role}
-              onChange={(v) => setRole(v as UserRoleEnum)}
+              onChange={(v) => setRole(v as UserRole)}
               options={roleOptions}
             />
             <AppSelect
@@ -154,7 +159,7 @@ export default function EditUserFormOS({
               label="Job function"
               placeholder="Select job function"
               value={jobFunction}
-              onChange={(v) => setJobFunction((v as JobFunctionEnum) ?? "")}
+              onChange={(v) => setJobFunction((v as UserJobFunction) ?? "")}
               options={jobFunctionOptions}
             />
             <AppSelect
@@ -162,7 +167,7 @@ export default function EditUserFormOS({
               label="Data scope"
               placeholder="Select data scope"
               value={dataScope}
-              onChange={(v) => setDataScope(v as DataScopeEnum)}
+              onChange={(v) => setDataScope(v as UserDataScope)}
               options={dataScopeOptions}
             />
           </div>
@@ -180,9 +185,9 @@ export default function EditUserFormOS({
               type="submit"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={updateProfile.isPending}
+              disabled={isSubmitting}
             >
-              {updateProfile.isPending && (
+              {isSubmitting && (
                 <Loader2 size={14} className="animate-spin" />
               )}
               Save changes
