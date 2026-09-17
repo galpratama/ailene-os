@@ -1,5 +1,5 @@
 import { STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure, baseProcedure } from "@/trpc/init";
+import { baseProcedure, loggedInProcedure } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
 import { numberIsID, numberIsPosInt, stringNotBlank } from "@/trpc/utils/validation";
 import {
@@ -11,7 +11,7 @@ import {
 import z from "zod";
 
 export const listLms = {
-  projects: administratorProcedure
+  projects: loggedInProcedure
     .input(
       z.object({
         keyword: stringNotBlank().optional(),
@@ -96,7 +96,7 @@ export const listLms = {
       };
     }),
 
-  levels: administratorProcedure
+  levels: loggedInProcedure
     .input(
       z.object({
         project_id: numberIsID().optional(),
@@ -134,7 +134,7 @@ export const listLms = {
       };
     }),
 
-  chapters: administratorProcedure
+  chapters: loggedInProcedure
     .input(
       z.object({
         level_id: numberIsID().optional(),
@@ -281,7 +281,7 @@ export const listLms = {
       };
     }),
 
-  chapterTrainerRequests: administratorProcedure
+  chapterTrainerRequests: loggedInProcedure
     .input(
       z.object({
         chapter_id: numberIsID().optional(),

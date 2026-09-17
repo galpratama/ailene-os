@@ -34,13 +34,6 @@ export function numberIsID(): z.ZodInt {
 }
 
 /**
- * Number should be an integer, 0 or bigger
- */
-export function numberIsRoleID(): z.ZodInt {
-  return z.int().min(0);
-}
-
-/**
  * Number should be an integer, 1 or bigger
  */
 export function numberIsPosInt(): z.ZodInt {

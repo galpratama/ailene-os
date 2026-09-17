@@ -11,15 +11,14 @@ import type {
   B2BQuotationSessionFormatEnum,
   B2BQuotationSourceTypeEnum,
   B2BQuotationTrainerTierEnum,
+  UserRoleEnum,
 } from "@prisma/client";
 
-// Roles allowed to see a quotation's internal cost/margin figures — everyone else only gets client-facing ones.
-const INTERNAL_VISIBILITY_ROLES = ["Manager", "Administrator", "Super Admin"];
-
+// Internal cost/margin figures are administrator-only; everyone else gets the client-facing ones.
 export function canViewQuotationInternals(actor: {
-  role: { name: string };
+  role: UserRoleEnum;
 }): boolean {
-  return INTERNAL_VISIBILITY_ROLES.includes(actor.role.name);
+  return actor.role === "ADMINISTRATOR";
 }
 
 export type QuotationPricingInput = {

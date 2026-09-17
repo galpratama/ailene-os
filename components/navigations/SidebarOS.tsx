@@ -3,9 +3,11 @@
 import AppButton from "@/components/buttons/AppButton";
 import ThemeToggleOS from "@/components/buttons/ThemeToggleOS";
 import { LogoAileneStroke } from "@/components/svg/LogoAileneStroke";
+import { useSession } from "@/contexts/SessionContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { logoutUser } from "@/lib/actions";
 import { OSNavItem, OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
-import { trpc, setSessionToken } from "@/trpc/client";
+import { setSessionToken } from "@/trpc/client";
 import { LogOut, LucideIcon, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -105,16 +107,13 @@ function UserFooter({
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data, isLoading } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const user = data?.user;
+  const user = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
     setIsLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logoutUser();
     } finally {
       window.location.href = "/auth/login";
     }
@@ -136,17 +135,17 @@ function UserFooter({
         />
       ) : (
         <div className="w-8 h-8 rounded-full bg-claude flex items-center justify-center text-xs font-bold text-white shrink-0">
-          {isLoading ? "" : initialsOf(user?.full_name ?? "?")}
+          {initialsOf(user?.full_name ?? "?")}
         </div>
       )}
       {!collapsed && (
         <>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-sb-text-strong truncate">
-              {isLoading ? "Loading..." : (user?.full_name ?? "Not signed in")}
+              {user?.full_name ?? "Not signed in"}
             </p>
             <p className="text-xs text-sb-text truncate">
-              {user?.role_name ?? ""}
+              {user?.role === "ADMINISTRATOR" ? "Administrator" : "Member"}
             </p>
           </div>
           <ThemeToggleOS />
@@ -172,10 +171,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const roleName = sessionData?.user.role_name;
+  const role = useSession()?.role;
 
   const {
     isCollapsed,
@@ -201,7 +197,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
   }, [segment]);
 
   const visibleToRole = (item: OSNavItem) =>
-    !item.minRoles || (!!roleName && item.minRoles.includes(roleName));
+    !item.minRoles || (!!role && item.minRoles.includes(role));
   const mainNav = osMainNav.filter(
     (item) => item.segment === segment && visibleToRole(item)
   );

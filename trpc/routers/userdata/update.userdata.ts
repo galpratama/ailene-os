@@ -1,11 +1,6 @@
-import {
-  STATUS_BAD_REQUEST,
-  STATUS_FORBIDDEN,
-  STATUS_OK,
-} from "@/lib/status_code";
-import { roleBasedProcedure } from "@/trpc/init";
+import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
+import { administratorProcedure } from "@/trpc/init";
 import { readFailedNotFound } from "@/trpc/utils/errors";
-import { canGrantRole } from "@/trpc/utils/role_hierarchy";
 import { isValidStatusTransition } from "@/trpc/utils/user_status";
 import {
   numberIsID,
@@ -16,6 +11,7 @@ import {
   DataScopeEnum,
   JobFunctionEnum,
   UserAccountStatusEnum,
+  UserRoleEnum,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -30,12 +26,12 @@ type AuditRow = {
 };
 
 export const updateUserData = {
-  // Role/team/job_function/data_scope edits; grant-hierarchy checked against both current and requested role.
-  profile: roleBasedProcedure(["Administrator", "Super Admin"])
+  // Role/team/job_function/data_scope edits — only an administrator gets here, and either role is grantable.
+  profile: administratorProcedure
     .input(
       z.object({
         id: stringIsUUID(),
-        role_id: numberIsID().optional(),
+        role: z.enum(UserRoleEnum).optional(),
         team_id: numberIsID().nullable().optional(),
         job_function: z.enum(JobFunctionEnum).nullable().optional(),
         data_scope: z.enum(DataScopeEnum).optional(),
@@ -43,44 +39,20 @@ export const updateUserData = {
       })
     )
     .mutation(async (opts) => {
-      const { id, role_id, team_id, job_function, data_scope, reason } =
+      const { id, role, team_id, job_function, data_scope, reason } =
         opts.input;
 
       await opts.ctx.prisma.$transaction(async (tx) => {
         const existing = await tx.user.findUnique({
           where: { id },
-          include: { role: true, team: true },
+          include: { team: true },
         });
         if (!existing) throw readFailedNotFound("user");
-
-        let targetRoleName: string | undefined;
-        if (role_id !== undefined && role_id !== existing.role_id) {
-          const targetRole = await tx.role.findUnique({
-            where: { id: role_id },
-          });
-          if (!targetRole) {
-            throw new TRPCError({
-              code: STATUS_BAD_REQUEST,
-              message: "The selected access role does not exist.",
-            });
-          }
-          const actorRoleName = opts.ctx.user.role.name;
-          if (
-            !canGrantRole(actorRoleName, targetRole.name) ||
-            !canGrantRole(actorRoleName, existing.role.name)
-          ) {
-            throw new TRPCError({
-              code: STATUS_FORBIDDEN,
-              message: "You are not allowed to change this user's role.",
-            });
-          }
-          targetRoleName = targetRole.name;
-        }
 
         const updated = await tx.user.update({
           where: { id },
           data: {
-            ...(role_id !== undefined && { role_id }),
+            ...(role !== undefined && { role }),
             ...(team_id !== undefined && { team_id }),
             ...(job_function !== undefined && { job_function }),
             ...(data_scope !== undefined && { data_scope }),
@@ -89,13 +61,13 @@ export const updateUserData = {
         });
 
         const auditRows: AuditRow[] = [];
-        if (role_id !== undefined && role_id !== existing.role_id) {
+        if (role !== undefined && role !== existing.role) {
           auditRows.push({
             target_user_id: id,
             actor_id: opts.ctx.user.id,
             field_changed: "role",
-            old_value: existing.role.name,
-            new_value: targetRoleName!,
+            old_value: existing.role,
+            new_value: role,
             reason,
           });
         }
@@ -141,7 +113,7 @@ export const updateUserData = {
     }),
 
   // Account lifecycle transitions, validated against the state machine in user_status.ts.
-  status: roleBasedProcedure(["Administrator", "Super Admin"])
+  status: administratorProcedure
     .input(
       z.object({
         id: stringIsUUID(),
@@ -182,7 +154,7 @@ export const updateUserData = {
     }),
 
   // Reassigns every owned pipeline/action from one user to another, one OwnershipReassignment row per record.
-  reassignOwnership: roleBasedProcedure(["Administrator", "Super Admin", "Manager"])
+  reassignOwnership: administratorProcedure
     .input(
       z.object({
         from_user_id: stringIsUUID(),
@@ -205,19 +177,6 @@ export const updateUserData = {
         opts.ctx.prisma.user.findUnique({ where: { id: to_user_id } }),
       ]);
       if (!fromUser || !toUser) throw readFailedNotFound("user");
-
-      const isManager = opts.ctx.user.role.name === "Manager";
-      if (
-        isManager &&
-        (opts.ctx.user.team_id === null ||
-          fromUser.team_id !== opts.ctx.user.team_id ||
-          toUser.team_id !== opts.ctx.user.team_id)
-      ) {
-        throw new TRPCError({
-          code: STATUS_FORBIDDEN,
-          message: "Managers can only reassign ownership within their own team.",
-        });
-      }
 
       const result = await opts.ctx.prisma.$transaction(async (tx) => {
         const [pipelines, actions, meetings] = await Promise.all([

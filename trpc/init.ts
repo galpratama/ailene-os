@@ -1,5 +1,6 @@
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import GetPrismaClient from "@/lib/prisma";
+import { UserRoleEnum } from "@prisma/client";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { cookies, headers } from "next/headers";
 
@@ -25,13 +26,7 @@ export async function createTRPCContext(opts?: createTRPCContextOptions) {
 
   async function getUserFromSessionToken(sessionToken: string) {
     const tokenObj = await prisma.token.findUnique({
-      include: {
-        user: {
-          include: {
-            role: true,
-          },
-        },
-      },
+      include: { user: true },
       where: {
         token: sessionToken,
       },
@@ -73,32 +68,12 @@ export const loggedInProcedure = t.procedure.use(async (opts) => {
   });
 });
 
-export const superAdminProcedure = t.procedure.use(async (opts) => {
-  const { ctx } = opts;
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  if (ctx.user.role.name !== "Super Admin") {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  return opts.next({
-    ctx: {
-      prisma: ctx.prisma,
-      user: ctx.user, // not-null
-    },
-  });
-});
-
 export const administratorProcedure = t.procedure.use(async (opts) => {
   const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
-  if (
-    ctx.user.role.name !== "Administrator" &&
-    ctx.user.role.name !== "Super Admin" &&
-    ctx.user.role.name !== "Business Development"
-  ) {
+  if (ctx.user.role !== UserRoleEnum.ADMINISTRATOR) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return opts.next({
@@ -109,13 +84,13 @@ export const administratorProcedure = t.procedure.use(async (opts) => {
   });
 });
 
-export const roleBasedProcedure = (roleList: string[]) => {
+export const roleBasedProcedure = (roleList: UserRoleEnum[]) => {
   return t.procedure.use(async (opts) => {
     const { ctx } = opts;
     if (!ctx.user) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-    if (!roleList.includes(ctx.user.role.name)) {
+    if (!roleList.includes(ctx.user.role)) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
     return opts.next({

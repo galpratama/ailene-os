@@ -30,7 +30,7 @@ import {
   STATUS_INTERNAL_SERVER_ERROR,
   STATUS_OK,
 } from "@/lib/status_code";
-import { administratorProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import type { protos } from "@google-analytics/data";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -602,7 +602,7 @@ function normalizeRanking(value: string | undefined) {
 }
 
 export const listAnalytics = {
-  ga4Dashboard: administratorProcedure
+  ga4Dashboard: loggedInProcedure
     .input(inputSchema)
     .query(async ({ input }) => {
       const periodDays = daysBetween(input.start_date, input.end_date);
@@ -845,7 +845,7 @@ export const listAnalytics = {
       }
     }),
 
-  bizDashboard: administratorProcedure
+  bizDashboard: loggedInProcedure
     .input(bizInputSchema)
     .query(async ({ input }) => {
       const periodDays = daysBetween(input.start_date, input.end_date);
@@ -1207,7 +1207,7 @@ export const listAnalytics = {
       };
     }),
 
-  metaAdsDashboard: administratorProcedure
+  metaAdsDashboard: loggedInProcedure
     .input(bizInputSchema)
     .query(async ({ input }) => {
       const periodDays = daysBetween(input.start_date, input.end_date);

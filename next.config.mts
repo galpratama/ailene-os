@@ -61,9 +61,9 @@ const nextConfig: NextConfig = {
         basePath: false,
         permanent: false,
       },
-      // Already signed in -> don't show the login page again.
+      // Already signed in -> don't show the login page again; clear-session is exempt since it must run with a cookie.
       {
-        source: "/auth(.*)",
+        source: "/auth((?!/clear-session).*)",
         has: [
           {
             type: "header",

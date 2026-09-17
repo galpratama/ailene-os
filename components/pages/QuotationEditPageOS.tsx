@@ -6,6 +6,7 @@ import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
 import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
 import { getQuotationPDFBlobUrl } from "@/components/pdf/QuotationPDF";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
+import { useSession } from "@/contexts/SessionContext";
 import { buildQuotationPDFPropsFromQuotation } from "@/lib/quotation-pdf";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BQuotationApprovalDecisionEnum } from "@prisma/client";
@@ -28,7 +29,6 @@ import {
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 
-const REVIEW_ROLES = ["Manager", "Administrator", "Super Admin"];
 
 type PendingDecision = { decision: "NEEDS_REVISION" | "REJECTED" };
 
@@ -87,13 +87,11 @@ export default function QuotationEditPageOS({
 
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
+  const sessionUser = useSession();
   const canViewCostDetails =
-    !!sessionData && sessionData.user.role_name !== "Business Development";
+    !!sessionUser && sessionUser.role === "ADMINISTRATOR";
   const canDecide =
-    !!sessionData && REVIEW_ROLES.includes(sessionData.user.role_name);
+    sessionUser?.role === "ADMINISTRATOR";
 
   const {
     data: quotationData,

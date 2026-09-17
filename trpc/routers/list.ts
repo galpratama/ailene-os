@@ -10,7 +10,6 @@ import { listUserData } from "./userdata/list.userdata";
 export const listRouter = createTRPCRouter({
   // Lookup Tables //
 
-  roles: listLookup.roles,
   industries: listLookup.industries,
 
   // User Data //

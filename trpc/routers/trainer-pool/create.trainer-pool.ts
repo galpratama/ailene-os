@@ -30,8 +30,7 @@ const optionalText = stringNotBlank().nullable().optional();
 const candidateInput = z.object({
   full_name: stringNotBlank(),
   email: z.email(),
-  phone_country_id: numberIsPosInt().nullable().optional(),
-  phone_number: optionalText,
+  phone: optionalText,
   source: z.enum(TrainerSourceEnum).nullable().optional(),
   specialization_ids: z.array(numberIsPosInt()).max(12).default([]),
   teaching_experience: optionalText,
@@ -58,8 +57,7 @@ function duplicateCandidateError() {
   });
 }
 
-// The join-trainer input always overrides the user's identity fields —
-// re-applying (or an admin re-entering someone) refreshes their name/phone.
+// The join-trainer input always overrides the user's identity fields — re-applying refreshes their name.
 async function upsertUserForTrainer(
   prisma: Prisma.TransactionClient,
   input: z.infer<typeof candidateInput>
@@ -69,14 +67,10 @@ async function upsertUserForTrainer(
     where: { email },
     update: {
       full_name: input.full_name,
-      phone_country_id: input.phone_country_id ?? null,
-      phone_number: input.phone_number ?? null,
     },
     create: {
       full_name: input.full_name,
       email,
-      phone_country_id: input.phone_country_id ?? null,
-      phone_number: input.phone_number ?? null,
     },
   });
 }
@@ -98,6 +92,7 @@ async function createTrainer(
   return prisma.trainer.create({
     data: {
       user_id: user.id,
+      phone: input.phone ?? null,
       source: input.source ?? null,
       ai_experience_years: input.ai_experience_years,
       notes: buildApplicationNotes(input) || null,

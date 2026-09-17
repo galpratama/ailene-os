@@ -1,7 +1,7 @@
 import { pushMeetingToGoogleCalendar } from "@/lib/google-calendar";
 import { calculatePricing } from "@/lib/pricing-b2b";
 import { STATUS_BAD_REQUEST, STATUS_FORBIDDEN, STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
+import { administratorProcedure } from "@/trpc/init";
 import {
   actionDataScopeWhere,
   isOwnerWithinScope,
@@ -602,7 +602,7 @@ export const updateB2B = {
     }),
 
   // Manager Review decision — the only path that writes a B2BQuotationApproval row.
-  decideQuotation: roleBasedProcedure(["Manager", "Administrator", "Super Admin"])
+  decideQuotation: administratorProcedure
     .input(
       z.object({
         id: numberIsID(),
@@ -715,11 +715,7 @@ export const updateB2B = {
       };
     }),
 
-  resolveOrganizationDuplicateReview: roleBasedProcedure([
-    "Administrator",
-    "Super Admin",
-    "Manager",
-  ])
+  resolveOrganizationDuplicateReview: administratorProcedure
     .input(
       z.object({
         id: numberIsID(),

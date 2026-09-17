@@ -280,8 +280,7 @@ export default function TrainerDetailOS({
               </span>
               <span className="flex items-center gap-2">
                 <MessageCircle size={15} className="text-gray-400" />
-                {trainer.phone_country?.phone_code ?? ""}{" "}
-                {trainer.phone_number ?? "No WhatsApp"}
+                {trainer.phone ?? "No WhatsApp"}
               </span>
               <span className="flex items-center gap-2">
                 <Sparkles size={15} className="text-gray-400" />

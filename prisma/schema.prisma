@@ -34,6 +34,14 @@ enum OccupationEnum {
   @@map("occupation_enum")
 }
 
+// What a user may do. Deliberately coarse: two roles, no join table, no permission bitmask.
+enum UserRoleEnum {
+  ADMINISTRATOR @map("administrator")
+  MEMBER        @map("member")
+
+  @@map("user_role_enum")
+}
+
 // Account lifecycle for internal OS users — distinct from the shared StatusEnum.
 enum UserAccountStatusEnum {
   INVITED     @map("invited")
@@ -45,7 +53,7 @@ enum UserAccountStatusEnum {
   @@map("user_account_status_enum")
 }
 
-// Job function is independent of access role (Role model).
+// Job function is independent of role: it describes where someone sits in the org, never what they may do.
 enum JobFunctionEnum {
   BD         @map("bd")
   SALES      @map("sales")
@@ -472,17 +480,6 @@ model Industry {
   @@map("industries")
 }
 
-model Role {
-  id         Int      @id @default(autoincrement()) @db.SmallInt
-  name       String   @unique @db.VarChar()
-  permission Int      @db.SmallInt
-  created_at DateTime @default(now()) @db.Timestamptz()
-  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz()
-  users      User[]
-
-  @@map("roles")
-}
-
 model Team {
   id         Int      @id @default(autoincrement()) @db.SmallInt
   name       String   @unique @db.VarChar()
@@ -491,17 +488,6 @@ model Team {
   users      User[]
 
   @@map("teams")
-}
-
-model PhoneCountryCode {
-  id           Int     @id @default(autoincrement()) @db.SmallInt
-  country_name String  @db.VarChar()
-  phone_code   String  @unique @db.VarChar()
-  emoji        String  @db.VarChar()
-  icon         String? @db.VarChar()
-  users        User[]
-
-  @@map("phone_country_codes")
 }
 
 model TrainerSpecialization {
@@ -519,12 +505,8 @@ model User {
   id                              String                        @id @default(uuid()) @db.Uuid
   full_name                       String                        @db.VarChar()
   email                           String                        @unique @db.VarChar()
-  phone_country                   PhoneCountryCode?             @relation(fields: [phone_country_id], references: [id])
-  phone_country_id                Int?                          @db.SmallInt
-  phone_number                    String?                       @db.VarChar()
   avatar                          String?                       @db.VarChar()
-  role                            Role                          @relation(fields: [role_id], references: [id])
-  role_id                         Int                           @default(3) @db.SmallInt // General User
+  role                            UserRoleEnum                  @default(MEMBER)
   team                            Team?                         @relation(fields: [team_id], references: [id])
   team_id                         Int?                          @db.SmallInt
   job_function                    JobFunctionEnum?
@@ -534,8 +516,6 @@ model User {
   invited_by_id                   String?                       @db.Uuid
   invited_at                      DateTime?                     @db.Timestamptz()
   invited_users                   User[]                        @relation("UserInvitedBy")
-  date_of_birth                   DateTime?                     @db.Date
-  occupation                      OccupationEnum?
   created_at                      DateTime                      @default(now()) @db.Timestamptz()
   updated_at                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
   last_login                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
@@ -941,6 +921,7 @@ model Trainer {
   status              TrainerStatusEnum          @default(ACTIVE)
   user                User                       @relation("TrainerUser", fields: [user_id], references: [id])
   user_id             String                     @unique @db.Uuid
+  phone               String?                    @db.VarChar()
   referrer            User?                      @relation("TrainerReferrer", fields: [referred_by], references: [id])
   referred_by         String?                    @db.Uuid
   notes               String?                    @db.Text

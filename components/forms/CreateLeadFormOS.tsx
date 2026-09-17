@@ -11,6 +11,7 @@ import OrganizationDuplicateModalOS, {
   OrganizationDuplicateCandidate,
 } from "@/components/modals/OrganizationDuplicateModalOS";
 import SheetOS from "@/components/modals/SheetOS";
+import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
 import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
@@ -79,10 +80,8 @@ export default function CreateLeadFormOS({
   const [duplicateMatches, setDuplicateMatches] = useState<OrganizationDuplicateCandidate[]>([]);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
@@ -99,9 +98,9 @@ export default function CreateLeadFormOS({
     setPrevIsOpen(isOpen);
     if (!isOpen) setSeededOwnerForOpen(false);
   }
-  if (isOpen && isOwnScoped && sessionData && !seededOwnerForOpen) {
+  if (isOpen && isOwnScoped && sessionUser && !seededOwnerForOpen) {
     setSeededOwnerForOpen(true);
-    setOwnerId(sessionData.user.id);
+    setOwnerId(sessionUser.id);
   }
 
   const industryOptions: AppSelectOption[] =

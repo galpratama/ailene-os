@@ -7,6 +7,7 @@ import OrganizationStatusLabel from "@/components/labels/OrganizationStatusLabel
 import OrganizationDetailDrawerOS from "@/components/modals/OrganizationDetailDrawerOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import { useSession } from "@/contexts/SessionContext";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { OrganizationStatusEnum } from "@prisma/client";
 import { Building2, Check, Loader2, Search, X } from "lucide-react";
@@ -28,12 +29,8 @@ export default function OrganizationsPageOS({
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const canReviewDuplicates = ["Administrator", "Super Admin", "Manager"].includes(
-    sessionData?.user.role_name ?? ""
-  );
+  const sessionUser = useSession();
+  const canReviewDuplicates = sessionUser?.role === "ADMINISTRATOR";
 
   const [tab, setTab] = useState<"organizations" | "reviews">("organizations");
 

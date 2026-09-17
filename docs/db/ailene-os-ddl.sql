@@ -21,6 +21,12 @@ CREATE TYPE occupation_enum AS ENUM (
 );
 
 -- Account lifecycle for internal OS users — distinct from status_enum.
+-- What a user may do. Deliberately coarse: two roles, no join table, no permission bitmask.
+CREATE TYPE user_role_enum AS ENUM (
+  'administrator',
+  'member'
+);
+
 CREATE TYPE user_account_status_enum AS ENUM (
   'invited',
   'active',
@@ -29,7 +35,7 @@ CREATE TYPE user_account_status_enum AS ENUM (
   'archived'
 );
 
--- Job function is independent of access role (roles table).
+-- Job function is independent of role: it describes where someone sits in the org, never what they may do.
 CREATE TYPE job_function_enum AS ENUM (
   'bd',
   'sales',
@@ -367,27 +373,11 @@ CREATE TABLE industries (
   created_at     TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE roles (
-  id          SMALLSERIAL  PRIMARY KEY,
-  name        VARCHAR      NOT NULL  UNIQUE,
-  permission  SMALLINT     NOT NULL,
-  created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE teams (
   id          SMALLSERIAL  PRIMARY KEY,
   name        VARCHAR      NOT NULL  UNIQUE,
   created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE phone_country_codes (
-  id            SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  country_name  VARCHAR  NOT NULL,
-  phone_code    VARCHAR  NOT NULL  UNIQUE,
-  emoji         VARCHAR  NOT NULL,
-  icon          VARCHAR      NULL
 );
 
 CREATE TABLE trainer_specializations (
@@ -402,18 +392,14 @@ CREATE TABLE users (
   id                     UUID                       PRIMARY KEY  DEFAULT gen_random_uuid(),
   full_name              VARCHAR                    NOT NULL,
   email                  VARCHAR                    NOT NULL     UNIQUE,
-  phone_country_id       SMALLINT                       NULL,
-  phone_number           VARCHAR                        NULL,
   avatar                 VARCHAR                        NULL,
-  role_id                SMALLINT                   NOT NULL     DEFAULT 3, -- General User
+  role                   user_role_enum             NOT NULL     DEFAULT 'member',
   team_id                SMALLINT                       NULL,
   job_function           job_function_enum              NULL,
   data_scope             data_scope_enum            NOT NULL     DEFAULT 'own',
   status                 user_account_status_enum   NOT NULL     DEFAULT 'active',
   invited_by_id          UUID                           NULL,
   invited_at             TIMESTAMPTZ                    NULL,
-  date_of_birth          DATE                           NULL,
-  occupation             occupation_enum                NULL,
   created_at             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   updated_at             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   last_login             TIMESTAMPTZ                NOT NULL     DEFAULT CURRENT_TIMESTAMP,
@@ -691,7 +677,8 @@ CREATE TABLE b2b_quotation_approvals (
 
 CREATE TABLE trainers (
   id                   CHAR(21)             PRIMARY KEY  DEFAULT nanoid(),
-  user_id              UUID                 NOT NULL     UNIQUE, -- identity (full_name/email/phone) lives on users
+  user_id              UUID                 NOT NULL     UNIQUE, -- identity (full_name/email) lives on users
+  phone                VARCHAR                       NULL, -- applicant's WhatsApp, full number incl. country code
   source               trainer_source_enum           NULL,
   level                trainer_level_enum   NOT NULL     DEFAULT 'junior', -- junior or senior, that's it
   stage                trainer_stage_enum   NOT NULL     DEFAULT 'candidate', -- derived, not admin-set
@@ -742,11 +729,6 @@ CREATE TABLE trainer_certifications (
   created_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP,
   updated_at                       TIMESTAMPTZ          NOT NULL     DEFAULT CURRENT_TIMESTAMP
 );
-
--- LMS (Ailene AI Learning Platform) — migrated from Sevenpreneur's ail_*
--- schema. Only the pure content-catalog tables carry migrated data; the
--- member/progress/submission tables below are created empty (see the
--- migration note at the end of this section).
 
 -- Lookup tables
 
@@ -1078,8 +1060,6 @@ CREATE TABLE lms_announcement (
 -- User data
 
 ALTER TABLE users
-  ADD FOREIGN KEY (phone_country_id) REFERENCES phone_country_codes (id),
-  ADD FOREIGN KEY (role_id)          REFERENCES roles (id),
   ADD FOREIGN KEY (team_id)          REFERENCES teams (id),
   ADD FOREIGN KEY (invited_by_id)    REFERENCES users (id);
 
@@ -1281,11 +1261,6 @@ $$ LANGUAGE plpgsql;
 --------------
 
 -- Lookup tables
-
-CREATE TRIGGER update_roles_updated_at_trigger
-  BEFORE UPDATE ON roles
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER update_teams_updated_at_trigger
   BEFORE UPDATE ON teams

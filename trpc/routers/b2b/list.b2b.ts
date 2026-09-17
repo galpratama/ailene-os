@@ -1,6 +1,6 @@
 import { Optional } from "@/lib/optional-type";
 import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure, roleBasedProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import {
   actionDataScopeWhere,
   meetingDataScopeWhere,
@@ -27,6 +27,7 @@ import {
   DuplicateReviewStatusEnum,
   OrganizationStatusEnum,
   Prisma,
+  DataScopeEnum,
 } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -102,7 +103,7 @@ function getCalendarDateInTimeZone(date: Date, timeZone: string) {
 }
 
 export const listB2B = {
-  companies: administratorProcedure
+  companies: loggedInProcedure
     .input(
       z.object({
         keyword: stringNotBlank().optional(),
@@ -165,7 +166,7 @@ export const listB2B = {
       };
     }),
 
-  checkOrganizationDuplicate: administratorProcedure
+  checkOrganizationDuplicate: loggedInProcedure
     .input(
       z.object({
         name: stringNotBlank(),
@@ -186,7 +187,7 @@ export const listB2B = {
       };
     }),
 
-  contacts: administratorProcedure
+  contacts: loggedInProcedure
     .input(
       z.object({
         keyword: stringNotBlank().optional(),
@@ -231,11 +232,7 @@ export const listB2B = {
       };
     }),
 
-  organizationDuplicateReviews: roleBasedProcedure([
-    "Administrator",
-    "Super Admin",
-    "Manager",
-  ])
+  organizationDuplicateReviews: loggedInProcedure
     .input(
       z.object({
         status: z.enum(DuplicateReviewStatusEnum).optional(),
@@ -288,7 +285,7 @@ export const listB2B = {
       };
     }),
 
-  pipelines: administratorProcedure
+  pipelines: loggedInProcedure
     .input(
       z.object({
         stage: z.enum(B2BStageEnum).optional(),
@@ -446,7 +443,7 @@ export const listB2B = {
 
   // Same b2b_actions data as a single pipeline's actions would be, but
   // across every pipeline/company at once — for the global Tasks board.
-  allActions: administratorProcedure
+  allActions: loggedInProcedure
     .input(
       z.object({
         keyword: stringNotBlank().optional(),
@@ -528,7 +525,7 @@ export const listB2B = {
 
   // Same b2b_meetings data as a single pipeline's meetings would be, but across every
   // pipeline/company at once — for a global Meetings board, mirroring allActions.
-  meetings: administratorProcedure
+  meetings: loggedInProcedure
     .input(
       z.object({
         keyword: stringNotBlank().optional(),
@@ -611,7 +608,7 @@ export const listB2B = {
       };
     }),
 
-  quotations: administratorProcedure
+  quotations: loggedInProcedure
     .input(
       z.object({
         pipeline_id: numberIsID().optional(),
@@ -675,11 +672,7 @@ export const listB2B = {
     }),
 
   // Manager Review queue — every quotation currently awaiting a decision.
-  quotationApprovalQueue: roleBasedProcedure([
-    "Manager",
-    "Administrator",
-    "Super Admin",
-  ])
+  quotationApprovalQueue: loggedInProcedure
     .input(
       z.object({
         page: numberIsPosInt().optional(),
@@ -734,7 +727,7 @@ export const listB2B = {
       };
     }),
 
-  calendar: administratorProcedure
+  calendar: loggedInProcedure
     .input(
       z.object({
         start_date: z.iso.date(),
@@ -870,7 +863,7 @@ export const listB2B = {
     }),
 
   // Actionable operational summary for the OS home dashboard.
-  homeSummary: administratorProcedure.query(async (opts) => {
+  homeSummary: loggedInProcedure.query(async (opts) => {
     const userId = opts.ctx.user.id;
     const now = new Date();
     const today = getCalendarDateInTimeZone(now, DASHBOARD_TIME_ZONE);
@@ -1188,14 +1181,14 @@ export const listB2B = {
   }),
 
   // Weekly dashboard analytics, sourced from b2b_pipeline_stage_history — no backfill, so depth is limited to history recorded since that table shipped.
-  dashboardAnalytics: administratorProcedure.query(async (opts) => {
-    const isBusinessDevelopment =
-      opts.ctx.user.role.name === "Business Development";
-    const ownerScope: Prisma.B2BPipelineWhereInput = isBusinessDevelopment
+  dashboardAnalytics: loggedInProcedure.query(async (opts) => {
+    // Scope by data_scope, not role: who may act is a separate question from which records they see.
+    const isOwnScoped = opts.ctx.user.data_scope === DataScopeEnum.OWN;
+    const ownerScope: Prisma.B2BPipelineWhereInput = isOwnScoped
       ? { owner_id: opts.ctx.user.id }
       : {};
     const historyOwnerScope: Prisma.B2BPipelineStageHistoryWhereInput =
-      isBusinessDevelopment ? { pipeline: { owner_id: opts.ctx.user.id } } : {};
+      isOwnScoped ? { pipeline: { owner_id: opts.ctx.user.id } } : {};
 
     const now = new Date();
     const weekStart = new Date(now.getTime() - WEEK_WINDOW_DAYS * 86_400_000);

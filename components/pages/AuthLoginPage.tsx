@@ -2,6 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import { LogoAilene } from "@/components/svg/LogoAilene";
+import { loginWithGoogle } from "@/lib/actions";
 import { useGoogleLogin } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -28,22 +29,12 @@ function LoginForm() {
       try {
         setIsLoading(true);
         setError(null);
-        // Same-origin: this page and the callback both live on the os domain.
-        const response = await fetch("/api/auth/callback/google", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tokenResponse }),
-        });
 
-        if (!response.ok) {
-          throw new Error("Login request failed");
-        }
-
-        const result = await response.json();
-        if (result.status === 200) {
+        const result = await loginWithGoogle(tokenResponse.access_token);
+        if (result.success) {
           window.location.assign("/");
         } else {
-          setError("Login failed. Please try again.");
+          setError(result.message ?? "Login failed. Please try again.");
         }
       } catch {
         setError("Something went wrong. Please try again.");

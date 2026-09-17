@@ -1,8 +1,5 @@
 import { STATUS_OK } from "@/lib/status_code";
-import {
-  administratorProcedure,
-  baseProcedure,
-} from "@/trpc/init";
+import { baseProcedure, loggedInProcedure } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
 import { numberIsPosInt, stringNotBlank } from "@/trpc/utils/validation";
 import {
@@ -15,14 +12,9 @@ import z from "zod";
 
 export const listTrainerPool = {
   applicationOptions: baseProcedure.query(async ({ ctx }) => {
-    const [specializations, phoneCountries] = await Promise.all([
-      ctx.prisma.trainerSpecialization.findMany({
-        orderBy: [{ specialization_name: "asc" }],
-      }),
-      ctx.prisma.phoneCountryCode.findMany({
-        orderBy: [{ country_name: "asc" }],
-      }),
-    ]);
+    const specializations = await ctx.prisma.trainerSpecialization.findMany({
+      orderBy: [{ specialization_name: "asc" }],
+    });
     return {
       code: STATUS_OK,
       message: "Success",
@@ -30,16 +22,10 @@ export const listTrainerPool = {
         id: entry.id,
         name: entry.specialization_name,
       })),
-      phone_countries: phoneCountries.map((entry) => ({
-        id: entry.id,
-        name: entry.country_name,
-        phone_code: entry.phone_code,
-        emoji: entry.emoji,
-      })),
     };
   }),
 
-  trainers: administratorProcedure
+  trainers: loggedInProcedure
     .input(
       z.object({
         stage: z.enum(TrainerStageEnum).optional(),
@@ -98,7 +84,6 @@ export const listTrainerPool = {
             select: {
               full_name: true,
               email: true,
-              phone_number: true,
               avatar: true,
             },
           },
@@ -160,7 +145,7 @@ export const listTrainerPool = {
             id: trainer.id,
             full_name: trainer.user.full_name,
             email: trainer.user.email,
-            phone_number: trainer.user.phone_number,
+            phone: trainer.phone,
             avatar: trainer.user.avatar,
             source: trainer.source,
             level: trainer.level,
@@ -195,7 +180,7 @@ export const listTrainerPool = {
       };
     }),
 
-  specializations: administratorProcedure.query(async ({ ctx }) => {
+  specializations: loggedInProcedure.query(async ({ ctx }) => {
     const list = await ctx.prisma.trainerSpecialization.findMany({
       include: { _count: { select: { trainers: true } } },
       orderBy: [{ specialization_name: "asc" }],

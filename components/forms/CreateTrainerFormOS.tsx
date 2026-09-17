@@ -34,8 +34,7 @@ export default function CreateTrainerFormOS({
   const utils = trpc.useUtils();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneCountryId, setPhoneCountryId] = useState<number | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone, setPhone] = useState("");
   const [source, setSource] = useState<TrainerSourceEnum | "">("");
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
   const [aiExperienceYears, setAiExperienceYears] = useState("");
@@ -46,17 +45,11 @@ export default function CreateTrainerFormOS({
     trpc.list.trainerPool.applicationOptions.useQuery(undefined, {
       enabled: !!sessionToken && isOpen,
     });
-  const phoneOptions: AppSelectOption[] =
-    optionsData?.phone_countries.map((country) => ({
-      value: country.id,
-      label: `${country.emoji} ${country.phone_code} · ${country.name}`,
-    })) ?? [];
 
   function reset() {
     setFullName("");
     setEmail("");
-    setPhoneCountryId(null);
-    setPhoneNumber("");
+    setPhone("");
     setSource("");
     setSpecializationIds([]);
     setAiExperienceYears("");
@@ -85,8 +78,7 @@ export default function CreateTrainerFormOS({
     createTrainer.mutate({
       full_name: fullName.trim(),
       email: email.trim(),
-      phone_country_id: phoneCountryId,
-      phone_number: phoneNumber.trim() || null,
+      phone: phone.trim() || null,
       source: source || null,
       specialization_ids: specializationIds,
       ai_experience_years: aiExperienceYears ? Number(aiExperienceYears) : 0,
@@ -123,24 +115,13 @@ export default function CreateTrainerFormOS({
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <AppSelect
-              selectId="candidate-phone-country"
-              label="Country Code"
-              placeholder="Select"
-              value={phoneCountryId}
-              onChange={(value) =>
-                setPhoneCountryId(value as number | null)
-              }
-              options={phoneOptions}
-            />
-            <AppInput
-              inputId="candidate-phone"
-              label="WhatsApp"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
-            />
-          </div>
+          <AppInput
+            inputId="candidate-phone"
+            label="WhatsApp"
+            placeholder="+6285110545698"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+          />
           <AppSelect
             selectId="candidate-source"
             label="Source"

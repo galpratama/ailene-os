@@ -4,9 +4,9 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
-import { grantableRoleNames } from "@/trpc/utils/role_hierarchy";
+import { USER_ROLE_OPTIONS } from "@/lib/constants";
 import { trpc } from "@/trpc/client";
-import { DataScopeEnum, JobFunctionEnum } from "@prisma/client";
+import { DataScopeEnum, JobFunctionEnum, UserRoleEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -41,29 +41,20 @@ export default function InviteUserFormOS({
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleId, setRoleId] = useState<number | null>(null);
+  const [role, setRole] = useState<UserRoleEnum | "">("");
   const [teamId, setTeamId] = useState<number | null>(null);
   const [jobFunction, setJobFunction] = useState<JobFunctionEnum | "">("");
   const [dataScope, setDataScope] = useState<DataScopeEnum>("OWN");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const { data: roleData } = trpc.list.roles.useQuery(undefined, {
-    enabled: !!sessionToken && isOpen,
-  });
   const { data: teamData } = trpc.list.teams.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
 
-  const grantable = sessionData
-    ? grantableRoleNames(sessionData.user.role_name)
-    : [];
-  const roleOptions: AppSelectOption[] =
-    roleData?.list
-      .filter((role) => grantable.includes(role.name))
-      .map((role) => ({ value: role.id, label: role.name })) ?? [];
+  const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
   const teamOptions: AppSelectOption[] = [
     { value: "", label: "No team" },
     ...(teamData?.list.map((team) => ({ value: team.id, label: team.name })) ??
@@ -73,7 +64,7 @@ export default function InviteUserFormOS({
   function reset() {
     setFullName("");
     setEmail("");
-    setRoleId(null);
+    setRole("");
     setTeamId(null);
     setJobFunction("");
     setDataScope("OWN");
@@ -93,13 +84,13 @@ export default function InviteUserFormOS({
 
     if (!fullName.trim()) return setError("Name is required.");
     if (!email.trim()) return setError("Email is required.");
-    if (!roleId) return setError("Access role is required.");
+    if (!role) return setError("Access role is required.");
 
     try {
       await inviteUser.mutateAsync({
         full_name: fullName.trim(),
         email: email.trim(),
-        role_id: roleId,
+        role,
         team_id: teamId,
         job_function: jobFunction || null,
         data_scope: dataScope,
@@ -148,8 +139,8 @@ export default function InviteUserFormOS({
             label="Access role"
             required
             placeholder="Select access role"
-            value={roleId}
-            onChange={(v) => setRoleId(v as number | null)}
+            value={role}
+            onChange={(v) => setRole(v as UserRoleEnum)}
             options={roleOptions}
           />
           <AppSelect

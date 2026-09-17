@@ -8,6 +8,7 @@ import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import RecordTimelineOS from "@/components/elements/RecordTimelineOS";
+import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
 import {
   B2BLostReasonEnum,
@@ -77,10 +78,8 @@ export default function EditLeadFormOS({
 }: EditLeadFormOSProps) {
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
@@ -142,7 +141,7 @@ export default function EditLeadFormOS({
     setProjectStartMonth(toMonthInputValue(pipeline.project_start_month));
     setProjectEndMonth(toMonthInputValue(pipeline.project_end_month));
     // OWN scope can only ever own their own leads, so use their id directly instead of whatever's on the record.
-    setOwnerId(isOwnScoped ? (sessionData?.user.id ?? pipeline.owner_id) : pipeline.owner_id);
+    setOwnerId(isOwnScoped ? (sessionUser?.id ?? pipeline.owner_id) : pipeline.owner_id);
   }
 
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {

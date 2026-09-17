@@ -6,6 +6,7 @@ import AppSearchableSelect, {
 import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
+import { useSession } from "@/contexts/SessionContext";
 import { getRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { Loader2 } from "lucide-react";
@@ -53,11 +54,9 @@ export default function PricingCalculatorPageOS({
   const router = useRouter();
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
+  const sessionUser = useSession();
   const canViewCostDetails =
-    !!sessionData && sessionData.user.role_name !== "Business Development";
+    !!sessionUser && sessionUser.role === "ADMINISTRATOR";
 
   // Optionally pre-linked to a lead via ?pipeline_id=, like /tasks?pipeline_id=.
   const searchParams = useSearchParams();

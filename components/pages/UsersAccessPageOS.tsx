@@ -195,7 +195,7 @@ export default function UsersAccessPageOS({
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <AccessRoleLabel roleName={entry.role_name} />
+                      <AccessRoleLabel role={entry.role} />
                     </td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
                       {entry.job_function

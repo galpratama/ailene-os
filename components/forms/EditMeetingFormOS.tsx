@@ -6,6 +6,7 @@ import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
+import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
 import { B2BMeetingStatusEnum } from "@prisma/client";
 import { Loader2, Trash2 } from "lucide-react";
@@ -40,10 +41,8 @@ export default function EditMeetingFormOS({
 }: EditMeetingFormOSProps) {
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [scheduledAt, setScheduledAt] = useState("");
   const [status, setStatus] = useState<B2BMeetingStatusEnum>("SCHEDULED");

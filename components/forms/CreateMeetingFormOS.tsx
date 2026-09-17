@@ -5,6 +5,7 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
+import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -26,10 +27,8 @@ export default function CreateMeetingFormOS({
 }: CreateMeetingFormOSProps) {
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [scheduledAt, setScheduledAt] = useState("");
   const [organizerId, setOrganizerId] = useState("");

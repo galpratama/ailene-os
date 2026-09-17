@@ -1,10 +1,10 @@
 import { STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import { readFailedNotFound } from "@/trpc/utils/errors";
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 
 export const readLms = {
-  project: administratorProcedure
+  project: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async ({ ctx, input }) => {
       const project = await ctx.prisma.lmsProject.findFirst({

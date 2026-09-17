@@ -1,22 +1,20 @@
 import { Optional } from "@/lib/optional-type";
 import { STATUS_OK } from "@/lib/status_code";
-import { roleBasedProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import { calculatePage } from "@/trpc/utils/paging";
 import {
   numberIsID,
   numberIsPosInt,
-  numberIsRoleID,
   stringNotBlank,
 } from "@/trpc/utils/validation";
-import { UserAccountStatusEnum } from "@prisma/client";
+import { UserAccountStatusEnum, UserRoleEnum } from "@prisma/client";
 import z from "zod";
 
 export const listUserData = {
-  // Manager is included since LeadsPageOS's owner picker and reassignment need it too.
-  users: roleBasedProcedure(["Administrator", "Super Admin", "Manager"])
+  users: loggedInProcedure
     .input(
       z.object({
-        role_ids: z.array(numberIsRoleID()).nonempty().optional(),
+        roles: z.array(z.enum(UserRoleEnum)).nonempty().optional(),
         team_id: numberIsID().optional(),
         status: z.enum(UserAccountStatusEnum).optional(),
         page: numberIsPosInt().optional(),
@@ -26,7 +24,7 @@ export const listUserData = {
     )
     .query(async (opts) => {
       const whereClause = {
-        role_id: opts.input.role_ids ? { in: opts.input.role_ids } : undefined,
+        role: opts.input.roles ? { in: opts.input.roles } : undefined,
         team_id: opts.input.team_id,
         status: opts.input.status,
         OR: undefined as Optional<
@@ -54,7 +52,7 @@ export const listUserData = {
       );
 
       const userList = await opts.ctx.prisma.user.findMany({
-        include: { role: true, team: true },
+        include: { team: true },
         orderBy: [{ full_name: "asc" }],
         where: whereClause,
         skip: paging.prisma.skip,
@@ -69,8 +67,7 @@ export const listUserData = {
           full_name: entry.full_name,
           email: entry.email,
           avatar: entry.avatar,
-          role_id: entry.role_id,
-          role_name: entry.role.name,
+          role: entry.role,
           team_id: entry.team_id,
           team_name: entry.team?.name ?? null,
           job_function: entry.job_function,
@@ -86,7 +83,7 @@ export const listUserData = {
       };
     }),
 
-  teams: roleBasedProcedure(["Administrator", "Super Admin"]).query(
+  teams: loggedInProcedure.query(
     async ({ ctx }) => {
       const list = await ctx.prisma.team.findMany({
         include: { _count: { select: { users: true } } },

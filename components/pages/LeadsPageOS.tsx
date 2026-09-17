@@ -13,6 +13,7 @@ import ViewModeToggleOS, {
   type ViewModeOS,
 } from "@/components/buttons/ViewModeToggleOS";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
+import { useSession } from "@/contexts/SessionContext";
 import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BLostReasonEnum, B2BStageEnum } from "@prisma/client";
@@ -79,11 +80,9 @@ export default function LeadsPageOS({
 
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
+  const sessionUser = useSession();
 
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPipelineId, setEditingPipelineId] = useState<number | null>(

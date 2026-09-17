@@ -62,8 +62,7 @@ export default function TrainerApplicationPageBIZ() {
   const [error, setError] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneCountryId, setPhoneCountryId] = useState<number | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone, setPhone] = useState("");
   const [source, setSource] = useState<TrainerSourceEnum | "">("");
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
   const [teachingExperience, setTeachingExperience] = useState("");
@@ -73,7 +72,7 @@ export default function TrainerApplicationPageBIZ() {
   const [availabilityNotes, setAvailabilityNotes] = useState("");
   const [website, setWebsite] = useState("");
 
-  const { data: optionsData, isLoading: isLoadingOptions } =
+  const { data: optionsData } =
     trpc.list.trainerPool.applicationOptions.useQuery();
   const apply = trpc.create.trainerPool.candidate.useMutation({
     onSuccess: () => {
@@ -83,12 +82,6 @@ export default function TrainerApplicationPageBIZ() {
     },
     onError: (mutationError) => setError(mutationError.message),
   });
-
-  const phoneOptions: AppSelectOption[] =
-    optionsData?.phone_countries.map((country) => ({
-      value: country.id,
-      label: `${country.emoji} ${country.phone_code} · ${country.name}`,
-    })) ?? [];
 
   function toggleSpecialization(id: number) {
     setSpecializationIds((current) =>
@@ -116,8 +109,7 @@ export default function TrainerApplicationPageBIZ() {
     apply.mutate({
       full_name: fullName.trim(),
       email: email.trim(),
-      phone_country_id: phoneCountryId,
-      phone_number: phoneNumber.trim() || null,
+      phone: phone.trim() || null,
       source: source || null,
       specialization_ids: specializationIds,
       teaching_experience: teachingExperience.trim(),
@@ -256,27 +248,13 @@ export default function TrainerApplicationPageBIZ() {
                     placeholder="nama@email.com"
                   />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <AppSelect
-                    selectId="trainer-phone-country"
-                    label="Kode negara"
-                    placeholder={
-                      isLoadingOptions ? "Memuat..." : "Pilih kode negara"
-                    }
-                    value={phoneCountryId}
-                    onChange={(value) =>
-                      setPhoneCountryId(value as number | null)
-                    }
-                    options={phoneOptions}
-                  />
-                  <AppInput
-                    inputId="trainer-phone"
-                    label="Nomor WhatsApp"
-                    value={phoneNumber}
-                    onChange={(event) => setPhoneNumber(event.target.value)}
-                    placeholder="81234567890"
-                  />
-                </div>
+                <AppInput
+                  inputId="trainer-phone"
+                  label="Nomor WhatsApp"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="+6281234567890"
+                />
                 <AppSelect
                   selectId="trainer-source"
                   label="Kamu tahu program ini dari mana?"

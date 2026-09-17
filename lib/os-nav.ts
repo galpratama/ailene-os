@@ -103,7 +103,7 @@ export const osMainNav: OSNavItem[] = [
     label: "Users & access",
     icon: ShieldCheck,
     segment: "B2B",
-    minRoles: ["Administrator", "Super Admin"],
+    minRoles: ["ADMINISTRATOR"],
     group: "Administrator",
   },
 ];

@@ -1,5 +1,5 @@
 import { STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import { readFailedNotFound } from "@/trpc/utils/errors";
 import { objectHasOnlyNanoId } from "@/trpc/utils/validation";
 import { TrainerCertificationStatusEnum, TrainerScreeningStatusEnum } from "@prisma/client";
@@ -12,13 +12,13 @@ import {
 } from "./trainer-pool.shared";
 
 export const readTrainerPool = {
-  trainer: administratorProcedure
+  trainer: loggedInProcedure
     .input(objectHasOnlyNanoId())
     .query(async ({ ctx, input }) => {
       const trainer = await ctx.prisma.trainer.findFirst({
         where: { id: input.id, deleted_at: null },
         include: {
-          user: { include: { phone_country: true } },
+          user: true,
           referrer: { select: { id: true, full_name: true } },
           specializations: {
             include: { specialization: true },
@@ -37,8 +37,7 @@ export const readTrainerPool = {
           ...trainerRest,
           full_name: trainer.user.full_name,
           email: trainer.user.email,
-          phone_number: trainer.user.phone_number,
-          phone_country: trainer.user.phone_country,
+          phone: trainer.phone,
           specializations: trainer.specializations.map((entry) => ({
             id: entry.specialization.id,
             name: entry.specialization.specialization_name,

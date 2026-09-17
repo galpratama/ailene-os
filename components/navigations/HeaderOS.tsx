@@ -1,7 +1,8 @@
 "use client";
 
 import NotificationBellOS from "@/components/navigations/NotificationBellOS";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { useSession } from "@/contexts/SessionContext";
+import { setSessionToken } from "@/trpc/client";
 import Image from "next/image";
 import { useEffect } from "react";
 
@@ -19,10 +20,7 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
     if (sessionToken) setSessionToken(sessionToken);
   }, [sessionToken]);
 
-  const { data } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const user = data?.user;
+  const user = useSession();
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-end gap-3 border-b border-gray-200 bg-white px-6 dark:border-zinc-800 dark:bg-zinc-900">

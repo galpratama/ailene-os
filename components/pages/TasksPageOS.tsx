@@ -13,6 +13,7 @@ import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
+import { useSession } from "@/contexts/SessionContext";
 import { setSessionToken, trpc } from "@/trpc/client";
 import type { B2BActionStatusEnum } from "@prisma/client";
 import {
@@ -67,10 +68,8 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const isOwnScoped = sessionData?.user.data_scope === "OWN";
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "tasks_view_mode",

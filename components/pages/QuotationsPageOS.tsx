@@ -5,6 +5,7 @@ import { downloadQuotationPDF, getQuotationPDFBlobUrl } from "@/components/pdf/Q
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
 import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
+import { useSession } from "@/contexts/SessionContext";
 import { getRupiahCurrency } from "@/lib/currency";
 import {
   buildQuotationPDFPropsFromQuotation,
@@ -32,12 +33,8 @@ export default function QuotationsPageOS({
 
   const utils = trpc.useUtils();
 
-  const { data: sessionData } = trpc.auth.checkSession.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
-  const canReview = ["Manager", "Administrator", "Super Admin"].includes(
-    sessionData?.user.role_name ?? ""
-  );
+  const sessionUser = useSession();
+  const canReview = sessionUser?.role === "ADMINISTRATOR";
   const canViewMargin = canReview;
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);

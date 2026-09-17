@@ -1,5 +1,5 @@
 import { STATUS_OK } from "@/lib/status_code";
-import { administratorProcedure } from "@/trpc/init";
+import { loggedInProcedure } from "@/trpc/init";
 import {
   actionDataScopeWhere,
   meetingDataScopeWhere,
@@ -12,7 +12,7 @@ import { getMasterDataTimeline, getPipelineTimeline } from "@/trpc/utils/timelin
 import { objectHasOnlyID } from "@/trpc/utils/validation";
 
 export const readB2B = {
-  company: administratorProcedure
+  company: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theCompany = await opts.ctx.prisma.b2BCompany.findFirst({
@@ -64,7 +64,7 @@ export const readB2B = {
       };
     }),
 
-  contact: administratorProcedure
+  contact: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theContact = await opts.ctx.prisma.contact.findFirst({
@@ -108,7 +108,7 @@ export const readB2B = {
       };
     }),
 
-  pipeline: administratorProcedure
+  pipeline: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const thePipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
@@ -164,7 +164,7 @@ export const readB2B = {
       };
     }),
 
-  action: administratorProcedure
+  action: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theAction = await opts.ctx.prisma.b2BAction.findFirst({
@@ -180,7 +180,7 @@ export const readB2B = {
       };
     }),
 
-  meeting: administratorProcedure
+  meeting: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theMeeting = await opts.ctx.prisma.b2BMeeting.findFirst({
@@ -234,7 +234,7 @@ export const readB2B = {
       };
     }),
 
-  quotation: administratorProcedure
+  quotation: loggedInProcedure
     .input(objectHasOnlyID())
     .query(async (opts) => {
       const theQuotation = await opts.ctx.prisma.b2BQuotation.findFirst({
@@ -307,7 +307,7 @@ export const readB2B = {
             actor_name: approval.actor.full_name,
             created_at: approval.created_at,
           })),
-          // Omitted entirely for Staff/Business Development, never just hidden client-side.
+          // Omitted entirely for non-administrators, never just hidden client-side.
           ...(canViewInternals && {
             trainer_cost: theQuotation.trainer_cost,
             addons_cost: theQuotation.addons_cost,
