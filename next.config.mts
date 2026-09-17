@@ -41,9 +41,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // No session cookie on os -> bounce to /auth/login; /auth and /api authenticate on their own, robots/sitemap must stay fetchable.
+      // No session cookie on os -> bounce to /auth/login, but page routes only: _next and any file with an extension must stay fetchable or the login page loads bare.
       {
-        source: "/:path((?!api|auth|robots|sitemap).*)",
+        source: "/:path((?!api|auth|_next|.*\\.).*)",
         has: [
           {
             type: "header",
