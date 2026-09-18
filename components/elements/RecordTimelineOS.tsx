@@ -8,7 +8,7 @@ interface RecordTimelineEntry {
   created_at: string | Date;
 }
 
-// One renderer for any record's timeline — shared shape comes from trpc/utils/timeline.ts's TimelineEntry.
+// One renderer for any record's timeline, whatever the source of the entries.
 export default function RecordTimelineOS({
   entries,
   emptyLabel = "No edits recorded yet.",

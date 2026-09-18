@@ -9,8 +9,6 @@ export const deleteRouter = createTRPCRouter({
     googleCalendarConnection: deleteIntegrations.googleCalendarConnection,
   },
   b2b: {
-    company: deleteB2B.company,
-    pipeline: deleteB2B.pipeline,
     action: deleteB2B.action,
     meeting: deleteB2B.meeting,
     quotation: deleteB2B.quotation,

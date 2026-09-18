@@ -37,16 +37,3 @@ export function quotationDataScopeWhere(
 ): Prisma.B2BQuotationWhereInput {
   return { pipeline: pipelineDataScopeWhere(actor) };
 }
-
-// For single-record mutations: is this specific pipeline owner within the actor's scope?
-export function isOwnerWithinScope(
-  actor: ScopedActor,
-  ownerId: string,
-  ownerTeamId: number | null
-): boolean {
-  if (actor.data_scope === "GLOBAL") return true;
-  if (actor.data_scope === "TEAM" && actor.team_id !== null) {
-    return ownerTeamId === actor.team_id;
-  }
-  return ownerId === actor.id;
-}

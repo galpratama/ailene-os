@@ -8,7 +8,6 @@ import {
   quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
-import { findOrganizationDuplicates } from "@/trpc/utils/organization_dedupe";
 import { canViewQuotationInternals } from "@/trpc/utils/quotation";
 import {
   numberIsID,
@@ -24,7 +23,6 @@ import {
   B2BProbabilityStatusEnum,
   B2BQuotationStatusEnum,
   B2BStageEnum,
-  DuplicateReviewStatusEnum,
   OrganizationStatusEnum,
   Prisma,
   DataScopeEnum,
@@ -166,125 +164,6 @@ export const listB2B = {
       };
     }),
 
-  checkOrganizationDuplicate: loggedInProcedure
-    .input(
-      z.object({
-        name: stringNotBlank(),
-        email: z.string().nullable().optional(),
-        phone: z.string().nullable().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const matches = await findOrganizationDuplicates(opts.ctx.prisma, {
-        name: opts.input.name,
-        email: opts.input.email,
-        phone: opts.input.phone,
-      });
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        matches,
-      };
-    }),
-
-  contacts: loggedInProcedure
-    .input(
-      z.object({
-        keyword: stringNotBlank().optional(),
-        organization_id: numberIsID().optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const whereClause: Prisma.ContactWhereInput = {
-        organizations: opts.input.organization_id
-          ? { some: { organization_id: opts.input.organization_id } }
-          : undefined,
-      };
-      if (opts.input.keyword !== undefined) {
-        whereClause.OR = [
-          { full_name: { contains: opts.input.keyword, mode: "insensitive" } },
-          { email: { contains: opts.input.keyword, mode: "insensitive" } },
-        ];
-      }
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.contact.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const contactList = await opts.ctx.prisma.contact.findMany({
-        orderBy: [{ full_name: "asc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: contactList,
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  organizationDuplicateReviews: loggedInProcedure
-    .input(
-      z.object({
-        status: z.enum(DuplicateReviewStatusEnum).optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const whereClause: Prisma.OrganizationDuplicateReviewWhereInput = {
-        status: opts.input.status ?? "PENDING",
-      };
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.organizationDuplicateReview.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const reviewList = await opts.ctx.prisma.organizationDuplicateReview.findMany({
-        include: {
-          requested_by: { select: { id: true, full_name: true } },
-          resolved_by: { select: { id: true, full_name: true } },
-        },
-        orderBy: [{ created_at: "desc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: reviewList.map((entry) => ({
-          id: entry.id,
-          proposed_name: entry.proposed_name,
-          proposed_pic_name: entry.proposed_pic_name,
-          proposed_pic_email: entry.proposed_pic_email,
-          matched_organization_ids: entry.matched_organization_ids,
-          status: entry.status,
-          requested_by_id: entry.requested_by.id,
-          requested_by_name: entry.requested_by.full_name,
-          resolved_by_name: entry.resolved_by?.full_name ?? null,
-          resolved_at: entry.resolved_at,
-          resolution_note: entry.resolution_note,
-          created_at: entry.created_at,
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
   pipelines: loggedInProcedure
     .input(
       z.object({
@@ -342,8 +221,7 @@ export const listB2B = {
       if (opts.input.year !== undefined) {
         const yearStart = new Date(`${opts.input.year}-01-01T00:00:00.000Z`);
         const yearEnd = new Date(`${opts.input.year + 1}-01-01T00:00:00.000Z`);
-        // Match leads in this year OR leads whose project window isn't set yet
-        // (so freshly-identified leads without a start_month still show up).
+        // Leads in this year, or with no project window set yet so fresh leads still show up.
         whereClause.AND = [
           {
             OR: [
@@ -441,8 +319,7 @@ export const listB2B = {
       };
     }),
 
-  // Same b2b_actions data as a single pipeline's actions would be, but
-  // across every pipeline/company at once — for the global Tasks board.
+  // b2b_actions across every pipeline/company at once, for the global Tasks board.
   allActions: loggedInProcedure
     .input(
       z.object({
@@ -523,8 +400,7 @@ export const listB2B = {
       };
     }),
 
-  // Same b2b_meetings data as a single pipeline's meetings would be, but across every
-  // pipeline/company at once — for a global Meetings board, mirroring allActions.
+  // b2b_meetings across every pipeline/company at once, mirroring allActions.
   meetings: loggedInProcedure
     .input(
       z.object({
@@ -761,8 +637,7 @@ export const listB2B = {
           : undefined,
       };
 
-      // Meetings have no status/priority/assignee of their own (see B2BMeeting) — those
-      // filters only narrow actions; a meeting only respects the shared date/pipeline/company ones.
+      // Meetings have no status/priority/assignee of their own, so those filters narrow actions only.
       const meetingWhereClause: Prisma.B2BMeetingWhereInput = {
         scheduled_at: { gte: startDate, lte: endDate },
         pipeline_id: opts.input.pipeline_id,
@@ -1020,8 +895,7 @@ export const listB2B = {
         orderBy: [{ updated_at: "desc" }],
         take: 12,
       }),
-      // Active pipelines within this actor's data_scope, for the ownership-conflict check below —
-      // two different owners both holding an active lead against the same company.
+      // Active in-scope pipelines, for the ownership-conflict check below (two owners, same company).
       opts.ctx.prisma.b2BPipeline.findMany({
         where: {
           ...pipelineDataScopeWhere(opts.ctx.user),

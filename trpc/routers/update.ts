@@ -6,16 +6,12 @@ import { updateTrainerPool } from "./trainer-pool/update.trainer-pool";
 
 export const updateRouter = createTRPCRouter({
   b2b: {
-    company: updateB2B.company,
-    pipeline: updateB2B.pipeline,
     action: updateB2B.action,
     meeting: updateB2B.meeting,
     quotation: updateB2B.quotation,
     submitQuotation: updateB2B.submitQuotation,
     decideQuotation: updateB2B.decideQuotation,
     updateQuotationOutcome: updateB2B.updateQuotationOutcome,
-    contact: updateB2B.contact,
-    resolveOrganizationDuplicateReview: updateB2B.resolveOrganizationDuplicateReview,
   },
   trainerPool: {
     trainer: updateTrainerPool.trainer,
