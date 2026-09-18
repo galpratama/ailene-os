@@ -1,3 +1,4 @@
+import { listIndustries } from "@/apis/lookup";
 import HomePageBIZ from "@/components/pages/HomePageBIZ";
 import JsonLd from "@/components/seo/JsonLd";
 import { homePageGraph } from "@/lib/structured-data";
@@ -26,11 +27,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+// A lookup outage must never fail this page or the build, so the form just drops the field.
+async function loadIndustries() {
+  try {
+    const result = await listIndustries({ page: 1, page_size: 100 });
+    return result.data?.list ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function HomePage() {
+  const industries = await loadIndustries();
+
   return (
     <>
       <JsonLd graph={homePageGraph()} />
-      <HomePageBIZ />
+      <HomePageBIZ industries={industries} />
     </>
   );
 }

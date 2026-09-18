@@ -1,5 +1,6 @@
 "use client";
 
+import type { IndustryEntry } from "@/apis/lookup";
 import type { LeadChannel } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import { createInboundLead } from "@/lib/actions";
@@ -19,7 +20,7 @@ const channelOptions: { value: LeadChannel; label: string }[] = [
 
 type SubmitState = "idle" | "sending" | "sent" | "duplicate" | "error";
 
-export default function LeadFormHomeBIZ() {
+export default function LeadFormHomeBIZ({ industries }: { industries: IndustryEntry[] }) {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -31,6 +32,7 @@ export default function LeadFormHomeBIZ() {
     setSubmitState("sending");
     const result = await createInboundLead({
       company_name: text("company"),
+      industry_id: Number(text("industry_id")) || null,
       website_url: text("website") || null,
       contact: {
         full_name: text("name"),
@@ -83,7 +85,8 @@ export default function LeadFormHomeBIZ() {
                   <label className="grid gap-2 text-xs font-semibold text-biz-ink">Jabatan<input name="job_title" maxLength={255} placeholder="Contoh: HR Manager" className={fieldClass} /></label>
                   <label className="grid gap-2 text-xs font-semibold text-biz-ink">Nama perusahaan<input name="company" required maxLength={255} placeholder="Nama perusahaan" className={fieldClass} /></label>
                   <label className="grid gap-2 text-xs font-semibold text-biz-ink">Website perusahaan<input name="website" type="url" maxLength={2048} placeholder="https://perusahaan.com" className={fieldClass} /></label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink sm:col-span-2">Tahu Ailene dari mana?<select name="lead_channel" defaultValue="" className={fieldClass}><option value="">Pilih salah satu (opsional)</option>{channelOptions.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label>
+                  {industries.length > 0 && <label className="grid gap-2 text-xs font-semibold text-biz-ink">Industri<select name="industry_id" defaultValue="" className={fieldClass}><option value="">Pilih industri (opsional)</option>{industries.map((industry) => (<option key={industry.id} value={industry.id}>{industry.name}</option>))}</select></label>}
+                  <label className={`grid gap-2 text-xs font-semibold text-biz-ink ${industries.length > 0 ? "" : "sm:col-span-2"}`}>Tahu Ailene dari mana?<select name="lead_channel" defaultValue="" className={fieldClass}><option value="">Pilih salah satu (opsional)</option>{channelOptions.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}</select></label>
                   <label className="grid gap-2 text-xs font-semibold text-biz-ink sm:col-span-2">Kebutuhan saat ini<textarea name="context" rows={5} maxLength={2000} placeholder="Ceritakan target atau workflow yang ingin dibantu" className={`${fieldClass} resize-y py-3`} /></label>
                 </div>
                 <AppButton type="submit" variant="green" size="cta" disabled={submitState === "sending"} className="mt-5 !bg-biz-lime !text-biz-forest hover:!bg-biz-lime/90">{submitState === "sending" ? "Mengirim..." : "Kirim kebutuhan"}</AppButton>

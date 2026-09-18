@@ -68,14 +68,19 @@ export function clientSecret() {
 
 export async function callApi<T = unknown>(
   path: string,
-  options: { method?: string; body?: unknown; token?: string } = {}
+  options: {
+    method?: string;
+    body?: unknown;
+    token?: string;
+    revalidate?: number;
+  } = {}
 ): Promise<ApiEnvelope<T>> {
   const baseUrl = process.env.BASE_URL;
   if (!baseUrl) {
     throw new Error("BASE_URL is not configured");
   }
 
-  const { method = "POST", body, token } = options;
+  const { method = "POST", body, token, revalidate } = options;
 
   const response = await fetch(new URL(path, baseUrl).toString(), {
     method,
@@ -84,7 +89,10 @@ export async function callApi<T = unknown>(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
-    cache: "no-store",
+    // Per-user data must never be cached; only public lookups opt into revalidation.
+    ...(revalidate === undefined
+      ? { cache: "no-store" as const }
+      : { next: { revalidate } }),
   });
 
   const data = (await response

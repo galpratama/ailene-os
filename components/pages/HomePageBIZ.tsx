@@ -13,8 +13,9 @@ import FAQHomeBIZ from "../static-sections/FAQHomeBIZ";
 import LeadFormHomeBIZ from "../static-sections/LeadFormHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
+import type { IndustryEntry } from "@/apis/lookup";
 
-export default function HomePageBIZ() {
+export default function HomePageBIZ({ industries }: { industries: IndustryEntry[] }) {
   return (
     <div id="top" className="bg-biz-paper text-biz-ink">
       <HeaderHomeBIZ />
@@ -50,7 +51,7 @@ export default function HomePageBIZ() {
           <FAQHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="lead_form">
-          <LeadFormHomeBIZ />
+          <LeadFormHomeBIZ industries={industries} />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="final_cta">
           <CTAHomeBIZ />
