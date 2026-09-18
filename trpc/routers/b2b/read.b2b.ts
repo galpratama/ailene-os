@@ -37,13 +37,6 @@ export const readB2B = {
           },
           organizer: { select: { id: true, full_name: true, avatar: true } },
           created_by: { select: { id: true, full_name: true } },
-          attendees: {
-            include: {
-              contact: {
-                select: { id: true, full_name: true, email: true, phone: true },
-              },
-            },
-          },
           next_actions: {
             select: { id: true, name: true, status: true, due_date: true },
           },
@@ -72,7 +65,6 @@ export const readB2B = {
           location_or_link: theMeeting.location_or_link,
           notes: theMeeting.notes,
           google_sync_status: theMeeting.google_sync_status,
-          attendees: theMeeting.attendees.map((entry) => entry.contact),
           next_actions: theMeeting.next_actions,
           created_at: theMeeting.created_at,
           updated_at: theMeeting.updated_at,

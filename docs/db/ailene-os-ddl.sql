@@ -78,7 +78,7 @@ CREATE TYPE google_calendar_sync_status_enum AS ENUM (
   'sync_failed'
 );
 
--- Enumeration for the b2b_pipeline table (b2b_*)
+-- Legacy-compatible stage labels used by dashboard UI components.
 
 CREATE TYPE b2b_stage_enum AS ENUM (
   'lead_identified',
@@ -99,7 +99,7 @@ CREATE TYPE b2b_probability_status_enum AS ENUM (
   'hot'
 );
 
--- Enumeration for the b2b_pipeline / b2b_pipeline_stage_history tables
+-- Lost-reason labels retained for historical UI compatibility.
 
 CREATE TYPE b2b_lost_reason_enum AS ENUM (
   'budget_too_high',
@@ -111,7 +111,7 @@ CREATE TYPE b2b_lost_reason_enum AS ENUM (
   'other'
 );
 
--- Organization (b2b_company) lifecycle — starts prospect, auto-bumps to customer on a closed_won pipeline.
+-- Legacy organization lifecycle labels retained for UI compatibility.
 CREATE TYPE organization_status_enum AS ENUM (
   'prospect',
   'customer',
@@ -450,67 +450,6 @@ CREATE TABLE notifications (
   created_at   TIMESTAMPTZ                     NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
--- B2B Sales Pipeline
-
-CREATE TABLE b2b_company (
-  id                SERIAL                    PRIMARY KEY,
-  name              VARCHAR                   NOT NULL,
-  normalized_name   VARCHAR                   NOT NULL,
-  aliases           VARCHAR[]                 NOT NULL  DEFAULT '{}',
-  legal_identifier  VARCHAR                       NULL,
-  status            organization_status_enum  NOT NULL  DEFAULT 'prospect',
-  archived_at       TIMESTAMPTZ                   NULL,
-  industry_id       SMALLINT                  NOT NULL,
-  pic_name          VARCHAR                       NULL,
-  pic_job_title     VARCHAR                       NULL,
-  pic_wa            VARCHAR                       NULL,
-  pic_email         VARCHAR                       NULL,
-  image_url         VARCHAR                       NULL,
-  created_at        TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at        TIMESTAMPTZ               NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
--- Reusable person record — can relate to multiple organizations (see
--- contact_organization_relationships) instead of living as flat fields on one company.
-CREATE TABLE contacts (
-  id          SERIAL       PRIMARY KEY,
-  full_name   VARCHAR      NOT NULL,
-  email       VARCHAR          NULL,
-  phone       VARCHAR          NULL,
-  job_title   VARCHAR          NULL,
-  created_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
--- One primary relationship per contact-organization pair, with effective dates.
-CREATE TABLE contact_organization_relationships (
-  contact_id        INTEGER      NOT NULL,
-  organization_id   INTEGER      NOT NULL,
-  is_primary        BOOLEAN      NOT NULL  DEFAULT FALSE,
-  relationship_role VARCHAR          NULL,
-  effective_from    DATE         NOT NULL  DEFAULT CURRENT_DATE,
-  effective_to      DATE             NULL,
-  created_at        TIMESTAMPTZ  NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (contact_id, organization_id)
-);
-
-CREATE TABLE b2b_pipeline (
-  id                          SERIAL                        PRIMARY KEY,
-  name                        VARCHAR                       NOT NULL,
-  company_id                  INTEGER                       NOT NULL,
-  stage                       b2b_stage_enum                NOT NULL  DEFAULT 'lead_identified',
-  probability                 SMALLINT                      NOT NULL  DEFAULT 0,
-  probability_status          b2b_probability_status_enum   NOT NULL  DEFAULT 'cold',
-  project_value               DECIMAL(15, 2)                NOT NULL  DEFAULT 0,
-  project_start_month         DATE                              NULL,
-  project_end_month           DATE                              NULL,
-  owner_id                    UUID                          NOT NULL,
-  current_stage_reason_code   b2b_lost_reason_enum              NULL, -- why the lead is currently On Hold / Closed Lost
-  on_hold_review_date         DATE                              NULL, -- required when stage enters On Hold
-  created_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-  updated_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE actions (
   id                 SERIAL              PRIMARY KEY,
   pipeline_id        INTEGER             NOT NULL,
@@ -523,16 +462,6 @@ CREATE TABLE actions (
   source_meeting_id  INTEGER                 NULL, -- meeting whose outcome created/updated this action
   created_at         TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at         TIMESTAMPTZ         NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE b2b_pipeline_stage_history (
-  id           SERIAL                PRIMARY KEY,
-  pipeline_id  INTEGER               NOT NULL,
-  from_stage   b2b_stage_enum            NULL,
-  to_stage     b2b_stage_enum        NOT NULL,
-  reason_code  b2b_lost_reason_enum      NULL,
-  changed_by   UUID                  NOT NULL,
-  created_at   TIMESTAMPTZ           NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- A held/scheduled meeting on a Sales API pipeline — the traceable source of first/second-meeting
@@ -554,12 +483,6 @@ CREATE TABLE meetings (
   created_by_id       UUID                                NOT NULL,
   created_at          TIMESTAMPTZ                         NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   updated_at          TIMESTAMPTZ                         NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE b2b_meeting_attendees (
-  meeting_id  INTEGER  NOT NULL,
-  contact_id  INTEGER  NOT NULL,
-  PRIMARY KEY (meeting_id, contact_id)
 );
 
 -- A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
@@ -606,7 +529,7 @@ CREATE TABLE quotations (
 );
 
 -- One row per training day in a quotation — mirrors PricingDay in lib/pricing-b2b.ts.
-CREATE TABLE b2b_quotation_line_items (
+CREATE TABLE quotation_line_items (
   id            SERIAL                          PRIMARY KEY,
   quotation_id  INTEGER                         NOT NULL,
   order_index   SMALLINT                        NOT NULL  DEFAULT 0,
@@ -616,8 +539,8 @@ CREATE TABLE b2b_quotation_line_items (
   trainer       b2bq_trainer_tier_enum          NOT NULL
 );
 
--- Append-only, mirrors b2b_pipeline_stage_history — one row per Manager Review decision.
-CREATE TABLE b2b_quotation_approvals (
+-- Append-only — one row per Manager Review decision.
+CREATE TABLE quotation_approvals (
   id            SERIAL                            PRIMARY KEY,
   quotation_id  INTEGER                           NOT NULL,
   decision      b2bq_approval_decision_enum       NOT NULL,
@@ -1035,50 +958,28 @@ ALTER TABLE google_calendar_connections
 ALTER TABLE notifications
   ADD FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
 
--- B2B Sales Pipeline
-
-ALTER TABLE b2b_company
-  ADD FOREIGN KEY (industry_id) REFERENCES industries (id);
-
-ALTER TABLE b2b_pipeline
-  ADD FOREIGN KEY (owner_id)   REFERENCES users (id),
-  ADD FOREIGN KEY (company_id) REFERENCES b2b_company (id);
-
 -- Sales API owns `pipelines` (see ailene-os-api/docs/db/sales-pipeline.sql).
--- Operational records below reference that canonical pipeline, while legacy
--- b2b_pipeline remains only for its unreplaced history and LMS relations.
+-- Operational records below reference that canonical pipeline.
 ALTER TABLE actions
   ADD FOREIGN KEY (pipeline_id)       REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (assignee_id)       REFERENCES users (id)        ON DELETE SET NULL,
   ADD FOREIGN KEY (source_meeting_id) REFERENCES meetings (id) ON DELETE SET NULL;
-
-ALTER TABLE b2b_pipeline_stage_history
-  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (changed_by)  REFERENCES users (id);
 
 ALTER TABLE meetings
   ADD FOREIGN KEY (pipeline_id)   REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (organizer_id)  REFERENCES users (id),
   ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
 
-ALTER TABLE b2b_meeting_attendees
-  ADD FOREIGN KEY (meeting_id) REFERENCES meetings (id) ON DELETE CASCADE,
-  ADD FOREIGN KEY (contact_id) REFERENCES contacts (id)     ON DELETE CASCADE;
-
 ALTER TABLE quotations
   ADD FOREIGN KEY (pipeline_id)   REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
 
-ALTER TABLE b2b_quotation_line_items
+ALTER TABLE quotation_line_items
   ADD FOREIGN KEY (quotation_id) REFERENCES quotations (id) ON DELETE CASCADE;
 
-ALTER TABLE b2b_quotation_approvals
+ALTER TABLE quotation_approvals
   ADD FOREIGN KEY (quotation_id) REFERENCES quotations (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (actor_id)     REFERENCES users (id);
-
-ALTER TABLE contact_organization_relationships
-  ADD FOREIGN KEY (contact_id)      REFERENCES contacts (id)    ON DELETE CASCADE,
-  ADD FOREIGN KEY (organization_id) REFERENCES b2b_company (id) ON DELETE CASCADE;
 
 -- Trainer Pool
 
@@ -1106,8 +1007,8 @@ ALTER TABLE lms_members
   ADD FOREIGN KEY (current_level_id) REFERENCES lms_levels (id);
 
 ALTER TABLE lms_projects
-  ADD FOREIGN KEY (company_id)  REFERENCES b2b_company (id),
-  ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id);
+  ADD FOREIGN KEY (company_id)  REFERENCES companies (id) ON DELETE SET NULL,
+  ADD FOREIGN KEY (pipeline_id) REFERENCES pipelines (id) ON DELETE RESTRICT;
 
 ALTER TABLE lms_groups
   ADD FOREIGN KEY (project_id)  REFERENCES lms_projects (id),
@@ -1218,18 +1119,6 @@ CREATE TRIGGER update_teams_updated_at_trigger
 
 CREATE TRIGGER update_users_updated_at_trigger
   BEFORE UPDATE ON users
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
--- B2B Sales Pipeline
-
-CREATE TRIGGER update_b2b_company_updated_at_trigger
-  BEFORE UPDATE ON b2b_company
-  FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER update_b2b_pipeline_updated_at_trigger
-  BEFORE UPDATE ON b2b_pipeline
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
@@ -1349,10 +1238,6 @@ CREATE TRIGGER update_lms_announcement_updated_at_trigger
 -- Coaching notes — lookup a member's notes for the dashboard.
 CREATE INDEX lms_coaching_notes_member_id_idx ON lms_coaching_notes (member_id);
 
--- Pipeline stage history — per-lead lookups and weekly-dashboard time-window queries.
-CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_history (pipeline_id);
-CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
-
 -- Meetings — first/second-held-meeting conversion lookups per pipeline, and calendar range queries.
 CREATE INDEX meetings_pipeline_id_idx ON meetings (pipeline_id);
 CREATE INDEX meetings_scheduled_at_idx ON meetings (scheduled_at);
@@ -1360,13 +1245,10 @@ CREATE INDEX meetings_scheduled_at_idx ON meetings (scheduled_at);
 -- Quotations — per-pipeline lookups (current version, version history) and the Manager Review queue.
 CREATE INDEX quotations_pipeline_id_idx ON quotations (pipeline_id);
 CREATE INDEX quotations_status_idx ON quotations (status);
-CREATE INDEX b2b_quotation_approvals_quotation_id_idx ON b2b_quotation_approvals (quotation_id);
+CREATE INDEX quotation_approvals_quotation_id_idx ON quotation_approvals (quotation_id);
 
 -- Notifications — unread-feed lookup for the notification bell.
 CREATE INDEX notifications_user_id_idx ON notifications (user_id);
-
--- Organizations — duplicate-name matching on create.
-CREATE INDEX b2b_company_normalized_name_idx ON b2b_company (normalized_name);
 
 -- User audit log — lookup a user's change history for the audit log page.
 CREATE INDEX user_audit_log_target_user_id_idx ON user_audit_log (target_user_id);

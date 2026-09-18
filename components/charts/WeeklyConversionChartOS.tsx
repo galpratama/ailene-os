@@ -1,6 +1,5 @@
 "use client";
 
-import type { B2BStageEnum } from "@prisma/client";
 import {
   Bar,
   BarChart,
@@ -12,7 +11,7 @@ import {
 } from "recharts";
 
 type ConversionDatum = {
-  stage: B2BStageEnum;
+  stage: string;
   label: string;
   this_week: number;
   trailing_avg: number;

@@ -6,6 +6,7 @@ import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
+import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { trpc } from "@/trpc/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -24,25 +25,17 @@ export default function CreateLmsProjectFormOS({
   const [attendeePax, setAttendeePax] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: companyData } = trpc.list.b2b.companies.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: isOpen }
-  );
-  const companyOptions: AppSelectOption[] =
-    companyData?.list.map((company) => ({
-      value: company.id,
-      label: company.name,
-    })) ?? [];
-
-  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: isOpen }
-  );
+  const { data: pipelineData } = useSalesPipelineList(isOpen);
+  const companyOptions: AppSelectOption[] = [
+    ...new Map(
+      (pipelineData ?? []).map((pipeline) => [pipeline.company_id, pipeline.company_name])
+    ),
+  ].map(([value, label]) => ({ value, label }));
   const pipelineOptions: AppSelectOption[] =
-    pipelineData?.list.map((pipeline) => ({
+    (pipelineData ?? []).map((pipeline) => ({
       value: pipeline.id,
-      label: `${pipeline.company_name} - ${pipeline.name}`,
-    })) ?? [];
+      label: pipeline.company_name,
+    }));
 
   function close() {
     setName("");

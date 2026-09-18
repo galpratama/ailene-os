@@ -1,15 +1,13 @@
-import type { B2BStageEnum } from "@prisma/client";
-
 // Mirrors StageLabel's variant mapping, as raw colors since recharts doesn't resolve Tailwind classes.
-export const STAGE_CHART_COLORS: Record<B2BStageEnum, string> = {
-  LEAD_IDENTIFIED: "#9ca3af",
-  CONTACTED: "var(--biru)",
-  REPLIED: "var(--biru)",
-  SHOW_INTEREST: "var(--toska)",
-  MEETING_BOOKED: "var(--ungu)",
-  NEGOTIATION: "var(--pink)",
-  VERBAL_COMMIT: "var(--kuning)",
-  CLOSED_WON: "var(--hijau)",
-  CLOSED_LOST: "var(--merah)",
-  ON_HOLD: "var(--oranye)",
+export const STAGE_CHART_COLORS: Record<string, string> = {
+  lead_identified: "#9ca3af",
+  triaging: "var(--biru)",
+  attempting: "var(--biru)",
+  engaged: "var(--toska)",
+  qualified: "var(--ungu)",
+  meeting_booked: "var(--ungu)",
+  discovery_done: "var(--pink)",
+  proposal_negotiation: "var(--kuning)",
+  closed_won: "var(--hijau)",
+  closed_lost: "var(--merah)",
 };

@@ -31,7 +31,7 @@ export const listLms = {
         where,
         include: {
           company: { select: { id: true, name: true, image_url: true } },
-          pipeline: { select: { id: true, name: true } },
+          pipeline: { select: { id: true, company: { select: { name: true } } } },
           _count: { select: { groups: true } },
         },
         orderBy: [{ created_at: "desc" }],
@@ -84,7 +84,7 @@ export const listLms = {
           company_name: entry.company?.name ?? null,
           company_image_url: entry.company?.image_url ?? null,
           pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           attendee_pax: entry.attendee_pax,
           group_count: entry._count.groups,
           session_count: sessionCountByProject.get(entry.id) ?? 0,

@@ -1,7 +1,6 @@
 "use client";
 
 import { STAGE_CHART_COLORS } from "@/lib/stage-chart-colors";
-import type { B2BStageEnum } from "@prisma/client";
 import {
   Bar,
   BarChart,
@@ -13,7 +12,7 @@ import {
 } from "recharts";
 
 type StageDatum = {
-  stage: B2BStageEnum;
+  stage: string;
   label: string;
   count: number;
   percentage: number;

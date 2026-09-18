@@ -3,11 +3,11 @@
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
+import type { PipelineStage } from "@/apis/sales";
 import { getRupiahCurrency } from "@/lib/currency";
 import type {
   B2BActionPriorityEnum,
   B2BQuotationStatusEnum,
-  B2BStageEnum,
 } from "@prisma/client";
 import {
   AlertCircle,
@@ -35,7 +35,7 @@ type StaleLead = {
   id: number;
   company_name: string;
   pipeline_name: string;
-  stage: B2BStageEnum;
+  stage: PipelineStage;
   last_activity_at: string | Date;
   inactive_days: number;
 };

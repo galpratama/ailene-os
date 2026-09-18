@@ -99,7 +99,6 @@ export const updateB2B = {
         status: z.enum(B2BMeetingStatusEnum).optional(),
         location_or_link: stringNotBlank().nullable().optional(),
         notes: stringNotBlank().nullable().optional(),
-        attendee_contact_ids: z.array(numberIsID()).optional(),
       })
     )
     .mutation(async (opts) => {
@@ -108,7 +107,6 @@ export const updateB2B = {
         scheduled_at,
         held_at,
         organizer_id,
-        attendee_contact_ids,
         status,
         ...rest
       } = opts.input;
@@ -166,17 +164,6 @@ export const updateB2B = {
           });
         }
 
-        if (attendee_contact_ids !== undefined) {
-          await tx.b2BMeetingAttendee.deleteMany({ where: { meeting_id: id } });
-          if (attendee_contact_ids.length > 0) {
-            await tx.b2BMeetingAttendee.createMany({
-              data: attendee_contact_ids.map((contact_id) => ({
-                meeting_id: id,
-                contact_id,
-              })),
-            });
-          }
-        }
       });
 
       const updatedMeeting = await opts.ctx.prisma.b2BMeeting.findUnique({

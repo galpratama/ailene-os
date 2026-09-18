@@ -131,7 +131,6 @@ export const createB2B = {
         scheduled_at: stringIsTimestampTz(),
         location_or_link: stringNotBlank().nullable().optional(),
         notes: stringNotBlank().nullable().optional(),
-        attendee_contact_ids: z.array(numberIsID()).default([]),
       })
     )
     .mutation(async (opts) => {
@@ -160,11 +159,6 @@ export const createB2B = {
           scheduled_at: new Date(opts.input.scheduled_at),
           location_or_link: opts.input.location_or_link ?? null,
           notes: opts.input.notes ?? null,
-          attendees: {
-            create: opts.input.attendee_contact_ids.map((contact_id) => ({
-              contact_id,
-            })),
-          },
         },
       });
 

@@ -108,7 +108,7 @@ enum GoogleCalendarSyncStatusEnum {
   @@map("google_calendar_sync_status_enum")
 }
 
-// Enumeration for the B2BPipeline model (b2b_*)
+// Legacy-compatible stage labels used by dashboard UI components.
 
 enum B2BStageEnum {
   LEAD_IDENTIFIED @map("lead_identified")
@@ -145,7 +145,7 @@ enum B2BLostReasonEnum {
   @@map("b2b_lost_reason_enum")
 }
 
-// Organization (B2BCompany) lifecycle — starts PROSPECT, auto-bumps to CUSTOMER on a CLOSED_WON pipeline.
+// Legacy organization lifecycle labels retained for UI compatibility.
 enum OrganizationStatusEnum {
   PROSPECT @map("prospect")
   CUSTOMER @map("customer")
@@ -473,7 +473,6 @@ model Industry {
   id                         Int                           @id @default(autoincrement()) @db.SmallInt
   industry_name              String                        @unique @db.VarChar()
   created_at                 DateTime                      @default(now()) @db.Timestamptz()
-  b2b_companies              B2BCompany[]
 
   @@map("industries")
 }
@@ -519,10 +518,8 @@ model User {
   last_login                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
   deleted_at                      DateTime?                     @db.Timestamptz()
   tokens                          Token[]
-  b2b_pipelines                   B2BPipeline[]
   sales_pipelines                 Pipeline[]                    @relation("PipelineSalesOwner")
   b2b_actions                     B2BAction[]
-  b2b_pipeline_stage_changes      B2BPipelineStageHistory[]
   trainer_profile                 Trainer?                      @relation("TrainerUser")
   trainer_referrals               Trainer[]                     @relation("TrainerReferrer")
   trainer_scores                  TrainerScreening[]            @relation("TrainerScreeningScorer")
@@ -623,33 +620,6 @@ model Notification {
   @@map("notifications")
 }
 
-// B2B Sales Pipeline
-
-model B2BCompany {
-  id                           Int                               @id @default(autoincrement())
-  name                         String                            @db.VarChar()
-  normalized_name              String                            @db.VarChar()
-  aliases                      String[]                          @default([])
-  legal_identifier             String?                           @db.VarChar()
-  status                       OrganizationStatusEnum            @default(PROSPECT)
-  archived_at                  DateTime?                         @db.Timestamptz()
-  industry                     Industry                          @relation(fields: [industry_id], references: [id])
-  industry_id                  Int                               @db.SmallInt
-  pic_name                     String?                           @db.VarChar()
-  pic_job_title                String?                           @db.VarChar()
-  pic_wa                       String?                           @db.VarChar()
-  pic_email                    String?                           @db.VarChar()
-  image_url                    String?                           @db.VarChar()
-  created_at                   DateTime                          @default(now()) @db.Timestamptz()
-  updated_at                   DateTime                          @default(now()) @updatedAt @db.Timestamptz()
-  pipelines                    B2BPipeline[]
-  lms_projects                 LmsProject[]
-  contacts                     ContactOrganizationRelationship[]
-
-  @@index([normalized_name])
-  @@map("b2b_company")
-}
-
 // Sales API organization. One company has exactly one active Pipeline row.
 model Company {
   id               Int               @id @default(autoincrement())
@@ -664,65 +634,14 @@ model Company {
   created_at       DateTime          @default(now()) @db.Timestamptz()
   updated_at       DateTime          @default(now()) @updatedAt @db.Timestamptz()
   pipeline         Pipeline?
+  lms_projects     LmsProject[]
 
   @@index([lead_channel])
   @@map("companies")
 }
 
 // Reusable person record — can relate to multiple organizations, not flat fields on one company.
-model Contact {
-  id            Int                               @id @default(autoincrement())
-  full_name     String                            @db.VarChar()
-  email         String?                           @db.VarChar()
-  phone         String?                           @db.VarChar()
-  job_title     String?                           @db.VarChar()
-  created_at    DateTime                          @default(now()) @db.Timestamptz()
-  updated_at    DateTime                          @default(now()) @updatedAt @db.Timestamptz()
-  organizations ContactOrganizationRelationship[]
-  meetings      B2BMeetingAttendee[]
-
-  @@map("contacts")
-}
-
 // One primary relationship per contact-organization pair, with effective dates.
-model ContactOrganizationRelationship {
-  contact           Contact    @relation(fields: [contact_id], references: [id], onDelete: Cascade)
-  contact_id        Int
-  organization      B2BCompany @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  organization_id   Int
-  is_primary        Boolean    @default(false)
-  relationship_role String?    @db.VarChar()
-  effective_from    DateTime   @default(now()) @db.Date
-  effective_to      DateTime?  @db.Date
-  created_at        DateTime   @default(now()) @db.Timestamptz()
-
-  @@id([contact_id, organization_id])
-  @@map("contact_organization_relationships")
-}
-
-model B2BPipeline {
-  id                        Int                       @id @default(autoincrement())
-  name                      String                    @db.VarChar()
-  company                   B2BCompany                @relation(fields: [company_id], references: [id])
-  company_id                Int
-  stage                     B2BStageEnum              @default(LEAD_IDENTIFIED)
-  probability               Int                       @default(0) @db.SmallInt
-  probability_status        B2BProbabilityStatusEnum  @default(COLD)
-  project_value             Decimal                   @default(0) @db.Decimal(15, 2)
-  project_start_month       DateTime?                 @db.Date
-  project_end_month         DateTime?                 @db.Date
-  owner                     User                      @relation(fields: [owner_id], references: [id])
-  owner_id                  String                    @db.Uuid
-  current_stage_reason_code B2BLostReasonEnum?
-  on_hold_review_date       DateTime?                 @db.Date
-  created_at                DateTime                  @default(now()) @db.Timestamptz()
-  updated_at                DateTime                  @default(now()) @updatedAt @db.Timestamptz()
-  stage_history             B2BPipelineStageHistory[]
-  lms_projects              LmsProject[]
-
-  @@map("b2b_pipeline")
-}
-
 // Sales API pipeline. Its company name is the user-facing label because there is one pipeline per company.
 model Pipeline {
   id                  Int             @id @default(autoincrement())
@@ -741,6 +660,7 @@ model Pipeline {
   actions             B2BAction[]
   meetings            B2BMeeting[]
   quotations          B2BQuotation[]
+  lms_projects        LmsProject[]
 
   @@index([sales_owner_id])
   @@index([stage_code])
@@ -767,22 +687,6 @@ model B2BAction {
   @@map("actions")
 }
 
-model B2BPipelineStageHistory {
-  id            Int                @id @default(autoincrement())
-  pipeline      B2BPipeline        @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
-  pipeline_id   Int
-  from_stage    B2BStageEnum?
-  to_stage      B2BStageEnum
-  reason_code   B2BLostReasonEnum?
-  changed_by    User               @relation(fields: [changed_by_id], references: [id])
-  changed_by_id String             @db.Uuid
-  created_at    DateTime           @default(now()) @db.Timestamptz()
-
-  @@index([pipeline_id])
-  @@index([created_at])
-  @@map("b2b_pipeline_stage_history")
-}
-
 // A held/scheduled meeting on a pipeline — the traceable source of first/second-meeting
 // conversion metrics. Conversion credit is attributed to the pipeline's *current* owner at
 // query time (see trpc dashboardAnalytics), not organizer_id here, so organizer_id only
@@ -807,22 +711,11 @@ model B2BMeeting {
   created_by_id      String                       @db.Uuid
   created_at         DateTime                     @default(now()) @db.Timestamptz()
   updated_at         DateTime                     @default(now()) @updatedAt @db.Timestamptz()
-  attendees          B2BMeetingAttendee[]
   next_actions       B2BAction[]
 
   @@index([pipeline_id])
   @@index([scheduled_at])
   @@map("meetings")
-}
-
-model B2BMeetingAttendee {
-  meeting    B2BMeeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
-  meeting_id Int
-  contact    Contact    @relation(fields: [contact_id], references: [id], onDelete: Cascade)
-  contact_id Int
-
-  @@id([meeting_id, contact_id])
-  @@map("b2b_meeting_attendees")
 }
 
 // A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
@@ -885,10 +778,10 @@ model B2BQuotationLineItem {
   peserta      Int
   trainer      B2BQuotationTrainerTierEnum
 
-  @@map("b2b_quotation_line_items")
+  @@map("quotation_line_items")
 }
 
-// Append-only, mirrors B2BPipelineStageHistory — one row per Manager Review decision.
+// Append-only — one row per Manager Review decision.
 model B2BQuotationApproval {
   id           Int                              @id @default(autoincrement())
   quotation    B2BQuotation                     @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
@@ -900,7 +793,7 @@ model B2BQuotationApproval {
   created_at   DateTime                         @default(now()) @db.Timestamptz()
 
   @@index([quotation_id])
-  @@map("b2b_quotation_approvals")
+  @@map("quotation_approvals")
 }
 
 // Trainer Pool
@@ -1041,9 +934,9 @@ model LmsGroup {
 model LmsProject {
   id           Int         @id @default(autoincrement())
   name         String      @db.VarChar()
-  company      B2BCompany? @relation(fields: [company_id], references: [id])
+  company      Company?    @relation(fields: [company_id], references: [id], onDelete: SetNull)
   company_id   Int?
-  pipeline     B2BPipeline @relation(fields: [pipeline_id], references: [id])
+  pipeline     Pipeline    @relation(fields: [pipeline_id], references: [id], onDelete: Restrict)
   pipeline_id  Int
   attendee_pax Int?
   created_at   DateTime    @default(now()) @db.Timestamptz()

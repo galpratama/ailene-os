@@ -1,7 +1,6 @@
 "use client";
 
 import { STAGE_CHART_COLORS } from "@/lib/stage-chart-colors";
-import type { B2BStageEnum } from "@prisma/client";
 import {
   Cell,
   Funnel,
@@ -12,7 +11,7 @@ import {
 } from "recharts";
 
 type FunnelDatum = {
-  stage: B2BStageEnum;
+  stage: string;
   label: string;
   count: number;
   percentage: number;
@@ -63,7 +62,7 @@ function FunnelTrapezoidShape(props: FunnelTrapezoidShapeProps) {
   ].join(" ");
 
   const fill = payload?.stage
-    ? STAGE_CHART_COLORS[payload.stage as B2BStageEnum]
+    ? STAGE_CHART_COLORS[payload.stage]
     : "var(--biru)";
 
   return (

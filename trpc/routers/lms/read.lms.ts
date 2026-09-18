@@ -11,7 +11,7 @@ export const readLms = {
         where: { id: input.id },
         include: {
           company: { select: { id: true, name: true } },
-          pipeline: { select: { id: true, name: true } },
+          pipeline: { select: { id: true, company: { select: { name: true } } } },
           groups: {
             include: {
               champion: { select: { id: true, job_title: true, user_id: true } },
@@ -44,7 +44,7 @@ export const readLms = {
           company_id: project.company?.id ?? null,
           company_name: project.company?.name ?? null,
           pipeline_id: project.pipeline.id,
-          pipeline_name: project.pipeline.name,
+          pipeline_name: project.pipeline.company.name,
           created_at: project.created_at,
           groups: project.groups.map((group) => ({
             id: group.id,
