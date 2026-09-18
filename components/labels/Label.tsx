@@ -73,7 +73,7 @@ export default function Label({ variant, children, className }: LabelProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold truncate ${text} ${border} ${bg} ${
+      className={`inline-flex w-fit items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold truncate ${text} ${border} ${bg} ${
         className ?? ""
       }`}
     >

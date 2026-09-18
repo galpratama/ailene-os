@@ -99,6 +99,8 @@ export default function LeadsPageOS({
   });
 
   const pipelineList = pipelineQuery.data?.list;
+  // From the raw list, not `board`, so an optimistic drag never becomes the stage baseline the save compares against.
+  const editingPipeline = pipelineList?.find((entry) => entry.id === editingPipelineId) ?? null;
   const totalPage = pipelineQuery.data?.metapaging.total_page ?? 1;
   const board = useMemo(
     () => pipelineList?.map((entry) => ({ ...entry, stage: movedStages[entry.id] ?? entry.stage })) ?? [],
@@ -122,7 +124,8 @@ export default function LeadsPageOS({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] }),
   });
 
-  const userList = useUserList(!isOwnScoped);
+  // Only active people can be picked as an owner to filter by.
+  const userList = useUserList(!isOwnScoped, "ACTIVE");
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
     ...userList.map((user) => ({ value: user.id, label: user.full_name })),
@@ -326,7 +329,7 @@ export default function LeadsPageOS({
       {pipelineList?.length === 0 && <p className="py-10 text-center text-sm text-gray-400">No leads found.</p>}
       {!isBoardView && <AppPaginationOS currentPage={page} totalPages={totalPage} onPageChange={setPage} />}
       <CreateLeadFormOS sessionToken={sessionToken} phase={phase} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-      <EditLeadFormOS sessionToken={sessionToken} pipelineId={editingPipelineId} isOpen={editingPipelineId !== null} onClose={() => setEditingPipelineId(null)} />
+      <EditLeadFormOS sessionToken={sessionToken} pipeline={editingPipeline} isOpen={editingPipelineId !== null} onClose={() => setEditingPipelineId(null)} />
     </div>
   );
 }

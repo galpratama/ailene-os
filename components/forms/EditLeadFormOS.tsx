@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompanySource, LeadChannel, LeadSource, PipelineStage } from "@/apis/sales";
+import type { CompanySource, LeadChannel, LeadSource, PipelineData, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
@@ -46,12 +46,12 @@ const leadChannelOptions: AppSelectOption[] = [
 
 export default function EditLeadFormOS({
   sessionToken,
-  pipelineId,
+  pipeline,
   isOpen,
   onClose,
 }: {
   sessionToken: string;
-  pipelineId: number | null;
+  pipeline: PipelineData | null;
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -78,16 +78,17 @@ export default function EditLeadFormOS({
   const [error, setError] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
-  const pipelineQuery = useQuery({
-    queryKey: ["sales", "pipeline", pipelineId],
-    queryFn: async () => requireApiData(await getPipelineDetails(pipelineId!)),
-    enabled: !!sessionToken && isOpen && pipelineId !== null,
-  });
-  const pipeline = pipelineQuery.data;
+  const pipelineId = pipeline?.id ?? null;
   const companyQuery = useQuery({
     queryKey: ["sales", "company", pipeline?.company_id],
     queryFn: async () => requireApiData(await getCompanyDetails(pipeline!.company_id)),
     enabled: !!sessionToken && isOpen && !!pipeline,
+  });
+  // Only the stage timeline needs this, so it never gates the form.
+  const historyQuery = useQuery({
+    queryKey: ["sales", "pipeline", pipelineId],
+    queryFn: async () => requireApiData(await getPipelineDetails(pipelineId!)),
+    enabled: !!sessionToken && isOpen && pipelineId !== null,
   });
   const company = companyQuery.data;
   const primaryContact =
@@ -215,7 +216,7 @@ export default function EditLeadFormOS({
     saveMutation.mutate();
   }
 
-  const timeline = (pipelineQuery.data?.stage_history ?? []).map((entry) => ({
+  const timeline = (historyQuery.data?.stage_history ?? []).map((entry) => ({
     id: `stage-${entry.id}`,
     field_changed: "stage",
     old_value: entry.from_stage ? PIPELINE_STAGE_LABELS[entry.from_stage] : null,
@@ -224,7 +225,7 @@ export default function EditLeadFormOS({
     actor_name: entry.changed_by,
     created_at: entry.created_at,
   }));
-  const isReady = !!pipeline && !!company && !pipelineQuery.isLoading && !companyQuery.isLoading;
+  const isReady = !!pipeline && !!company && !companyQuery.isLoading;
 
   return [
     <SheetOS key="sheet" title="Edit Lead" description="Update company, primary contact, and pipeline data." isOpen={isOpen} onClose={handleClose}>
@@ -270,7 +271,7 @@ export default function EditLeadFormOS({
             </div>
             {stage !== pipeline.stage && <AppTextArea textAreaId="edit-lead-stage-note" label="Stage Note" rows={2} value={stageNote} onChange={(event) => setStageNote(event.target.value)} placeholder="Optional context for this stage change" />}
             {!isOwnScoped && <AppSelect selectId="edit-lead-owner" label="Sales Owner" required placeholder="Assign an owner" value={ownerId} onChange={(value) => setOwnerId((value as string) ?? "")} options={ownerOptions} />}
-            <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Stage History</p><div className="mt-2"><RecordTimelineOS entries={timeline} /></div></div>
+            <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Stage History</p><div className="mt-2">{historyQuery.isLoading ? <Loader2 size={14} className="animate-spin text-gray-400" /> : <RecordTimelineOS entries={timeline} />}</div></div>
           </div>
 
           <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
