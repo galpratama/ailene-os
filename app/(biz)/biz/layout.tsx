@@ -1,5 +1,6 @@
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
+import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
 import { siteProfile } from "@/lib/site";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
@@ -51,6 +52,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       {googleAnalyticsId && <GoogleAnalytics gaId={googleAnalyticsId} />}
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
+      <MicrosoftClarityBIZ />
       <div className={stackSansText.className}>{children}</div>
     </ThemeProvider>
   );
