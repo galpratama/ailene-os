@@ -13,8 +13,6 @@ import { FormEvent, useState } from "react";
 
 interface CreateMeetingFormOSProps {
   sessionToken: string;
-  // When omitted, the form shows its own Pipeline picker (Company - Pipeline)
-  // instead of assuming an ambient pipeline — same convention as CreateActionFormOS.
   pipelineId?: number;
   isOpen: boolean;
   onClose: () => void;

@@ -35,7 +35,8 @@ export default async function Page({
   return (
     <UsersAccessPageOS
       users={users.data?.list ?? []}
-      metapaging={users.data?.metapaging ?? null}
+      page={page}
+      totalPages={users.data?.metapaging.total_page ?? 1}
       teams={teams.data?.list ?? []}
       loadError={
         isSuccessStatus(users.status)

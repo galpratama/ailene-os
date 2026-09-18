@@ -1,54 +1,24 @@
 "use client";
 
+import type { LeadChannel, LeadSource, PipelineData, PipelinePhase, PipelineStage } from "@/apis/sales";
+import ViewModeToggleOS, { type ViewModeOS } from "@/components/buttons/ViewModeToggleOS";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import CreateLeadFormOS from "@/components/forms/CreateLeadFormOS";
 import EditLeadFormOS from "@/components/forms/EditLeadFormOS";
-import ProbabilityStatusLabel from "@/components/labels/ProbabilityStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
-import StageReasonPromptOS from "@/components/modals/StageReasonPromptOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
-import ViewModeToggleOS, {
-  type ViewModeOS,
-} from "@/components/buttons/ViewModeToggleOS";
-import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useSession } from "@/contexts/SessionContext";
-import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
-import type { B2BLostReasonEnum, B2BStageEnum } from "@prisma/client";
-import {
-  Building2,
-  Kanban,
-  LayoutGrid,
-  Plus,
-  Search,
-  Table2,
-  Wallet,
-} from "lucide-react";
-import Image from "next/image";
+import { requireApiData } from "@/lib/api-result";
+import { listPipelines, updatePipeline } from "@/lib/actions";
+import { getRupiahCurrency } from "@/lib/currency";
+import { PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Building2, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
-const scorecards = [
-  { key: "pipeline_value" as const, label: "Pipeline Value" },
-  { key: "weighted_value" as const, label: "Weighted Value" },
-  { key: "closed_won_value" as const, label: "Closed Won" },
-];
-
-const stageOptions: AppSelectOption[] = [
-  { value: "", label: "All Stages" },
-  { value: "LEAD_IDENTIFIED", label: "Lead Identified" },
-  { value: "CONTACTED", label: "Contacted" },
-  { value: "REPLIED", label: "Replied" },
-  { value: "SHOW_INTEREST", label: "Show Interest" },
-  { value: "MEETING_BOOKED", label: "Meeting Booked" },
-  { value: "NEGOTIATION", label: "Negotiation" },
-  { value: "VERBAL_COMMIT", label: "Verbal Commit" },
-  { value: "CLOSED_WON", label: "Closed Won" },
-  { value: "CLOSED_LOST", label: "Closed Lost" },
-  { value: "ON_HOLD", label: "On Hold" },
-];
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
@@ -56,211 +26,146 @@ const viewModeOptions = [
   { value: "table" as const, label: "Table", icon: Table2 },
 ];
 
-// Kanban column order + accent dot, mirrored from StageLabel's color mapping.
-const stageColumns: { value: B2BStageEnum; label: string; dot: string }[] = [
-  { value: "LEAD_IDENTIFIED", label: "Lead Identified", dot: "bg-gray-400" },
-  { value: "CONTACTED", label: "Contacted", dot: "bg-biru" },
-  { value: "REPLIED", label: "Replied", dot: "bg-biru" },
-  { value: "SHOW_INTEREST", label: "Show Interest", dot: "bg-toska" },
-  { value: "MEETING_BOOKED", label: "Meeting Booked", dot: "bg-ungu" },
-  { value: "NEGOTIATION", label: "Negotiation", dot: "bg-pink" },
-  { value: "VERBAL_COMMIT", label: "Verbal Commit", dot: "bg-kuning" },
-  { value: "CLOSED_WON", label: "Closed Won", dot: "bg-hijau" },
-  { value: "CLOSED_LOST", label: "Closed Lost", dot: "bg-merah" },
-  { value: "ON_HOLD", label: "On Hold", dot: "bg-oranye" },
+const leadSourceLabels: Record<LeadSource, string> = {
+  inbound: "Inbound",
+  outbound: "Outbound",
+};
+
+const leadChannelOptions: AppSelectOption[] = [
+  { value: "", label: "All Channels" },
+  { value: "referral", label: "Referral" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "thread", label: "Thread" },
+  { value: "instagram", label: "Instagram" },
 ];
+
+function sourceForStage(current: LeadSource, stage: PipelineStage): LeadSource {
+  if (stage === "triaging") return "inbound";
+  if (stage === "attempting") return "outbound";
+  return current;
+}
 
 export default function LeadsPageOS({
   sessionToken,
+  phase,
 }: {
   sessionToken: string;
+  phase: PipelinePhase;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
-
+  const queryClient = useQueryClient();
   const sessionUser = useSession();
-
   const isOwnScoped = sessionUser?.data_scope === "OWN";
-
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingPipelineId, setEditingPipelineId] = useState<number | null>(
-    null
-  );
-
+  const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
-    "leads_view_mode",
+    `leads_${phase}_view_mode`,
     ["kanban", "cards", "table"],
     "cards"
   );
-
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState<
-    string | undefined
-  >();
+  const [debouncedKeyword, setDebouncedKeyword] = useState<string>();
   const [stageFilter, setStageFilter] = useState("");
+  const [channelFilter, setChannelFilter] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
+  const [movedStages, setMovedStages] = useState<Partial<Record<number, PipelineStage>>>({});
   const pageSize = 21;
   const isBoardView = viewMode === "kanban";
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedKeyword(keyword.trim() === "" ? undefined : keyword.trim());
+    const timer = setTimeout(() => {
+      setDebouncedKeyword(keyword.trim() || undefined);
       setPage(1);
     }, 400);
-    return () => clearTimeout(handler);
+    return () => clearTimeout(timer);
   }, [keyword]);
 
-  // Kanban needs every matching lead on screen at once (grouped by stage),
-  // so it bypasses normal pagination the same way the Tasks board does.
-  const { data, isLoading, isError } = trpc.list.b2b.pipelines.useQuery(
-    {
-      page: isBoardView ? 1 : page,
-      page_size: isBoardView ? 500 : pageSize,
-      keyword: debouncedKeyword,
-      stage: (stageFilter || undefined) as B2BStageEnum | undefined,
-      owner_id: ownerFilter || undefined,
-    },
-    { enabled: !!sessionToken }
+  const filters = {
+    phase,
+    page: isBoardView ? 1 : page,
+    page_size: isBoardView ? 100 : pageSize,
+    keyword: debouncedKeyword,
+    stage: (stageFilter || undefined) as PipelineStage | undefined,
+    lead_channel: (channelFilter || undefined) as LeadChannel | undefined,
+    sales_owner_id: isOwnScoped ? undefined : ownerFilter || undefined,
+  };
+
+  const pipelineQuery = useQuery({
+    queryKey: ["sales", "pipelines", filters],
+    queryFn: async () => requireApiData(await listPipelines(filters)),
+    enabled: !!sessionToken,
+  });
+
+  const pipelineList = pipelineQuery.data?.list;
+  const totalPage = pipelineQuery.data?.metapaging.total_page ?? 1;
+  const board = useMemo(
+    () => pipelineList?.map((entry) => ({ ...entry, stage: movedStages[entry.id] ?? entry.stage })) ?? [],
+    [pipelineList, movedStages]
   );
+
+  const updateStage = useMutation({
+    mutationFn: async ({ pipeline, stage }: { pipeline: PipelineData; stage: PipelineStage }) =>
+      requireApiData(
+        await updatePipeline({
+          id: pipeline.id,
+          company_id: pipeline.company_id,
+          sales_owner_id: pipeline.sales_owner_id,
+          lead_source: sourceForStage(pipeline.lead_source, stage),
+          lead_channel: pipeline.lead_channel,
+          stage,
+          estimated_value: Number(pipeline.estimated_value),
+          expected_close_date: pipeline.expected_close_date,
+        })
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] }),
+  });
 
   const userList = useUserList(!isOwnScoped);
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
-    ...(userList.map((u) => ({
-      value: u.id,
-      label: u.full_name,
-      image: u.avatar ?? undefined,
-    })) ?? []),
+    ...userList.map((user) => ({ value: user.id, label: user.full_name })),
+  ];
+  const phaseStages = PIPELINE_STAGES_BY_PHASE[phase];
+  const stageOptions: AppSelectOption[] = [
+    { value: "", label: "All Stages" },
+    ...phaseStages.map((value) => ({ value, label: PIPELINE_STAGE_LABELS[value] })),
   ];
 
-  const pipelineList = data?.list;
-  const totalPage = data?.metapaging.total_page ?? 1;
-
-  const updatePipelineStage = trpc.update.b2b.pipeline.useMutation();
-
-  // Optimistic local overrides so a Kanban drag feels instant while the
-  // mutation is in flight — same pattern as the Tasks board.
-  const [movedStages, setMovedStages] = useState<
-    Partial<Record<number, B2BStageEnum>>
-  >({});
-
-  const board = useMemo(
-    () =>
-      pipelineList?.map((post) => {
-        const stage = movedStages[post.id];
-        return stage ? { ...post, stage } : post;
-      }) ?? [],
-    [pipelineList, movedStages]
-  );
-
-  const [draggedId, setDraggedId] = useState<number | null>(null);
-  const [dragOverStage, setDragOverStage] = useState<B2BStageEnum | null>(null);
-
-  // Stages where we pause the drop to ask "why" before committing the move.
-  const REASON_STAGES = new Set<B2BStageEnum>(["CLOSED_LOST", "ON_HOLD"]);
-  const [pendingReasonPrompt, setPendingReasonPrompt] = useState<{
-    id: number;
-    stage: "CLOSED_LOST" | "ON_HOLD";
-    prevStage: B2BStageEnum;
-    leadName: string;
-  } | null>(null);
-
-  const commitStageChange = (
-    id: number,
-    stage: B2BStageEnum,
-    prevStage: B2BStageEnum,
-    reasonCode?: B2BLostReasonEnum
-  ) => {
-    updatePipelineStage.mutate(
-      { id, stage, reason_code: reasonCode },
-      {
-        onError: () => {
-          setMovedStages((prev) => ({ ...prev, [id]: prevStage }));
-        },
-        onSuccess: () => utils.list.b2b.pipelines.invalidate(),
-      }
+  function moveTo(id: number, stage: PipelineStage) {
+    const pipeline = board.find((entry) => entry.id === id);
+    if (!pipeline || pipeline.stage === stage) return;
+    const previousStage = pipeline.stage;
+    setMovedStages((current) => ({ ...current, [id]: stage }));
+    updateStage.mutate(
+      { pipeline, stage },
+      { onError: () => setMovedStages((current) => ({ ...current, [id]: previousStage })) }
     );
-  };
+  }
 
-  const moveTo = (id: number, stage: B2BStageEnum) => {
-    const current = board.find((b) => b.id === id);
-    if (!current || current.stage === stage) return;
-    const prevStage = current.stage;
-    // Card snaps to the new column instantly regardless of what happens next.
-    setMovedStages((prev) => ({ ...prev, [id]: stage }));
-
-    if (REASON_STAGES.has(stage)) {
-      setPendingReasonPrompt({
-        id,
-        stage: stage as "CLOSED_LOST" | "ON_HOLD",
-        prevStage,
-        leadName: current.company_name,
-      });
-      return;
-    }
-    commitStageChange(id, stage, prevStage);
-  };
-
-  const handleDrop =
-    (stage: B2BStageEnum) => (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setDragOverStage(null);
-      const id = draggedId;
-      setDraggedId(null);
-      if (id != null) moveTo(id, stage);
-    };
+  const phaseLabel = phase.toUpperCase();
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 sm:px-8">
       <PageHeaderOS
-        title="Leads"
-        description="Track and manage every lead across the B2B sales pipeline"
-        action={{
-          label: "Add Lead",
-          icon: Plus,
-          onClick: () => setIsCreateOpen(true),
-        }}
+        title={`${phaseLabel} Leads`}
+        description={`Track and manage leads in the ${phaseLabel} sales phase.`}
+        action={{ label: "Add Lead", icon: Plus, onClick: () => setIsCreateOpen(true) }}
       />
 
-      {/* Scorecards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {scorecards.map((sc) => (
-          <div
-            key={sc.key}
-            className="bg-card-bg rounded-xl border border-dashboard-border p-5 flex flex-col gap-3"
-          >
-            <div className="w-8 h-8 rounded-lg bg-claude/10 flex items-center justify-center">
-              <Wallet size={16} className="text-claude" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
-                {getShortRupiahCurrency(data?.scorecards[sc.key] ?? 0)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                {sc.label}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <AppInput
-          inputId="leads-search"
+          inputId={`${phase}-leads-search`}
           icon={<Search size={14} />}
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Search company, PIC, or email..."
+          onChange={(event) => setKeyword(event.target.value)}
+          placeholder="Search company..."
           className="max-w-full sm:max-w-sm"
         />
-        <div className="w-full max-w-52">
+        <div className="w-full max-w-56">
           <AppSelect
-            selectId="leads-stage-filter"
+            selectId={`${phase}-leads-stage-filter`}
             placeholder="All Stages"
             value={stageFilter}
             options={stageOptions}
@@ -270,10 +175,22 @@ export default function LeadsPageOS({
             }}
           />
         </div>
+        <div className="w-full max-w-48">
+          <AppSelect
+            selectId={`${phase}-leads-channel-filter`}
+            placeholder="All Channels"
+            value={channelFilter}
+            options={leadChannelOptions}
+            onChange={(value) => {
+              setChannelFilter((value as string) ?? "");
+              setPage(1);
+            }}
+          />
+        </div>
         {!isOwnScoped && (
           <div className="w-full max-w-56">
             <AppSelect
-              selectId="leads-owner-filter"
+              selectId={`${phase}-leads-owner-filter`}
               placeholder="All Owners"
               value={ownerFilter}
               options={ownerOptions}
@@ -284,356 +201,132 @@ export default function LeadsPageOS({
             />
           </div>
         )}
-        <ViewModeToggleOS
-          value={viewMode}
-          onChange={setViewMode}
-          options={viewModeOptions}
-          className="ml-auto"
-        />
+        <ViewModeToggleOS value={viewMode} onChange={setViewMode} options={viewModeOptions} className="ml-auto" />
       </div>
 
-      {isLoading && (
-        <p className="text-sm text-gray-400 dark:text-zinc-500 py-8 text-center">
-          Loading leads...
-        </p>
-      )}
-      {isError && (
-        <p className="text-sm text-red-500 py-8 text-center">
-          Failed to load leads. You may not have access to this data.
-        </p>
-      )}
+      {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
+      {pipelineQuery.isError && <p className="py-8 text-center text-sm text-red-500">{pipelineQuery.error.message}</p>}
 
-      {pipelineList && !isLoading && !isError && viewMode === "kanban" && (
-        <div className="flex gap-4 overflow-x-auto pb-1">
-          {stageColumns.map((col) => {
-            const items = board.filter((b) => b.stage === col.value);
-            const isOver = dragOverStage === col.value;
-            return (
-              <div
-                key={col.value}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOverStage(col.value);
-                }}
-                onDragLeave={(e) => {
-                  if (e.currentTarget === e.target) setDragOverStage(null);
-                }}
-                onDrop={handleDrop(col.value)}
-                className={`flex w-70 shrink-0 flex-col max-h-128 gap-2 rounded-xl border p-3 transition-colors ${
-                  isOver
-                    ? "border-claude bg-claude/5"
-                    : "border-dashboard-border bg-dashboard-bg"
-                }`}
-              >
-                <div className="flex items-center justify-between px-1 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${col.dot}`} />
-                    <span className="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-zinc-300">
-                      {col.label}
+      {pipelineList && isBoardView && (
+        <>
+          {pipelineList.length === 100 && <p className="text-xs text-amber-600">Kanban shows at most 100 matching leads.</p>}
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {phaseStages.map((stage) => {
+              const items = board.filter((entry) => entry.stage === stage);
+              const isOver = dragOverStage === stage;
+              return (
+                <div
+                  key={stage}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragOverStage(stage);
+                  }}
+                  onDragLeave={(event) => {
+                    if (event.currentTarget === event.target) setDragOverStage(null);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setDragOverStage(null);
+                    if (draggedId !== null) moveTo(draggedId, stage);
+                    setDraggedId(null);
+                  }}
+                  className={`flex max-h-128 w-70 shrink-0 flex-col gap-2 rounded-xl border p-3 transition-colors ${
+                    isOver ? "border-claude bg-claude/5" : "border-dashboard-border bg-dashboard-bg"
+                  }`}
+                >
+                  <div className="flex shrink-0 items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`size-2 rounded-full ${PIPELINE_STAGE_DOTS[stage]}`} />
+                      <span className="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-zinc-300">
+                        {PIPELINE_STAGE_LABELS[stage]}
+                      </span>
+                    </div>
+                    <span className={`flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${PIPELINE_STAGE_DOTS[stage]}`}>
+                      {items.length}
                     </span>
                   </div>
-                  <span
-                    className={`flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${col.dot}`}
-                  >
-                    {items.length}
-                  </span>
-                </div>
-
-                <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
-                  {items.map((post) => (
-                    <div
-                      key={post.id}
-                      draggable
-                      onDragStart={() => setDraggedId(post.id)}
-                      onDragEnd={() => setDraggedId(null)}
-                      onClick={() => setEditingPipelineId(post.id)}
-                      className={`rounded-lg border border-dashboard-border bg-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
-                        draggedId === post.id ? "opacity-50" : ""
-                      }`}
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800">
-                          {post.company_image_url ? (
-                            <Image
-                              src={post.company_image_url}
-                              alt={post.company_name}
-                              width={28}
-                              height={28}
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <Building2 size={13} className="text-gray-400" />
-                          )}
+                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+                    {items.map((entry) => (
+                      <div
+                        key={entry.id}
+                        draggable
+                        onDragStart={() => setDraggedId(entry.id)}
+                        onDragEnd={() => setDraggedId(null)}
+                        onClick={() => setEditingPipelineId(entry.id)}
+                        className={`flex cursor-grab flex-col gap-2 rounded-lg border border-dashboard-border bg-card-bg p-3 hover:border-claude/40 ${draggedId === entry.id ? "opacity-50" : ""}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Building2 size={14} className="shrink-0 text-gray-400" />
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</p>
                         </div>
-                        <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">
-                          {post.company_name}
-                        </p>
+                        <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
+                          <span>{leadSourceLabels[entry.lead_source]}</span>
+                          <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</span>
+                        </div>
                       </div>
-                      <p className="truncate text-xs text-gray-500 dark:text-zinc-400">
-                        {post.name}
-                      </p>
-                      <div className="flex items-center justify-between gap-2">
-                        <ProbabilityStatusLabel
-                          status={post.probability_status}
-                        />
-                        <span className="text-xs font-semibold text-gray-900 dark:text-zinc-100">
-                          {getShortRupiahCurrency(Number(post.project_value))}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {items.length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">
-                      No leads
-                    </p>
-                  )}
+                    ))}
+                    {items.length === 0 && <p className="py-6 text-center text-xs text-gray-400">No leads</p>}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      {pipelineList && !isLoading && !isError && viewMode === "table" && (
+      {pipelineList && viewMode === "table" && (
         <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
           <div className="overflow-x-auto">
             <table className="w-full min-w-190 text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
-                  <th className="px-5 py-3">Company</th>
-                  <th className="px-5 py-3">Program</th>
-                  <th className="px-5 py-3">Stage</th>
-                  <th className="px-5 py-3">Probability</th>
-                  <th className="px-5 py-3">Value</th>
-                  <th className="px-5 py-3">Owner</th>
+                  <th className="px-5 py-3">Company</th><th className="px-5 py-3">Source</th><th className="px-5 py-3">Stage</th><th className="px-5 py-3">Value</th><th className="px-5 py-3">Expected Close</th><th className="px-5 py-3">Owner</th>
                 </tr>
               </thead>
               <tbody>
-                {pipelineList.map((post) => (
-                  <tr
-                    key={post.id}
-                    onClick={() => setEditingPipelineId(post.id)}
-                    className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
-                  >
-                    <td className="px-5 py-3.5">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800">
-                          {post.company_image_url ? (
-                            <Image
-                              src={post.company_image_url}
-                              alt={post.company_name}
-                              width={32}
-                              height={32}
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <Building2 size={14} className="text-gray-400" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
-                            {post.company_name}
-                          </p>
-                          <p className="truncate text-xs text-gray-400">
-                            {post.industry_name}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
-                      {post.name}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <StageLabel stage={post.stage} />
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <ProbabilityStatusLabel
-                          status={post.probability_status}
-                        />
-                        <span className="text-xs text-gray-400">
-                          {post.probability}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
-                      {getRupiahCurrency(Number(post.project_value))}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 dark:bg-zinc-700 shrink-0">
-                          {post.owner_avatar && (
-                            <Image
-                              src={post.owner_avatar}
-                              alt={post.owner_name}
-                              width={20}
-                              height={20}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
-                          {post.owner_name}
-                        </span>
-                      </div>
-                    </td>
+                {pipelineList.map((entry) => (
+                  <tr key={entry.id} onClick={() => setEditingPipelineId(entry.id)} className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50">
+                    <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</td>
+                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{entry.lead_source}</td>
+                    <td className="px-5 py-3.5"><StageLabel stage={entry.stage} /></td>
+                    <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{entry.expected_close_date ? new Date(entry.expected_close_date).toLocaleDateString("en-GB") : "—"}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{entry.sales_owner_name}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {pipelineList.length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
-                {debouncedKeyword
-                  ? `No leads found for "${debouncedKeyword}"`
-                  : "No leads yet."}
-              </p>
-            )}
           </div>
         </div>
       )}
 
-      {pipelineList && !isLoading && !isError && viewMode === "cards" && (
+      {pipelineList && viewMode === "cards" && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {pipelineList.map((post) => (
-            <div
-              key={post.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setEditingPipelineId(post.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setEditingPipelineId(post.id);
-                }
-              }}
-              className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700"
-            >
+          {pipelineList.map((entry) => (
+            <div key={entry.id} role="button" tabIndex={0} onClick={() => setEditingPipelineId(entry.id)} onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setEditingPipelineId(entry.id);
+              }
+            }} className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700">
               <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800">
-                  {post.company_image_url ? (
-                    <Image
-                      src={post.company_image_url}
-                      alt={post.company_name}
-                      width={44}
-                      height={44}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <Building2 size={18} className="text-gray-400" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-bold text-gray-900 dark:text-zinc-100">
-                    {post.company_name}
-                  </h3>
-                  <p className="truncate text-xs text-gray-500 dark:text-zinc-400">
-                    {post.industry_name}
-                  </p>
-                </div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800"><Building2 size={18} className="text-gray-400" /></div>
+                <div className="min-w-0 flex-1"><h3 className="truncate font-bold text-gray-900 dark:text-zinc-100">{entry.company_name}</h3><p className="truncate text-xs capitalize text-gray-500">{entry.lead_source} lead</p></div>
               </div>
-
-              <p className="truncate text-sm text-gray-600 dark:text-zinc-300">
-                {post.name}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                <StageLabel stage={post.stage} />
-                <ProbabilityStatusLabel status={post.probability_status} />
-              </div>
-
+              <StageLabel stage={entry.stage} />
               <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {getRupiahCurrency(Number(post.project_value))}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 dark:bg-zinc-700 shrink-0">
-                    {post.owner_avatar && (
-                      <Image
-                        src={post.owner_avatar}
-                        alt={post.owner_name}
-                        width={20}
-                        height={20}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
-                    {post.owner_name}
-                  </span>
-                </div>
+                <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</span>
+                <span className="truncate text-xs text-gray-700 dark:text-zinc-300">{entry.sales_owner_name}</span>
               </div>
             </div>
           ))}
-
-          {pipelineList.length === 0 && (
-            <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10 sm:col-span-2 xl:col-span-3">
-              {debouncedKeyword
-                ? `No leads found for "${debouncedKeyword}"`
-                : "No leads yet."}
-            </p>
-          )}
         </div>
       )}
 
-      {!isBoardView && (
-        <AppPaginationOS
-          currentPage={page}
-          totalPages={totalPage}
-          onPageChange={setPage}
-        />
-      )}
-
-      <CreateLeadFormOS
-        sessionToken={sessionToken}
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
-
-      <EditLeadFormOS
-        sessionToken={sessionToken}
-        pipelineId={editingPipelineId}
-        isOpen={editingPipelineId !== null}
-        onClose={() => setEditingPipelineId(null)}
-      />
-
-      <StageReasonPromptOS
-        target={
-          pendingReasonPrompt
-            ? {
-                leadName: pendingReasonPrompt.leadName,
-                stage: pendingReasonPrompt.stage,
-              }
-            : null
-        }
-        onConfirm={(reasonCode) => {
-          if (!pendingReasonPrompt) return;
-          commitStageChange(
-            pendingReasonPrompt.id,
-            pendingReasonPrompt.stage,
-            pendingReasonPrompt.prevStage,
-            reasonCode
-          );
-          setPendingReasonPrompt(null);
-        }}
-        onSkip={() => {
-          if (!pendingReasonPrompt) return;
-          commitStageChange(
-            pendingReasonPrompt.id,
-            pendingReasonPrompt.stage,
-            pendingReasonPrompt.prevStage
-          );
-          setPendingReasonPrompt(null);
-        }}
-        onCancel={() => {
-          if (!pendingReasonPrompt) return;
-          setMovedStages((prev) => ({
-            ...prev,
-            [pendingReasonPrompt.id]: pendingReasonPrompt.prevStage,
-          }));
-          setPendingReasonPrompt(null);
-        }}
-      />
+      {pipelineList?.length === 0 && <p className="py-10 text-center text-sm text-gray-400">No leads found.</p>}
+      {!isBoardView && <AppPaginationOS currentPage={page} totalPages={totalPage} onPageChange={setPage} />}
+      <CreateLeadFormOS sessionToken={sessionToken} phase={phase} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+      <EditLeadFormOS sessionToken={sessionToken} pipelineId={editingPipelineId} isOpen={editingPipelineId !== null} onClose={() => setEditingPipelineId(null)} />
     </div>
   );
 }

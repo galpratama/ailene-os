@@ -29,9 +29,7 @@ export type OSNavItem = {
   group?: string;
 };
 
-// Nav links rendered in SidebarOS, split by the B2B/B2C segment toggle.
-// B2C only surfaces Tracking; every other nav item lives under B2B.
-// Items sharing the same `group` are clustered under a labeled sub-section.
+// SidebarOS nav, split by the B2B/B2C toggle (B2C has only Tracking); a shared `group` clusters items into a labeled sub-section.
 export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true, segment: "B2B" },
   { href: "/calendar", label: "Calendar", icon: Calendar, segment: "B2B" },
@@ -50,8 +48,15 @@ export const osMainNav: OSNavItem[] = [
     group: "Business Development",
   },
   {
-    href: "/leads",
-    label: "Leads",
+    href: "/leads/sdr",
+    label: "SDR Leads",
+    icon: Users,
+    segment: "B2B",
+    group: "Business Development",
+  },
+  {
+    href: "/leads/bdr",
+    label: "BDR Leads",
     icon: Users,
     segment: "B2B",
     group: "Business Development",

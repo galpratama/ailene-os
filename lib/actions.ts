@@ -16,6 +16,26 @@ import {
   type UserStatus,
 } from "@/apis/users";
 import { isSuccessStatus } from "@/lib/status_code";
+import {
+  createCompany as createCompanyApi,
+  createContact as createContactApi,
+  createPipeline as createPipelineApi,
+  deleteCompany as deleteCompanyApi,
+  deletePipeline as deletePipelineApi,
+  getCompanyDetails as getCompanyDetailsApi,
+  getPipelineDetails as getPipelineDetailsApi,
+  listCompanies as listCompaniesApi,
+  listPipelines as listPipelinesApi,
+  updateCompany as updateCompanyApi,
+  updateContact as updateContactApi,
+  updatePipeline as updatePipelineApi,
+  type CompanyForm,
+  type ContactForm,
+  type CreatePipelinePayload,
+  type ListCompaniesOptions,
+  type ListPipelinesOptions,
+  type UpdatePipelinePayload,
+} from "@/apis/sales";
 
 // The session JWT stays in the httpOnly cookie — the client only learns whether to navigate.
 export async function loginWithGoogle(accessToken: string) {
@@ -65,4 +85,59 @@ export async function listTeams() {
 
 export async function createTeam(name: string) {
   return createTeamApi(name);
+}
+
+export async function listCompanies(options: ListCompaniesOptions = {}) {
+  return listCompaniesApi(options);
+}
+
+export async function getCompanyDetails(id: number) {
+  return getCompanyDetailsApi(id);
+}
+
+export async function createCompany(company: CompanyForm) {
+  return createCompanyApi(company);
+}
+
+export async function updateCompany(payload: { id: number; company: CompanyForm }) {
+  return updateCompanyApi(payload);
+}
+
+export async function deleteCompany(id: number) {
+  return deleteCompanyApi(id);
+}
+
+export async function createContact(payload: {
+  company_id: number;
+  contact: ContactForm;
+}) {
+  return createContactApi(payload);
+}
+
+export async function updateContact(payload: {
+  id: number;
+  company_id: number;
+  contact: ContactForm;
+}) {
+  return updateContactApi(payload);
+}
+
+export async function listPipelines(options: ListPipelinesOptions) {
+  return listPipelinesApi(options);
+}
+
+export async function getPipelineDetails(id: number) {
+  return getPipelineDetailsApi(id);
+}
+
+export async function createPipeline(payload: CreatePipelinePayload) {
+  return createPipelineApi(payload);
+}
+
+export async function updatePipeline(payload: UpdatePipelinePayload) {
+  return updatePipelineApi(payload);
+}
+
+export async function deletePipeline(id: number) {
+  return deletePipelineApi(id);
 }

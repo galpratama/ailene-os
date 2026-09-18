@@ -12,7 +12,7 @@ import OffboardUserDrawerOS from "@/components/modals/OffboardUserDrawerOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { updateUserStatus } from "@/lib/actions";
-import type { MetaPaging, UserEntry, UserStatus } from "@/apis/users";
+import type { UserEntry, UserStatus } from "@/apis/users";
 import type { TeamEntry } from "@/apis/teams";
 import {
   Archive,
@@ -47,7 +47,8 @@ const jobFunctionLabels: Record<string, string> = {
 
 export default function UsersAccessPageOS({
   users,
-  metapaging,
+  page,
+  totalPages,
   teams,
   initialKeyword,
   initialTeam,
@@ -55,7 +56,8 @@ export default function UsersAccessPageOS({
   loadError,
 }: {
   users: UserEntry[];
-  metapaging: MetaPaging | null;
+  page: number;
+  totalPages: number;
   teams: TeamEntry[];
   initialKeyword: string;
   initialTeam: string;
@@ -105,8 +107,7 @@ export default function UsersAccessPageOS({
   ];
 
   const userList = users;
-  const totalPage = metapaging?.total_page ?? 1;
-  const currentPage = metapaging?.current_page ?? 1;
+  const currentPage = page;
 
   function changeStatus(id: string, status: UserStatus) {
     startTransition(async () => {
@@ -328,7 +329,7 @@ export default function UsersAccessPageOS({
 
       <AppPaginationOS
         currentPage={currentPage}
-        totalPages={totalPage}
+        totalPages={totalPages}
         onPageChange={(next) => pushParams({ page: String(next) }, false)}
       />
 

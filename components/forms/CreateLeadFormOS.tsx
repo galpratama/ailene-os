@@ -1,120 +1,160 @@
 "use client";
 
+import type { CompanySource, LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
-import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
-import AppSearchableSelect, {
-  AppSearchableOption,
-} from "@/components/fields/AppSearchableSelect";
-import OrganizationDuplicateModalOS, {
-  OrganizationDuplicateCandidate,
-} from "@/components/modals/OrganizationDuplicateModalOS";
+import AppSearchableSelect, { type AppSearchableOption } from "@/components/fields/AppSearchableSelect";
+import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
-import { trpc } from "@/trpc/client";
 import { useUserList } from "@/hooks/useUserList";
-import { B2BProbabilityStatusEnum, B2BStageEnum } from "@prisma/client";
+import { requireApiData } from "@/lib/api-result";
+import { createPipeline, listCompanies } from "@/lib/actions";
+import { pipelineStageOptions } from "@/lib/sales";
+import { trpc } from "@/trpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 
-const stageOptions: AppSelectOption[] = [
-  { value: "LEAD_IDENTIFIED", label: "Lead Identified" },
-  { value: "CONTACTED", label: "Contacted" },
-  { value: "REPLIED", label: "Replied" },
-  { value: "SHOW_INTEREST", label: "Show Interest" },
-  { value: "MEETING_BOOKED", label: "Meeting Booked" },
-  { value: "NEGOTIATION", label: "Negotiation" },
-  { value: "VERBAL_COMMIT", label: "Verbal Commit" },
-  { value: "CLOSED_WON", label: "Closed Won" },
-  { value: "CLOSED_LOST", label: "Closed Lost" },
-  { value: "ON_HOLD", label: "On Hold" },
+const companySourceOptions: AppSelectOption[] = [
+  { value: "referral", label: "Referral" },
+  { value: "outreach", label: "Outreach" },
+  { value: "inbound", label: "Inbound" },
 ];
 
-const probabilityStatusOptions: AppSelectOption[] = [
-  { value: "", label: "None" },
-  { value: "COLD", label: "Cold" },
-  { value: "WARM", label: "Warm" },
-  { value: "HOT", label: "Hot" },
+const leadSourceOptions: AppSelectOption[] = [
+  { value: "inbound", label: "Inbound" },
+  { value: "outbound", label: "Outbound" },
+];
+const leadChannelOptions: AppSelectOption[] = [
+  { value: "", label: "No channel" },
+  { value: "referral", label: "Referral" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "thread", label: "Thread" },
+  { value: "instagram", label: "Instagram" },
 ];
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
-    active ? "bg-lime-bright text-forest-deep" : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+    active
+      ? "bg-lime-bright text-forest-deep"
+      : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
   }`;
-}
-
-interface CreateLeadFormOSProps {
-  sessionToken: string;
-  isOpen: boolean;
-  onClose: () => void;
 }
 
 export default function CreateLeadFormOS({
   sessionToken,
+  phase,
   isOpen,
   onClose,
-}: CreateLeadFormOSProps) {
-  const utils = trpc.useUtils();
-
+}: {
+  sessionToken: string;
+  phase: PipelinePhase;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const sessionUser = useSession();
+  const isOwnScoped = sessionUser?.data_scope === "OWN";
   const [useExistingCompany, setUseExistingCompany] = useState(false);
   const [companyOption, setCompanyOption] = useState<AppSearchableOption | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
-  const [picName, setPicName] = useState("");
-  const [picJobTitle, setPicJobTitle] = useState("");
-  const [picWa, setPicWa] = useState("");
-  const [picEmail, setPicEmail] = useState("");
+  const [companySource, setCompanySource] = useState<CompanySource>("outreach");
+  const [legalIdentifier, setLegalIdentifier] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-
-  const [name, setName] = useState("");
-  const [stage, setStage] = useState<B2BStageEnum>("LEAD_IDENTIFIED");
-  const [probability, setProbability] = useState("");
-  const [probabilityStatus, setProbabilityStatus] = useState<B2BProbabilityStatusEnum | "">("");
-  const [projectValue, setProjectValue] = useState("");
-  const [projectStartMonth, setProjectStartMonth] = useState("");
-  const [projectEndMonth, setProjectEndMonth] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactJobTitle, setContactJobTitle] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [leadSource, setLeadSource] = useState<LeadSource>("outbound");
+  const [leadChannel, setLeadChannel] = useState<LeadChannel | "">("");
+  const [stage, setStage] = useState<PipelineStage>(
+    phase === "sdr" ? "lead_identified" : "discovery_done"
+  );
+  const [estimatedValue, setEstimatedValue] = useState("");
+  const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [ownerId, setOwnerId] = useState("");
-
   const [error, setError] = useState<string | null>(null);
-  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
-  const [duplicateMatches, setDuplicateMatches] = useState<OrganizationDuplicateCandidate[]>([]);
-  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-
-  const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const { data: industryData } = trpc.list.industries.useQuery(undefined, {
     enabled: !!sessionToken && isOpen,
   });
   const userList = useUserList(isOpen && !isOwnScoped);
 
-  // OWN-scoped users can only own their own leads, so auto-assign instead of showing a picker.
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  const [seededOwnerForOpen, setSeededOwnerForOpen] = useState(false);
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (!isOpen) setSeededOwnerForOpen(false);
+  const [previousOpen, setPreviousOpen] = useState(isOpen);
+  const [seededOpen, setSeededOpen] = useState(false);
+  if (isOpen !== previousOpen) {
+    setPreviousOpen(isOpen);
+    if (!isOpen) setSeededOpen(false);
   }
-  if (isOpen && isOwnScoped && sessionUser && !seededOwnerForOpen) {
-    setSeededOwnerForOpen(true);
-    setOwnerId(sessionUser.id);
+  if (isOpen && !seededOpen) {
+    setSeededOpen(true);
+    setStage(phase === "sdr" ? "lead_identified" : "discovery_done");
+    if (isOwnScoped && sessionUser) setOwnerId(sessionUser.id);
   }
 
   const industryOptions: AppSelectOption[] =
-    industryData?.list.map((i) => ({ value: i.id, label: i.name })) ?? [];
-  const ownerOptions: AppSelectOption[] =
-    userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
+    industryData?.list.map((industry) => ({ value: industry.id, label: industry.name })) ?? [];
+  const ownerOptions: AppSelectOption[] = userList.map((user) => ({
+    value: user.id,
+    label: user.full_name,
+  }));
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const common = {
+        sales_owner_id: ownerId || undefined,
+        lead_source: leadSource,
+        lead_channel: leadChannel || null,
+        stage,
+        estimated_value: estimatedValue ? Number(estimatedValue) : 0,
+        expected_close_date: expectedCloseDate || null,
+      };
+      return requireApiData(
+        await createPipeline(
+          useExistingCompany
+            ? { ...common, company_id: companyOption!.value as number }
+            : {
+                ...common,
+                new_company: {
+                  name: companyName.trim(),
+                  industry_id: industryId,
+                  source: companySource,
+                  legal_identifier: legalIdentifier.trim() || null,
+                  website_url: websiteUrl.trim() || null,
+                  image_url: imageUrl.trim() || null,
+                },
+                new_contact: {
+                  full_name: contactName.trim(),
+                  email: contactEmail.trim() || null,
+                  phone: contactPhone.trim() || null,
+                  job_title: contactJobTitle.trim() || null,
+                  primary: true,
+                },
+              }
+        )
+      );
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] }),
+        queryClient.invalidateQueries({ queryKey: ["sales", "companies"] }),
+      ]);
+      handleClose();
+    },
+    onError: (cause) => setError(cause instanceof Error ? cause.message : "Failed to create lead."),
+  });
 
   async function loadCompanyOptions(inputValue: string, page: number) {
-    const result = await utils.list.b2b.companies.fetch({
-      keyword: inputValue || undefined,
-      page,
-      page_size: 20,
-    });
+    const result = requireApiData(
+      await listCompanies({ keyword: inputValue || undefined, page, page_size: 20 })
+    );
     return {
-      options: result.list.map((c) => ({ value: c.id, label: c.name })),
-      hasMore: page < result.metapaging.total_page!,
+      options: result.list.map((company) => ({ value: company.id, label: company.name })),
+      hasMore: result.metapaging.current_page < result.metapaging.total_page,
     };
   }
 
@@ -123,21 +163,20 @@ export default function CreateLeadFormOS({
     setCompanyOption(null);
     setCompanyName("");
     setIndustryId(null);
-    setPicName("");
-    setPicJobTitle("");
-    setPicWa("");
-    setPicEmail("");
-    setName("");
-    setStage("LEAD_IDENTIFIED");
-    setProbability("");
-    setProbabilityStatus("");
-    setProjectValue("");
-    setProjectStartMonth("");
-    setProjectEndMonth("");
+    setCompanySource("outreach");
+    setLegalIdentifier("");
+    setWebsiteUrl("");
+    setImageUrl("");
+    setContactName("");
+    setContactJobTitle("");
+    setContactPhone("");
+    setContactEmail("");
+    setLeadSource("outbound");
+    setLeadChannel("");
+    setEstimatedValue("");
+    setExpectedCloseDate("");
     setOwnerId("");
     setError(null);
-    setDuplicateMatches([]);
-    setIsDuplicateModalOpen(false);
   }
 
   function handleClose() {
@@ -145,341 +184,78 @@ export default function CreateLeadFormOS({
     onClose();
   }
 
-  const createPipeline = trpc.create.b2b.pipeline.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.pipelines.invalidate();
-      if (!useExistingCompany) utils.list.b2b.companies.invalidate();
-      handleClose();
-    },
-    onError: (err) => setError(err.message),
-  });
-
-  const requestReview = trpc.create.b2b.organizationDuplicateReview.useMutation({
-    onSuccess: () => {
-      setIsDuplicateModalOpen(false);
-      handleClose();
-    },
-    onError: (err) => setError(err.message),
-  });
-
-  function basePayload() {
-    return {
-      name: name.trim(),
-      stage,
-      probability: probability ? Number(probability) : undefined,
-      probability_status: probabilityStatus || undefined,
-      project_value: projectValue ? Number(projectValue) : undefined,
-      project_start_month: projectStartMonth ? `${projectStartMonth}-01` : null,
-      project_end_month: projectEndMonth ? `${projectEndMonth}-01` : null,
-      owner_id: ownerId,
-    };
-  }
-
-  function newCompanyPayload() {
-    return {
-      name: companyName.trim(),
-      industry_id: industryId as number,
-      pic_name: picName.trim() || null,
-      pic_job_title: picJobTitle.trim() || null,
-      pic_wa: picWa.trim() || null,
-      pic_email: picEmail.trim() || null,
-      image_url: imageUrl.trim() || null,
-    };
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
     setError(null);
-
-    if (!name.trim()) return setError("Program name is required.");
-    if (!ownerId) return setError("Owner is required.");
     if (useExistingCompany && !companyOption) return setError("Pick an existing company.");
     if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
-    if (!useExistingCompany && !industryId) return setError("Industry is required.");
-
-    if (useExistingCompany) {
-      createPipeline.mutate({
-        ...basePayload(),
-        company_id: companyOption!.value as number,
-      });
-      return;
-    }
-
-    setIsCheckingDuplicate(true);
-    try {
-      const result = await utils.list.b2b.checkOrganizationDuplicate.fetch({
-        name: companyName.trim(),
-        email: picEmail.trim() || undefined,
-        phone: picWa.trim() || undefined,
-      });
-      if (result.matches.length > 0) {
-        setDuplicateMatches(result.matches);
-        setIsDuplicateModalOpen(true);
-      } else {
-        createPipeline.mutate({ ...basePayload(), new_company: newCompanyPayload() });
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to check for duplicate organizations."
-      );
-    } finally {
-      setIsCheckingDuplicate(false);
-    }
-  }
-
-  function handleLinkExisting(organizationId: number) {
-    setIsDuplicateModalOpen(false);
-    setUseExistingCompany(true);
-    createPipeline.mutate({
-      ...basePayload(),
-      company_id: organizationId,
-    });
-  }
-
-  function handleCreateAnyway() {
-    setIsDuplicateModalOpen(false);
-    createPipeline.mutate({
-      ...basePayload(),
-      new_company: newCompanyPayload(),
-      force: true,
-    });
-  }
-
-  function handleRequestReview() {
-    requestReview.mutate({
-      proposed_name: companyName.trim(),
-      proposed_industry_id: industryId ?? undefined,
-      proposed_pic_name: picName.trim() || null,
-      proposed_pic_job_title: picJobTitle.trim() || null,
-      proposed_pic_wa: picWa.trim() || null,
-      proposed_pic_email: picEmail.trim() || null,
-      matched_organization_ids: duplicateMatches.map((m) => m.id),
-    });
+    if (!useExistingCompany && !contactName.trim()) return setError("Primary contact name is required.");
+    if (!ownerId && !isOwnScoped) return setError("Sales owner is required.");
+    if (stage === "triaging" && leadSource !== "inbound") return setError("Triaging requires an inbound lead source.");
+    if (stage === "attempting" && leadSource !== "outbound") return setError("Attempting requires an outbound lead source.");
+    mutation.mutate();
   }
 
   return (
-    <>
-    <SheetOS
-      title="Add New Lead"
-      description="Capture a new B2B lead into the sales pipeline."
-      isOpen={isOpen}
-      onClose={handleClose}
-    >
-      <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
+    <SheetOS title={`Add ${phase.toUpperCase()} Lead`} description="Create a company-linked sales pipeline in the Java API." isOpen={isOpen} onClose={handleClose}>
+      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+          {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">{error}</p>}
 
-          <AppInput
-            inputId="lead-name"
-            label="Program Name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Q3 AI Bootcamp Sponsorship"
-          />
-
-          {/* Company */}
           <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
             <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p>
-                <p className="text-xs text-gray-500 dark:text-zinc-400">Create a new company or pick an existing one.</p>
-              </div>
+              <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p><p className="text-xs text-gray-500">Create a company and primary contact, or use an existing company.</p></div>
               <div className="flex rounded-lg border border-gray-300 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
-                <button
-                  type="button"
-                  onClick={() => setUseExistingCompany(false)}
-                  className={segmentClass(!useExistingCompany)}
-                >
-                  New
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUseExistingCompany(true)}
-                  className={segmentClass(useExistingCompany)}
-                >
-                  Existing
-                </button>
+                <button type="button" onClick={() => setUseExistingCompany(false)} className={segmentClass(!useExistingCompany)}>New</button>
+                <button type="button" onClick={() => setUseExistingCompany(true)} className={segmentClass(useExistingCompany)}>Existing</button>
               </div>
             </div>
-
             {useExistingCompany ? (
-              <AppSearchableSelect
-                selectId="lead-company"
-                label="Company"
-                required
-                placeholder="Type to search organizations..."
-                value={companyOption}
-                onChange={setCompanyOption}
-                loadOptions={loadCompanyOptions}
-              />
+              <AppSearchableSelect selectId="lead-company" label="Company" required placeholder="Type to search companies..." value={companyOption} onChange={setCompanyOption} loadOptions={loadCompanyOptions} />
             ) : (
-              <div className="flex flex-col gap-3">
-                <AppInput
-                  inputId="lead-company-name"
-                  label="Company Name"
-                  required
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="e.g. PT Sumber Makmur"
-                />
-                <AppSelect
-                  selectId="lead-industry"
-                  label="Industry"
-                  required
-                  placeholder="Pick an industry"
-                  value={industryId}
-                  onChange={(v) => setIndustryId(v as number | null)}
-                  options={industryOptions}
-                />
+              <>
+                <AppInput inputId="lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
                 <div className="grid grid-cols-2 gap-3">
-                  <AppInput
-                    inputId="lead-pic-name"
-                    label="PIC Name"
-                    value={picName}
-                    onChange={(e) => setPicName(e.target.value)}
-                  />
-                  <AppInput
-                    inputId="lead-pic-job-title"
-                    label="PIC Job Title"
-                    value={picJobTitle}
-                    onChange={(e) => setPicJobTitle(e.target.value)}
-                  />
+                  <AppSelect selectId="lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
+                  <AppSelect selectId="lead-company-source" label="Company Source" required placeholder="Pick a source" value={companySource} onChange={(value) => setCompanySource(value as CompanySource)} options={companySourceOptions} />
+                </div>
+                <AppInput inputId="lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+                <div className="grid grid-cols-2 gap-3">
+                  <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://" />
+                  <AppInput inputId="lead-company-image-url" label="Logo URL" type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://" />
+                </div>
+                <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Primary contact</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <AppInput inputId="lead-contact-name" label="Full Name" required value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                  <AppInput inputId="lead-contact-job-title" label="Job Title" value={contactJobTitle} onChange={(event) => setContactJobTitle(event.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <AppInput
-                    inputId="lead-pic-wa"
-                    label="PIC WhatsApp"
-                    value={picWa}
-                    onChange={(e) => setPicWa(e.target.value)}
-                  />
-                  <AppInput
-                    inputId="lead-pic-email"
-                    label="PIC Email"
-                    value={picEmail}
-                    onChange={(e) => setPicEmail(e.target.value)}
-                  />
+                  <AppInput inputId="lead-contact-phone" label="Phone" value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
+                  <AppInput inputId="lead-contact-email" label="Email" type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
                 </div>
-                <AppInput
-                  inputId="lead-company-image-url"
-                  label="Company Logo URL"
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://"
-                />
-              </div>
+              </>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <AppSelect
-              selectId="lead-stage"
-              label="Stage"
-              placeholder="Pick a stage"
-              value={stage}
-              onChange={(v) => setStage(v as B2BStageEnum)}
-              options={stageOptions}
-            />
-            <AppSelect
-              selectId="lead-probability-status"
-              label="Probability Status"
-              placeholder="Pick a status"
-              value={probabilityStatus}
-              onChange={(v) => setProbabilityStatus(v as B2BProbabilityStatusEnum | "")}
-              options={probabilityStatusOptions}
-            />
+            <AppSelect selectId="lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
+            <AppSelect selectId="lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
           </div>
-
           <div className="grid grid-cols-2 gap-3">
-            <AppNumberInput
-              inputId="lead-probability"
-              label="Probability (%)"
-              mode="numeric"
-              value={probability}
-              onValueChange={setProbability}
-              placeholder="0"
-            />
-            <AppNumberInput
-              inputId="lead-project-value"
-              label="Project Value (Rp)"
-              mode="numeric"
-              value={projectValue}
-              onValueChange={setProjectValue}
-              placeholder="0"
-            />
+            <AppSelect selectId="lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={pipelineStageOptions(phase)} />
+            <AppNumberInput inputId="lead-estimated-value" label="Estimated Value (Rp)" mode="numeric" value={estimatedValue} onValueChange={setEstimatedValue} placeholder="0" />
           </div>
-
           <div className="grid grid-cols-2 gap-3">
-            <AppInput
-              inputId="lead-start-month"
-              label="Project Start Month"
-              type="month"
-              value={projectStartMonth}
-              onChange={(e) => setProjectStartMonth(e.target.value)}
-            />
-            <AppInput
-              inputId="lead-end-month"
-              label="Project End Month"
-              type="month"
-              value={projectEndMonth}
-              onChange={(e) => setProjectEndMonth(e.target.value)}
-            />
+            <AppInput inputId="lead-expected-close-date" label="Expected Close Date" type="date" value={expectedCloseDate} onChange={(event) => setExpectedCloseDate(event.target.value)} />
           </div>
-
-          {!isOwnScoped && (
-            <AppSelect
-              selectId="lead-owner"
-              label="Owner"
-              required
-              placeholder="Assign an owner"
-              value={ownerId}
-              onChange={(v) => setOwnerId((v as string) ?? "")}
-              options={ownerOptions}
-            />
-          )}
+          {!isOwnScoped && <AppSelect selectId="lead-owner" label="Sales Owner" required placeholder="Assign an owner" value={ownerId} onChange={(value) => setOwnerId((value as string) ?? "")} options={ownerOptions} />}
         </div>
 
         <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
-          <AppButton
-            type="button"
-            variant="outline"
-            className="flex-1 justify-center"
-            onClick={handleClose}
-          >
-            Cancel
-          </AppButton>
-          <AppButton
-            type="submit"
-            variant="primary"
-            className="flex-1 justify-center"
-            disabled={createPipeline.isPending || isCheckingDuplicate}
-          >
-            {(createPipeline.isPending || isCheckingDuplicate) && (
-              <Loader2 size={14} className="animate-spin" />
-            )}
-            Create Lead
-          </AppButton>
+          <AppButton type="button" variant="outline" className="flex-1 justify-center" onClick={handleClose}>Cancel</AppButton>
+          <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={mutation.isPending}>{mutation.isPending && <Loader2 size={14} className="animate-spin" />}Create Lead</AppButton>
         </div>
       </form>
     </SheetOS>
-
-    <OrganizationDuplicateModalOS
-      isOpen={isDuplicateModalOpen}
-      onClose={() => setIsDuplicateModalOpen(false)}
-      proposedName={companyName.trim()}
-      matches={duplicateMatches}
-      onLinkExisting={handleLinkExisting}
-      onCreateAnyway={handleCreateAnyway}
-      onRequestReview={handleRequestReview}
-      isLinking={createPipeline.isPending}
-      isCreating={createPipeline.isPending}
-      isRequestingReview={requestReview.isPending}
-    />
-    </>
   );
 }

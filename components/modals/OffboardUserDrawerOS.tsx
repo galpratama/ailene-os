@@ -42,7 +42,7 @@ export default function OffboardUserDrawerOS({
 
   const loadDetails = useCallback(async (id: string) => {
     const result = await getUserDetails(id);
-    setUser(result.data?.user ?? null);
+    setUser(result.data ?? null);
     setOwnership(result.data?.ownership ?? null);
   }, []);
 
@@ -54,7 +54,7 @@ export default function OffboardUserDrawerOS({
       listUsers({ page: 1, page_size: 100 }),
     ]).then(([detail, list]) => {
       if (!active) return;
-      setUser(detail.data?.user ?? null);
+      setUser(detail.data ?? null);
       setOwnership(detail.data?.ownership ?? null);
       setCandidates(list.data?.list ?? []);
     });

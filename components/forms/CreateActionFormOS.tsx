@@ -27,9 +27,6 @@ export const priorityOptions: AppSelectOption[] = [
 
 interface CreateActionFormOSProps {
   sessionToken: string;
-  // When omitted, the form shows its own Pipeline picker (Company - Pipeline)
-  // instead of assuming an ambient pipeline — used on the cross-pipeline
-  // Tasks page, as opposed to a single pipeline's kanban.
   pipelineId?: number;
   isOpen: boolean;
   onClose: () => void;
@@ -57,11 +54,6 @@ export default function CreateActionFormOS({
 
   const [error, setError] = useState<string | null>(null);
 
-  // The form stays mounted across opens (SheetOS just hides it), so on the
-  // open→closed→open transition triggered by a different column's "Add
-  // action" button, re-seed status from the new defaultStatus. Adjusting
-  // state during render (React's documented pattern for this) rather than
-  // in an effect avoids an extra commit.
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -231,7 +223,9 @@ export default function CreateActionFormOS({
             className="flex-1 justify-center"
             disabled={createAction.isPending}
           >
-            {createAction.isPending && <Loader2 size={14} className="animate-spin" />}
+            {createAction.isPending && (
+              <Loader2 size={14} className="animate-spin" />
+            )}
             Create Action
           </AppButton>
         </div>

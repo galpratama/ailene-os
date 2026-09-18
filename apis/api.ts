@@ -13,6 +13,19 @@ import {
   type StatusName,
 } from "@/lib/status_code";
 
+export type Metapaging = {
+  total_data: number;
+  total_page: number;
+  current_page: number;
+  page_size: number;
+};
+
+// Every list endpoint answers with the same `list` + `metapaging` wrapper, never a bare array.
+export type ApiList<T> = {
+  list: T[];
+  metapaging: Metapaging;
+};
+
 export type ApiEnvelope<T = unknown> = {
   success?: boolean;
   code?: number;

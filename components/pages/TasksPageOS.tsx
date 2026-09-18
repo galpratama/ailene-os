@@ -78,8 +78,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     "kanban"
   );
 
-  // Deep-linked from a project's "View Detail Task" button as
-  // /tasks?pipeline_id=<id> — pre-selects that pipeline in the filter.
+  // Deep-linked as /tasks?pipeline_id=<id> — pre-selects that pipeline in the filter.
   const searchParams = useSearchParams();
   const linkedPipelineId = searchParams.get("pipeline_id");
 

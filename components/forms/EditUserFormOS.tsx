@@ -62,7 +62,7 @@ export default function EditUserFormOS({
     let active = true;
     getUserDetails(userId).then((result) => {
       if (!active) return;
-      const entry = result.data?.user ?? null;
+      const entry = result.data ?? null;
       setUser(entry);
       if (entry) {
         setRole(entry.role);
