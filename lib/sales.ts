@@ -1,4 +1,4 @@
-import type { PipelinePhase, PipelineStage } from "@/apis/sales";
+import type { LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
 
 export const PIPELINE_STAGES_BY_PHASE: Record<PipelinePhase, PipelineStage[]> = {
   sdr: [
@@ -51,4 +51,13 @@ export function pipelineStageOptions(phase?: PipelinePhase) {
     ? PIPELINE_STAGES_BY_PHASE[phase]
     : [...PIPELINE_STAGES_BY_PHASE.sdr, ...PIPELINE_STAGES_BY_PHASE.bdr];
   return stages.map((value) => ({ value, label: PIPELINE_STAGE_LABELS[value] }));
+}
+
+export function isStageCompatibleWithLeadSource(
+  stage: PipelineStage,
+  leadSource: LeadSource
+) {
+  if (stage === "triaging") return leadSource === "inbound";
+  if (stage === "attempting") return leadSource === "outbound";
+  return true;
 }

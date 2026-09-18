@@ -15,7 +15,7 @@ import { useUserList } from "@/hooks/useUserList";
 import { requireApiData } from "@/lib/api-result";
 import { listPipelines, updatePipeline } from "@/lib/actions";
 import { getRupiahCurrency } from "@/lib/currency";
-import { PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
+import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -31,6 +31,10 @@ const leadSourceLabels: Record<LeadSource, string> = {
   outbound: "Outbound",
 };
 
+function leadSourceLabel(source: LeadSource | null) {
+  return source ? leadSourceLabels[source] : "—";
+}
+
 const leadChannelOptions: AppSelectOption[] = [
   { value: "", label: "All Channels" },
   { value: "referral", label: "Referral" },
@@ -38,12 +42,6 @@ const leadChannelOptions: AppSelectOption[] = [
   { value: "thread", label: "Thread" },
   { value: "instagram", label: "Instagram" },
 ];
-
-function sourceForStage(current: LeadSource, stage: PipelineStage): LeadSource {
-  if (stage === "triaging") return "inbound";
-  if (stage === "attempting") return "outbound";
-  return current;
-}
 
 export default function LeadsPageOS({
   sessionToken,
@@ -71,6 +69,7 @@ export default function LeadsPageOS({
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [movedStages, setMovedStages] = useState<Partial<Record<number, PipelineStage>>>({});
+  const [stageError, setStageError] = useState<string | null>(null);
   const pageSize = 21;
   const isBoardView = viewMode === "kanban";
 
@@ -114,14 +113,20 @@ export default function LeadsPageOS({
           id: pipeline.id,
           company_id: pipeline.company_id,
           sales_owner_id: pipeline.sales_owner_id,
-          lead_source: sourceForStage(pipeline.lead_source, stage),
-          lead_channel: pipeline.lead_channel,
           stage,
           estimated_value: Number(pipeline.estimated_value),
           expected_close_date: pipeline.expected_close_date,
         })
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] }),
+    onSuccess: async (_data, { pipeline }) => {
+      setStageError(null);
+      await queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] });
+      setMovedStages((current) => {
+        const next = { ...current };
+        delete next[pipeline.id];
+        return next;
+      });
+    },
   });
 
   // Only active people can be picked as an owner to filter by.
@@ -139,11 +144,32 @@ export default function LeadsPageOS({
   function moveTo(id: number, stage: PipelineStage) {
     const pipeline = board.find((entry) => entry.id === id);
     if (!pipeline || pipeline.stage === stage) return;
-    const previousStage = pipeline.stage;
+    if (!pipeline.lead_source) {
+      setStageError("Set this company's lead source before moving its pipeline.");
+      return;
+    }
+    if (!isStageCompatibleWithLeadSource(stage, pipeline.lead_source)) {
+      setStageError(
+        stage === "triaging"
+          ? "Triaging requires an inbound lead source."
+          : "Attempting requires an outbound lead source."
+      );
+      return;
+    }
+    setStageError(null);
     setMovedStages((current) => ({ ...current, [id]: stage }));
     updateStage.mutate(
       { pipeline, stage },
-      { onError: () => setMovedStages((current) => ({ ...current, [id]: previousStage })) }
+      {
+        onError: (cause) => {
+          setMovedStages((current) => {
+            const next = { ...current };
+            delete next[id];
+            return next;
+          });
+          setStageError(cause instanceof Error ? cause.message : "Failed to move this lead.");
+        },
+      }
     );
   }
 
@@ -209,6 +235,7 @@ export default function LeadsPageOS({
 
       {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
       {pipelineQuery.isError && <p className="py-8 text-center text-sm text-red-500">{pipelineQuery.error.message}</p>}
+      {stageError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">{stageError}</p>}
 
       {pipelineList && isBoardView && (
         <>
@@ -263,7 +290,7 @@ export default function LeadsPageOS({
                           <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</p>
                         </div>
                         <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
-                          <span>{leadSourceLabels[entry.lead_source]}</span>
+                          <span>{leadSourceLabel(entry.lead_source)}</span>
                           <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</span>
                         </div>
                       </div>
@@ -290,7 +317,7 @@ export default function LeadsPageOS({
                 {pipelineList.map((entry) => (
                   <tr key={entry.id} onClick={() => setEditingPipelineId(entry.id)} className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50">
                     <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</td>
-                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{entry.lead_source}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{leadSourceLabel(entry.lead_source)}</td>
                     <td className="px-5 py-3.5"><StageLabel stage={entry.stage} /></td>
                     <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{entry.expected_close_date ? new Date(entry.expected_close_date).toLocaleDateString("en-GB") : "—"}</td>
@@ -314,7 +341,7 @@ export default function LeadsPageOS({
             }} className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700">
               <div className="flex items-center gap-3">
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800"><Building2 size={18} className="text-gray-400" /></div>
-                <div className="min-w-0 flex-1"><h3 className="truncate font-bold text-gray-900 dark:text-zinc-100">{entry.company_name}</h3><p className="truncate text-xs capitalize text-gray-500">{entry.lead_source} lead</p></div>
+                <div className="min-w-0 flex-1"><h3 className="truncate font-bold text-gray-900 dark:text-zinc-100">{entry.company_name}</h3><p className="truncate text-xs text-gray-500">{leadSourceLabel(entry.lead_source)} lead</p></div>
               </div>
               <StageLabel stage={entry.stage} />
               <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">

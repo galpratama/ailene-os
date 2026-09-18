@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompanySource } from "@/apis/sales";
+import type { LeadChannel, LeadSource } from "@/apis/sales";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import OrganizationDetailDrawerOS from "@/components/modals/OrganizationDetailDrawerOS";
@@ -13,18 +13,26 @@ import { useQuery } from "@tanstack/react-query";
 import { Building2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-const sourceOptions: AppSelectOption[] = [
-  { value: "", label: "All sources" },
-  { value: "referral", label: "Referral" },
-  { value: "outreach", label: "Outreach" },
+const leadSourceOptions: AppSelectOption[] = [
+  { value: "", label: "All Sources" },
   { value: "inbound", label: "Inbound" },
+  { value: "outbound", label: "Outbound" },
+];
+
+const leadChannelOptions: AppSelectOption[] = [
+  { value: "", label: "All Channels" },
+  { value: "referral", label: "Referral" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "thread", label: "Thread" },
+  { value: "instagram", label: "Instagram" },
 ];
 
 export default function OrganizationsPageOS({ sessionToken }: { sessionToken: string }) {
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>();
-  const [sourceFilter, setSourceFilter] = useState("");
+  const [leadSourceFilter, setLeadSourceFilter] = useState("");
+  const [leadChannelFilter, setLeadChannelFilter] = useState("");
   const [openOrganizationId, setOpenOrganizationId] = useState<number | null>(null);
   const pageSize = 20;
 
@@ -37,14 +45,15 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
   }, [keyword]);
 
   const companiesQuery = useQuery({
-    queryKey: ["sales", "companies", { page, keyword: debouncedKeyword, sourceFilter }],
+    queryKey: ["sales", "companies", { page, keyword: debouncedKeyword, leadSourceFilter, leadChannelFilter }],
     queryFn: async () =>
       requireApiData(
         await listCompanies({
           page,
           page_size: pageSize,
           keyword: debouncedKeyword,
-          source: (sourceFilter || undefined) as CompanySource | undefined,
+          lead_source: (leadSourceFilter || undefined) as LeadSource | undefined,
+          lead_channel: (leadChannelFilter || undefined) as LeadChannel | undefined,
         })
       ),
     enabled: !!sessionToken,
@@ -65,8 +74,14 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
       <div className="flex flex-wrap items-center gap-3">
         <AppInput inputId="organizations-search" icon={<Search size={14} />} value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Search companies..." className="max-w-full sm:max-w-sm" />
         <div className="w-full max-w-48">
-          <AppSelect selectId="organizations-source-filter" placeholder="Filter by source" value={sourceFilter} options={sourceOptions} onChange={(value) => {
-            setSourceFilter((value as string) ?? "");
+          <AppSelect selectId="organizations-source-filter" placeholder="Filter by source" value={leadSourceFilter} options={leadSourceOptions} onChange={(value) => {
+            setLeadSourceFilter((value as string) ?? "");
+            setPage(1);
+          }} />
+        </div>
+        <div className="w-full max-w-48">
+          <AppSelect selectId="organizations-channel-filter" placeholder="Filter by channel" value={leadChannelFilter} options={leadChannelOptions} onChange={(value) => {
+            setLeadChannelFilter((value as string) ?? "");
             setPage(1);
           }} />
         </div>
@@ -81,14 +96,15 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
             <table className="w-full min-w-190 text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
-                  <th className="px-5 py-3">Name</th><th className="px-5 py-3">Source</th><th className="px-5 py-3">Industry</th><th className="px-5 py-3">Legal ID</th><th className="px-5 py-3">Website</th>
+                  <th className="px-5 py-3">Name</th><th className="px-5 py-3">Lead Source</th><th className="px-5 py-3">Channel</th><th className="px-5 py-3">Industry</th><th className="px-5 py-3">Legal ID</th><th className="px-5 py-3">Website</th>
                 </tr>
               </thead>
               <tbody>
                 {organizationList.map((company) => (
                   <tr key={company.id} onClick={() => setOpenOrganizationId(company.id)} className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50">
                     <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800"><Building2 size={14} className="text-gray-400" /></div><p className="truncate font-semibold text-gray-900 dark:text-zinc-100">{company.name}</p></div></td>
-                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{company.source}</td>
+                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{company.lead_source ?? "—"}</td>
+                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{company.lead_channel ?? "—"}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.industry_id ? industries.get(company.industry_id) ?? `#${company.industry_id}` : "—"}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.legal_identifier ?? "—"}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.website_url ?? "—"}</td>

@@ -3,7 +3,6 @@ import "server-only";
 import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
-export type CompanySource = "referral" | "outreach" | "inbound";
 export type LeadSource = "inbound" | "outbound";
 export type LeadChannel = "referral" | "linkedin" | "thread" | "instagram";
 export type PipelinePhase = "sdr" | "bdr";
@@ -27,7 +26,8 @@ export type CompanyData = {
   normalized_name: string;
   legal_identifier: string | null;
   industry_id: number | null;
-  source: CompanySource;
+  lead_source: LeadSource | null;
+  lead_channel: LeadChannel | null;
   website_url: string | null;
   image_url: string | null;
   created_at: string;
@@ -53,7 +53,7 @@ export type PipelineData = {
   company_name: string;
   sales_owner_id: string;
   sales_owner_name: string;
-  lead_source: LeadSource;
+  lead_source: LeadSource | null;
   lead_channel: LeadChannel | null;
   stage: PipelineStage;
   phase: PipelinePhase;
@@ -79,7 +79,8 @@ export type PipelineStageHistoryData = {
 export type CompanyForm = {
   name: string;
   industry_id?: number | null;
-  source: CompanySource;
+  lead_source: LeadSource;
+  lead_channel?: LeadChannel | null;
   legal_identifier?: string | null;
   website_url?: string | null;
   image_url?: string | null;
@@ -95,7 +96,8 @@ export type ContactForm = {
 
 export type ListCompaniesOptions = {
   keyword?: string;
-  source?: CompanySource;
+  lead_source?: LeadSource;
+  lead_channel?: LeadChannel;
   page?: number;
   page_size?: number;
 };
@@ -116,8 +118,6 @@ export type CreatePipelinePayload = {
   new_company?: CompanyForm;
   new_contact?: ContactForm;
   sales_owner_id?: string;
-  lead_source: LeadSource;
-  lead_channel?: LeadChannel | null;
   stage?: PipelineStage;
   estimated_value?: number;
   expected_close_date?: string | null;
@@ -154,8 +154,6 @@ export type UpdatePipelinePayload = {
   id: number;
   company_id: number;
   sales_owner_id: string;
-  lead_source: LeadSource;
-  lead_channel?: LeadChannel | null;
   stage: PipelineStage;
   estimated_value: number;
   expected_close_date?: string | null;

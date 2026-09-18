@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompanySource, LeadChannel, LeadSource, PipelineData, PipelineStage } from "@/apis/sales";
+import type { LeadChannel, LeadSource, PipelineData, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
@@ -21,17 +21,12 @@ import {
   updateContact,
   updatePipeline,
 } from "@/lib/actions";
-import { PIPELINE_STAGE_LABELS, pipelineStageOptions } from "@/lib/sales";
+import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_LABELS, pipelineStageOptions } from "@/lib/sales";
 import { trpc } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
-const companySourceOptions: AppSelectOption[] = [
-  { value: "referral", label: "Referral" },
-  { value: "outreach", label: "Outreach" },
-  { value: "inbound", label: "Inbound" },
-];
 const leadSourceOptions: AppSelectOption[] = [
   { value: "inbound", label: "Inbound" },
   { value: "outbound", label: "Outbound" },
@@ -60,7 +55,6 @@ export default function EditLeadFormOS({
   const isOwnScoped = sessionUser?.data_scope === "OWN";
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
-  const [companySource, setCompanySource] = useState<CompanySource>("outreach");
   const [legalIdentifier, setLegalIdentifier] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -105,7 +99,6 @@ export default function EditLeadFormOS({
     setSeededPipelineId(pipeline.id);
     setCompanyName(company.name);
     setIndustryId(company.industry_id);
-    setCompanySource(company.source);
     setLegalIdentifier(company.legal_identifier ?? "");
     setWebsiteUrl(company.website_url ?? "");
     setImageUrl(company.image_url ?? "");
@@ -113,8 +106,8 @@ export default function EditLeadFormOS({
     setContactJobTitle(primaryContact?.job_title ?? "");
     setContactPhone(primaryContact?.phone ?? "");
     setContactEmail(primaryContact?.email ?? "");
-    setLeadSource(pipeline.lead_source);
-    setLeadChannel(pipeline.lead_channel ?? "");
+    setLeadSource(company.lead_source ?? (pipeline.stage === "triaging" ? "inbound" : "outbound"));
+    setLeadChannel(company.lead_channel ?? "");
     setStage(pipeline.stage);
     setEstimatedValue(String(Number(pipeline.estimated_value)));
     setExpectedCloseDate(pipeline.expected_close_date ?? "");
@@ -136,19 +129,46 @@ export default function EditLeadFormOS({
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!pipeline || !company) throw new Error("Lead details are not loaded.");
-      requireApiData(
-        await updateCompany({
-          id: company.id,
-          company: {
-            name: companyName.trim(),
-            industry_id: industryId,
-            source: companySource,
-            legal_identifier: legalIdentifier.trim() || null,
-            website_url: websiteUrl.trim() || null,
-            image_url: imageUrl.trim() || null,
-          },
-        })
-      );
+      const companyPayload = {
+        id: company.id,
+        company: {
+          name: companyName.trim(),
+          industry_id: industryId,
+          lead_source: leadSource,
+          lead_channel: leadChannel || null,
+          legal_identifier: legalIdentifier.trim() || null,
+          website_url: websiteUrl.trim() || null,
+          image_url: imageUrl.trim() || null,
+        },
+      };
+      const pipelinePayload = {
+        id: pipeline.id,
+        company_id: pipeline.company_id,
+        sales_owner_id: ownerId,
+        stage,
+        estimated_value: estimatedValue ? Number(estimatedValue) : 0,
+        expected_close_date: expectedCloseDate || null,
+        stage_note: stage !== pipeline.stage ? stageNote.trim() || null : null,
+      };
+      const sourceChanged = company.lead_source !== leadSource;
+      const companyCanUpdateFirst = isStageCompatibleWithLeadSource(pipeline.stage, leadSource);
+      const pipelineCanUpdateFirst = company.lead_source
+        ? isStageCompatibleWithLeadSource(stage, company.lead_source)
+        : false;
+
+      if (sourceChanged && !companyCanUpdateFirst && !pipelineCanUpdateFirst) {
+        throw new Error(
+          "Move the lead to a neutral stage and save it before switching between inbound/triaging and outbound/attempting."
+        );
+      }
+
+      let pipelineUpdated = false;
+      if (sourceChanged && !companyCanUpdateFirst) {
+        requireApiData(await updatePipeline(pipelinePayload));
+        pipelineUpdated = true;
+      }
+
+      requireApiData(await updateCompany(companyPayload));
       const contact = {
         full_name: contactName.trim(),
         email: contactEmail.trim() || null,
@@ -161,19 +181,7 @@ export default function EditLeadFormOS({
       } else {
         requireApiData(await createContact({ company_id: company.id, contact }));
       }
-      return requireApiData(
-        await updatePipeline({
-          id: pipeline.id,
-          company_id: pipeline.company_id,
-          sales_owner_id: ownerId,
-          lead_source: leadSource,
-          lead_channel: leadChannel || null,
-          stage,
-          estimated_value: estimatedValue ? Number(estimatedValue) : 0,
-          expected_close_date: expectedCloseDate || null,
-          stage_note: stage !== pipeline.stage ? stageNote.trim() || null : null,
-        })
-      );
+      return pipelineUpdated ? undefined : requireApiData(await updatePipeline(pipelinePayload));
     },
     onSuccess: async () => {
       await Promise.all([
@@ -239,10 +247,13 @@ export default function EditLeadFormOS({
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p>
               <AppInput inputId="edit-lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
               <div className="grid grid-cols-2 gap-3">
-                <AppSelect selectId="edit-lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
-                <AppSelect selectId="edit-lead-company-source" label="Company Source" required placeholder="Pick a source" value={companySource} onChange={(value) => setCompanySource(value as CompanySource)} options={companySourceOptions} />
+                <AppSelect selectId="edit-lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
+                <AppSelect selectId="edit-lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
               </div>
-              <AppInput inputId="edit-lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+              <div className="grid grid-cols-2 gap-3">
+                <AppSelect selectId="edit-lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
+                <AppInput inputId="edit-lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <AppInput inputId="edit-lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} />
                 <AppInput inputId="edit-lead-image-url" label="Logo URL" type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} />
@@ -258,10 +269,6 @@ export default function EditLeadFormOS({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <AppSelect selectId="edit-lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
-              <AppSelect selectId="edit-lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <AppSelect selectId="edit-lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={pipelineStageOptions()} />
               <AppNumberInput inputId="edit-lead-estimated-value" label="Estimated Value (Rp)" mode="numeric" value={estimatedValue} onValueChange={setEstimatedValue} />

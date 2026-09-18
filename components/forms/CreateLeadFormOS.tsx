@@ -1,6 +1,6 @@
 "use client";
 
-import type { CompanySource, LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
+import type { LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
@@ -11,17 +11,12 @@ import { useSession } from "@/contexts/SessionContext";
 import { useUserList } from "@/hooks/useUserList";
 import { requireApiData } from "@/lib/api-result";
 import { createPipeline, listCompanies } from "@/lib/actions";
-import { pipelineStageOptions } from "@/lib/sales";
+import { isStageCompatibleWithLeadSource, pipelineStageOptions } from "@/lib/sales";
 import { trpc } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
-const companySourceOptions: AppSelectOption[] = [
-  { value: "referral", label: "Referral" },
-  { value: "outreach", label: "Outreach" },
-  { value: "inbound", label: "Inbound" },
-];
 
 const leadSourceOptions: AppSelectOption[] = [
   { value: "inbound", label: "Inbound" },
@@ -34,6 +29,10 @@ const leadChannelOptions: AppSelectOption[] = [
   { value: "thread", label: "Thread" },
   { value: "instagram", label: "Instagram" },
 ];
+
+type CompanySearchOption = AppSearchableOption & {
+  leadSource: LeadSource | null;
+};
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
@@ -58,10 +57,9 @@ export default function CreateLeadFormOS({
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "OWN";
   const [useExistingCompany, setUseExistingCompany] = useState(false);
-  const [companyOption, setCompanyOption] = useState<AppSearchableOption | null>(null);
+  const [companyOption, setCompanyOption] = useState<CompanySearchOption | null>(null);
   const [companyName, setCompanyName] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
-  const [companySource, setCompanySource] = useState<CompanySource>("outreach");
   const [legalIdentifier, setLegalIdentifier] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -107,8 +105,6 @@ export default function CreateLeadFormOS({
     mutationFn: async () => {
       const common = {
         sales_owner_id: ownerId || undefined,
-        lead_source: leadSource,
-        lead_channel: leadChannel || null,
         stage,
         estimated_value: estimatedValue ? Number(estimatedValue) : 0,
         expected_close_date: expectedCloseDate || null,
@@ -122,7 +118,8 @@ export default function CreateLeadFormOS({
                 new_company: {
                   name: companyName.trim(),
                   industry_id: industryId,
-                  source: companySource,
+                  lead_source: leadSource,
+                  lead_channel: leadChannel || null,
                   legal_identifier: legalIdentifier.trim() || null,
                   website_url: websiteUrl.trim() || null,
                   image_url: imageUrl.trim() || null,
@@ -153,7 +150,11 @@ export default function CreateLeadFormOS({
       await listCompanies({ keyword: inputValue || undefined, page, page_size: 20 })
     );
     return {
-      options: result.list.map((company) => ({ value: company.id, label: company.name })),
+      options: result.list.map((company) => ({
+        value: company.id,
+        label: company.name,
+        leadSource: company.lead_source,
+      })),
       hasMore: result.metapaging.current_page < result.metapaging.total_page,
     };
   }
@@ -163,7 +164,6 @@ export default function CreateLeadFormOS({
     setCompanyOption(null);
     setCompanyName("");
     setIndustryId(null);
-    setCompanySource("outreach");
     setLegalIdentifier("");
     setWebsiteUrl("");
     setImageUrl("");
@@ -191,8 +191,15 @@ export default function CreateLeadFormOS({
     if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
     if (!useExistingCompany && !contactName.trim()) return setError("Primary contact name is required.");
     if (!ownerId && !isOwnScoped) return setError("Sales owner is required.");
-    if (stage === "triaging" && leadSource !== "inbound") return setError("Triaging requires an inbound lead source.");
-    if (stage === "attempting" && leadSource !== "outbound") return setError("Attempting requires an outbound lead source.");
+    const companyLeadSource = useExistingCompany ? companyOption?.leadSource : leadSource;
+    if (!companyLeadSource) return setError("Set this company's lead source before creating a pipeline.");
+    if (!isStageCompatibleWithLeadSource(stage, companyLeadSource)) {
+      return setError(
+        stage === "triaging"
+          ? "Triaging requires an inbound lead source."
+          : "Attempting requires an outbound lead source."
+      );
+    }
     mutation.mutate();
   }
 
@@ -211,15 +218,18 @@ export default function CreateLeadFormOS({
               </div>
             </div>
             {useExistingCompany ? (
-              <AppSearchableSelect selectId="lead-company" label="Company" required placeholder="Type to search companies..." value={companyOption} onChange={setCompanyOption} loadOptions={loadCompanyOptions} />
+              <AppSearchableSelect selectId="lead-company" label="Company" required placeholder="Type to search companies..." value={companyOption} onChange={(option) => setCompanyOption(option as CompanySearchOption | null)} loadOptions={loadCompanyOptions} />
             ) : (
               <>
                 <AppInput inputId="lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
                 <div className="grid grid-cols-2 gap-3">
-                  <AppSelect selectId="lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
-                  <AppSelect selectId="lead-company-source" label="Company Source" required placeholder="Pick a source" value={companySource} onChange={(value) => setCompanySource(value as CompanySource)} options={companySourceOptions} />
+                  <AppSelect selectId="lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
+                  <AppSelect selectId="lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
                 </div>
-                <AppInput inputId="lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+                <div className="grid grid-cols-2 gap-3">
+                  <AppSelect selectId="lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
+                  <AppInput inputId="lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://" />
                   <AppInput inputId="lead-company-image-url" label="Logo URL" type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://" />
@@ -237,10 +247,6 @@ export default function CreateLeadFormOS({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <AppSelect selectId="lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
-            <AppSelect selectId="lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <AppSelect selectId="lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={pipelineStageOptions(phase)} />
             <AppNumberInput inputId="lead-estimated-value" label="Estimated Value (Rp)" mode="numeric" value={estimatedValue} onValueChange={setEstimatedValue} placeholder="0" />

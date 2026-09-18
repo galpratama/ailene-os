@@ -58,7 +58,8 @@ export default function OrganizationDetailDrawerOS({
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
               {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-gray-400">Source</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.source}</p></div>
+                <div><p className="text-xs text-gray-400">Lead source</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_source ?? "—"}</p></div>
+                <div><p className="text-xs text-gray-400">Lead channel</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_channel ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Industry ID</p><p className="text-gray-700 dark:text-zinc-300">{company.industry_id ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Legal identifier</p><p className="text-gray-700 dark:text-zinc-300">{company.legal_identifier ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Website</p><p className="break-all text-gray-700 dark:text-zinc-300">{company.website_url ?? "—"}</p></div>
@@ -87,7 +88,7 @@ export default function OrganizationDetailDrawerOS({
           </div>
         )}
       </SheetOS>
-      <AlertConfirmationOS isOpen={isConfirmingDelete} onClose={() => setIsConfirmingDelete(false)} onConfirm={() => deleteMutation.mutate()} title="Delete this company?" message="Java API only permits deletion after its contacts and pipeline have been removed." confirmLabel="Delete" destructive isPending={deleteMutation.isPending} />
+      <AlertConfirmationOS isOpen={isConfirmingDelete} onClose={() => setIsConfirmingDelete(false)} onConfirm={() => deleteMutation.mutate()} title="Delete this company?" message="The pipeline must be removed first. Contacts will be deleted with the company." confirmLabel="Delete" destructive isPending={deleteMutation.isPending} />
     </>
   );
 }
