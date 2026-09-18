@@ -8,6 +8,7 @@ import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
 import { trpc } from "@/trpc/client";
 import { useUserList } from "@/hooks/useUserList";
+import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -45,14 +46,13 @@ export default function CreateMeetingFormOS({
   ];
 
   const needsPipelinePicker = pipelineId === undefined;
-  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken && isOpen && needsPipelinePicker }
+  const { data: pipelineData } = useSalesPipelineList(
+    !!sessionToken && isOpen && needsPipelinePicker
   );
   const pipelineOptions: AppSelectOption[] =
-    pipelineData?.list.map((p) => ({
+    pipelineData?.map((p) => ({
       value: p.id,
-      label: `${p.company_name} - ${p.name}`,
+      label: p.company_name,
     })) ?? [];
 
   function resetForm() {

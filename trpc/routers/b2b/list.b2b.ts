@@ -3,8 +3,8 @@ import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import { loggedInProcedure } from "@/trpc/init";
 import {
   actionDataScopeWhere,
+  legacyPipelineDataScopeWhere,
   meetingDataScopeWhere,
-  pipelineDataScopeWhere,
   quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
@@ -182,7 +182,7 @@ export const listB2B = {
         probability_status: opts.input.probability_status,
         owner_id: opts.input.owner_id,
         // Spread after owner_id so an OWN scope always wins over whatever the caller sent.
-        ...pipelineDataScopeWhere(opts.ctx.user),
+        ...legacyPipelineDataScopeWhere(opts.ctx.user),
         OR: undefined as Optional<
           [
             { name: { contains: string; mode: "insensitive" } },
@@ -340,7 +340,7 @@ export const listB2B = {
         assignee_id: opts.input.assignee_id,
         pipeline_id: opts.input.pipeline_id,
         pipeline: {
-          ...(scopeWhere.pipeline as Prisma.B2BPipelineWhereInput),
+          ...(scopeWhere.pipeline as Prisma.PipelineWhereInput),
           ...(opts.input.company_id && { company_id: opts.input.company_id }),
         },
         ...(opts.input.keyword && {
@@ -365,7 +365,6 @@ export const listB2B = {
           pipeline: {
             select: {
               id: true,
-              name: true,
               company: { select: { id: true, name: true } },
             },
           },
@@ -382,7 +381,7 @@ export const listB2B = {
         list: actionList.map((entry) => ({
           id: entry.id,
           pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           company_id: entry.pipeline.company.id,
           company_name: entry.pipeline.company.name,
           name: entry.name,
@@ -421,7 +420,7 @@ export const listB2B = {
         organizer_id: opts.input.organizer_id,
         pipeline_id: opts.input.pipeline_id,
         pipeline: {
-          ...(scopeWhere.pipeline as Prisma.B2BPipelineWhereInput),
+          ...(scopeWhere.pipeline as Prisma.PipelineWhereInput),
           ...(opts.input.company_id && { company_id: opts.input.company_id }),
         },
         ...(opts.input.keyword && {
@@ -429,7 +428,9 @@ export const listB2B = {
             { notes: { contains: opts.input.keyword, mode: "insensitive" } },
             {
               pipeline: {
-                name: { contains: opts.input.keyword, mode: "insensitive" },
+                company: {
+                  name: { contains: opts.input.keyword, mode: "insensitive" },
+                },
               },
             },
           ],
@@ -450,7 +451,6 @@ export const listB2B = {
           pipeline: {
             select: {
               id: true,
-              name: true,
               company: { select: { id: true, name: true } },
             },
           },
@@ -467,7 +467,7 @@ export const listB2B = {
         list: meetingList.map((entry) => ({
           id: entry.id,
           pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           company_id: entry.pipeline.company.id,
           company_name: entry.pipeline.company.name,
           organizer_id: entry.organizer_id,
@@ -512,7 +512,7 @@ export const listB2B = {
       const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
         include: {
           pipeline: {
-            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+            select: { id: true, company: { select: { id: true, name: true } } },
           },
           created_by: { select: { id: true, full_name: true } },
         },
@@ -528,7 +528,7 @@ export const listB2B = {
         list: quotationList.map((entry) => ({
           id: entry.id,
           pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           company_id: entry.pipeline.company.id,
           company_name: entry.pipeline.company.name,
           version: entry.version,
@@ -572,7 +572,7 @@ export const listB2B = {
       const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
         include: {
           pipeline: {
-            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+            select: { id: true, company: { select: { id: true, name: true } } },
           },
           created_by: { select: { id: true, full_name: true } },
         },
@@ -588,7 +588,7 @@ export const listB2B = {
         list: quotationList.map((entry) => ({
           id: entry.id,
           pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           company_id: entry.pipeline.company.id,
           company_name: entry.pipeline.company.name,
           version: entry.version,
@@ -653,7 +653,6 @@ export const listB2B = {
             pipeline: {
               select: {
                 id: true,
-                name: true,
                 company: { select: { id: true, name: true } },
               },
             },
@@ -671,7 +670,6 @@ export const listB2B = {
             pipeline: {
               select: {
                 id: true,
-                name: true,
                 company: { select: { id: true, name: true } },
               },
             },
@@ -686,7 +684,7 @@ export const listB2B = {
         type: "b2b_action" as const,
         title: entry.name,
         pipeline_id: entry.pipeline_id,
-        pipeline_name: entry.pipeline.name,
+        pipeline_name: entry.pipeline.company.name,
         company_id: entry.pipeline.company.id,
         company_name: entry.pipeline.company.name,
         name: entry.name,
@@ -706,7 +704,7 @@ export const listB2B = {
         type: "b2b_meeting" as const,
         title: `Meeting: ${entry.pipeline.company.name}`,
         pipeline_id: entry.pipeline_id,
-        pipeline_name: entry.pipeline.name,
+        pipeline_name: entry.pipeline.company.name,
         company_id: entry.pipeline.company.id,
         company_name: entry.pipeline.company.name,
         // due_date is the calendar page's shared grouping field — holds scheduled_at for a meeting.
@@ -778,9 +776,6 @@ export const listB2B = {
           B2BStageEnum.ON_HOLD,
         ],
       },
-      actions: {
-        none: { updated_at: { gte: staleSince } },
-      },
     };
 
     // This actor's own kicked-back drafts, plus (for reviewers) the Manager Review queue.
@@ -828,7 +823,7 @@ export const listB2B = {
       }),
       opts.ctx.prisma.b2BAction.findMany({
         where: approvalWhere,
-        include: { pipeline: { select: { id: true, name: true } } },
+        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
         orderBy: [
           { due_date: { sort: "asc", nulls: "last" } },
           { priority: "desc" },
@@ -838,14 +833,14 @@ export const listB2B = {
       opts.ctx.prisma.b2BAction.count({ where: overdueTaskWhere }),
       opts.ctx.prisma.b2BAction.findMany({
         where: overdueTaskWhere,
-        include: { pipeline: { select: { id: true, name: true } } },
+        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
         orderBy: [{ priority: "desc" }, { due_date: "asc" }],
         take: 5,
       }),
       opts.ctx.prisma.b2BAction.count({ where: dueTodayTaskWhere }),
       opts.ctx.prisma.b2BAction.findMany({
         where: dueTodayTaskWhere,
-        include: { pipeline: { select: { id: true, name: true } } },
+        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
         orderBy: [{ priority: "desc" }, { created_at: "asc" }],
         take: 5,
       }),
@@ -854,11 +849,6 @@ export const listB2B = {
         where: staleLeadWhere,
         include: {
           company: { select: { name: true } },
-          actions: {
-            select: { updated_at: true },
-            orderBy: { updated_at: "desc" },
-            take: 1,
-          },
         },
         orderBy: [{ updated_at: "asc" }],
         take: 20,
@@ -874,7 +864,6 @@ export const listB2B = {
           pipeline: {
             select: {
               id: true,
-              name: true,
               company: { select: { name: true } },
             },
           },
@@ -898,7 +887,7 @@ export const listB2B = {
       // Active in-scope pipelines, for the ownership-conflict check below (two owners, same company).
       opts.ctx.prisma.b2BPipeline.findMany({
         where: {
-          ...pipelineDataScopeWhere(opts.ctx.user),
+          ...legacyPipelineDataScopeWhere(opts.ctx.user),
           stage: { notIn: [B2BStageEnum.CLOSED_WON, B2BStageEnum.CLOSED_LOST] },
         },
         select: {
@@ -915,7 +904,7 @@ export const listB2B = {
         where: quotationsPendingWhere,
         include: {
           pipeline: {
-            select: { id: true, name: true, company: { select: { name: true } } },
+            select: { id: true, company: { select: { name: true } } },
           },
         },
         orderBy: [{ created_at: "asc" }],
@@ -955,7 +944,7 @@ export const listB2B = {
           id: `action-${entry.id}`,
           type: isNew ? ("action_created" as const) : ("action_updated" as const),
           title: entry.name,
-          description: `${entry.pipeline.company.name} · ${entry.pipeline.name}`,
+          description: entry.pipeline.company.name,
           pipeline_id: entry.pipeline_id,
           occurred_at: isNew ? entry.created_at : entry.updated_at,
         };
@@ -982,7 +971,7 @@ export const listB2B = {
       id: entry.id,
       name: entry.name,
       pipeline_id: entry.pipeline_id,
-      pipeline_name: entry.pipeline.name,
+      pipeline_name: entry.pipeline.company.name,
       due_date: entry.due_date,
       priority: entry.priority,
     });
@@ -1017,7 +1006,7 @@ export const listB2B = {
         quotations_pending: quotationsPending.map((entry) => ({
           id: entry.id,
           pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.name,
+          pipeline_name: entry.pipeline.company.name,
           company_name: entry.pipeline.company.name,
           version: entry.version,
           status: entry.status,
@@ -1025,11 +1014,7 @@ export const listB2B = {
         })),
         stale_leads: staleLeads
           .map((entry) => {
-            const lastActivityAt =
-              entry.actions[0]?.updated_at &&
-              entry.actions[0].updated_at > entry.updated_at
-                ? entry.actions[0].updated_at
-                : entry.updated_at;
+            const lastActivityAt = entry.updated_at;
             return {
               id: entry.id,
               company_name: entry.company.name,

@@ -33,7 +33,7 @@ export const readB2B = {
         where: { id: opts.input.id, ...meetingDataScopeWhere(opts.ctx.user) },
         include: {
           pipeline: {
-            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+            select: { id: true, company: { select: { id: true, name: true } } },
           },
           organizer: { select: { id: true, full_name: true, avatar: true } },
           created_by: { select: { id: true, full_name: true } },
@@ -58,7 +58,7 @@ export const readB2B = {
         meeting: {
           id: theMeeting.id,
           pipeline_id: theMeeting.pipeline.id,
-          pipeline_name: theMeeting.pipeline.name,
+          pipeline_name: theMeeting.pipeline.company.name,
           company_id: theMeeting.pipeline.company.id,
           company_name: theMeeting.pipeline.company.name,
           organizer_id: theMeeting.organizer.id,
@@ -87,7 +87,7 @@ export const readB2B = {
         where: { id: opts.input.id, ...quotationDataScopeWhere(opts.ctx.user) },
         include: {
           pipeline: {
-            select: { id: true, name: true, company: { select: { id: true, name: true } } },
+            select: { id: true, company: { select: { id: true, name: true } } },
           },
           created_by: { select: { id: true, full_name: true } },
           line_items: { orderBy: { order_index: "asc" } },
@@ -109,7 +109,7 @@ export const readB2B = {
         quotation: {
           id: theQuotation.id,
           pipeline_id: theQuotation.pipeline.id,
-          pipeline_name: theQuotation.pipeline.name,
+          pipeline_name: theQuotation.pipeline.company.name,
           company_id: theQuotation.pipeline.company.id,
           company_name: theQuotation.pipeline.company.name,
           version: theQuotation.version,

@@ -14,6 +14,7 @@ import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useSession } from "@/contexts/SessionContext";
+import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { useUserList } from "@/hooks/useUserList";
 import type { B2BActionStatusEnum } from "@prisma/client";
@@ -117,15 +118,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
-  const { data: pipelineData } = trpc.list.b2b.pipelines.useQuery(
-    { page: 1, page_size: 200 },
-    { enabled: !!sessionToken }
-  );
+  const { data: pipelineData } = useSalesPipelineList(!!sessionToken);
   const pipelineOptions: AppSelectOption[] = [
     { value: null, label: "All Pipelines" },
-    ...(pipelineData?.list.map((p) => ({
+    ...(pipelineData?.map((p) => ({
       value: p.id,
-      label: `${p.company_name} - ${p.name}`,
+      label: p.company_name,
     })) ?? []),
   ];
 

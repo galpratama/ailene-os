@@ -154,21 +154,20 @@ enum OrganizationStatusEnum {
   @@map("organization_status_enum")
 }
 
-// Entity types covered by MasterDataAuditLog.
-enum MasterDataEntityTypeEnum {
-  ORGANIZATION @map("organization")
-  CONTACT      @map("contact")
+enum LeadSourceEnum {
+  INBOUND  @map("inbound")
+  OUTBOUND @map("outbound")
 
-  @@map("master_data_entity_type_enum")
+  @@map("lead_source_enum")
 }
 
-enum DuplicateReviewStatusEnum {
-  PENDING         @map("pending")
-  LINKED_EXISTING @map("linked_existing")
-  CREATED_NEW     @map("created_new")
-  DISMISSED       @map("dismissed")
+enum LeadChannelEnum {
+  REFERRAL  @map("referral")
+  LINKEDIN  @map("linkedin")
+  THREAD    @map("thread")
+  INSTAGRAM @map("instagram")
 
-  @@map("duplicate_review_status_enum")
+  @@map("lead_channel_enum")
 }
 
 // Enumeration for the B2BAction model (b2ba_*)
@@ -475,7 +474,6 @@ model Industry {
   industry_name              String                        @unique @db.VarChar()
   created_at                 DateTime                      @default(now()) @db.Timestamptz()
   b2b_companies              B2BCompany[]
-  duplicate_review_proposals OrganizationDuplicateReview[]
 
   @@map("industries")
 }
@@ -522,6 +520,7 @@ model User {
   deleted_at                      DateTime?                     @db.Timestamptz()
   tokens                          Token[]
   b2b_pipelines                   B2BPipeline[]
+  sales_pipelines                 Pipeline[]                    @relation("PipelineSalesOwner")
   b2b_actions                     B2BAction[]
   b2b_pipeline_stage_changes      B2BPipelineStageHistory[]
   trainer_profile                 Trainer?                      @relation("TrainerUser")
@@ -534,9 +533,6 @@ model User {
   reassignments_as_previous_owner OwnershipReassignment[]       @relation("OwnershipReassignmentPreviousOwner")
   reassignments_as_new_owner      OwnershipReassignment[]       @relation("OwnershipReassignmentNewOwner")
   reassignments_as_actor          OwnershipReassignment[]       @relation("OwnershipReassignmentActor")
-  duplicate_reviews_requested     OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewRequester")
-  duplicate_reviews_resolved      OrganizationDuplicateReview[] @relation("OrganizationDuplicateReviewResolver")
-  master_data_audit_actions       MasterDataAuditLog[]
   meetings_organized              B2BMeeting[]                  @relation("B2BMeetingOrganizer")
   meetings_created                B2BMeeting[]                  @relation("B2BMeetingCreatedBy")
   notifications                   Notification[]
@@ -649,10 +645,28 @@ model B2BCompany {
   pipelines                    B2BPipeline[]
   lms_projects                 LmsProject[]
   contacts                     ContactOrganizationRelationship[]
-  organizationDuplicateReviews OrganizationDuplicateReview[]
 
   @@index([normalized_name])
   @@map("b2b_company")
+}
+
+// Sales API organization. One company has exactly one active Pipeline row.
+model Company {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar()
+  normalized_name  String            @unique @db.VarChar()
+  legal_identifier String?           @db.VarChar()
+  industry_id      Int?              @db.SmallInt
+  lead_source      LeadSourceEnum?
+  lead_channel     LeadChannelEnum?
+  website_url      String?           @db.VarChar()
+  image_url        String?           @db.VarChar()
+  created_at       DateTime          @default(now()) @db.Timestamptz()
+  updated_at       DateTime          @default(now()) @updatedAt @db.Timestamptz()
+  pipeline         Pipeline?
+
+  @@index([lead_channel])
+  @@map("companies")
 }
 
 // Reusable person record — can relate to multiple organizations, not flat fields on one company.
@@ -686,49 +700,6 @@ model ContactOrganizationRelationship {
   @@map("contact_organization_relationships")
 }
 
-// "Request review" path from the duplicate-check modal, for a Manager/Admin to resolve.
-model OrganizationDuplicateReview {
-  id                       Int                       @id @default(autoincrement())
-  requested_by             User                      @relation("OrganizationDuplicateReviewRequester", fields: [requested_by_id], references: [id])
-  requested_by_id          String                    @db.Uuid
-  proposed_name            String                    @db.VarChar()
-  proposed_industry        Industry?                 @relation(fields: [proposed_industry_id], references: [id])
-  proposed_industry_id     Int?                      @db.SmallInt
-  proposed_pic_name        String?                   @db.VarChar()
-  proposed_pic_job_title   String?                   @db.VarChar()
-  proposed_pic_wa          String?                   @db.VarChar()
-  proposed_pic_email       String?                   @db.VarChar()
-  matched_organization_ids Int[]                     @default([])
-  status                   DuplicateReviewStatusEnum @default(PENDING)
-  resolved_organization    B2BCompany?               @relation(fields: [resolved_organization_id], references: [id])
-  resolved_organization_id Int?
-  resolved_by              User?                     @relation("OrganizationDuplicateReviewResolver", fields: [resolved_by_id], references: [id])
-  resolved_by_id           String?                   @db.Uuid
-  resolved_at              DateTime?                 @db.Timestamptz()
-  resolution_note          String?                   @db.Text
-  created_at               DateTime                  @default(now()) @db.Timestamptz()
-
-  @@index([status])
-  @@map("organization_duplicate_reviews")
-}
-
-// Append-only audit trail for Organization/Contact edits, generalized across both entity types.
-model MasterDataAuditLog {
-  id                 Int                      @id @default(autoincrement())
-  target_entity_type MasterDataEntityTypeEnum
-  target_entity_id   Int
-  actor              User                     @relation(fields: [actor_id], references: [id])
-  actor_id           String                   @db.Uuid
-  field_changed      String                   @db.VarChar()
-  old_value          String?                  @db.VarChar()
-  new_value          String?                  @db.VarChar()
-  reason             String?                  @db.Text
-  created_at         DateTime                 @default(now()) @db.Timestamptz()
-
-  @@index([target_entity_type, target_entity_id])
-  @@map("master_data_audit_log")
-}
-
 model B2BPipeline {
   id                        Int                       @id @default(autoincrement())
   name                      String                    @db.VarChar()
@@ -746,18 +717,39 @@ model B2BPipeline {
   on_hold_review_date       DateTime?                 @db.Date
   created_at                DateTime                  @default(now()) @db.Timestamptz()
   updated_at                DateTime                  @default(now()) @updatedAt @db.Timestamptz()
-  actions                   B2BAction[]
-  meetings                  B2BMeeting[]
-  quotations                B2BQuotation[]
   stage_history             B2BPipelineStageHistory[]
   lms_projects              LmsProject[]
 
   @@map("b2b_pipeline")
 }
 
+// Sales API pipeline. Its company name is the user-facing label because there is one pipeline per company.
+model Pipeline {
+  id                  Int             @id @default(autoincrement())
+  company             Company         @relation(fields: [company_id], references: [id])
+  company_id          Int             @unique
+  sales_owner         User            @relation("PipelineSalesOwner", fields: [sales_owner_id], references: [id])
+  sales_owner_id      String          @db.Uuid
+  stage_code          String          @db.VarChar(40)
+  estimated_value     Decimal         @default(0) @db.Decimal(15, 2)
+  expected_close_date DateTime?       @db.Date
+  qualified_at        DateTime?       @db.Timestamptz()
+  meeting_booked_at   DateTime?       @db.Timestamptz()
+  closed_at           DateTime?       @db.Timestamptz()
+  created_at          DateTime        @default(now()) @db.Timestamptz()
+  updated_at          DateTime        @default(now()) @updatedAt @db.Timestamptz()
+  actions             B2BAction[]
+  meetings            B2BMeeting[]
+  quotations          B2BQuotation[]
+
+  @@index([sales_owner_id])
+  @@index([stage_code])
+  @@map("pipelines")
+}
+
 model B2BAction {
   id                Int                   @id @default(autoincrement())
-  pipeline          B2BPipeline           @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline          Pipeline              @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
   pipeline_id       Int
   name              String                @db.VarChar()
   summary           String?               @db.Text
@@ -772,7 +764,7 @@ model B2BAction {
   created_at        DateTime              @default(now()) @db.Timestamptz()
   updated_at        DateTime              @default(now()) @updatedAt @db.Timestamptz()
 
-  @@map("b2b_actions")
+  @@map("actions")
 }
 
 model B2BPipelineStageHistory {
@@ -797,7 +789,7 @@ model B2BPipelineStageHistory {
 // records who actually ran the meeting.
 model B2BMeeting {
   id                 Int                          @id @default(autoincrement())
-  pipeline           B2BPipeline                  @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline           Pipeline                     @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
   pipeline_id        Int
   organizer          User                         @relation("B2BMeetingOrganizer", fields: [organizer_id], references: [id])
   organizer_id       String                       @db.Uuid
@@ -820,7 +812,7 @@ model B2BMeeting {
 
   @@index([pipeline_id])
   @@index([scheduled_at])
-  @@map("b2b_meetings")
+  @@map("meetings")
 }
 
 model B2BMeetingAttendee {
@@ -836,7 +828,7 @@ model B2BMeetingAttendee {
 // A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
 model B2BQuotation {
   id                   Int                         @id @default(autoincrement())
-  pipeline             B2BPipeline                 @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  pipeline             Pipeline                    @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
   pipeline_id          Int
   version              Int
   is_current           Boolean                     @default(true)
@@ -879,7 +871,7 @@ model B2BQuotation {
   approvals            B2BQuotationApproval[]
 
   @@unique([pipeline_id, version])
-  @@map("b2b_quotations")
+  @@map("quotations")
 }
 
 // One row per training day in a quotation — mirrors PricingDay in lib/pricing-b2b.ts.

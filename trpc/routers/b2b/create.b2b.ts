@@ -78,7 +78,7 @@ export const createB2B = {
       })
     )
     .mutation(async (opts) => {
-      const pipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
+      const pipeline = await opts.ctx.prisma.pipeline.findFirst({
         where: {
           id: opts.input.pipeline_id,
           ...pipelineDataScopeWhere(opts.ctx.user),
@@ -135,12 +135,12 @@ export const createB2B = {
       })
     )
     .mutation(async (opts) => {
-      const pipeline = await opts.ctx.prisma.b2BPipeline.findFirst({
+      const pipeline = await opts.ctx.prisma.pipeline.findFirst({
         where: {
           id: opts.input.pipeline_id,
           ...pipelineDataScopeWhere(opts.ctx.user),
         },
-        select: { id: true, name: true, company: { select: { name: true } } },
+        select: { id: true, company: { select: { name: true } } },
       });
       if (!pipeline) {
         throw readFailedNotFound("pipeline");
@@ -170,7 +170,7 @@ export const createB2B = {
 
       await pushMeetingToGoogleCalendar(opts.ctx.prisma, {
         ...created,
-        pipeline_name: pipeline.name,
+        pipeline_name: pipeline.company.name,
         company_name: pipeline.company.name,
       });
 
@@ -192,7 +192,7 @@ export const createB2B = {
       const { pipeline_id, days, ...rest } = opts.input;
 
       const created = await opts.ctx.prisma.$transaction(async (tx) => {
-        const pipeline = await tx.b2BPipeline.findFirst({
+        const pipeline = await tx.pipeline.findFirst({
           where: { id: pipeline_id, ...pipelineDataScopeWhere(opts.ctx.user) },
           select: { id: true },
         });

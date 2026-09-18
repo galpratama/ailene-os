@@ -6,6 +6,7 @@ import AppSearchableSelect, {
 import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
+import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { useSession } from "@/contexts/SessionContext";
 import { getRupiahCurrency } from "@/lib/currency";
 import { setSessionToken, trpc } from "@/trpc/client";
@@ -52,7 +53,7 @@ export default function PricingCalculatorPageOS({
   }, [sessionToken]);
 
   const router = useRouter();
-  const utils = trpc.useUtils();
+  const { data: pipelineData } = useSalesPipelineList(!!sessionToken);
 
   const sessionUser = useSession();
   const canViewCostDetails =
@@ -71,17 +72,18 @@ export default function PricingCalculatorPageOS({
   const [saveError, setSaveError] = useState<string | null>(null);
 
   async function loadPipelineOptions(inputValue: string, page: number) {
-    const result = await utils.list.b2b.pipelines.fetch({
-      keyword: inputValue || undefined,
-      page,
-      page_size: 20,
-    });
+    const pageSize = 20;
+    const normalizedKeyword = inputValue.trim().toLocaleLowerCase();
+    const matchingPipelines = (pipelineData ?? []).filter((pipeline) =>
+      pipeline.company_name.toLocaleLowerCase().includes(normalizedKeyword)
+    );
+    const offset = (page - 1) * pageSize;
     return {
-      options: result.list.map((p) => ({
-        value: p.id,
-        label: `${p.company_name} - ${p.name}`,
+      options: matchingPipelines.slice(offset, offset + pageSize).map((pipeline) => ({
+        value: pipeline.id,
+        label: pipeline.company_name,
       })),
-      hasMore: page < result.metapaging.total_page!,
+      hasMore: offset + pageSize < matchingPipelines.length,
     };
   }
 

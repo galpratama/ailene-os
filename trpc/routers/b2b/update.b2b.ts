@@ -186,7 +186,7 @@ export const updateB2B = {
       if (updatedMeeting) {
         await pushMeetingToGoogleCalendar(opts.ctx.prisma, {
           ...updatedMeeting,
-          pipeline_name: updatedMeeting.pipeline.name,
+          pipeline_name: updatedMeeting.pipeline.company.name,
           company_name: updatedMeeting.pipeline.company.name,
         });
       }

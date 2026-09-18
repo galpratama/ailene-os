@@ -6,8 +6,8 @@ type ScopedActor = {
   data_scope: DataScopeEnum;
 };
 
-// Restricts a B2BPipeline query to what the actor's data_scope allows to see. TEAM with no team assigned falls back to OWN.
-export function pipelineDataScopeWhere(
+// Restricts a legacy B2BPipeline query to what the actor's data_scope allows to see. TEAM with no team assigned falls back to OWN.
+export function legacyPipelineDataScopeWhere(
   actor: ScopedActor
 ): Prisma.B2BPipelineWhereInput {
   if (actor.data_scope === "GLOBAL") return {};
@@ -15,6 +15,15 @@ export function pipelineDataScopeWhere(
     return { owner: { team_id: actor.team_id } };
   }
   return { owner_id: actor.id };
+}
+
+// Restricts a Sales API Pipeline query to what the actor's data_scope allows to see.
+export function pipelineDataScopeWhere(actor: ScopedActor): Prisma.PipelineWhereInput {
+  if (actor.data_scope === "GLOBAL") return {};
+  if (actor.data_scope === "TEAM" && actor.team_id !== null) {
+    return { sales_owner: { team_id: actor.team_id } };
+  }
+  return { sales_owner_id: actor.id };
 }
 
 // Same restriction, applied through a B2BAction's parent pipeline (actions have no owner of their own).

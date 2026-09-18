@@ -71,7 +71,7 @@ CREATE TYPE notification_type_enum AS ENUM (
   'overdue_next_action'
 );
 
--- Push-only sync state of a b2b_meetings row into the organizer's connected Google Calendar.
+-- Push-only sync state of a meetings row into the organizer's connected Google Calendar.
 CREATE TYPE google_calendar_sync_status_enum AS ENUM (
   'not_synced',
   'synced',
@@ -118,20 +118,7 @@ CREATE TYPE organization_status_enum AS ENUM (
   'archived'
 );
 
--- Entity types covered by master_data_audit_log.
-CREATE TYPE master_data_entity_type_enum AS ENUM (
-  'organization',
-  'contact'
-);
-
-CREATE TYPE duplicate_review_status_enum AS ENUM (
-  'pending',
-  'linked_existing',
-  'created_new',
-  'dismissed'
-);
-
--- Enumeration for the b2b_actions table (b2ba_*)
+-- Enumeration for the actions table (b2ba_*)
 
 CREATE TYPE b2ba_status_enum AS ENUM (
   'to_do',
@@ -147,7 +134,7 @@ CREATE TYPE b2ba_priority_enum AS ENUM (
   'urgent'
 );
 
--- Enumeration for the b2b_meetings table (b2bm_*)
+-- Enumeration for the meetings table (b2bm_*)
 
 CREATE TYPE b2bm_status_enum AS ENUM (
   'scheduled',
@@ -156,7 +143,7 @@ CREATE TYPE b2bm_status_enum AS ENUM (
   'no_show'
 );
 
--- Enumeration for the b2b_quotations table (b2bq_*)
+-- Enumeration for the quotations table (b2bq_*)
 
 CREATE TYPE b2bq_status_enum AS ENUM (
   'draft',
@@ -440,7 +427,7 @@ CREATE TABLE ownership_reassignments (
 );
 
 -- One row per connected Google account; refresh_token drives the one-way (Ailene OS ->
--- Google Calendar) push sync for b2b_meetings. No read-back from Google in this slice.
+-- Google Calendar) push sync for meetings. No read-back from Google in this slice.
 CREATE TABLE google_calendar_connections (
   user_id             UUID                    PRIMARY KEY,
   refresh_token       TEXT                    NOT NULL,
@@ -507,40 +494,6 @@ CREATE TABLE contact_organization_relationships (
   PRIMARY KEY (contact_id, organization_id)
 );
 
--- "Request review" path from the duplicate-check modal — captures the
--- proposed organization identity for a Manager/Admin to resolve.
-CREATE TABLE organization_duplicate_reviews (
-  id                        SERIAL                       PRIMARY KEY,
-  requested_by_id           UUID                         NOT NULL,
-  proposed_name             VARCHAR                      NOT NULL,
-  proposed_industry_id      SMALLINT                         NULL,
-  proposed_pic_name         VARCHAR                          NULL,
-  proposed_pic_job_title    VARCHAR                          NULL,
-  proposed_pic_wa           VARCHAR                          NULL,
-  proposed_pic_email        VARCHAR                          NULL,
-  matched_organization_ids  INTEGER[]                    NOT NULL  DEFAULT '{}',
-  status                    duplicate_review_status_enum NOT NULL  DEFAULT 'pending',
-  resolved_organization_id  INTEGER                          NULL,
-  resolved_by_id            UUID                             NULL,
-  resolved_at               TIMESTAMPTZ                      NULL,
-  resolution_note           TEXT                             NULL,
-  created_at                TIMESTAMPTZ                  NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
--- Append-only audit trail for Organization/Contact edits — same shape as
--- user_audit_log, generalized across both entity types.
-CREATE TABLE master_data_audit_log (
-  id                  SERIAL                        PRIMARY KEY,
-  target_entity_type  master_data_entity_type_enum  NOT NULL,
-  target_entity_id    INTEGER                       NOT NULL,
-  actor_id            UUID                          NOT NULL,
-  field_changed       VARCHAR                       NOT NULL,
-  old_value           VARCHAR                           NULL,
-  new_value           VARCHAR                           NULL,
-  reason              TEXT                              NULL,
-  created_at          TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE b2b_pipeline (
   id                          SERIAL                        PRIMARY KEY,
   name                        VARCHAR                       NOT NULL,
@@ -558,7 +511,7 @@ CREATE TABLE b2b_pipeline (
   updated_at                  TIMESTAMPTZ                   NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE b2b_actions (
+CREATE TABLE actions (
   id                 SERIAL              PRIMARY KEY,
   pipeline_id        INTEGER             NOT NULL,
   name               VARCHAR             NOT NULL,
@@ -582,10 +535,10 @@ CREATE TABLE b2b_pipeline_stage_history (
   created_at   TIMESTAMPTZ           NOT NULL  DEFAULT CURRENT_TIMESTAMP
 );
 
--- A held/scheduled meeting on a pipeline — the traceable source of first/second-meeting
--- conversion metrics. Conversion credit is attributed to b2b_pipeline's *current* owner_id
+-- A held/scheduled meeting on a Sales API pipeline — the traceable source of first/second-meeting
+-- conversion metrics. Conversion credit is attributed to pipelines.sales_owner_id
 -- at query time, not organizer_id here, so organizer_id only records who actually ran it.
-CREATE TABLE b2b_meetings (
+CREATE TABLE meetings (
   id                  SERIAL                              PRIMARY KEY,
   pipeline_id         INTEGER                             NOT NULL,
   organizer_id        UUID                                NOT NULL,
@@ -610,7 +563,7 @@ CREATE TABLE b2b_meeting_attendees (
 );
 
 -- A versioned price quote against a pipeline — see lib/pricing-b2b.ts for the formulas these columns snapshot.
-CREATE TABLE b2b_quotations (
+CREATE TABLE quotations (
   id                    SERIAL                        PRIMARY KEY,
   pipeline_id           INTEGER                       NOT NULL,
   version               INTEGER                       NOT NULL,
@@ -1091,47 +1044,41 @@ ALTER TABLE b2b_pipeline
   ADD FOREIGN KEY (owner_id)   REFERENCES users (id),
   ADD FOREIGN KEY (company_id) REFERENCES b2b_company (id);
 
-ALTER TABLE b2b_actions
-  ADD FOREIGN KEY (pipeline_id)       REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+-- Sales API owns `pipelines` (see ailene-os-api/docs/db/sales-pipeline.sql).
+-- Operational records below reference that canonical pipeline, while legacy
+-- b2b_pipeline remains only for its unreplaced history and LMS relations.
+ALTER TABLE actions
+  ADD FOREIGN KEY (pipeline_id)       REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (assignee_id)       REFERENCES users (id)        ON DELETE SET NULL,
-  ADD FOREIGN KEY (source_meeting_id) REFERENCES b2b_meetings (id) ON DELETE SET NULL;
+  ADD FOREIGN KEY (source_meeting_id) REFERENCES meetings (id) ON DELETE SET NULL;
 
 ALTER TABLE b2b_pipeline_stage_history
   ADD FOREIGN KEY (pipeline_id) REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (changed_by)  REFERENCES users (id);
 
-ALTER TABLE b2b_meetings
-  ADD FOREIGN KEY (pipeline_id)   REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+ALTER TABLE meetings
+  ADD FOREIGN KEY (pipeline_id)   REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (organizer_id)  REFERENCES users (id),
   ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
 
 ALTER TABLE b2b_meeting_attendees
-  ADD FOREIGN KEY (meeting_id) REFERENCES b2b_meetings (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (meeting_id) REFERENCES meetings (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (contact_id) REFERENCES contacts (id)     ON DELETE CASCADE;
 
-ALTER TABLE b2b_quotations
-  ADD FOREIGN KEY (pipeline_id)   REFERENCES b2b_pipeline (id) ON DELETE CASCADE,
+ALTER TABLE quotations
+  ADD FOREIGN KEY (pipeline_id)   REFERENCES pipelines (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (created_by_id) REFERENCES users (id);
 
 ALTER TABLE b2b_quotation_line_items
-  ADD FOREIGN KEY (quotation_id) REFERENCES b2b_quotations (id) ON DELETE CASCADE;
+  ADD FOREIGN KEY (quotation_id) REFERENCES quotations (id) ON DELETE CASCADE;
 
 ALTER TABLE b2b_quotation_approvals
-  ADD FOREIGN KEY (quotation_id) REFERENCES b2b_quotations (id) ON DELETE CASCADE,
+  ADD FOREIGN KEY (quotation_id) REFERENCES quotations (id) ON DELETE CASCADE,
   ADD FOREIGN KEY (actor_id)     REFERENCES users (id);
 
 ALTER TABLE contact_organization_relationships
   ADD FOREIGN KEY (contact_id)      REFERENCES contacts (id)    ON DELETE CASCADE,
   ADD FOREIGN KEY (organization_id) REFERENCES b2b_company (id) ON DELETE CASCADE;
-
-ALTER TABLE organization_duplicate_reviews
-  ADD FOREIGN KEY (requested_by_id)      REFERENCES users (id),
-  ADD FOREIGN KEY (proposed_industry_id) REFERENCES industries (id),
-  ADD FOREIGN KEY (resolved_organization_id) REFERENCES b2b_company (id),
-  ADD FOREIGN KEY (resolved_by_id)       REFERENCES users (id);
-
-ALTER TABLE master_data_audit_log
-  ADD FOREIGN KEY (actor_id) REFERENCES users (id);
 
 -- Trainer Pool
 
@@ -1286,18 +1233,18 @@ CREATE TRIGGER update_b2b_pipeline_updated_at_trigger
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_b2b_actions_updated_at_trigger
-  BEFORE UPDATE ON b2b_actions
+CREATE TRIGGER update_actions_updated_at_trigger
+  BEFORE UPDATE ON actions
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_b2b_meetings_updated_at_trigger
-  BEFORE UPDATE ON b2b_meetings
+CREATE TRIGGER update_meetings_updated_at_trigger
+  BEFORE UPDATE ON meetings
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_b2b_quotations_updated_at_trigger
-  BEFORE UPDATE ON b2b_quotations
+CREATE TRIGGER update_quotations_updated_at_trigger
+  BEFORE UPDATE ON quotations
   FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
@@ -1407,12 +1354,12 @@ CREATE INDEX b2b_pipeline_stage_history_pipeline_id_idx ON b2b_pipeline_stage_hi
 CREATE INDEX b2b_pipeline_stage_history_created_at_idx ON b2b_pipeline_stage_history (created_at);
 
 -- Meetings — first/second-held-meeting conversion lookups per pipeline, and calendar range queries.
-CREATE INDEX b2b_meetings_pipeline_id_idx ON b2b_meetings (pipeline_id);
-CREATE INDEX b2b_meetings_scheduled_at_idx ON b2b_meetings (scheduled_at);
+CREATE INDEX meetings_pipeline_id_idx ON meetings (pipeline_id);
+CREATE INDEX meetings_scheduled_at_idx ON meetings (scheduled_at);
 
 -- Quotations — per-pipeline lookups (current version, version history) and the Manager Review queue.
-CREATE INDEX b2b_quotations_pipeline_id_idx ON b2b_quotations (pipeline_id);
-CREATE INDEX b2b_quotations_status_idx ON b2b_quotations (status);
+CREATE INDEX quotations_pipeline_id_idx ON quotations (pipeline_id);
+CREATE INDEX quotations_status_idx ON quotations (status);
 CREATE INDEX b2b_quotation_approvals_quotation_id_idx ON b2b_quotation_approvals (quotation_id);
 
 -- Notifications — unread-feed lookup for the notification bell.
@@ -1420,12 +1367,6 @@ CREATE INDEX notifications_user_id_idx ON notifications (user_id);
 
 -- Organizations — duplicate-name matching on create.
 CREATE INDEX b2b_company_normalized_name_idx ON b2b_company (normalized_name);
-
--- Duplicate reviews — filtering the manager queue by status.
-CREATE INDEX organization_duplicate_reviews_status_idx ON organization_duplicate_reviews (status);
-
--- Master data audit log — lookup an organization/contact's change history.
-CREATE INDEX master_data_audit_log_target_idx ON master_data_audit_log (target_entity_type, target_entity_id);
 
 -- User audit log — lookup a user's change history for the audit log page.
 CREATE INDEX user_audit_log_target_user_id_idx ON user_audit_log (target_user_id);
