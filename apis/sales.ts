@@ -1,6 +1,6 @@
 import "server-only";
 
-import { callApi, type ApiEnvelope, type ApiList } from "./api";
+import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
 export type CompanySource = "referral" | "outreach" | "inbound";
@@ -121,6 +121,33 @@ export type CreatePipelinePayload = {
   stage?: PipelineStage;
   estimated_value?: number;
   expected_close_date?: string | null;
+};
+
+export type InboundLeadPayload = {
+  company_name: string;
+  industry_id?: number | null;
+  website_url?: string | null;
+  contact: {
+    full_name: string;
+    email?: string | null;
+    phone?: string | null;
+    job_title?: string | null;
+  };
+  lead_channel?: LeadChannel | null;
+  note?: string | null;
+};
+
+// The response withholds owner fields on purpose, so the landing page never sees internal staff.
+export type InboundLeadData = {
+  id: number;
+  company_id: number;
+  company_name: string;
+  contact_id: number;
+  lead_source: LeadSource;
+  lead_channel: LeadChannel | null;
+  stage: PipelineStage;
+  phase: PipelinePhase;
+  created_at: string;
 };
 
 export type UpdatePipelinePayload = {
@@ -245,6 +272,16 @@ export async function updatePipeline(
 ): Promise<ApiEnvelope<PipelineData>> {
   return callApi("/api/v1/pipelines/update", {
     token: await token(),
+    body: payload,
+  });
+}
+
+// The only sales endpoint with no signed-in user: it authenticates with the static client secret.
+export async function createInboundLead(
+  payload: InboundLeadPayload
+): Promise<ApiEnvelope<InboundLeadData>> {
+  return callApi("/api/v1/pipelines/create-inbound", {
+    token: clientSecret(),
     body: payload,
   });
 }

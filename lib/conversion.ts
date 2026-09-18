@@ -9,7 +9,7 @@ export function trackWhatsAppLead(params: { placement: BizBlock }) {
   sendLeadEvent();
 }
 
-// A form that hands the visitor to sales counts as the same lead conversion.
+// A completed sales form counts as the same lead conversion as a WhatsApp CTA.
 export function trackFormLead(params: { placement: BizBlock }) {
   trackFeatureClick({ name: "form_submit", block: params.placement });
   sendConversionEvent();

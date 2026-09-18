@@ -57,6 +57,15 @@ function statusNameFromCode(code: number): StatusName {
   }
 }
 
+// Endpoints with no per-user credential yet are gated by the shared client secret instead.
+export function clientSecret() {
+  const secret = process.env.CLIENT_SECRET;
+  if (!secret) {
+    throw new Error("CLIENT_SECRET is not configured");
+  }
+  return secret;
+}
+
 export async function callApi<T = unknown>(
   path: string,
   options: { method?: string; body?: unknown; token?: string } = {}

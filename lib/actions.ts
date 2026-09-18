@@ -19,6 +19,7 @@ import { isSuccessStatus } from "@/lib/status_code";
 import {
   createCompany as createCompanyApi,
   createContact as createContactApi,
+  createInboundLead as createInboundLeadApi,
   createPipeline as createPipelineApi,
   deleteCompany as deleteCompanyApi,
   deletePipeline as deletePipelineApi,
@@ -32,6 +33,7 @@ import {
   type CompanyForm,
   type ContactForm,
   type CreatePipelinePayload,
+  type InboundLeadPayload,
   type ListCompaniesOptions,
   type ListPipelinesOptions,
   type UpdatePipelinePayload,
@@ -140,4 +142,16 @@ export async function updatePipeline(payload: UpdatePipelinePayload) {
 
 export async function deletePipeline(id: number) {
   return deletePipelineApi(id);
+}
+
+// Public landing page: only a classified outcome crosses back, never the API's own wording.
+export async function createInboundLead(payload: InboundLeadPayload) {
+  const result = await createInboundLeadApi(payload);
+  if (isSuccessStatus(result.status)) {
+    return { success: true as const };
+  }
+  return {
+    success: false as const,
+    duplicateCompany: result.message === "A company with this name already exists.",
+  };
 }
