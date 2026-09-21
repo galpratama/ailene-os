@@ -8,11 +8,11 @@ import AppSearchableSelect, { type AppSearchableOption } from "@/components/fiel
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
+import { useIndustryList } from "@/hooks/useIndustryList";
 import { useUserList } from "@/hooks/useUserList";
 import { requireApiData } from "@/lib/api-result";
 import { createPipeline, listCompanies } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, pipelineStageOptions } from "@/lib/sales";
-import { trpc } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -77,9 +77,7 @@ export default function CreateLeadFormOS({
   const [ownerId, setOwnerId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: industryData } = trpc.list.industries.useQuery(undefined, {
-    enabled: !!sessionToken && isOpen,
-  });
+  const industryList = useIndustryList(!!sessionToken && isOpen);
   const userList = useUserList(isOpen && !isOwnScoped);
 
   const [previousOpen, setPreviousOpen] = useState(isOpen);
@@ -94,8 +92,10 @@ export default function CreateLeadFormOS({
     if (isOwnScoped && sessionUser) setOwnerId(sessionUser.id);
   }
 
-  const industryOptions: AppSelectOption[] =
-    industryData?.list.map((industry) => ({ value: industry.id, label: industry.name })) ?? [];
+  const industryOptions: AppSelectOption[] = industryList.map((industry) => ({
+    value: industry.id,
+    label: industry.name,
+  }));
   const ownerOptions: AppSelectOption[] = userList.map((user) => ({
     value: user.id,
     label: user.full_name,

@@ -1,6 +1,7 @@
 "use server";
 
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
+import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from "@/apis/lookup";
 import { logoutUser as logoutUserApi } from "@/apis/session";
 import { createTeam as createTeamApi, listTeams as listTeamsApi } from "@/apis/teams";
 import {
@@ -87,6 +88,10 @@ export async function listTeams() {
 
 export async function createTeam(name: string) {
   return createTeamApi(name);
+}
+
+export async function listIndustries(options: ListIndustriesOptions = {}) {
+  return listIndustriesApi(options);
 }
 
 export async function listCompanies(options: ListCompaniesOptions = {}) {

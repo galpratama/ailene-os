@@ -6,9 +6,9 @@ import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import OrganizationDetailDrawerOS from "@/components/modals/OrganizationDetailDrawerOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import { useIndustryList } from "@/hooks/useIndustryList";
 import { requireApiData } from "@/lib/api-result";
 import { listCompanies } from "@/lib/actions";
-import { trpc } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -58,12 +58,10 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
       ),
     enabled: !!sessionToken,
   });
-  const { data: industryData } = trpc.list.industries.useQuery(undefined, {
-    enabled: !!sessionToken,
-  });
+  const industryList = useIndustryList(!!sessionToken);
   const industries = useMemo(
-    () => new Map(industryData?.list.map((industry) => [industry.id, industry.name]) ?? []),
-    [industryData]
+    () => new Map(industryList.map((industry) => [industry.id, industry.name])),
+    [industryList]
   );
   const organizationList = companiesQuery.data?.list;
   const totalPage = companiesQuery.data?.metapaging.total_page ?? 1;

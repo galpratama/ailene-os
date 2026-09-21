@@ -10,6 +10,7 @@ import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import RecordTimelineOS from "@/components/elements/RecordTimelineOS";
 import { useSession } from "@/contexts/SessionContext";
+import { useIndustryList } from "@/hooks/useIndustryList";
 import { useUserList } from "@/hooks/useUserList";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import {
@@ -22,7 +23,6 @@ import {
   updatePipeline,
 } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_LABELS, pipelineStageOptions } from "@/lib/sales";
-import { trpc } from "@/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -115,12 +115,12 @@ export default function EditLeadFormOS({
     setStageNote("");
   }
 
-  const { data: industryData } = trpc.list.industries.useQuery(undefined, {
-    enabled: !!sessionToken && isOpen,
-  });
+  const industryList = useIndustryList(!!sessionToken && isOpen);
   const userList = useUserList(isOpen && !isOwnScoped);
-  const industryOptions: AppSelectOption[] =
-    industryData?.list.map((industry) => ({ value: industry.id, label: industry.name })) ?? [];
+  const industryOptions: AppSelectOption[] = industryList.map((industry) => ({
+    value: industry.id,
+    label: industry.name,
+  }));
   const ownerOptions: AppSelectOption[] = userList.map((user) => ({
     value: user.id,
     label: user.full_name,
