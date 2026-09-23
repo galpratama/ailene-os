@@ -109,8 +109,23 @@ export type ListPipelinesOptions = {
   lead_channel?: LeadChannel;
   sales_owner_id?: string;
   keyword?: string;
+  // Both bounds are inclusive YYYY-MM-DD calendar days, read in Asia/Jakarta.
+  created_from?: string;
+  created_to?: string;
   page?: number;
   page_size?: number;
+};
+
+export type PipelineWeekOptions = Omit<ListPipelinesOptions, "page" | "page_size"> & {
+  weeks?: number;
+};
+
+export type PipelineWeekData = {
+  week_start: string;
+  week_end: string;
+  total_leads: number;
+  inbound_leads: number;
+  outbound_leads: number;
 };
 
 export type CreatePipelinePayload = {
@@ -238,6 +253,16 @@ export async function listPipelines(
   options: ListPipelinesOptions
 ): Promise<ApiEnvelope<ApiList<PipelineData>>> {
   return callApi("/api/v1/pipelines", {
+    token: await token(),
+    body: options,
+  });
+}
+
+// Counts every matching lead per week, not just the page the list would return.
+export async function listPipelineWeeks(
+  options: PipelineWeekOptions
+): Promise<ApiEnvelope<ApiList<PipelineWeekData>>> {
+  return callApi("/api/v1/pipelines/weekly", {
     token: await token(),
     body: options,
   });

@@ -2,7 +2,7 @@
 
 import { LucideIcon } from "lucide-react";
 
-export type ViewModeOS = "kanban" | "cards" | "table";
+export type ViewModeOS = "kanban" | "cards" | "table" | "weekly";
 
 interface ViewModeOptionOS {
   value: ViewModeOS;

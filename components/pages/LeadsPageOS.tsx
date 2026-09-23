@@ -2,13 +2,15 @@
 
 import type { LeadChannel, LeadSource, PipelineData, PipelinePhase, PipelineStage } from "@/apis/sales";
 import ViewModeToggleOS, { type ViewModeOS } from "@/components/buttons/ViewModeToggleOS";
+import AppFilterMenu, { AppFilterChips, type FilterField, type FilterValues } from "@/components/fields/AppFilterMenu";
 import AppInput from "@/components/fields/AppInput";
-import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
+import { type AppSelectOption } from "@/components/fields/AppSelect";
 import CreateLeadFormOS from "@/components/forms/CreateLeadFormOS";
 import EditLeadFormOS from "@/components/forms/EditLeadFormOS";
 import StageLabel from "@/components/labels/StageLabel";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import LeadsWeeklyPanelOS from "@/components/pages/LeadsWeeklyPanelOS";
 import { useSession } from "@/contexts/SessionContext";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
@@ -17,13 +19,14 @@ import { listPipelines, updatePipeline } from "@/lib/actions";
 import { getRupiahCurrency } from "@/lib/currency";
 import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
+import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
   { value: "cards" as const, label: "Cards", icon: LayoutGrid },
   { value: "table" as const, label: "Table", icon: Table2 },
+  { value: "weekly" as const, label: "Weekly", icon: CalendarRange },
 ];
 
 const leadSourceLabels: Record<LeadSource, string> = {
@@ -34,6 +37,11 @@ const leadSourceLabels: Record<LeadSource, string> = {
 function leadSourceLabel(source: LeadSource | null) {
   return source ? leadSourceLabels[source] : "—";
 }
+
+const leadSourceOptions: AppSelectOption[] = [
+  { value: "", label: "All Sources" },
+  ...(Object.keys(leadSourceLabels) as LeadSource[]).map((value) => ({ value, label: leadSourceLabels[value] })),
+];
 
 const leadChannelOptions: AppSelectOption[] = [
   { value: "", label: "All Channels" },
@@ -55,23 +63,25 @@ export default function LeadsPageOS({
   const isOwnScoped = sessionUser?.data_scope === "OWN";
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
+  // The weekly tab's leads are not in `pipelineList`, so they carry their own row.
+  const [weeklyPipeline, setWeeklyPipeline] = useState<PipelineData | null>(null);
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     `leads_${phase}_view_mode`,
-    ["kanban", "cards", "table"],
+    ["kanban", "cards", "table", "weekly"],
     "cards"
   );
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>();
-  const [stageFilter, setStageFilter] = useState("");
-  const [channelFilter, setChannelFilter] = useState("");
-  const [ownerFilter, setOwnerFilter] = useState("");
+  // Keyed by the API field each value is sent as, so the filter menu stays generic.
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [movedStages, setMovedStages] = useState<Partial<Record<number, PipelineStage>>>({});
   const [stageError, setStageError] = useState<string | null>(null);
   const pageSize = 21;
   const isBoardView = viewMode === "kanban";
+  const isWeeklyView = viewMode === "weekly";
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,25 +91,33 @@ export default function LeadsPageOS({
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  const filters = {
+  // Shared by every view; the weekly tally reuses it without the paging keys.
+  const baseFilters = {
     phase,
+    keyword: debouncedKeyword,
+    stage: (filterValues.stage || undefined) as PipelineStage | undefined,
+    lead_source: (filterValues.lead_source || undefined) as LeadSource | undefined,
+    lead_channel: (filterValues.lead_channel || undefined) as LeadChannel | undefined,
+    sales_owner_id: isOwnScoped ? undefined : filterValues.sales_owner_id || undefined,
+    created_from: filterValues.created_from || undefined,
+    created_to: filterValues.created_to || undefined,
+  };
+
+  const filters = {
+    ...baseFilters,
     page: isBoardView ? 1 : page,
     page_size: isBoardView ? 100 : pageSize,
-    keyword: debouncedKeyword,
-    stage: (stageFilter || undefined) as PipelineStage | undefined,
-    lead_channel: (channelFilter || undefined) as LeadChannel | undefined,
-    sales_owner_id: isOwnScoped ? undefined : ownerFilter || undefined,
   };
 
   const pipelineQuery = useQuery({
     queryKey: ["sales", "pipelines", filters],
     queryFn: async () => requireApiData(await listPipelines(filters)),
-    enabled: !!sessionToken,
+    enabled: !!sessionToken && !isWeeklyView,
   });
 
   const pipelineList = pipelineQuery.data?.list;
   // From the raw list, not `board`, so an optimistic drag never becomes the stage baseline the save compares against.
-  const editingPipeline = pipelineList?.find((entry) => entry.id === editingPipelineId) ?? null;
+  const editingPipeline = pipelineList?.find((entry) => entry.id === editingPipelineId) ?? weeklyPipeline;
   const totalPage = pipelineQuery.data?.metapaging.total_page ?? 1;
   const board = useMemo(
     () => pipelineList?.map((entry) => ({ ...entry, stage: movedStages[entry.id] ?? entry.stage })) ?? [],
@@ -140,6 +158,22 @@ export default function LeadsPageOS({
     { value: "", label: "All Stages" },
     ...phaseStages.map((value) => ({ value, label: PIPELINE_STAGE_LABELS[value] })),
   ];
+  const filterFields: FilterField[] = [
+    { kind: "select", key: "stage", label: "Stage", placeholder: "All Stages", options: stageOptions },
+    { kind: "select", key: "lead_source", label: "Source", placeholder: "All Sources", options: leadSourceOptions },
+    { kind: "select", key: "lead_channel", label: "Channel", placeholder: "All Channels", options: leadChannelOptions },
+    // An own-scoped user sees only their own leads, so the owner filter is moot.
+    ...(isOwnScoped
+      ? []
+      : [{ kind: "select" as const, key: "sales_owner_id", label: "Owner", placeholder: "All Owners", options: ownerOptions }]),
+    { kind: "date-range", key: "created", label: "Created", fromKey: "created_from", toKey: "created_to" },
+  ];
+
+  // Reset paging, or page 4 survives into a narrower result that has no page 4.
+  function applyFilters(next: FilterValues) {
+    setFilterValues(next);
+    setPage(1);
+  }
 
   function moveTo(id: number, stage: PipelineStage) {
     const pipeline = board.find((entry) => entry.id === id);
@@ -183,54 +217,25 @@ export default function LeadsPageOS({
         action={{ label: "Add Lead", icon: Plus, onClick: () => setIsCreateOpen(true) }}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <AppInput
-          inputId={`${phase}-leads-search`}
-          icon={<Search size={14} />}
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-          placeholder="Search company..."
-          className="max-w-full sm:max-w-sm"
-        />
-        <div className="w-full max-w-56">
-          <AppSelect
-            selectId={`${phase}-leads-stage-filter`}
-            placeholder="All Stages"
-            value={stageFilter}
-            options={stageOptions}
-            onChange={(value) => {
-              setStageFilter((value as string) ?? "");
-              setPage(1);
-            }}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <AppInput
+            inputId={`${phase}-leads-search`}
+            icon={<Search size={14} />}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            placeholder="Search company..."
+            className="max-w-full sm:max-w-sm"
           />
-        </div>
-        <div className="w-full max-w-48">
-          <AppSelect
-            selectId={`${phase}-leads-channel-filter`}
-            placeholder="All Channels"
-            value={channelFilter}
-            options={leadChannelOptions}
-            onChange={(value) => {
-              setChannelFilter((value as string) ?? "");
-              setPage(1);
-            }}
+          <AppFilterMenu
+            menuId={`${phase}-leads-filters`}
+            fields={filterFields}
+            values={filterValues}
+            onChange={applyFilters}
           />
+          <ViewModeToggleOS value={viewMode} onChange={setViewMode} options={viewModeOptions} className="ml-auto" />
         </div>
-        {!isOwnScoped && (
-          <div className="w-full max-w-56">
-            <AppSelect
-              selectId={`${phase}-leads-owner-filter`}
-              placeholder="All Owners"
-              value={ownerFilter}
-              options={ownerOptions}
-              onChange={(value) => {
-                setOwnerFilter((value as string) ?? "");
-                setPage(1);
-              }}
-            />
-          </div>
-        )}
-        <ViewModeToggleOS value={viewMode} onChange={setViewMode} options={viewModeOptions} className="ml-auto" />
+        <AppFilterChips fields={filterFields} values={filterValues} onChange={applyFilters} />
       </div>
 
       {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
@@ -353,10 +358,30 @@ export default function LeadsPageOS({
         </div>
       )}
 
+      {isWeeklyView && (
+        <LeadsWeeklyPanelOS
+          filters={baseFilters}
+          onOpenLead={(lead) => {
+            setWeeklyPipeline(lead);
+            setEditingPipelineId(lead.id);
+          }}
+        />
+      )}
+
       {pipelineList?.length === 0 && <p className="py-10 text-center text-sm text-gray-400">No leads found.</p>}
-      {!isBoardView && <AppPaginationOS currentPage={page} totalPages={totalPage} onPageChange={setPage} />}
+      {!isBoardView && !isWeeklyView && (
+        <AppPaginationOS currentPage={page} totalPages={totalPage} onPageChange={setPage} />
+      )}
       <CreateLeadFormOS sessionToken={sessionToken} phase={phase} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-      <EditLeadFormOS sessionToken={sessionToken} pipeline={editingPipeline} isOpen={editingPipelineId !== null} onClose={() => setEditingPipelineId(null)} />
+      <EditLeadFormOS
+        sessionToken={sessionToken}
+        pipeline={editingPipeline}
+        isOpen={editingPipelineId !== null}
+        onClose={() => {
+          setEditingPipelineId(null);
+          setWeeklyPipeline(null);
+        }}
+      />
     </div>
   );
 }
