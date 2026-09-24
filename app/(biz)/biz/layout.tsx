@@ -4,6 +4,7 @@ import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
 import { siteProfile } from "@/lib/site";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Text } from "next/font/google";
 import type { ReactNode } from "react";
@@ -40,6 +41,13 @@ const stackSansText = Stack_Sans_Text({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const crayonize = localFont({
+  src: "../../../public/fonts/crayonize-bold.otf",
+  variable: "--font-crayonize",
+  display: "swap",
+  weight: "700",
+});
+
 // Keep the marketing site on the light brand palette; dark mode belongs to the OS app.
 export default function BizLayout({ children }: { children: ReactNode }) {
   const googleAnalyticsId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
@@ -53,7 +61,9 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
-      <div className={stackSansText.className}>{children}</div>
+      <div className={`${stackSansText.className} ${crayonize.variable}`}>
+        {children}
+      </div>
     </ThemeProvider>
   );
 }

@@ -3,9 +3,7 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppNumberInput from "@/components/fields/AppNumberInput";
-import AppSelect, {
-  type AppSelectOption,
-} from "@/components/fields/AppSelect";
+import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import FooterBIZ from "@/components/navigations/FooterBIZ";
 import HeaderBIZ from "@/components/navigations/HeaderBIZ";
@@ -24,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import PageMargin from "@/components/layouts/PageMargin";
 
 const sourceOptions: AppSelectOption[] = [
   { value: "AI_COMMUNITY", label: "Komunitas AI" },
@@ -43,17 +42,20 @@ const process = [
   {
     icon: ClipboardCheck,
     title: "Screening",
-    description: "Review aplikasi dan wawancara singkat untuk memetakan keahlian dan kesiapanmu.",
+    description:
+      "Review aplikasi dan wawancara singkat untuk memetakan keahlian dan kesiapanmu.",
   },
   {
     icon: Award,
     title: "Sertifikasi",
-    description: "Pathway sertifikasi berjenjang sesuai level, dari materi dasar sampai delivery langsung.",
+    description:
+      "Pathway sertifikasi berjenjang sesuai level, dari materi dasar sampai delivery langsung.",
   },
   {
     icon: Rocket,
     title: "Penempatan project",
-    description: "Dipasangkan dengan project yang sesuai spesialisasi dan level kesiapanmu.",
+    description:
+      "Dipasangkan dengan project yang sesuai spesialisasi dan level kesiapanmu.",
   },
 ];
 
@@ -103,7 +105,9 @@ export default function TrainerApplicationPageBIZ() {
       );
     }
     if (!aiExperienceYears || Number(aiExperienceYears) < 1) {
-      return setError("Minimal 1 tahun pengalaman AI diperlukan untuk mendaftar.");
+      return setError(
+        "Minimal 1 tahun pengalaman AI diperlukan untuk mendaftar."
+      );
     }
 
     apply.mutate({
@@ -126,7 +130,7 @@ export default function TrainerApplicationPageBIZ() {
       <HeaderBIZ />
       <main>
         <section className="border-b border-ink-line bg-forest-deep text-white">
-          <div className="mx-auto grid max-w-280 gap-12 px-7 py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <PageMargin className="grid gap-12 py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold">
                 <Sparkles size={14} className="text-lime-bright" />
@@ -142,10 +146,12 @@ export default function TrainerApplicationPageBIZ() {
               </p>
               <div className="mt-7 flex flex-wrap gap-5 text-sm font-semibold">
                 <span className="flex items-center gap-2">
-                  <Users size={17} className="text-lime-bright" /> Project sesuai demand
+                  <Users size={17} className="text-lime-bright" /> Project
+                  sesuai demand
                 </span>
                 <span className="flex items-center gap-2">
-                  <BadgeCheck size={17} className="text-lime-bright" /> Pathway sertifikasi jelas
+                  <BadgeCheck size={17} className="text-lime-bright" /> Pathway
+                  sertifikasi jelas
                 </span>
               </div>
             </div>
@@ -165,11 +171,11 @@ export default function TrainerApplicationPageBIZ() {
                 </div>
               ))}
             </div>
-          </div>
+          </PageMargin>
         </section>
 
         <section className="border-b border-ink-line bg-white">
-          <div className="mx-auto max-w-280 px-7 py-14">
+          <PageMargin className="py-14">
             <div className="grid gap-6 sm:grid-cols-3">
               {process.map((step, index) => (
                 <div key={step.title} className="flex gap-4">
@@ -190,7 +196,7 @@ export default function TrainerApplicationPageBIZ() {
                 </div>
               ))}
             </div>
-          </div>
+          </PageMargin>
         </section>
 
         <section className="mx-auto max-w-200 px-7 py-16">
@@ -340,9 +346,7 @@ export default function TrainerApplicationPageBIZ() {
                   label="Ketersediaan kasar"
                   rows={3}
                   value={availabilityNotes}
-                  onChange={(event) =>
-                    setAvailabilityNotes(event.target.value)
-                  }
+                  onChange={(event) => setAvailabilityNotes(event.target.value)}
                   placeholder="Contoh: weekday setelah 18.00, Sabtu fleksibel."
                 />
                 <div className="absolute -left-250" aria-hidden="true">
@@ -357,7 +361,7 @@ export default function TrainerApplicationPageBIZ() {
                 </div>
                 <AppButton
                   type="submit"
-                  variant="green"
+                  variant="lime"
                   size="cta"
                   className="justify-center"
                   disabled={apply.isPending}

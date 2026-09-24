@@ -1,3 +1,5 @@
+import PageMargin from "@/components/layouts/PageMargin";
+
 const tools = [
   { name: "ChatGPT", icon: "openai" },
   { name: "Gemini", icon: "googlegemini" },
@@ -14,8 +16,8 @@ export default function ToolsHomeBIZ() {
 
   return (
     <section className="overflow-hidden border-y border-biz-forest/10 bg-biz-paper py-9.5 sm:py-11">
-      <div className="mx-auto w-full max-w-315 px-4.5 sm:px-7.5">
-        <p className="text-center text-[13px] font-medium tracking-[0.08em] text-biz-forest-light uppercase">
+      <PageMargin>
+        <p className="biz-topic-label text-center">
           Belajar dengan tools apapun
         </p>
         <div className="mt-6 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
@@ -38,7 +40,7 @@ export default function ToolsHomeBIZ() {
             ))}
           </div>
         </div>
-      </div>
+      </PageMargin>
     </section>
   );
 }

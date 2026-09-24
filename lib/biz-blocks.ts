@@ -5,6 +5,7 @@ export const BIZ_BLOCKS = [
   "header_mobile",
   "hero",
   "companies",
+  "solution",
   "outcomes",
   "tools",
   "adoption_proof",
@@ -35,6 +36,7 @@ export const BIZ_LEAD_FEATURES: FeatureName[] = ["whatsapp_cta", "form_submit"];
 // Landing page content sections in scroll order — the blocks HomePageBIZ passes to RevealOnScroll.
 export const BIZ_SCROLL_BLOCKS: BizBlock[] = [
   "companies",
+  "solution",
   "outcomes",
   "tools",
   "adoption_proof",
@@ -61,6 +63,7 @@ export const BIZ_BLOCK_LABELS: Record<BizBlock, string> = {
   header_mobile: "Header (mobile)",
   hero: "Hero",
   companies: "Client logos",
+  solution: "Solution",
   outcomes: "Outcomes",
   tools: "Tools",
   adoption_proof: "Adoption proof",

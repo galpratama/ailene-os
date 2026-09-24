@@ -1,36 +1,17 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import LinkButtonBIZ from "@/components/buttons/LinkButtonBIZ";
 import { LogoAilene } from "@/components/svg/LogoAilene";
-import { trackWhatsAppLead } from "@/lib/conversion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import PageMargin from "@/components/layouts/PageMargin";
 
 const navLinks = [
   { label: "How We Work", href: "#how-we-work" },
   { label: "Programs", href: "#programs" },
   { label: "FAQ", href: "#faq" },
 ];
-
-const announcement = (
-  <>
-    <span className="font-mono text-[8px] font-bold tracking-[0.14em] uppercase">
-      Batch Agustus 2026
-    </span>
-    <span className="text-xs font-semibold">10 slot pertama dapat harga spesial.</span>
-    <a
-      href="https://wa.me/6285110545698"
-      target="_blank"
-      rel="noreferrer"
-      onClick={() => trackWhatsAppLead({ placement: "header_announcement" })}
-      className="border-b border-current text-xs font-bold"
-    >
-      Amankan slot →
-    </a>
-  </>
-);
 
 export default function HeaderHomeBIZ() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,40 +30,30 @@ export default function HeaderHomeBIZ() {
 
   return (
     <header
-      className={`left-0 z-50 w-full transition-[background-color,color] duration-300 ${
-        isScrolled
-          ? "fixed top-0 bg-biz-paper/92 text-biz-ink shadow-sm backdrop-blur-xl"
-          : "absolute top-0 text-white"
+      className={`sticky top-0 z-50 w-full bg-white text-biz-ink transition-shadow duration-300 ${
+        isScrolled ? "shadow-sm" : ""
       }`}
     >
-      <aside className="overflow-hidden border-b border-biz-forest/25 bg-biz-lime text-biz-forest">
-        <div className="biz-marquee flex w-max [animation:biz-marquee_30s_linear_infinite] hover:[animation-play-state:paused]">
-          {Array.from({ length: 8 }, (_, index) => (
-            <div
-              key={index}
-              aria-hidden={index > 0}
-              className="flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap py-2 pl-9 after:ml-3 after:size-1 after:rounded-full after:bg-current after:opacity-50"
-            >
-              {announcement}
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      <div className="mx-auto flex min-h-17.5 w-full max-w-315 items-center justify-between gap-4 px-4.5 sm:px-7.5">
-        <Link href="#top" aria-label="Ailene home" onClick={closeMenu}>
-          <LogoAilene
-            variant={isScrolled ? "default" : "white"}
-            className="h-7 w-auto"
-          />
+      <PageMargin className="flex min-h-17.5 items-center justify-between gap-4">
+        <Link
+          href="#top"
+          aria-label="Ailene for business home"
+          onClick={closeMenu}
+          className="flex items-center gap-2"
+        >
+          <LogoAilene className="h-7 w-auto" />
+          <span className="pt-2 tracking-[-0.02em]">for Business</span>
         </Link>
 
-        <nav aria-label="Navigasi utama" className="ml-auto hidden items-center gap-6.5 lg:flex">
+        <nav
+          aria-label="Navigasi utama"
+          className="ml-auto hidden items-center gap-6.5 lg:flex"
+        >
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="text-[13px] font-medium opacity-75 transition-opacity hover:opacity-100"
+              className="text-[15px] font-medium opacity-75 transition-opacity hover:opacity-100"
             >
               {link.label}
             </a>
@@ -90,14 +61,14 @@ export default function HeaderHomeBIZ() {
         </nav>
 
         <div className="hidden lg:block">
-          <LinkButtonBIZ
-            href="https://wa.me/6285110545698"
+          <AppButton
+            href="#contact"
             variant="lime"
+            size="cta"
             trackPlacement="header"
-            className="min-h-10 rounded-[7px]"
           >
-            Diskusikan Kebutuhan Tim
-          </LinkButtonBIZ>
+            Book Meeting
+          </AppButton>
         </div>
 
         <AppButton
@@ -108,11 +79,11 @@ export default function HeaderHomeBIZ() {
           aria-expanded={menuOpen}
           aria-controls="home-biz-mobile-nav"
           onClick={() => setMenuOpen((open) => !open)}
-          className={`lg:hidden ${isScrolled ? "!text-biz-forest hover:!bg-biz-forest/8" : "!text-white hover:!bg-white/10"}`}
+          className="lg:hidden !text-biz-forest hover:!bg-biz-forest/8"
         >
           {menuOpen ? <X size={19} /> : <Menu size={19} />}
         </AppButton>
-      </div>
+      </PageMargin>
 
       {menuOpen && (
         <nav
@@ -125,20 +96,20 @@ export default function HeaderHomeBIZ() {
               key={link.label}
               href={link.href}
               onClick={closeMenu}
-              className="rounded-lg px-3.5 py-3 text-sm font-medium hover:bg-biz-forest/6"
+              className="rounded-lg px-3.5 py-3 text-base font-medium hover:bg-biz-forest/6"
             >
               {link.label}
             </a>
           ))}
-          <LinkButtonBIZ
-            href="https://wa.me/6285110545698"
+          <AppButton
+            href="#contact"
             variant="lime"
             trackPlacement="header_mobile"
             onClick={closeMenu}
             className="mt-1 w-full"
           >
-            Diskusikan Kebutuhan Tim
-          </LinkButtonBIZ>
+            Book Meeting
+          </AppButton>
         </nav>
       )}
     </header>

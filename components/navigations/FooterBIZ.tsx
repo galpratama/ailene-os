@@ -1,4 +1,5 @@
 import { LogoAilene } from "@/components/svg/LogoAilene";
+import PageMargin from "@/components/layouts/PageMargin";
 
 const footerColumns = [
   {
@@ -17,8 +18,8 @@ const footerColumns = [
 
 export default function FooterBIZ() {
   return (
-    <footer className="bg-ink pb-8 pt-14 text-white">
-      <div className="mx-auto max-w-280 px-7">
+    <footer className="bg-black pb-8 pt-14 text-white">
+      <PageMargin>
         <div className="mb-7 grid grid-cols-2 gap-10 border-b border-white/10 pb-10 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
             <LogoAilene className="mb-2 h-6 w-auto" />
@@ -52,10 +53,12 @@ export default function FooterBIZ() {
           <span>© 2026 Ailene. All rights reserved.</span>
           <div className="flex gap-4">
             <a className="cursor-pointer hover:text-white/60">Privacy Policy</a>
-            <a className="cursor-pointer hover:text-white/60">Terms of Service</a>
+            <a className="cursor-pointer hover:text-white/60">
+              Terms of Service
+            </a>
           </div>
         </div>
-      </div>
+      </PageMargin>
     </footer>
   );
 }
