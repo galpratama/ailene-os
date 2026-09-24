@@ -77,7 +77,7 @@ export default function PackagesHomeBIZ() {
             <div className="font-script mb-2.5 text-[34px] leading-none text-coral">
               Training menu
             </div>
-            <h2 className="text-[42px] leading-[1.02] font-light tracking-[-0.025em] sm:text-[clamp(38px,5vw,68px)]">
+            <h2 className="text-[36px] leading-[1.02] font-light tracking-[-0.025em] lg:text-[44px]">
               Apa yang tim kamu <strong className="font-bold">dapatkan.</strong>
             </h2>
           </div>

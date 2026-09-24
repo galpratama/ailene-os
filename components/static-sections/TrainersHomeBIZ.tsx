@@ -28,7 +28,7 @@ export default function TrainersHomeBIZ() {
         <SectionHeaderHomeBIZ
           eyebrow="Trainer model"
           title="Experienced people behind the practice."
-          copy="Trainer kami adalah praktisi berpengalaman yang menggabungkan perspektif bisnis dan teknis, lalu menerjemahkannya menjadi latihan AI yang relevan untuk kerja tim Anda."
+          centered
         />
         <div className="grid gap-4.5 lg:grid-cols-2">
           {trainers.map((trainer) => (

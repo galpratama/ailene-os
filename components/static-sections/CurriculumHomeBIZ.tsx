@@ -20,7 +20,7 @@ export default function CurriculumHomeBIZ() {
         <SectionHeaderHomeBIZ
           eyebrow="Curriculum"
           title="Enam langkah terstruktur untuk hasil yang nyata."
-          copy="Kurikulum membawa tim dari baseline yang aman, praktik yang relevan, sampai rencana adopsi yang bisa dijalankan."
+          centered
         />
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.06fr)_minmax(360px,0.94fr)]">
           <div

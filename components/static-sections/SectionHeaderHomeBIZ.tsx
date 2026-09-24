@@ -29,7 +29,7 @@ export default function SectionHeaderHomeBIZ({
       >
         <p className="biz-topic-label">{eyebrow}</p>
         <h2
-          className={`mt-3 text-[clamp(2.35rem,4.3vw,4.35rem)] leading-[0.94] font-medium tracking-[-0.065em] ${dark ? "text-white" : "text-biz-ink"}`}
+          className={`mt-3 text-[36px] leading-[0.94] font-medium tracking-[-0.065em] lg:text-[44px] ${dark ? "text-white" : "text-biz-ink"}`}
         >
           {title}
         </h2>
@@ -56,7 +56,7 @@ export default function SectionHeaderHomeBIZ({
       <div>
         <p className="biz-topic-label">{eyebrow}</p>
         <h2
-          className={`mt-3.5 text-[clamp(2.45rem,4.3vw,4.2rem)] leading-[0.94] font-medium tracking-[-0.065em] ${dark ? "text-white" : "text-biz-ink"}`}
+          className={`mt-3.5 text-[36px] leading-[0.94] font-medium tracking-[-0.065em] lg:text-[44px] ${dark ? "text-white" : "text-biz-ink"}`}
         >
           {title}
         </h2>

@@ -7,10 +7,10 @@ export default function AdoptionProofHomeBIZ() {
     <section id="adoption-gap" className="overflow-hidden py-18 sm:py-28">
       <PageMargin className="grid items-center gap-11 lg:grid-cols-[minmax(300px,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
         <div>
-          <p className="biz-topic-label text-white before:hidden after:hidden">
+          <p className="biz-topic-label !text-white before:!hidden after:!hidden">
             The adoption gap
           </p>
-          <h2 className="mt-3.5 max-w-146 text-[clamp(3rem,5.1vw,5.25rem)] leading-[0.92] font-medium tracking-[-0.06em]">
+          <h2 className="mt-3.5 max-w-146 text-[36px] leading-[0.98] font-medium tracking-[-0.06em] text-white lg:text-[44px]">
             Training selesai. Adopsi belum tentu dimulai.
           </h2>
           <p className="mt-6 max-w-126 text-base leading-[1.7] text-white/68">

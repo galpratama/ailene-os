@@ -130,7 +130,7 @@ export default function CompareProgramsHomeBIZ() {
             <div className="font-script mb-2.5 text-[34px] leading-none text-coral">
               Compare programs
             </div>
-            <h2 className="text-[42px] leading-[1.02] font-light tracking-[-0.025em] sm:text-[clamp(38px,5vw,68px)]">
+            <h2 className="text-[36px] leading-[1.02] font-light tracking-[-0.025em] lg:text-[44px]">
               Pilih berdasarkan <strong className="font-bold">kebutuhan tim.</strong>
             </h2>
           </div>

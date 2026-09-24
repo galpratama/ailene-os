@@ -155,7 +155,6 @@ export default function ProgramsHomeBIZ() {
         <SectionHeaderHomeBIZ
           eyebrow="Pilih jalurnya"
           title="Pilih program sesuai kebutuhan tim."
-          copy="Bandingkan format, benefit, pendampingan, dan hasil setiap jalur—termasuk opsi custom untuk kebutuhan yang lebih spesifik."
           className="mb-5"
         />
         <p className="mb-2.5 flex items-center gap-1.5 text-[12px] font-medium text-biz-muted lg:hidden">

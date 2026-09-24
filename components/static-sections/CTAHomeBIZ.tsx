@@ -8,7 +8,7 @@ export default function CTAHomeBIZ() {
         <div className="grid items-center gap-5 rounded-xl border border-biz-forest/18 bg-white p-5.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-7">
           <div>
             <p className="biz-topic-label">Langkah berikutnya</p>
-            <h2 className="mt-2 max-w-162.5 text-[clamp(1.8rem,2.8vw,2.45rem)] leading-[1.02] font-medium tracking-[-0.055em] text-biz-forest">
+            <h2 className="mt-2 max-w-162.5 text-[36px] leading-[1.02] font-medium tracking-[-0.055em] text-biz-forest lg:text-[44px]">
               Mulai dari satu workflow yang ingin dibuat lebih baik.
             </h2>
             <p className="mt-2 max-w-155 text-[13px] leading-[1.65] text-biz-muted">

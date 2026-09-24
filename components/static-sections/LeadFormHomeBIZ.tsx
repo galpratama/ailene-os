@@ -63,7 +63,7 @@ export default function LeadFormHomeBIZ({
       <PageMargin className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
           <p className="biz-topic-label">Start a conversation</p>
-          <h2 className="mt-3.5 max-w-140 text-[clamp(2.35rem,4vw,4rem)] leading-[1.02] font-medium tracking-[-0.06em]">
+          <h2 className="mt-3.5 max-w-140 text-[36px] leading-[1.02] font-medium tracking-[-0.06em] lg:text-[44px]">
             Tim Anda sudah punya kebutuhan. Kita bantu membuat langkah
             berikutnya jelas.
           </h2>
@@ -72,23 +72,6 @@ export default function LeadFormHomeBIZ({
             workflow yang ingin dicoba. Percakapan awal dimulai dari kebutuhan
             Anda.
           </p>
-          <ul className="mt-6.5 grid gap-3">
-            {[
-              "Rekomendasi format yang sesuai",
-              "Contoh outcome yang realistis",
-              "Bukan sales pitch — percakapan awal fokus ke kebutuhan tim Anda",
-            ].map((item) => (
-              <li
-                key={item}
-                className="grid grid-cols-[20px_1fr] gap-2.5 text-sm leading-[1.55] text-biz-muted"
-              >
-                <span className="grid size-5 place-items-center rounded-full bg-biz-lime text-biz-forest">
-                  <Check size={12} strokeWidth={2.5} />
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="rounded-xl border border-biz-forest/12 bg-white p-5 shadow-[0_18px_50px_rgba(6,35,25,0.08)] sm:p-7">

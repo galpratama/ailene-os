@@ -50,7 +50,7 @@ export default function SolutionHomeBIZ() {
         <div className="mb-3 flex items-center justify-center">
           <p className="biz-topic-label">The solution</p>
         </div>
-        <h2 className="mx-auto max-w-250 text-center text-[clamp(2.5rem,3.4vw,3.25rem)] leading-[1.02] font-medium tracking-[-0.05em] text-biz-ink">
+        <h2 className="mx-auto max-w-250 text-center text-[36px] leading-[1.02] font-medium tracking-[-0.05em] text-biz-ink lg:text-[44px]">
           Upskill AI untuk produktivitas tim
         </h2>
 
