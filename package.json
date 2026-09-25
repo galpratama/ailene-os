@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https",
+    "dev": "next dev --experimental-https --experimental-https-key certificates/dev-key.pem --experimental-https-cert certificates/dev.pem",
+    "dev:cert": "mkcert -cert-file certificates/dev.pem -key-file certificates/dev-key.pem example.com \"*.example.com\" localhost 127.0.0.1 ::1",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
