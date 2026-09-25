@@ -10,19 +10,6 @@ import { objectHasOnlyID } from "@/trpc/utils/validation";
 import { TRPCError } from "@trpc/server";
 
 export const deleteB2B = {
-  action: administratorProcedure
-    .input(objectHasOnlyID())
-    .mutation(async (opts) => {
-      const deleted = await opts.ctx.prisma.b2BAction.deleteMany({
-        where: { id: opts.input.id },
-      });
-      await checkDeleteResult(deleted.count, "actions", "action");
-      return {
-        code: STATUS_NO_CONTENT,
-        message: "Success",
-      };
-    }),
-
   // Cascades to this meeting's attendees; linked next actions survive with source_meeting_id set to NULL.
   meeting: administratorProcedure
     .input(objectHasOnlyID())

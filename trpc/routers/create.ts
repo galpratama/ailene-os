@@ -9,7 +9,6 @@ export const createRouter = createTRPCRouter({
     googleCalendarConnection: createIntegrations.googleCalendarConnection,
   },
   b2b: {
-    action: createB2B.action,
     meeting: createB2B.meeting,
     quotation: createB2B.quotation,
   },

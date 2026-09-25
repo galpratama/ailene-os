@@ -2,7 +2,6 @@ import { STATUS_BAD_REQUEST, STATUS_OK } from "@/lib/status_code";
 import type { PipelineStage } from "@/apis/sales";
 import { loggedInProcedure } from "@/trpc/init";
 import {
-  actionDataScopeWhere,
   meetingDataScopeWhere,
   pipelineDataScopeWhere,
   quotationDataScopeWhere,
@@ -16,8 +15,6 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
-  B2BActionPriorityEnum,
-  B2BActionStatusEnum,
   B2BMeetingStatusEnum,
   B2BQuotationStatusEnum,
   Prisma,
@@ -63,104 +60,9 @@ const FUNNEL_STAGE_ORDER = STAGE_ORDER.filter(
   (stage) => stage !== "closed_lost"
 );
 
-function getCalendarDateInTimeZone(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(
-    parts.map((part) => [part.type, part.value])
-  );
-  return new Date(
-    `${values.year}-${values.month}-${values.day}T00:00:00.000Z`
-  );
-}
-
 export const listB2B = {
 
-  // b2b_actions across every pipeline/company at once, for the global Tasks board.
-  allActions: loggedInProcedure
-    .input(
-      z.object({
-        keyword: stringNotBlank().optional(),
-        status: z.enum(B2BActionStatusEnum).optional(),
-        assignee_id: stringIsUUID().optional(),
-        company_id: numberIsID().optional(),
-        pipeline_id: numberIsID().optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const scopeWhere = actionDataScopeWhere(opts.ctx.user);
-
-      const whereClause: Prisma.B2BActionWhereInput = {
-        status: opts.input.status,
-        assignee_id: opts.input.assignee_id,
-        pipeline_id: opts.input.pipeline_id,
-        pipeline: {
-          ...(scopeWhere.pipeline as Prisma.PipelineWhereInput),
-          ...(opts.input.company_id && { company_id: opts.input.company_id }),
-        },
-        ...(opts.input.keyword && {
-          OR: [
-            { name: { contains: opts.input.keyword, mode: "insensitive" } },
-            { summary: { contains: opts.input.keyword, mode: "insensitive" } },
-          ],
-        }),
-      };
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.b2BAction.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const actionList = await opts.ctx.prisma.b2BAction.findMany({
-        include: {
-          assignee: { select: { id: true, full_name: true, avatar: true } },
-          pipeline: {
-            select: {
-              id: true,
-              company: { select: { id: true, name: true } },
-            },
-          },
-        },
-        orderBy: [{ due_date: "asc" }, { created_at: "asc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: actionList.map((entry) => ({
-          id: entry.id,
-          pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.company.name,
-          company_id: entry.pipeline.company.id,
-          company_name: entry.pipeline.company.name,
-          name: entry.name,
-          summary: entry.summary,
-          status: entry.status,
-          priority: entry.priority,
-          due_date: entry.due_date,
-          assignee_id: entry.assignee_id,
-          assignee_name: entry.assignee?.full_name ?? null,
-          assignee_avatar: entry.assignee?.avatar ?? null,
-          created_at: entry.created_at,
-          updated_at: entry.updated_at,
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  // b2b_meetings across every pipeline/company at once, mirroring allActions.
+  // b2b_meetings across every pipeline/company at once.
   meetings: loggedInProcedure
     .input(
       z.object({
@@ -364,14 +266,12 @@ export const listB2B = {
       };
     }),
 
+  // Meetings only — the calendar reads action due dates from the Actions API.
   calendar: loggedInProcedure
     .input(
       z.object({
         start_date: z.iso.date(),
         end_date: z.iso.date(),
-        status: z.enum(B2BActionStatusEnum).optional(),
-        priority: z.enum(B2BActionPriorityEnum).optional(),
-        assignee_id: stringIsUUID().optional(),
         company_id: numberIsID().optional(),
         pipeline_id: numberIsID().optional(),
       })
@@ -387,18 +287,6 @@ export const listB2B = {
         });
       }
 
-      const actionWhereClause: Prisma.B2BActionWhereInput = {
-        due_date: { gte: startDate, lte: endDate },
-        status: opts.input.status,
-        priority: opts.input.priority,
-        assignee_id: opts.input.assignee_id,
-        pipeline_id: opts.input.pipeline_id,
-        pipeline: opts.input.company_id
-          ? { company_id: opts.input.company_id }
-          : undefined,
-      };
-
-      // Meetings have no status/priority/assignee of their own, so those filters narrow actions only.
       const meetingWhereClause: Prisma.B2BMeetingWhereInput = {
         scheduled_at: { gte: startDate, lte: endDate },
         pipeline_id: opts.input.pipeline_id,
@@ -407,58 +295,19 @@ export const listB2B = {
           : undefined,
       };
 
-      const [actionList, meetingList] = await Promise.all([
-        opts.ctx.prisma.b2BAction.findMany({
-          include: {
-            assignee: { select: { id: true, full_name: true, avatar: true } },
-            pipeline: {
-              select: {
-                id: true,
-                company: { select: { id: true, name: true } },
-              },
+      const meetingList = await opts.ctx.prisma.b2BMeeting.findMany({
+        include: {
+          organizer: { select: { id: true, full_name: true, avatar: true } },
+          pipeline: {
+            select: {
+              id: true,
+              company: { select: { id: true, name: true } },
             },
           },
-          orderBy: [
-            { due_date: "asc" },
-            { priority: "desc" },
-            { created_at: "asc" },
-          ],
-          where: actionWhereClause,
-        }),
-        opts.ctx.prisma.b2BMeeting.findMany({
-          include: {
-            organizer: { select: { id: true, full_name: true, avatar: true } },
-            pipeline: {
-              select: {
-                id: true,
-                company: { select: { id: true, name: true } },
-              },
-            },
-          },
-          orderBy: [{ scheduled_at: "asc" }],
-          where: meetingWhereClause,
-        }),
-      ]);
-
-      const actionEvents = actionList.map((entry) => ({
-        id: entry.id,
-        type: "b2b_action" as const,
-        title: entry.name,
-        pipeline_id: entry.pipeline_id,
-        pipeline_name: entry.pipeline.company.name,
-        company_id: entry.pipeline.company.id,
-        company_name: entry.pipeline.company.name,
-        name: entry.name,
-        summary: entry.summary,
-        status: entry.status,
-        priority: entry.priority,
-        due_date: entry.due_date,
-        assignee_id: entry.assignee_id,
-        assignee_name: entry.assignee?.full_name ?? null,
-        assignee_avatar: entry.assignee?.avatar ?? null,
-        created_at: entry.created_at,
-        updated_at: entry.updated_at,
-      }));
+        },
+        orderBy: [{ scheduled_at: "asc" }],
+        where: meetingWhereClause,
+      });
 
       const meetingEvents = meetingList.map((entry) => ({
         id: entry.id,
@@ -479,19 +328,14 @@ export const listB2B = {
         updated_at: entry.updated_at,
       }));
 
-      const combinedList = [...actionEvents, ...meetingEvents].sort(
-        (left, right) =>
-          (left.due_date?.getTime() ?? 0) - (right.due_date?.getTime() ?? 0)
-      );
-
       return {
         code: STATUS_OK,
         message: "Success",
-        list: combinedList,
+        list: meetingEvents,
         meta: {
           start_date: opts.input.start_date,
           end_date: opts.input.end_date,
-          total_data: combinedList.length,
+          total_data: meetingEvents.length,
         },
       };
     }),
@@ -500,33 +344,12 @@ export const listB2B = {
   homeSummary: loggedInProcedure.query(async (opts) => {
     const userId = opts.ctx.user.id;
     const now = new Date();
-    const today = getCalendarDateInTimeZone(now, DASHBOARD_TIME_ZONE);
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     const activitySince = new Date(
       now.getTime() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000
     );
     const staleSince = new Date(
       now.getTime() - STALE_LEAD_DAYS * 24 * 60 * 60 * 1000
     );
-    const approvalWhere: Prisma.B2BActionWhereInput = {
-      assignee_id: userId,
-      status: B2BActionStatusEnum.REVIEW,
-    };
-    const overdueTaskWhere: Prisma.B2BActionWhereInput = {
-      assignee_id: userId,
-      status: {
-        notIn: [B2BActionStatusEnum.DONE, B2BActionStatusEnum.REVIEW],
-      },
-      due_date: { lt: today },
-    };
-    const dueTodayTaskWhere: Prisma.B2BActionWhereInput = {
-      assignee_id: userId,
-      status: {
-        notIn: [B2BActionStatusEnum.DONE, B2BActionStatusEnum.REVIEW],
-      },
-      due_date: { gte: today, lt: tomorrow },
-    };
     const staleLeadWhere: Prisma.PipelineWhereInput = {
       ...pipelineDataScopeWhere(opts.ctx.user),
       updated_at: { lt: staleSince },
@@ -547,63 +370,13 @@ export const listB2B = {
     };
 
     const [
-      pendingApprovals,
-      myTasksToday,
-      teamOverdue,
-      activeTasks,
-      approvalsWaiting,
-      overdueTaskCount,
-      overdueTasks,
-      dueTodayTaskCount,
-      dueTodayTasks,
       staleLeadCount,
       staleLeads,
-      recentActions,
       recentPipelines,
       activePipelinesForConflictCheck,
       quotationsPendingCount,
       quotationsPending,
     ] = await Promise.all([
-      opts.ctx.prisma.b2BAction.count({ where: approvalWhere }),
-      opts.ctx.prisma.b2BAction.count({
-        where: {
-          assignee_id: userId,
-          due_date: { gte: today, lt: tomorrow },
-          status: { not: B2BActionStatusEnum.DONE },
-        },
-      }),
-      opts.ctx.prisma.b2BAction.count({
-        where: {
-          due_date: { lt: today },
-          status: { not: B2BActionStatusEnum.DONE },
-        },
-      }),
-      opts.ctx.prisma.b2BAction.count({
-        where: { status: B2BActionStatusEnum.IN_PROGRESS },
-      }),
-      opts.ctx.prisma.b2BAction.findMany({
-        where: approvalWhere,
-        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
-        orderBy: [
-          { due_date: { sort: "asc", nulls: "last" } },
-          { priority: "desc" },
-        ],
-        take: 5,
-      }),
-      opts.ctx.prisma.b2BAction.count({ where: overdueTaskWhere }),
-      opts.ctx.prisma.b2BAction.findMany({
-        where: overdueTaskWhere,
-        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
-        orderBy: [{ priority: "desc" }, { due_date: "asc" }],
-        take: 5,
-      }),
-      opts.ctx.prisma.b2BAction.count({ where: dueTodayTaskWhere }),
-      opts.ctx.prisma.b2BAction.findMany({
-        where: dueTodayTaskWhere,
-        include: { pipeline: { select: { id: true, company: { select: { name: true } } } } },
-        orderBy: [{ priority: "desc" }, { created_at: "asc" }],
-        take: 5,
-      }),
       opts.ctx.prisma.pipeline.count({ where: staleLeadWhere }),
       opts.ctx.prisma.pipeline.findMany({
         where: staleLeadWhere,
@@ -612,24 +385,6 @@ export const listB2B = {
         },
         orderBy: [{ updated_at: "asc" }],
         take: 20,
-      }),
-      opts.ctx.prisma.b2BAction.findMany({
-        where: {
-          OR: [
-            { created_at: { gte: activitySince } },
-            { updated_at: { gte: activitySince } },
-          ],
-        },
-        include: {
-          pipeline: {
-            select: {
-              id: true,
-              company: { select: { name: true } },
-            },
-          },
-        },
-        orderBy: [{ updated_at: "desc" }],
-        take: 12,
       }),
       opts.ctx.prisma.pipeline.findMany({
         where: {
@@ -698,17 +453,6 @@ export const listB2B = {
     );
 
     const activity = [
-      ...recentActions.map((entry) => {
-        const isNew = entry.created_at >= activitySince;
-        return {
-          id: `action-${entry.id}`,
-          type: isNew ? ("action_created" as const) : ("action_updated" as const),
-          title: entry.name,
-          description: entry.pipeline.company.name,
-          pipeline_id: entry.pipeline_id,
-          occurred_at: isNew ? entry.created_at : entry.updated_at,
-        };
-      }),
       ...recentPipelines.map((entry) => {
         const isNew = entry.created_at >= activitySince;
         return {
@@ -727,15 +471,6 @@ export const listB2B = {
       )
       .slice(0, 8);
 
-    const mapAction = (entry: (typeof approvalsWaiting)[number]) => ({
-      id: entry.id,
-      name: entry.name,
-      pipeline_id: entry.pipeline_id,
-      pipeline_name: entry.pipeline.company.name,
-      due_date: entry.due_date,
-      priority: entry.priority,
-    });
-
     return {
       code: STATUS_OK,
       message: "Success",
@@ -743,25 +478,13 @@ export const listB2B = {
         id: opts.ctx.user.id,
         full_name: opts.ctx.user.full_name,
       },
-      stats: {
-        pending_approvals: pendingApprovals,
-        my_tasks_today: myTasksToday,
-        team_overdue: teamOverdue,
-        active_tasks: activeTasks,
-      },
       activity,
       attention: {
         totals: {
-          approvals: pendingApprovals,
-          overdue_tasks: overdueTaskCount,
-          due_today_tasks: dueTodayTaskCount,
           stale_leads: staleLeadCount,
           ownership_conflicts: ownershipConflicts.length,
           quotations_pending: quotationsPendingCount,
         },
-        approvals: approvalsWaiting.map(mapAction),
-        overdue_tasks: overdueTasks.map(mapAction),
-        due_today_tasks: dueTodayTasks.map(mapAction),
         ownership_conflicts: ownershipConflicts.slice(0, 5),
         quotations_pending: quotationsPending.map((entry) => ({
           id: entry.id,

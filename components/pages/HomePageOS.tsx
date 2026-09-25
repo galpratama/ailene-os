@@ -6,7 +6,10 @@ import StageDistributionChartOS from "@/components/charts/StageDistributionChart
 import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
 import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
+import { getActionSummary } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import { setSessionToken, trpc } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 function getJakartaHour() {
@@ -40,6 +43,14 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
     enabled: !!sessionToken,
   });
 
+  // Task figures come from the Actions API; leads and quotations still come from tRPC.
+  const actionSummary = useQuery({
+    queryKey: ["actions", "summary"],
+    queryFn: async () => requireApiData(await getActionSummary()),
+    enabled: !!sessionToken,
+  });
+  const tasks = actionSummary.data;
+
   const { data: analytics, isLoading: isAnalyticsLoading } =
     trpc.list.b2b.dashboardAnalytics.useQuery(undefined, {
       enabled: !!sessionToken,
@@ -64,42 +75,40 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           {firstName ? `, ${firstName}` : ""}
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-          {data?.stats.my_tasks_today
-            ? `You have ${data.stats.my_tasks_today} task${
-                data.stats.my_tasks_today > 1 ? "s" : ""
+          {tasks?.my_tasks_today
+            ? `You have ${tasks.my_tasks_today} task${
+                tasks.my_tasks_today > 1 ? "s" : ""
               } due today.`
             : "You have no tasks due today."}
         </p>
       </div>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
-        {isError && (
+        {(isError || actionSummary.isError) && (
           <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
             Dashboard data could not be loaded. Please refresh the page.
           </div>
         )}
 
         <HomeAttentionOS
-          attention={
-            data?.attention ?? {
-              totals: {
-                approvals: 0,
-                overdue_tasks: 0,
-                due_today_tasks: 0,
-                stale_leads: 0,
-                ownership_conflicts: 0,
-                quotations_pending: 0,
-              },
-              approvals: [],
-              overdue_tasks: [],
-              due_today_tasks: [],
-              stale_leads: [],
-              ownership_conflicts: [],
-              quotations_pending: [],
-            }
-          }
+          attention={{
+            totals: {
+              approvals: tasks?.approvals.total ?? 0,
+              overdue_tasks: tasks?.overdue_tasks.total ?? 0,
+              due_today_tasks: tasks?.due_today_tasks.total ?? 0,
+              stale_leads: data?.attention.totals.stale_leads ?? 0,
+              ownership_conflicts: data?.attention.totals.ownership_conflicts ?? 0,
+              quotations_pending: data?.attention.totals.quotations_pending ?? 0,
+            },
+            approvals: tasks?.approvals.list ?? [],
+            overdue_tasks: tasks?.overdue_tasks.list ?? [],
+            due_today_tasks: tasks?.due_today_tasks.list ?? [],
+            stale_leads: data?.attention.stale_leads ?? [],
+            ownership_conflicts: data?.attention.ownership_conflicts ?? [],
+            quotations_pending: data?.attention.quotations_pending ?? [],
+          }}
           staleLeadDays={data?.meta.stale_lead_days ?? 0}
-          isLoading={isSummaryLoading}
+          isLoading={isSummaryLoading || actionSummary.isLoading}
         />
 
         {/* This week's trend + leads by stage */}

@@ -1,5 +1,15 @@
 "use server";
 
+import {
+  createAction as createActionApi,
+  getActionDetails as getActionDetailsApi,
+  getActionSummary as getActionSummaryApi,
+  listActions as listActionsApi,
+  updateAction as updateActionApi,
+  type CreateActionPayload,
+  type ListActionsOptions,
+  type UpdateActionPayload,
+} from "@/apis/actions";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
   createLmsGroup as createLmsGroupApi,
@@ -163,6 +173,26 @@ export async function updatePipeline(payload: UpdatePipelinePayload) {
 
 export async function deletePipeline(id: number) {
   return deletePipelineApi(id);
+}
+
+export async function listActions(options: ListActionsOptions = {}) {
+  return listActionsApi(options);
+}
+
+export async function getActionSummary() {
+  return getActionSummaryApi();
+}
+
+export async function getActionDetails(id: number) {
+  return getActionDetailsApi(id);
+}
+
+export async function createAction(payload: CreateActionPayload) {
+  return createActionApi(payload);
+}
+
+export async function updateAction(payload: UpdateActionPayload) {
+  return updateActionApi(payload);
 }
 
 export async function createLmsGroup(payload: {

@@ -15,13 +15,6 @@ export function pipelineDataScopeWhere(actor: ScopedActor): Prisma.PipelineWhere
   return { sales_owner_id: actor.id };
 }
 
-// Same restriction, applied through a B2BAction's parent pipeline (actions have no owner of their own).
-export function actionDataScopeWhere(
-  actor: ScopedActor
-): Prisma.B2BActionWhereInput {
-  return { pipeline: pipelineDataScopeWhere(actor) };
-}
-
 // Same restriction, applied through a B2BMeeting's parent pipeline (meetings have no owner of their own).
 export function meetingDataScopeWhere(
   actor: ScopedActor

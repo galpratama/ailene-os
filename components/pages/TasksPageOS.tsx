@@ -12,14 +12,15 @@ import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
-import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
+import type { ActionData, ActionStatus } from "@/apis/actions";
 import { useSession } from "@/contexts/SessionContext";
-import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { useActionList } from "@/hooks/useActionList";
+import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
-import type { B2BActionStatusEnum } from "@prisma/client";
+import { updateAction } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Building2,
   CalendarClock,
   Kanban,
   LayoutGrid,
@@ -28,14 +29,13 @@ import {
   Table2,
 } from "lucide-react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-const columns: { value: B2BActionStatusEnum; label: string; dot: string }[] = [
-  { value: "TO_DO", label: "To Do", dot: "bg-lime-bright" },
-  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-lime-bright" },
-  { value: "REVIEW", label: "Review", dot: "bg-lime-bright" },
-  { value: "DONE", label: "Done", dot: "bg-lime-bright" },
+const columns: { value: ActionStatus; label: string; dot: string }[] = [
+  { value: "to_do", label: "To Do", dot: "bg-lime-bright" },
+  { value: "in_progress", label: "In Progress", dot: "bg-lime-bright" },
+  { value: "review", label: "Review", dot: "bg-lime-bright" },
+  { value: "done", label: "Done", dot: "bg-lime-bright" },
 ];
 
 const viewModeOptions = [
@@ -50,10 +50,11 @@ function initialsOf(name: string | null) {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
 
-function dueLabel(due: string | Date | null, isDone: boolean) {
+// due is a plain YYYY-MM-DD, so parse it as a local calendar day rather than UTC midnight.
+function dueLabel(due: string | null, isDone: boolean) {
   if (!due) return null;
-  const target = new Date(due);
-  target.setHours(0, 0, 0, 0);
+  const [year, month, day] = due.split("-").map(Number);
+  const target = new Date(year, month - 1, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
@@ -64,11 +65,7 @@ function dueLabel(due: string | Date | null, isDone: boolean) {
 }
 
 export default function TasksPageOS({ sessionToken }: { sessionToken: string }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "OWN";
@@ -79,21 +76,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     "kanban"
   );
 
-  // Deep-linked as /tasks?pipeline_id=<id> — pre-selects that pipeline in the filter.
-  const searchParams = useSearchParams();
-  const linkedPipelineId = searchParams.get("pipeline_id");
-
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<
     string | undefined
   >(undefined);
   const [assigneeFilter, setAssigneeFilter] = useState("");
-  const [pipelineFilter, setPipelineFilter] = useState<number | null>(
-    linkedPipelineId ? Number(linkedPipelineId) : null
-  );
-  const [createStatus, setCreateStatus] = useState<B2BActionStatusEnum | null>(
-    null
-  );
+  const [createStatus, setCreateStatus] = useState<ActionStatus | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -102,14 +90,12 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     return () => clearTimeout(timeout);
   }, [keyword]);
 
-  const { data, isLoading, isError } = trpc.list.b2b.allActions.useQuery(
+  const { data, isLoading, isError } = useActionList(
     {
-      page_size: 500,
       keyword: debouncedKeyword,
       assignee_id: assigneeFilter || undefined,
-      pipeline_id: pipelineFilter ?? undefined,
     },
-    { enabled: !!sessionToken }
+    !!sessionToken
   );
 
   const userList = useUserList(!isOwnScoped);
@@ -118,57 +104,53 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
 
-  const { data: pipelineData } = useSalesPipelineList(!!sessionToken);
-  const pipelineOptions: AppSelectOption[] = [
-    { value: null, label: "All Pipelines" },
-    ...(pipelineData?.map((p) => ({
-      value: p.id,
-      label: p.company_name,
-    })) ?? []),
-  ];
-
-  const updateAction = trpc.update.b2b.action.useMutation();
-
   // Optimistic local overrides so a drag feels instant while the mutation is in flight.
   const [movedStatuses, setMovedStatuses] = useState<
-    Partial<Record<number, B2BActionStatusEnum>>
+    Partial<Record<number, ActionStatus>>
   >({});
 
   const board = useMemo(
     () =>
-      data?.list.map((action) => {
+      data?.map((action) => {
         const status = movedStatuses[action.id];
         return status ? { ...action, status } : action;
       }) ?? [],
-    [data?.list, movedStatuses]
+    [data, movedStatuses]
   );
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<B2BActionStatusEnum | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<ActionStatus | null>(null);
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
-  const moveTo = (id: number, status: B2BActionStatusEnum) => {
-    const current = board.find((b) => b.id === id);
-    if (!current || current.status === status) return;
-    const prevStatus = current.status;
-    setMovedStatuses((prev) => ({ ...prev, [id]: status }));
-    updateAction.mutate(
-      { id, status },
-      {
-        onError: () => {
-          setMovedStatuses((prev) => ({ ...prev, [id]: prevStatus }));
-        },
-        onSuccess: () => utils.list.b2b.allActions.invalidate(),
-      }
-    );
+  // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
+  const moveTo = async (action: ActionData, status: ActionStatus) => {
+    if (action.status === status) return;
+    const prevStatus = action.status;
+    setMovedStatuses((prev) => ({ ...prev, [action.id]: status }));
+    try {
+      requireApiData(
+        await updateAction({
+          id: action.id,
+          name: action.name,
+          summary: action.summary,
+          status,
+          priority: action.priority,
+          due_date: action.due_date,
+          assignee_id: action.assignee_id,
+        })
+      );
+      await queryClient.invalidateQueries({ queryKey: ["actions"] });
+    } catch {
+      setMovedStatuses((prev) => ({ ...prev, [action.id]: prevStatus }));
+    }
   };
 
-  const handleDrop = (status: B2BActionStatusEnum) => (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (status: ActionStatus) => (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragOverStatus(null);
-    const id = draggedId;
+    const dragged = board.find((b) => b.id === draggedId);
     setDraggedId(null);
-    if (id != null) moveTo(id, status);
+    if (dragged) void moveTo(dragged, status);
   };
 
   return (
@@ -177,10 +159,10 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tasks</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-            Every action across every client, in one board
+            Every action you can see, in one board
           </p>
         </div>
-        <AppButton size="sm" onClick={() => setCreateStatus("TO_DO")}>
+        <AppButton size="sm" onClick={() => setCreateStatus("to_do")}>
           <Plus size={14} />
           Create New Task
         </AppButton>
@@ -207,15 +189,6 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
             />
           </div>
         )}
-        <div className="min-w-32 flex-1">
-          <AppSelect
-            selectId="tasks-pipeline-filter"
-            placeholder="All Pipelines"
-            value={pipelineFilter}
-            options={pipelineOptions}
-            onChange={(value) => setPipelineFilter(value as number | null)}
-          />
-        </div>
         <ViewModeToggleOS
           value={viewMode}
           onChange={setViewMode}
@@ -266,7 +239,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
                 <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
                   {items.map((action) => {
-                    const due = dueLabel(action.due_date, action.status === "DONE");
+                    const due = dueLabel(action.due_date, action.status === "done");
                     return (
                       <div
                         key={action.id}
@@ -281,10 +254,6 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                         <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100 line-clamp-3">
                           {action.name}
                         </p>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-zinc-500">
-                          <Building2 size={11} />
-                          {action.company_name}
-                        </span>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <PriorityLabel priority={action.priority} />
@@ -341,7 +310,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       {!isError && viewMode === "cards" && (
         <div className="grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {board.map((action) => {
-            const due = dueLabel(action.due_date, action.status === "DONE");
+            const due = dueLabel(action.due_date, action.status === "done");
             return (
               <div
                 key={action.id}
@@ -362,10 +331,6 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                   </p>
                   <ActionStatusLabel status={action.status} />
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 dark:text-zinc-500">
-                  <Building2 size={12} />
-                  {action.company_name}
-                </span>
                 <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">
                   <div className="flex items-center gap-2">
                     <PriorityLabel priority={action.priority} />
@@ -413,7 +378,6 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
                   <th className="px-5 py-3">Task</th>
-                  <th className="px-5 py-3">Company</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Priority</th>
                   <th className="px-5 py-3">Due</th>
@@ -422,7 +386,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
               </thead>
               <tbody>
                 {board.map((action) => {
-                  const due = dueLabel(action.due_date, action.status === "DONE");
+                  const due = dueLabel(action.due_date, action.status === "done");
                   return (
                     <tr
                       key={action.id}
@@ -431,12 +395,6 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {action.name}
-                      </td>
-                      <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
-                        <span className="inline-flex items-center gap-1">
-                          <Building2 size={12} className="text-gray-400" />
-                          {action.company_name}
-                        </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <ActionStatusLabel status={action.status} />
@@ -493,16 +451,14 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       <EditActionFormOS
-        sessionToken={sessionToken}
         actionId={editingActionId}
         isOpen={editingActionId !== null}
         onClose={() => setEditingActionId(null)}
       />
 
       <CreateActionFormOS
-        sessionToken={sessionToken}
         isOpen={createStatus !== null}
-        defaultStatus={createStatus ?? "TO_DO"}
+        defaultStatus={createStatus ?? "to_do"}
         onClose={() => setCreateStatus(null)}
       />
     </div>

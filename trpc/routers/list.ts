@@ -9,7 +9,6 @@ export const listRouter = createTRPCRouter({
   // B2B Sales Pipeline //
 
   b2b: {
-    allActions: listB2B.allActions,
     meetings: listB2B.meetings,
     quotations: listB2B.quotations,
     quotationApprovalQueue: listB2B.quotationApprovalQueue,

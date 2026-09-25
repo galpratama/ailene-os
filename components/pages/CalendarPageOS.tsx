@@ -6,8 +6,10 @@ import EditMeetingFormOS from "@/components/forms/EditMeetingFormOS";
 import CalendarActionModalOS, {
   CalendarActionModalEvent,
 } from "@/components/modals/CalendarActionModalOS";
+import type { ActionPriority } from "@/apis/actions";
+import { useActionList } from "@/hooks/useActionList";
 import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BActionPriorityEnum, B2BMeetingStatusEnum } from "@prisma/client";
+import type { B2BMeetingStatusEnum } from "@prisma/client";
 import {
   CalendarClock,
   CalendarDays,
@@ -21,25 +23,25 @@ import { useEffect, useMemo, useState } from "react";
 const DAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 const priorityStyles: Record<
-  B2BActionPriorityEnum,
+  ActionPriority,
   { label: string; dot: string; chip: string }
 > = {
-  LOW: {
+  low: {
     label: "Low",
     dot: "bg-gray-400",
     chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
   },
-  MEDIUM: {
+  medium: {
     label: "Medium",
     dot: "bg-biru",
     chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
   },
-  HIGH: {
+  high: {
     label: "High",
     dot: "bg-oranye",
     chip: "bg-oranye-t text-oranye hover:bg-oranye-t/80 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20",
   },
-  URGENT: {
+  urgent: {
     label: "Urgent",
     dot: "bg-merah",
     chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
@@ -72,9 +74,7 @@ const meetingStatusStyles: Record<
   },
 };
 
-// A calendar event is either a B2BAction (due_date, priority) or a B2BMeeting
-// (due_date here holds scheduled_at — see the calendar backend query, which
-// normalizes both into one shared field for grouping-by-day).
+// Actions (Actions API) and meetings (tRPC, due_date = scheduled_at) group by the same due_date field.
 type CalendarMeetingEvent = {
   id: number;
   type: "b2b_meeting";
@@ -92,7 +92,7 @@ type CalendarMeetingEvent = {
 };
 
 type CalendarEvent =
-  | (CalendarActionModalEvent & { type: "b2b_action" })
+  | (CalendarActionModalEvent & { type: "b2b_action"; title: string })
   | CalendarMeetingEvent;
 
 function pad(value: number) {
@@ -169,23 +169,37 @@ export default function CalendarPageOS({
   );
   const visibleEnd = visibleDays[visibleDays.length - 1];
 
-  const { data, isLoading, isError } = trpc.list.b2b.calendar.useQuery(
+  const meetingQuery = trpc.list.b2b.calendar.useQuery(
     {
       start_date: dateKey(visibleStart),
       end_date: dateKey(visibleEnd),
     },
     { enabled: !!sessionToken }
   );
+  const actionQuery = useActionList(
+    { due_from: dateKey(visibleStart), due_to: dateKey(visibleEnd) },
+    !!sessionToken
+  );
+  const isLoading = meetingQuery.isLoading || actionQuery.isLoading;
+  const isError = meetingQuery.isError || actionQuery.isError;
 
   const eventsByDate = useMemo(() => {
+    const events: CalendarEvent[] = [
+      ...(actionQuery.data ?? []).map((action) => ({
+        ...action,
+        type: "b2b_action" as const,
+        title: action.name,
+      })),
+      ...(meetingQuery.data?.list ?? []),
+    ];
     const grouped = new Map<string, CalendarEvent[]>();
-    for (const event of data?.list ?? []) {
+    for (const event of events) {
       const key = dateKeyFromValue(event.due_date);
       if (!key) continue;
       grouped.set(key, [...(grouped.get(key) ?? []), event]);
     }
     return grouped;
-  }, [data?.list]);
+  }, [actionQuery.data, meetingQuery.data?.list]);
 
   const goToPreviousMonth = () =>
     setCurrent((value) => {

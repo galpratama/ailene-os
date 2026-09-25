@@ -8,7 +8,6 @@ export const readRouter = createTRPCRouter({
     googleCalendarConnection: readIntegrations.googleCalendarConnection,
   },
   b2b: {
-    action: readB2B.action,
     meeting: readB2B.meeting,
     quotation: readB2B.quotation,
   },

@@ -3,7 +3,6 @@ import { calculatePricing } from "@/lib/pricing-b2b";
 import { STATUS_BAD_REQUEST, STATUS_FORBIDDEN, STATUS_OK } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import {
-  actionDataScopeWhere,
   meetingDataScopeWhere,
   quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
@@ -21,8 +20,6 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
-  B2BActionPriorityEnum,
-  B2BActionStatusEnum,
   B2BMeetingStatusEnum,
   B2BQuotationApprovalDecisionEnum,
   B2BQuotationStatusEnum,
@@ -30,65 +27,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
-// "YYYY-MM-DD" string from frontend. Day expected to be 01 by convention.
-const monthDate = z.iso.date();
-
 export const updateB2B = {
-  action: administratorProcedure
-    .input(
-      z.object({
-        id: numberIsID(),
-        name: stringNotBlank().optional(),
-        summary: stringNotBlank().nullable().optional(),
-        status: z.enum(B2BActionStatusEnum).optional(),
-        priority: z.enum(B2BActionPriorityEnum).optional(),
-        due_date: monthDate.nullable().optional(),
-        assignee_id: stringIsUUID().nullable().optional(),
-      })
-    )
-    .mutation(async (opts) => {
-      const { id, due_date, ...rest } = opts.input;
-
-      await opts.ctx.prisma.$transaction(async (tx) => {
-        const existing = await tx.b2BAction.findFirst({
-          where: { id, ...actionDataScopeWhere(opts.ctx.user) },
-          select: { assignee_id: true },
-        });
-        if (!existing) {
-          throw readFailedNotFound("action");
-        }
-
-        const row = await tx.b2BAction.update({
-          where: { id },
-          data: {
-            ...rest,
-            ...(due_date !== undefined && {
-              due_date: due_date ? new Date(due_date) : null,
-            }),
-          },
-        });
-
-        const assigneeChanged =
-          rest.assignee_id !== undefined &&
-          rest.assignee_id !== existing.assignee_id;
-        if (assigneeChanged && row.assignee_id) {
-          await notifyUsers(tx, {
-            userIds: [row.assignee_id],
-            actorId: opts.ctx.user.id,
-            type: "NEW_ASSIGNMENT",
-            entityType: "B2B_ACTION",
-            entityId: row.id,
-            message: `You were assigned to "${row.name}".`,
-          });
-        }
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Action updated",
-      };
-    }),
-
   meeting: administratorProcedure
     .input(
       z.object({

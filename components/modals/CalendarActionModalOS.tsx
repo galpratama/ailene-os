@@ -2,43 +2,28 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import PriorityLabel from "@/components/labels/PriorityLabel";
-import type { B2BActionPriorityEnum, B2BActionStatusEnum } from "@prisma/client";
-import { Building2, CalendarDays, UserRound, Workflow, X } from "lucide-react";
+import type { ActionData, ActionPriority, ActionStatus } from "@/apis/actions";
+import { CalendarDays, UserRound, Workflow, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 
-export type CalendarActionModalEvent = {
-  id: number;
-  title: string;
-  name: string;
-  summary: string | null;
-  status: B2BActionStatusEnum;
-  priority: B2BActionPriorityEnum;
-  due_date: string | Date | null;
-  pipeline_id: number;
-  pipeline_name: string;
-  company_id: number;
-  company_name: string;
-  assignee_id: string | null;
-  assignee_name: string | null;
-  assignee_avatar: string | null;
+export type CalendarActionModalEvent = ActionData;
+
+const statusLabels: Record<ActionStatus, string> = {
+  to_do: "To Do",
+  in_progress: "In Progress",
+  review: "Review",
+  done: "Done",
 };
 
-const statusLabels: Record<B2BActionStatusEnum, string> = {
-  TO_DO: "To Do",
-  IN_PROGRESS: "In Progress",
-  REVIEW: "Review",
-  DONE: "Done",
+const priorityLabels: Record<ActionPriority, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  urgent: "Urgent",
 };
 
-const priorityLabels: Record<B2BActionPriorityEnum, string> = {
-  LOW: "Low",
-  MEDIUM: "Medium",
-  HIGH: "High",
-  URGENT: "Urgent",
-};
-
-function formatDate(value: string | Date | null) {
+function formatDate(value: string | null) {
   if (!value) return "No due date";
   return new Date(value).toLocaleDateString("id-ID", {
     day: "numeric",
@@ -86,7 +71,7 @@ export default function CalendarActionModalOS({
               B2B Action
             </p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-              {event.title}
+              {event.name}
             </h2>
           </div>
           <AppButton
@@ -124,20 +109,6 @@ export default function CalendarActionModalOS({
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-claude/10 text-claude">
-                <Building2 size={15} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
-                  {event.company_name}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
-                  {event.pipeline_name}
-                </p>
-              </div>
-            </div>
-
             <div className="flex items-center gap-3">
               <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-xs font-bold text-gray-500 dark:bg-zinc-800 dark:text-zinc-300">
                 {event.assignee_avatar ? (

@@ -4,7 +4,6 @@ import { STATUS_CONFLICT, STATUS_CREATED } from "@/lib/status_code";
 import { administratorProcedure } from "@/trpc/init";
 import { pipelineDataScopeWhere } from "@/trpc/utils/data_scope";
 import { readFailedNotFound } from "@/trpc/utils/errors";
-import { notifyUsers } from "@/trpc/utils/notification";
 import { computeRequiresReview, toPricingState } from "@/trpc/utils/quotation";
 import {
   numberIsID,
@@ -15,8 +14,6 @@ import {
   stringNotBlank,
 } from "@/trpc/utils/validation";
 import {
-  B2BActionPriorityEnum,
-  B2BActionStatusEnum,
   B2BQuotationMateriLevelEnum,
   B2BQuotationPackageEnum,
   B2BQuotationSessionFormatEnum,
@@ -59,70 +56,7 @@ export function requirePackageType<T extends typeof quotationInputShape>(
   });
 }
 
-// "YYYY-MM-DD" string from frontend. Day expected to be 01 by convention.
-const monthDate = z.iso.date();
-
 export const createB2B = {
-  action: administratorProcedure
-    .input(
-      z.object({
-        pipeline_id: numberIsID(),
-        name: stringNotBlank(),
-        summary: stringNotBlank().nullable().optional(),
-        status: z.enum(B2BActionStatusEnum).optional(),
-        priority: z.enum(B2BActionPriorityEnum).optional(),
-        due_date: monthDate.nullable().optional(),
-        assignee_id: stringIsUUID().nullable().optional(),
-        // Set when this action is the next action created from a Meeting outcome (see b2b.meeting).
-        source_meeting_id: numberIsID().optional(),
-      })
-    )
-    .mutation(async (opts) => {
-      const pipeline = await opts.ctx.prisma.pipeline.findFirst({
-        where: {
-          id: opts.input.pipeline_id,
-          ...pipelineDataScopeWhere(opts.ctx.user),
-        },
-        select: { id: true },
-      });
-      if (!pipeline) {
-        throw readFailedNotFound("pipeline");
-      }
-
-      const created = await opts.ctx.prisma.$transaction(async (tx) => {
-        const row = await tx.b2BAction.create({
-          data: {
-            pipeline_id: opts.input.pipeline_id,
-            name: opts.input.name,
-            summary: opts.input.summary ?? null,
-            status: opts.input.status,
-            priority: opts.input.priority,
-            due_date: opts.input.due_date ? new Date(opts.input.due_date) : null,
-            assignee_id: opts.input.assignee_id ?? null,
-            source_meeting_id: opts.input.source_meeting_id,
-          },
-        });
-
-        if (row.assignee_id) {
-          await notifyUsers(tx, {
-            userIds: [row.assignee_id],
-            actorId: opts.ctx.user.id,
-            type: "NEW_ASSIGNMENT",
-            entityType: "B2B_ACTION",
-            entityId: row.id,
-            message: `You were assigned to "${row.name}".`,
-          });
-        }
-
-        return row;
-      });
-      return {
-        code: STATUS_CREATED,
-        message: "Action created",
-        id: created.id,
-      };
-    }),
-
   meeting: administratorProcedure
     .input(
       z.object({

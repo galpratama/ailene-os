@@ -170,26 +170,6 @@ enum LeadChannelEnum {
   @@map("lead_channel_enum")
 }
 
-// Enumeration for the B2BAction model (b2ba_*)
-
-enum B2BActionStatusEnum {
-  TO_DO       @map("to_do")
-  IN_PROGRESS @map("in_progress")
-  REVIEW      @map("review")
-  DONE        @map("done")
-
-  @@map("b2ba_status_enum")
-}
-
-enum B2BActionPriorityEnum {
-  LOW    @map("low")
-  MEDIUM @map("medium")
-  HIGH   @map("high")
-  URGENT @map("urgent")
-
-  @@map("b2ba_priority_enum")
-}
-
 // Enumeration for the B2BMeeting model (b2bm_*)
 
 enum B2BMeetingStatusEnum {
@@ -470,9 +450,9 @@ enum LmsPaMotivationEnum {
 // Lookup tables
 
 model Industry {
-  id                         Int                           @id @default(autoincrement()) @db.SmallInt
-  industry_name              String                        @unique @db.VarChar()
-  created_at                 DateTime                      @default(now()) @db.Timestamptz()
+  id            Int      @id @default(autoincrement()) @db.SmallInt
+  industry_name String   @unique @db.VarChar()
+  created_at    DateTime @default(now()) @db.Timestamptz()
 
   @@map("industries")
 }
@@ -499,43 +479,42 @@ model TrainerSpecialization {
 // User data
 
 model User {
-  id                              String                        @id @default(uuid()) @db.Uuid
-  full_name                       String                        @db.VarChar()
-  email                           String                        @unique @db.VarChar()
-  avatar                          String?                       @db.VarChar()
-  role                            UserRoleEnum                  @default(MEMBER)
-  team                            Team?                         @relation(fields: [team_id], references: [id])
-  team_id                         Int?                          @db.SmallInt
+  id                              String                     @id @default(uuid()) @db.Uuid
+  full_name                       String                     @db.VarChar()
+  email                           String                     @unique @db.VarChar()
+  avatar                          String?                    @db.VarChar()
+  role                            UserRoleEnum               @default(MEMBER)
+  team                            Team?                      @relation(fields: [team_id], references: [id])
+  team_id                         Int?                       @db.SmallInt
   job_function                    JobFunctionEnum?
-  data_scope                      DataScopeEnum                 @default(OWN)
-  status                          UserAccountStatusEnum         @default(ACTIVE)
-  invited_by                      User?                         @relation("UserInvitedBy", fields: [invited_by_id], references: [id])
-  invited_by_id                   String?                       @db.Uuid
-  invited_at                      DateTime?                     @db.Timestamptz()
-  invited_users                   User[]                        @relation("UserInvitedBy")
-  created_at                      DateTime                      @default(now()) @db.Timestamptz()
-  updated_at                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
-  last_login                      DateTime                      @default(now()) @updatedAt @db.Timestamptz()
-  deleted_at                      DateTime?                     @db.Timestamptz()
+  data_scope                      DataScopeEnum              @default(OWN)
+  status                          UserAccountStatusEnum      @default(ACTIVE)
+  invited_by                      User?                      @relation("UserInvitedBy", fields: [invited_by_id], references: [id])
+  invited_by_id                   String?                    @db.Uuid
+  invited_at                      DateTime?                  @db.Timestamptz()
+  invited_users                   User[]                     @relation("UserInvitedBy")
+  created_at                      DateTime                   @default(now()) @db.Timestamptz()
+  updated_at                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  last_login                      DateTime                   @default(now()) @updatedAt @db.Timestamptz()
+  deleted_at                      DateTime?                  @db.Timestamptz()
   tokens                          Token[]
-  sales_pipelines                 Pipeline[]                    @relation("PipelineSalesOwner")
-  b2b_actions                     B2BAction[]
-  trainer_profile                 Trainer?                      @relation("TrainerUser")
-  trainer_referrals               Trainer[]                     @relation("TrainerReferrer")
-  trainer_scores                  TrainerScreening[]            @relation("TrainerScreeningScorer")
-  chapter_trainer_request_reviews LmsChapterTrainerRequest[]    @relation("LmsChapterTrainerRequestReviewer")
-  audit_log_entries               UserAuditLog[]                @relation("UserAuditLogTarget")
-  audit_log_actions               UserAuditLog[]                @relation("UserAuditLogActor")
-  reassignments_as_creator        OwnershipReassignment[]       @relation("OwnershipReassignmentOriginalCreator")
-  reassignments_as_previous_owner OwnershipReassignment[]       @relation("OwnershipReassignmentPreviousOwner")
-  reassignments_as_new_owner      OwnershipReassignment[]       @relation("OwnershipReassignmentNewOwner")
-  reassignments_as_actor          OwnershipReassignment[]       @relation("OwnershipReassignmentActor")
-  meetings_organized              B2BMeeting[]                  @relation("B2BMeetingOrganizer")
-  meetings_created                B2BMeeting[]                  @relation("B2BMeetingCreatedBy")
+  sales_pipelines                 Pipeline[]                 @relation("PipelineSalesOwner")
+  trainer_profile                 Trainer?                   @relation("TrainerUser")
+  trainer_referrals               Trainer[]                  @relation("TrainerReferrer")
+  trainer_scores                  TrainerScreening[]         @relation("TrainerScreeningScorer")
+  chapter_trainer_request_reviews LmsChapterTrainerRequest[] @relation("LmsChapterTrainerRequestReviewer")
+  audit_log_entries               UserAuditLog[]             @relation("UserAuditLogTarget")
+  audit_log_actions               UserAuditLog[]             @relation("UserAuditLogActor")
+  reassignments_as_creator        OwnershipReassignment[]    @relation("OwnershipReassignmentOriginalCreator")
+  reassignments_as_previous_owner OwnershipReassignment[]    @relation("OwnershipReassignmentPreviousOwner")
+  reassignments_as_new_owner      OwnershipReassignment[]    @relation("OwnershipReassignmentNewOwner")
+  reassignments_as_actor          OwnershipReassignment[]    @relation("OwnershipReassignmentActor")
+  meetings_organized              B2BMeeting[]               @relation("B2BMeetingOrganizer")
+  meetings_created                B2BMeeting[]               @relation("B2BMeetingCreatedBy")
   notifications                   Notification[]
   google_calendar_connection      GoogleCalendarConnection?
-  quotations_created              B2BQuotation[]                @relation("B2BQuotationCreatedBy")
-  quotation_approvals             B2BQuotationApproval[]        @relation("B2BQuotationApprovalActor")
+  quotations_created              B2BQuotation[]             @relation("B2BQuotationCreatedBy")
+  quotation_approvals             B2BQuotationApproval[]     @relation("B2BQuotationApprovalActor")
 
   @@map("users")
 }
@@ -622,17 +601,17 @@ model Notification {
 
 // Sales API organization. One company has exactly one active Pipeline row.
 model Company {
-  id               Int               @id @default(autoincrement())
-  name             String            @db.VarChar()
-  normalized_name  String            @unique @db.VarChar()
-  legal_identifier String?           @db.VarChar()
-  industry_id      Int?              @db.SmallInt
+  id               Int              @id @default(autoincrement())
+  name             String           @db.VarChar()
+  normalized_name  String           @unique @db.VarChar()
+  legal_identifier String?          @db.VarChar()
+  industry_id      Int?             @db.SmallInt
   lead_source      LeadSourceEnum?
   lead_channel     LeadChannelEnum?
-  website_url      String?           @db.VarChar()
-  image_url        String?           @db.VarChar()
-  created_at       DateTime          @default(now()) @db.Timestamptz()
-  updated_at       DateTime          @default(now()) @updatedAt @db.Timestamptz()
+  website_url      String?          @db.VarChar()
+  image_url        String?          @db.VarChar()
+  created_at       DateTime         @default(now()) @db.Timestamptz()
+  updated_at       DateTime         @default(now()) @updatedAt @db.Timestamptz()
   pipeline         Pipeline?
   lms_projects     LmsProject[]
 
@@ -644,20 +623,19 @@ model Company {
 // One primary relationship per contact-organization pair, with effective dates.
 // Sales API pipeline. Its company name is the user-facing label because there is one pipeline per company.
 model Pipeline {
-  id                  Int             @id @default(autoincrement())
-  company             Company         @relation(fields: [company_id], references: [id])
-  company_id          Int             @unique
-  sales_owner         User            @relation("PipelineSalesOwner", fields: [sales_owner_id], references: [id])
-  sales_owner_id      String          @db.Uuid
-  stage_code          String          @db.VarChar(40)
-  estimated_value     Decimal         @default(0) @db.Decimal(15, 2)
-  expected_close_date DateTime?       @db.Date
-  qualified_at        DateTime?       @db.Timestamptz()
-  meeting_booked_at   DateTime?       @db.Timestamptz()
-  closed_at           DateTime?       @db.Timestamptz()
-  created_at          DateTime        @default(now()) @db.Timestamptz()
-  updated_at          DateTime        @default(now()) @updatedAt @db.Timestamptz()
-  actions             B2BAction[]
+  id                  Int            @id @default(autoincrement())
+  company             Company        @relation(fields: [company_id], references: [id])
+  company_id          Int            @unique
+  sales_owner         User           @relation("PipelineSalesOwner", fields: [sales_owner_id], references: [id])
+  sales_owner_id      String         @db.Uuid
+  stage_code          String         @db.VarChar(40)
+  estimated_value     Decimal        @default(0) @db.Decimal(15, 2)
+  expected_close_date DateTime?      @db.Date
+  qualified_at        DateTime?      @db.Timestamptz()
+  meeting_booked_at   DateTime?      @db.Timestamptz()
+  closed_at           DateTime?      @db.Timestamptz()
+  created_at          DateTime       @default(now()) @db.Timestamptz()
+  updated_at          DateTime       @default(now()) @updatedAt @db.Timestamptz()
   meetings            B2BMeeting[]
   quotations          B2BQuotation[]
   lms_projects        LmsProject[]
@@ -665,26 +643,6 @@ model Pipeline {
   @@index([sales_owner_id])
   @@index([stage_code])
   @@map("pipelines")
-}
-
-model B2BAction {
-  id                Int                   @id @default(autoincrement())
-  pipeline          Pipeline              @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
-  pipeline_id       Int
-  name              String                @db.VarChar()
-  summary           String?               @db.Text
-  status            B2BActionStatusEnum   @default(TO_DO)
-  priority          B2BActionPriorityEnum @default(MEDIUM)
-  due_date          DateTime?             @db.Date
-  assignee          User?                 @relation(fields: [assignee_id], references: [id], onDelete: SetNull)
-  assignee_id       String?               @db.Uuid
-  // Set when this action is the next action created/updated from a Meeting outcome (see B2BMeeting).
-  source_meeting    B2BMeeting?           @relation(fields: [source_meeting_id], references: [id], onDelete: SetNull)
-  source_meeting_id Int?
-  created_at        DateTime              @default(now()) @db.Timestamptz()
-  updated_at        DateTime              @default(now()) @updatedAt @db.Timestamptz()
-
-  @@map("actions")
 }
 
 // A held/scheduled meeting on a pipeline — the traceable source of first/second-meeting
@@ -711,7 +669,6 @@ model B2BMeeting {
   created_by_id      String                       @db.Uuid
   created_at         DateTime                     @default(now()) @db.Timestamptz()
   updated_at         DateTime                     @default(now()) @updatedAt @db.Timestamptz()
-  next_actions       B2BAction[]
 
   @@index([pipeline_id])
   @@index([scheduled_at])
@@ -932,15 +889,15 @@ model LmsGroup {
 }
 
 model LmsProject {
-  id           Int         @id @default(autoincrement())
-  name         String      @db.VarChar()
-  company      Company?    @relation(fields: [company_id], references: [id], onDelete: SetNull)
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar()
+  company      Company?   @relation(fields: [company_id], references: [id], onDelete: SetNull)
   company_id   Int?
-  pipeline     Pipeline    @relation(fields: [pipeline_id], references: [id], onDelete: Restrict)
+  pipeline     Pipeline   @relation(fields: [pipeline_id], references: [id], onDelete: Restrict)
   pipeline_id  Int
   attendee_pax Int?
-  created_at   DateTime    @default(now()) @db.Timestamptz()
-  updated_at   DateTime    @default(now()) @updatedAt @db.Timestamptz()
+  created_at   DateTime   @default(now()) @db.Timestamptz()
+  updated_at   DateTime   @default(now()) @updatedAt @db.Timestamptz()
   groups       LmsGroup[]
   levels       LmsLevel[]
 

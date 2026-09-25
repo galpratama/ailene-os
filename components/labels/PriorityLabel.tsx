@@ -1,5 +1,5 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { B2BActionPriorityEnum } from "@prisma/client";
+import type { ActionPriority } from "@/apis/actions";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,19 +9,19 @@ import {
 } from "lucide-react";
 
 const priorityStyles: Record<
-  B2BActionPriorityEnum,
+  ActionPriority,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
-  LOW: { variant: "gray", icon: ChevronDown, label: "Low" },
-  MEDIUM: { variant: "biru", icon: Equal, label: "Medium" },
-  HIGH: { variant: "oranye", icon: ChevronUp, label: "High" },
-  URGENT: { variant: "merah", icon: ChevronsUp, label: "Urgent" },
+  low: { variant: "gray", icon: ChevronDown, label: "Low" },
+  medium: { variant: "biru", icon: Equal, label: "Medium" },
+  high: { variant: "oranye", icon: ChevronUp, label: "High" },
+  urgent: { variant: "merah", icon: ChevronsUp, label: "Urgent" },
 };
 
 export default function PriorityLabel({
   priority,
 }: {
-  priority: B2BActionPriorityEnum;
+  priority: ActionPriority;
 }) {
   const { variant, icon: Icon } = priorityStyles[priority];
 

@@ -5,53 +5,47 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
-import { trpc } from "@/trpc/client";
-import { useUserList } from "@/hooks/useUserList";
-import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
-import { B2BActionPriorityEnum, B2BActionStatusEnum } from "@prisma/client";
+import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
+import { createAction } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 export const statusOptions: AppSelectOption[] = [
-  { value: "TO_DO", label: "To Do" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "REVIEW", label: "Review" },
-  { value: "DONE", label: "Done" },
+  { value: "to_do", label: "To Do" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "review", label: "Review" },
+  { value: "done", label: "Done" },
 ];
 
 export const priorityOptions: AppSelectOption[] = [
-  { value: "LOW", label: "Low" },
-  { value: "MEDIUM", label: "Medium" },
-  { value: "HIGH", label: "High" },
-  { value: "URGENT", label: "Urgent" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" },
 ];
 
 interface CreateActionFormOSProps {
-  sessionToken: string;
-  pipelineId?: number;
   isOpen: boolean;
   onClose: () => void;
-  defaultStatus?: B2BActionStatusEnum;
+  defaultStatus?: ActionStatus;
 }
 
 export default function CreateActionFormOS({
-  sessionToken,
-  pipelineId,
   isOpen,
   onClose,
-  defaultStatus = "TO_DO",
+  defaultStatus = "to_do",
 }: CreateActionFormOSProps) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [status, setStatus] = useState<B2BActionStatusEnum>(defaultStatus);
-  const [priority, setPriority] = useState<B2BActionPriorityEnum>("MEDIUM");
+  const [status, setStatus] = useState<ActionStatus>(defaultStatus);
+  const [priority, setPriority] = useState<ActionPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
-    null
-  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -61,31 +55,15 @@ export default function CreateActionFormOS({
     if (isOpen) setStatus(defaultStatus);
   }
 
-  const userList = useUserList(isOpen);
-
-  const assigneeOptions: AppSelectOption[] = [
-    { value: "", label: "Unassigned" },
-    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
-  ];
-
-  const needsPipelinePicker = pipelineId === undefined;
-  const { data: pipelineData } = useSalesPipelineList(
-    !!sessionToken && isOpen && needsPipelinePicker
-  );
-  const pipelineOptions: AppSelectOption[] =
-    pipelineData?.map((p) => ({
-      value: p.id,
-      label: p.company_name,
-    })) ?? [];
+  const assigneeOptions = useAssigneeOptions(isOpen);
 
   function resetForm() {
     setName("");
     setSummary("");
     setStatus(defaultStatus);
-    setPriority("MEDIUM");
+    setPriority("medium");
     setDueDate("");
     setAssigneeId("");
-    setSelectedPipelineId(null);
     setError(null);
   }
 
@@ -94,12 +72,24 @@ export default function CreateActionFormOS({
     onClose();
   }
 
-  const createAction = trpc.create.b2b.action.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.allActions.invalidate();
+  const createMutation = useMutation({
+    mutationFn: async () =>
+      requireApiData(
+        await createAction({
+          name: name.trim(),
+          summary: summary.trim() || null,
+          status,
+          priority,
+          due_date: dueDate || null,
+          assignee_id: assigneeId || null,
+        })
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["actions"] });
       handleClose();
     },
-    onError: (err) => setError(err.message),
+    onError: (cause) =>
+      setError(cause instanceof Error ? cause.message : "Failed to create action."),
   });
 
   function handleSubmit(e: FormEvent) {
@@ -107,28 +97,14 @@ export default function CreateActionFormOS({
     setError(null);
 
     if (!name.trim()) return setError("Action name is required.");
-    const targetPipelineId = pipelineId ?? selectedPipelineId;
-    if (!targetPipelineId) return setError("Pipeline is required.");
 
-    createAction.mutate({
-      pipeline_id: targetPipelineId,
-      name: name.trim(),
-      summary: summary.trim() || null,
-      status,
-      priority,
-      due_date: dueDate || null,
-      assignee_id: assigneeId || null,
-    });
+    createMutation.mutate();
   }
 
   return (
     <SheetOS
       title="Add New Action"
-      description={
-        needsPipelinePicker
-          ? "Add a task to a lead's delivery workflow."
-          : "Add a task to this lead's delivery workflow."
-      }
+      description="Add a task to the board."
       isOpen={isOpen}
       onClose={handleClose}
     >
@@ -138,18 +114,6 @@ export default function CreateActionFormOS({
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
               {error}
             </p>
-          )}
-
-          {needsPipelinePicker && (
-            <AppSelect
-              selectId="action-pipeline"
-              label="Pipeline"
-              required
-              placeholder="Pick a pipeline"
-              value={selectedPipelineId}
-              onChange={(v) => setSelectedPipelineId(v as number | null)}
-              options={pipelineOptions}
-            />
           )}
 
           <AppInput
@@ -176,7 +140,7 @@ export default function CreateActionFormOS({
               label="Status"
               placeholder="Pick a status"
               value={status}
-              onChange={(v) => setStatus(v as B2BActionStatusEnum)}
+              onChange={(v) => setStatus(v as ActionStatus)}
               options={statusOptions}
             />
             <AppSelect
@@ -184,7 +148,7 @@ export default function CreateActionFormOS({
               label="Priority"
               placeholder="Pick a priority"
               value={priority}
-              onChange={(v) => setPriority(v as B2BActionPriorityEnum)}
+              onChange={(v) => setPriority(v as ActionPriority)}
               options={priorityOptions}
             />
           </div>
@@ -221,9 +185,9 @@ export default function CreateActionFormOS({
             type="submit"
             variant="primary"
             className="flex-1 justify-center"
-            disabled={createAction.isPending}
+            disabled={createMutation.isPending}
           >
-            {createAction.isPending && (
+            {createMutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
             Create Action

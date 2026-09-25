@@ -6,46 +6,40 @@ import AppSelect from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import { priorityOptions, statusOptions } from "@/components/forms/CreateActionFormOS";
-import { trpc } from "@/trpc/client";
-import { useUserList } from "@/hooks/useUserList";
-import { B2BActionPriorityEnum, B2BActionStatusEnum } from "@prisma/client";
+import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
+import { getActionDetails, updateAction } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 interface EditActionFormOSProps {
-  sessionToken: string;
   actionId: number | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-function toDateInputValue(value: string | Date | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
-}
-
 export default function EditActionFormOS({
-  sessionToken,
   actionId,
   isOpen,
   onClose,
 }: EditActionFormOSProps) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [status, setStatus] = useState<B2BActionStatusEnum>("TO_DO");
-  const [priority, setPriority] = useState<B2BActionPriorityEnum>("MEDIUM");
+  const [status, setStatus] = useState<ActionStatus>("to_do");
+  const [priority, setPriority] = useState<ActionPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading: isLoadingAction } = trpc.read.b2b.action.useQuery(
-    { id: actionId ?? 0 },
-    { enabled: !!sessionToken && isOpen && actionId != null }
-  );
+  const { data: action, isLoading: isLoadingAction } = useQuery({
+    queryKey: ["actions", "details", actionId],
+    queryFn: async () => requireApiData(await getActionDetails(actionId!)),
+    enabled: isOpen && actionId != null,
+  });
 
   // Seed the form once per action, adjusting state during render (React's
   // documented pattern for this) rather than in an effect. Reset the seeded
@@ -58,35 +52,42 @@ export default function EditActionFormOS({
     if (!isOpen) setSeededActionId(null);
   }
 
-  const action = data?.action;
   if (isOpen && action && action.id !== seededActionId) {
     setSeededActionId(action.id);
     setName(action.name);
     setSummary(action.summary ?? "");
     setStatus(action.status);
     setPriority(action.priority);
-    setDueDate(toDateInputValue(action.due_date));
+    setDueDate(action.due_date ?? "");
     setAssigneeId(action.assignee_id ?? "");
   }
 
-  const userList = useUserList(isOpen);
-
-  const assigneeOptions = [
-    { value: "", label: "Unassigned" },
-    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
-  ];
+  const assigneeOptions = useAssigneeOptions(isOpen);
 
   function handleClose() {
     setError(null);
     onClose();
   }
 
-  const updateAction = trpc.update.b2b.action.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.allActions.invalidate();
+  const updateMutation = useMutation({
+    mutationFn: async (id: number) =>
+      requireApiData(
+        await updateAction({
+          id,
+          name: name.trim(),
+          summary: summary.trim() || null,
+          status,
+          priority,
+          due_date: dueDate || null,
+          assignee_id: assigneeId || null,
+        })
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["actions"] });
       handleClose();
     },
-    onError: (err) => setError(err.message),
+    onError: (cause) =>
+      setError(cause instanceof Error ? cause.message : "Failed to update action."),
   });
 
   function handleSubmit(e: FormEvent) {
@@ -96,18 +97,10 @@ export default function EditActionFormOS({
     if (!name.trim()) return setError("Action name is required.");
     if (actionId == null) return;
 
-    updateAction.mutate({
-      id: actionId,
-      name: name.trim(),
-      summary: summary.trim() || null,
-      status,
-      priority,
-      due_date: dueDate || null,
-      assignee_id: assigneeId || null,
-    });
+    updateMutation.mutate(actionId);
   }
 
-  const isReady = !isLoadingAction && !!data?.action;
+  const isReady = !isLoadingAction && !!action;
 
   return (
     <SheetOS
@@ -153,7 +146,7 @@ export default function EditActionFormOS({
                 label="Status"
                 placeholder="Pick a status"
                 value={status}
-                onChange={(v) => setStatus(v as B2BActionStatusEnum)}
+                onChange={(v) => setStatus(v as ActionStatus)}
                 options={statusOptions}
               />
               <AppSelect
@@ -161,7 +154,7 @@ export default function EditActionFormOS({
                 label="Priority"
                 placeholder="Pick a priority"
                 value={priority}
-                onChange={(v) => setPriority(v as B2BActionPriorityEnum)}
+                onChange={(v) => setPriority(v as ActionPriority)}
                 options={priorityOptions}
               />
             </div>
@@ -198,9 +191,9 @@ export default function EditActionFormOS({
               type="submit"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={updateAction.isPending}
+              disabled={updateMutation.isPending}
             >
-              {updateAction.isPending && <Loader2 size={14} className="animate-spin" />}
+              {updateMutation.isPending && <Loader2 size={14} className="animate-spin" />}
               Save Changes
             </AppButton>
           </div>

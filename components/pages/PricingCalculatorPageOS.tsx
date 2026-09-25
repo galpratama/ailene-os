@@ -59,7 +59,7 @@ export default function PricingCalculatorPageOS({
   const canViewCostDetails =
     !!sessionUser && sessionUser.role === "ADMINISTRATOR";
 
-  // Optionally pre-linked to a lead via ?pipeline_id=, like /tasks?pipeline_id=.
+  // Optionally pre-linked to a lead via ?pipeline_id=.
   const searchParams = useSearchParams();
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
     () => {

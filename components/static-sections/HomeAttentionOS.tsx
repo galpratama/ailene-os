@@ -3,12 +3,10 @@
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
+import type { ActionData } from "@/apis/actions";
 import type { PipelineStage } from "@/apis/sales";
 import { getRupiahCurrency } from "@/lib/currency";
-import type {
-  B2BActionPriorityEnum,
-  B2BQuotationStatusEnum,
-} from "@prisma/client";
+import type { B2BQuotationStatusEnum } from "@prisma/client";
 import {
   AlertCircle,
   CheckCircle2,
@@ -22,14 +20,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AttentionAction = {
-  id: number;
-  name: string;
-  pipeline_id: number;
-  pipeline_name: string;
-  due_date: string | Date | null;
-  priority: B2BActionPriorityEnum;
-};
+type AttentionAction = Pick<ActionData, "id" | "name" | "due_date" | "priority">;
 
 type StaleLead = {
   id: number;
@@ -56,7 +47,7 @@ type PendingQuotation = {
   net_value: string | number;
 };
 
-function formatDueDate(value: string | Date | null) {
+function formatDueDate(value: string | null) {
   if (!value) return "No due date";
   return new Date(value).toLocaleDateString("en-US", {
     day: "numeric",
@@ -118,7 +109,7 @@ function ActionRow({ action }: { action: AttentionAction }) {
           {action.name}
         </p>
         <p className="truncate text-xs text-gray-400 dark:text-zinc-500">
-          {action.pipeline_name} · {formatDueDate(action.due_date)}
+          {formatDueDate(action.due_date)}
         </p>
       </div>
       <PriorityLabel priority={action.priority} />
