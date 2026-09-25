@@ -1,7 +1,6 @@
 import { createTRPCRouter } from "@/trpc/init";
 import { readB2B } from "./b2b/read.b2b";
 import { readIntegrations } from "./integrations/read.integrations";
-import { readLms } from "./lms/read.lms";
 import { readTrainerPool } from "./trainer-pool/read.trainer-pool";
 
 export const readRouter = createTRPCRouter({
@@ -15,8 +14,5 @@ export const readRouter = createTRPCRouter({
   },
   trainerPool: {
     trainer: readTrainerPool.trainer,
-  },
-  lms: {
-    project: readLms.project,
   },
 });

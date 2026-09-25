@@ -19,9 +19,6 @@ export const createRouter = createTRPCRouter({
     specialization: createTrainerPool.specialization,
   },
   lms: {
-    project: createLms.project,
-    level: createLms.level,
-    chapter: createLms.chapter,
     chapterTrainerRequest: createLms.chapterTrainerRequest,
   },
 });

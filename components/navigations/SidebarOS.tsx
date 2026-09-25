@@ -202,7 +202,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     (item) => item.segment === segment && visibleToRole(item)
   );
 
-  // Nested hrefs (`/lms` vs `/lms/projects`) both prefix-match, so only the longest match lights up.
+  // Nested hrefs (`/lms` vs `/lms/class-marketplace`) both prefix-match, so only the longest match lights up.
   const activeHref = [...mainNav, ...toolsNav]
     .filter((item) =>
       item.exact

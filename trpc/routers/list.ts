@@ -29,11 +29,7 @@ export const listRouter = createTRPCRouter({
   // LMS //
 
   lms: {
-    projects: listLms.projects,
-    levels: listLms.levels,
-    chapters: listLms.chapters,
     marketplaceChapters: listLms.marketplaceChapters,
-    chapterTrainerRequests: listLms.chapterTrainerRequests,
   },
 
   // Analytics //

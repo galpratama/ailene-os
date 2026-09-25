@@ -1,7 +1,6 @@
 import { createTRPCRouter } from "@/trpc/init";
 import { deleteB2B } from "./b2b/delete.b2b";
 import { deleteIntegrations } from "./integrations/delete.integrations";
-import { deleteLms } from "./lms/delete.lms";
 import { deleteTrainerPool } from "./trainer-pool/delete.trainer-pool";
 
 export const deleteRouter = createTRPCRouter({
@@ -16,11 +15,5 @@ export const deleteRouter = createTRPCRouter({
   trainerPool: {
     trainer: deleteTrainerPool.trainer,
     specialization: deleteTrainerPool.specialization,
-  },
-  lms: {
-    project: deleteLms.project,
-    level: deleteLms.level,
-    chapter: deleteLms.chapter,
-    chapterTrainerRequest: deleteLms.chapterTrainerRequest,
   },
 });
