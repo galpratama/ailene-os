@@ -42,6 +42,15 @@ export type InviteLmsMemberPayload = {
   job_title?: string;
   role: LmsMemberRole;
   group_id: number;
+  // Applied only when the person has no password yet; never replaces an existing one.
+  password?: string;
+};
+
+export type LmsInviteResult = {
+  member: LmsMemberEntry;
+  email_sent: boolean;
+  password_set: boolean;
+  access_url: string;
 };
 
 export type UpdateLmsMemberPayload = {
@@ -113,7 +122,7 @@ export async function listLmsMembers(payload: {
 
 export async function inviteLmsMember(
   payload: InviteLmsMemberPayload
-): Promise<ApiEnvelope<LmsMemberEntry>> {
+): Promise<ApiEnvelope<LmsInviteResult>> {
   return callLmsAdmin("users/invite", payload);
 }
 

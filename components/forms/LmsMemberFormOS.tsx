@@ -9,6 +9,7 @@ import { inviteLmsMember, updateLmsMember } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
 import type {
   LmsGroupEntry,
+  LmsInviteResult,
   LmsMemberEntry,
   LmsMemberRole,
   UpdateLmsMemberPayload,
@@ -16,10 +17,35 @@ import type {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 const roleOptions: AppSelectOption[] = (
   Object.keys(lmsMemberRoleStyles) as LmsMemberRole[]
 ).map((role) => ({ value: role, label: lmsMemberRoleStyles[role].label }));
+
+// The invite itself succeeded; these toasts only flag what the admin may need to follow up on.
+function announceInvite(result: LmsInviteResult, typedPassword: boolean) {
+  const name = result.member.user.full_name;
+
+  if (result.email_sent) {
+    toast.success(`${name} was invited.`, {
+      description: `Invitation sent to ${result.member.user.email}.`,
+    });
+  } else {
+    toast.warning(`${name} was invited, but the email failed to send.`, {
+      description: "Share the LMS link with them yourself.",
+      duration: Infinity,
+      action: {
+        label: "Copy link",
+        onClick: () => navigator.clipboard.writeText(result.access_url),
+      },
+    });
+  }
+
+  if (typedPassword && !result.password_set) {
+    toast.info("User already has a password — it was not changed.");
+  }
+}
 
 interface LmsMemberFormOSProps {
   projectId: string;
@@ -42,6 +68,7 @@ export default function LmsMemberFormOS({
   const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(member?.user.full_name ?? "");
   const [jobTitle, setJobTitle] = useState(member?.user.job_title ?? "");
   const [role, setRole] = useState<LmsMemberRole | "">(member?.role ?? "");
@@ -51,6 +78,7 @@ export default function LmsMemberFormOS({
 
   function seed(next: LmsMemberEntry | null) {
     setEmail("");
+    setPassword("");
     setFullName(next?.user.full_name ?? "");
     setJobTitle(next?.user.job_title ?? "");
     setRole(next?.role ?? "");
@@ -82,8 +110,9 @@ export default function LmsMemberFormOS({
     if (!member && !email.trim()) return setError("Email is required.");
     if (!role) return setError("Role is required.");
     if (!groupId) return setError("Group is required.");
+    if (!member && password && (password.length < 8 || password.length > 72))
+      return setError("Password must be 8–72 characters.");
 
-    let result;
     if (member) {
       // `users/update` only touches what's sent, so unchanged fields stay out of the payload.
       const payload: UpdateLmsMemberPayload = {
@@ -100,22 +129,30 @@ export default function LmsMemberFormOS({
       if (Object.keys(payload).length === 2) return handleClose();
 
       setIsSubmitting(true);
-      result = await updateLmsMember(payload);
+      const result = await updateLmsMember(payload);
+      setIsSubmitting(false);
+
+      if (!isSuccessStatus(result.status)) {
+        return setError(result.message ?? "Failed to save member.");
+      }
+      toast.success("Member updated.");
     } else {
       setIsSubmitting(true);
-      result = await inviteLmsMember({
+      const result = await inviteLmsMember({
         project_id: projectId,
         email: email.trim(),
         full_name: fullName.trim() || undefined,
         job_title: jobTitle.trim() || undefined,
         role,
         group_id: groupId,
+        password: password || undefined,
       });
-    }
-    setIsSubmitting(false);
+      setIsSubmitting(false);
 
-    if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to save member.");
+      if (!isSuccessStatus(result.status) || !result.data) {
+        return setError(result.message ?? "Failed to invite member.");
+      }
+      announceInvite(result.data, !!password);
     }
 
     router.refresh();
@@ -129,7 +166,7 @@ export default function LmsMemberFormOS({
       description={
         member
           ? "Name and job title change everywhere this person appears, in every project."
-          : "No email is sent — the person signs in to the LMS with Google using this address."
+          : "An invitation email with a link to the LMS is sent to this address."
       }
       isOpen={isOpen}
       onClose={handleClose}
@@ -185,6 +222,25 @@ export default function LmsMemberFormOS({
             onChange={(e) => setJobTitle(e.target.value)}
             placeholder="e.g. HR Generalist"
           />
+          {!member && (
+            <div className="flex flex-col gap-1">
+              <AppInput
+                inputId="lms-member-password"
+                label="Password"
+                type="password"
+                autoComplete="new-password"
+                maxLength={72}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Optional, 8–72 characters"
+              />
+              <p className="text-xs text-gray-400 dark:text-zinc-500">
+                Lets them sign in with email and password besides Google.
+                It&apos;s sent in the invitation email in plain text, and
+                never replaces a password they already have.
+              </p>
+            </div>
+          )}
           <AppSelect
             selectId="lms-member-role"
             label="Role"
