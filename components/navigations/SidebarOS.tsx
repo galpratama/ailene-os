@@ -53,17 +53,15 @@ function NavItem({
   href,
   label,
   icon: Icon,
-  exact,
+  active,
   collapsed,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
-  exact?: boolean;
+  active: boolean;
   collapsed: boolean;
 }) {
-  const pathname = usePathname();
-  const active = exact ? pathname === href : pathname.startsWith(href);
   const { closeMobileSidebar } = useSidebar();
 
   return (
@@ -182,8 +180,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
   } = useSidebar();
   const pathname = usePathname();
 
-  // Always start on B2B so the client's first render matches the server's
-  // (which has no access to localStorage) — read the saved value after mount.
+  // Start on B2B to match SSR (no localStorage there); the saved value is read after mount.
   const [segment, setSegment] = useState<OSSegment>("B2B");
 
   useEffect(() => {
@@ -205,6 +202,15 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     (item) => item.segment === segment && visibleToRole(item)
   );
 
+  // Nested hrefs (`/lms` vs `/lms/projects`) both prefix-match, so only the longest match lights up.
+  const activeHref = [...mainNav, ...toolsNav]
+    .filter((item) =>
+      item.exact
+        ? pathname === item.href
+        : pathname === item.href || pathname.startsWith(`${item.href}/`)
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   const ungroupedNav = mainNav.filter((item) => !item.group);
   const navGroups = mainNav
     .filter((item) => item.group)
@@ -215,8 +221,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
       return groups;
     }, []);
 
-  // Safety net: if navigation ever happens without going through a NavItem's
-  // onClick (e.g. browser back/forward), still close the mobile drawer.
+  // Close the mobile drawer on any navigation, including browser back/forward.
   useEffect(() => {
     closeMobileSidebar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,7 +321,12 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
             className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
           >
             {ungroupedNav.map((item) => (
-              <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+              <NavItem
+                key={item.href}
+                {...item}
+                active={item.href === activeHref}
+                collapsed={isCollapsed}
+              />
             ))}
           </nav>
 
@@ -330,7 +340,12 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
               )}
               <div className="flex flex-col gap-0.5 mt-0.5">
                 {group.items.map((item) => (
-                  <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+                  <NavItem
+                    key={item.href}
+                    {...item}
+                    active={item.href === activeHref}
+                    collapsed={isCollapsed}
+                  />
                 ))}
               </div>
             </div>
@@ -346,7 +361,12 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
               )}
               <div className="flex flex-col gap-0.5 mt-0.5">
                 {toolsNav.map((item) => (
-                  <NavItem key={item.href} {...item} collapsed={isCollapsed} />
+                  <NavItem
+                    key={item.href}
+                    {...item}
+                    active={item.href === activeHref}
+                    collapsed={isCollapsed}
+                  />
                 ))}
               </div>
             </div>

@@ -73,9 +73,11 @@ export async function callApi<T = unknown>(
     body?: unknown;
     token?: string;
     revalidate?: number;
+    // Defaults to the identity/sales API; other services (e.g. the LMS) pass their own.
+    baseUrl?: string;
   } = {}
 ): Promise<ApiEnvelope<T>> {
-  const baseUrl = process.env.BASE_URL;
+  const baseUrl = options.baseUrl ?? process.env.BASE_URL;
   if (!baseUrl) {
     throw new Error("BASE_URL is not configured");
   }

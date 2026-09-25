@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Building2,
   Calculator,
   Calendar,
@@ -83,11 +84,18 @@ export const osMainNav: OSNavItem[] = [
     group: "Business Development",
   },
   {
+    href: "/lms",
+    label: "LMS",
+    icon: BookOpen,
+    segment: "B2B",
+    group: "LMS",
+  },
+  {
     href: "/lms/projects",
     label: "Corporate Training",
     icon: FolderKanban,
     segment: "B2B",
-    group: "Business Development",
+    group: "LMS",
   },
   {
     href: "/trainers",

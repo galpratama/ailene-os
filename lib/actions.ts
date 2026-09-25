@@ -1,6 +1,16 @@
 "use server";
 
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
+import {
+  createLmsGroup as createLmsGroupApi,
+  deleteLmsGroup as deleteLmsGroupApi,
+  deleteLmsMember as deleteLmsMemberApi,
+  inviteLmsMember as inviteLmsMemberApi,
+  updateLmsGroup as updateLmsGroupApi,
+  updateLmsMember as updateLmsMemberApi,
+  type InviteLmsMemberPayload,
+  type UpdateLmsMemberPayload,
+} from "@/apis/lms";
 import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from "@/apis/lookup";
 import { logoutUser as logoutUserApi } from "@/apis/session";
 import { createTeam as createTeamApi, listTeams as listTeamsApi } from "@/apis/teams";
@@ -153,6 +163,43 @@ export async function updatePipeline(payload: UpdatePipelinePayload) {
 
 export async function deletePipeline(id: number) {
   return deletePipelineApi(id);
+}
+
+export async function createLmsGroup(payload: {
+  project_id: string;
+  name: string;
+}) {
+  return createLmsGroupApi(payload);
+}
+
+export async function updateLmsGroup(payload: {
+  project_id: string;
+  group_id: number;
+  name: string;
+}) {
+  return updateLmsGroupApi(payload);
+}
+
+export async function deleteLmsGroup(payload: {
+  project_id: string;
+  group_id: number;
+}) {
+  return deleteLmsGroupApi(payload);
+}
+
+export async function inviteLmsMember(payload: InviteLmsMemberPayload) {
+  return inviteLmsMemberApi(payload);
+}
+
+export async function updateLmsMember(payload: UpdateLmsMemberPayload) {
+  return updateLmsMemberApi(payload);
+}
+
+export async function deleteLmsMember(payload: {
+  project_id: string;
+  access_id: string;
+}) {
+  return deleteLmsMemberApi(payload);
 }
 
 // Public landing page: only a classified outcome crosses back, never the API's own wording.
