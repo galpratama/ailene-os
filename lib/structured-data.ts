@@ -151,3 +151,63 @@ export function trainerPageGraph() {
     ]),
   ];
 }
+
+export function articlesIndexGraph() {
+  return [
+    organizationSchema(),
+    websiteSchema(),
+    {
+      "@type": "CollectionPage",
+      "@id": `${SITE_URL}/articles#webpage`,
+      url: `${SITE_URL}/articles`,
+      name: "Artikel Ailene",
+      inLanguage: "id-ID",
+      isPartOf: { "@id": WEBSITE_ID },
+      about: { "@id": ORGANIZATION_ID },
+    },
+    breadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Artikel", path: "/articles" },
+    ]),
+  ];
+}
+
+export function articlePageGraph(article: {
+  id: number;
+  title: string;
+  insight: string;
+  image_url: string;
+  keywords: string;
+  slug_url: string;
+  published_at: string;
+  updated_at: string;
+  author: { full_name: string };
+  category: { name: string };
+}) {
+  const path = `/articles/${article.slug_url}/${article.id}`;
+  return [
+    organizationSchema(),
+    websiteSchema(),
+    {
+      "@type": "BlogPosting",
+      "@id": `${SITE_URL}${path}#article`,
+      mainEntityOfPage: `${SITE_URL}${path}`,
+      headline: article.title,
+      description: article.insight,
+      image: article.image_url,
+      keywords: article.keywords,
+      articleSection: article.category.name,
+      datePublished: article.published_at,
+      dateModified: article.updated_at,
+      inLanguage: "id-ID",
+      author: { "@type": "Person", name: article.author.full_name },
+      publisher: { "@id": ORGANIZATION_ID },
+      isPartOf: { "@id": WEBSITE_ID },
+    },
+    breadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Artikel", path: "/articles" },
+      { name: article.title, path },
+    ]),
+  ];
+}

@@ -8,8 +8,8 @@ export default function JsonLd({ graph }: { graph: object[] }) {
   return (
     <script
       type="application/ld+json"
-      // Schema comes from our own modules, never from user input.
-      dangerouslySetInnerHTML={{ __html: payload.replace(/</g, "\u003c") }}
+      // Article graphs carry CMS text, so escape "<" to keep a "</script>" in a title from closing the tag.
+      dangerouslySetInnerHTML={{ __html: payload.replace(/</g, "\\u003c") }}
     />
   );
 }

@@ -10,6 +10,19 @@ import {
   type ListActionsOptions,
   type UpdateActionPayload,
 } from "@/apis/actions";
+import {
+  createArticle as createArticleApi,
+  createArticleCategory as createArticleCategoryApi,
+  deleteArticle as deleteArticleApi,
+  deleteArticleCategory as deleteArticleCategoryApi,
+  getArticleDetails as getArticleDetailsApi,
+  listArticleCategories as listArticleCategoriesApi,
+  updateArticle as updateArticleApi,
+  updateArticleCategory as updateArticleCategoryApi,
+  type ArticleCategoryPayload,
+  type CreateArticlePayload,
+  type UpdateArticlePayload,
+} from "@/apis/articles";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
   createLmsGroup as createLmsGroupApi,
@@ -193,6 +206,40 @@ export async function createAction(payload: CreateActionPayload) {
 
 export async function updateAction(payload: UpdateActionPayload) {
   return updateActionApi(payload);
+}
+
+export async function listArticleCategories() {
+  return listArticleCategoriesApi({ page: 1, page_size: 100 });
+}
+
+export async function createArticleCategory(payload: ArticleCategoryPayload) {
+  return createArticleCategoryApi(payload);
+}
+
+export async function updateArticleCategory(
+  payload: ArticleCategoryPayload & { id: number }
+) {
+  return updateArticleCategoryApi(payload);
+}
+
+export async function deleteArticleCategory(id: number) {
+  return deleteArticleCategoryApi(id);
+}
+
+export async function getArticleDetails(id: number) {
+  return getArticleDetailsApi(id);
+}
+
+export async function createArticle(payload: CreateArticlePayload) {
+  return createArticleApi(payload);
+}
+
+export async function updateArticle(payload: UpdateArticlePayload) {
+  return updateArticleApi(payload);
+}
+
+export async function deleteArticle(id: number) {
+  return deleteArticleApi(id);
 }
 
 export async function createLmsGroup(payload: {

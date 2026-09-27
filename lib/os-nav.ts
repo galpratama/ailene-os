@@ -8,6 +8,7 @@ import {
   GraduationCap,
   LayoutGrid,
   LucideIcon,
+  Newspaper,
   Settings,
   ShieldCheck,
   SquareCheckBig,
@@ -102,6 +103,14 @@ export const osMainNav: OSNavItem[] = [
     icon: Store,
     segment: "B2B",
     group: "Trainer Pool",
+  },
+  {
+    href: "/articles",
+    label: "Articles",
+    icon: Newspaper,
+    segment: "B2B",
+    minRoles: ["ADMINISTRATOR"],
+    group: "Marketing",
   },
   {
     href: "/users",

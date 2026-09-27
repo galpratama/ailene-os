@@ -12,6 +12,7 @@ const navLinks = [
   { label: "Kurikulum", href: "/#kurikulum" },
   { label: "Komunitas", href: "/#komunitas" },
   { label: "Event", href: "/#event" },
+  { label: "Artikel", href: "/articles" },
   { label: "Jadi trainer", href: "/join-trainer" },
 ];
 
