@@ -4,21 +4,15 @@ import { loggedInProcedure } from "@/trpc/init";
 import {
   meetingDataScopeWhere,
   pipelineDataScopeWhere,
-  quotationDataScopeWhere,
 } from "@/trpc/utils/data_scope";
 import { calculatePage } from "@/trpc/utils/paging";
-import { canViewQuotationInternals } from "@/trpc/utils/quotation";
 import {
   numberIsID,
   numberIsPosInt,
   stringIsUUID,
   stringNotBlank,
 } from "@/trpc/utils/validation";
-import {
-  B2BMeetingStatusEnum,
-  B2BQuotationStatusEnum,
-  Prisma,
-} from "@prisma/client";
+import { B2BMeetingStatusEnum, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
@@ -147,125 +141,6 @@ export const listB2B = {
       };
     }),
 
-  quotations: loggedInProcedure
-    .input(
-      z.object({
-        pipeline_id: numberIsID().optional(),
-        status: z.enum(B2BQuotationStatusEnum).optional(),
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const canViewInternals = canViewQuotationInternals(opts.ctx.user);
-      const whereClause: Prisma.B2BQuotationWhereInput = {
-        pipeline_id: opts.input.pipeline_id,
-        status: opts.input.status,
-        ...quotationDataScopeWhere(opts.ctx.user),
-      };
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.b2BQuotation.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
-        include: {
-          pipeline: {
-            select: { id: true, company: { select: { id: true, name: true } } },
-          },
-          created_by: { select: { id: true, full_name: true } },
-        },
-        orderBy: [{ created_at: "desc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: quotationList.map((entry) => ({
-          id: entry.id,
-          pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.company.name,
-          company_id: entry.pipeline.company.id,
-          company_name: entry.pipeline.company.name,
-          version: entry.version,
-          is_current: entry.is_current,
-          status: entry.status,
-          source_type: entry.source_type,
-          package_type: entry.package_type,
-          net_value: entry.net_value,
-          invoice_amount: entry.invoice_amount,
-          requires_review: entry.requires_review,
-          created_by_name: entry.created_by.full_name,
-          created_at: entry.created_at,
-          ...(canViewInternals && { margin_pct: entry.margin_pct }),
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
-  // Manager Review queue — every quotation currently awaiting a decision.
-  quotationApprovalQueue: loggedInProcedure
-    .input(
-      z.object({
-        page: numberIsPosInt().optional(),
-        page_size: numberIsPosInt().optional(),
-      })
-    )
-    .query(async (opts) => {
-      const whereClause: Prisma.B2BQuotationWhereInput = {
-        status: "MANAGER_REVIEW",
-        ...quotationDataScopeWhere(opts.ctx.user),
-      };
-
-      const paging = calculatePage(
-        opts.input,
-        await opts.ctx.prisma.b2BQuotation.aggregate({
-          _count: true,
-          where: whereClause,
-        })
-      );
-
-      const quotationList = await opts.ctx.prisma.b2BQuotation.findMany({
-        include: {
-          pipeline: {
-            select: { id: true, company: { select: { id: true, name: true } } },
-          },
-          created_by: { select: { id: true, full_name: true } },
-        },
-        orderBy: [{ created_at: "asc" }],
-        where: whereClause,
-        skip: paging.prisma.skip,
-        take: paging.prisma.take,
-      });
-
-      return {
-        code: STATUS_OK,
-        message: "Success",
-        list: quotationList.map((entry) => ({
-          id: entry.id,
-          pipeline_id: entry.pipeline.id,
-          pipeline_name: entry.pipeline.company.name,
-          company_id: entry.pipeline.company.id,
-          company_name: entry.pipeline.company.name,
-          version: entry.version,
-          source_type: entry.source_type,
-          package_type: entry.package_type,
-          net_value: entry.net_value,
-          margin_pct: entry.margin_pct,
-          created_by_name: entry.created_by.full_name,
-          created_at: entry.created_at,
-        })),
-        metapaging: paging.metapaging,
-      };
-    }),
-
   // Meetings only — the calendar reads action due dates from the Actions API.
   calendar: loggedInProcedure
     .input(
@@ -342,7 +217,6 @@ export const listB2B = {
 
   // Actionable operational summary for the OS home dashboard.
   homeSummary: loggedInProcedure.query(async (opts) => {
-    const userId = opts.ctx.user.id;
     const now = new Date();
     const activitySince = new Date(
       now.getTime() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000
@@ -361,21 +235,11 @@ export const listB2B = {
       },
     };
 
-    // This actor's own kicked-back drafts, plus (for reviewers) the Manager Review queue.
-    const quotationsPendingWhere: Prisma.B2BQuotationWhereInput = {
-      OR: [
-        { status: "NEEDS_REVISION", created_by_id: userId },
-        { status: "MANAGER_REVIEW", ...quotationDataScopeWhere(opts.ctx.user) },
-      ],
-    };
-
     const [
       staleLeadCount,
       staleLeads,
       recentPipelines,
       activePipelinesForConflictCheck,
-      quotationsPendingCount,
-      quotationsPending,
     ] = await Promise.all([
       opts.ctx.prisma.pipeline.count({ where: staleLeadWhere }),
       opts.ctx.prisma.pipeline.findMany({
@@ -413,17 +277,6 @@ export const listB2B = {
           sales_owner_id: true,
           sales_owner: { select: { full_name: true } },
         },
-      }),
-      opts.ctx.prisma.b2BQuotation.count({ where: quotationsPendingWhere }),
-      opts.ctx.prisma.b2BQuotation.findMany({
-        where: quotationsPendingWhere,
-        include: {
-          pipeline: {
-            select: { id: true, company: { select: { name: true } } },
-          },
-        },
-        orderBy: [{ created_at: "asc" }],
-        take: 5,
       }),
     ]);
 
@@ -483,18 +336,8 @@ export const listB2B = {
         totals: {
           stale_leads: staleLeadCount,
           ownership_conflicts: ownershipConflicts.length,
-          quotations_pending: quotationsPendingCount,
         },
         ownership_conflicts: ownershipConflicts.slice(0, 5),
-        quotations_pending: quotationsPending.map((entry) => ({
-          id: entry.id,
-          pipeline_id: entry.pipeline_id,
-          pipeline_name: entry.pipeline.company.name,
-          company_name: entry.pipeline.company.name,
-          version: entry.version,
-          status: entry.status,
-          net_value: entry.net_value,
-        })),
         stale_leads: staleLeads
           .map((entry) => {
             const lastActivityAt = entry.updated_at;

@@ -6,7 +6,7 @@ import StageDistributionChartOS from "@/components/charts/StageDistributionChart
 import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
 import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
-import { getActionSummary } from "@/lib/actions";
+import { getActionSummary, getQuotationSummary } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { setSessionToken, trpc } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -43,13 +43,20 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
     enabled: !!sessionToken,
   });
 
-  // Task figures come from the Actions API; leads and quotations still come from tRPC.
+  // Tasks and quotations come from the Java API; leads still come from tRPC.
   const actionSummary = useQuery({
     queryKey: ["actions", "summary"],
     queryFn: async () => requireApiData(await getActionSummary()),
     enabled: !!sessionToken,
   });
   const tasks = actionSummary.data;
+
+  const quotationSummary = useQuery({
+    queryKey: ["quotations", "summary"],
+    queryFn: async () => requireApiData(await getQuotationSummary()),
+    enabled: !!sessionToken,
+  });
+  const quotations = quotationSummary.data;
 
   const { data: analytics, isLoading: isAnalyticsLoading } =
     trpc.list.b2b.dashboardAnalytics.useQuery(undefined, {
@@ -84,7 +91,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
-        {(isError || actionSummary.isError) && (
+        {(isError || actionSummary.isError || quotationSummary.isError) && (
           <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
             Dashboard data could not be loaded. Please refresh the page.
           </div>
@@ -98,17 +105,19 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
               due_today_tasks: tasks?.due_today_tasks.total ?? 0,
               stale_leads: data?.attention.totals.stale_leads ?? 0,
               ownership_conflicts: data?.attention.totals.ownership_conflicts ?? 0,
-              quotations_pending: data?.attention.totals.quotations_pending ?? 0,
+              quotations_pending: quotations?.total ?? 0,
             },
             approvals: tasks?.approvals.list ?? [],
             overdue_tasks: tasks?.overdue_tasks.list ?? [],
             due_today_tasks: tasks?.due_today_tasks.list ?? [],
             stale_leads: data?.attention.stale_leads ?? [],
             ownership_conflicts: data?.attention.ownership_conflicts ?? [],
-            quotations_pending: data?.attention.quotations_pending ?? [],
+            quotations_pending: quotations?.list ?? [],
           }}
           staleLeadDays={data?.meta.stale_lead_days ?? 0}
-          isLoading={isSummaryLoading || actionSummary.isLoading}
+          isLoading={
+            isSummaryLoading || actionSummary.isLoading || quotationSummary.isLoading
+          }
         />
 
         {/* This week's trend + leads by stage */}

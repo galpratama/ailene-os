@@ -8,11 +8,13 @@ import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
 import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { useSession } from "@/contexts/SessionContext";
+import { createQuotation, submitQuotation } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import { getRupiahCurrency } from "@/lib/currency";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 
 function Block({
   step,
@@ -48,11 +50,8 @@ export default function PricingCalculatorPageOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: pipelineData } = useSalesPipelineList(!!sessionToken);
 
   const sessionUser = useSession();
@@ -98,8 +97,17 @@ export default function PricingCalculatorPageOS({
     seed: null,
   });
 
-  const createQuotation = trpc.create.b2b.quotation.useMutation();
-  const submitQuotationMutation = trpc.update.b2b.submitQuotation.useMutation();
+  // Both buttons draft first; "Buat Quotation" then submits the new draft straight away.
+  async function draftQuotation(pipelineId: number) {
+    const created = requireApiData(
+      await createQuotation({
+        pipeline_id: pipelineId,
+        ...builder.buildQuotationPayload(),
+      })
+    );
+    await queryClient.invalidateQueries({ queryKey: ["quotations"] });
+    return created;
+  }
 
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingQuotation, setIsSubmittingQuotation] = useState(false);
@@ -112,10 +120,7 @@ export default function PricingCalculatorPageOS({
     }
     setIsSavingDraft(true);
     try {
-      const created = await createQuotation.mutateAsync({
-        pipeline_id: selectedPipelineId,
-        ...builder.buildQuotationPayload(),
-      });
+      const created = await draftQuotation(selectedPipelineId);
       router.push(`/quotations/${created.id}`);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Gagal menyimpan draft.");
@@ -132,11 +137,9 @@ export default function PricingCalculatorPageOS({
     }
     setIsSubmittingQuotation(true);
     try {
-      const created = await createQuotation.mutateAsync({
-        pipeline_id: selectedPipelineId,
-        ...builder.buildQuotationPayload(),
-      });
-      await submitQuotationMutation.mutateAsync({ id: created.id });
+      const created = await draftQuotation(selectedPipelineId);
+      requireApiData(await submitQuotation(created.id));
+      await queryClient.invalidateQueries({ queryKey: ["quotations"] });
       router.push(`/quotations/${created.id}`);
     } catch (err) {
       setSaveError(

@@ -21,10 +21,3 @@ export function meetingDataScopeWhere(
 ): Prisma.B2BMeetingWhereInput {
   return { pipeline: pipelineDataScopeWhere(actor) };
 }
-
-// Same restriction, applied through a B2BQuotation's parent pipeline (quotations have no owner of their own).
-export function quotationDataScopeWhere(
-  actor: ScopedActor
-): Prisma.B2BQuotationWhereInput {
-  return { pipeline: pipelineDataScopeWhere(actor) };
-}

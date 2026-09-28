@@ -1,12 +1,11 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { setSessionToken, trpc } from "@/trpc/client";
 import dayjs from "dayjs";
 import "dayjs/locale/id";
-import { Building2, Calendar, Check, Loader2, MapPin, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Building2, Calendar, Check, CircleDashed, MapPin, Users } from "lucide-react";
+import { useEffect } from "react";
 
 dayjs.locale("id");
 
@@ -29,42 +28,12 @@ export default function ClassMarketplaceOS({
     { enabled: !!sessionToken }
   );
 
-  const [applyingId, setApplyingId] = useState<number | null>(null);
-  const [submittedId, setSubmittedId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const utils = trpc.useUtils();
-  const apply = trpc.create.lms.chapterTrainerRequest.useMutation({
-    onSuccess: (_result, variables) => {
-      setSubmittedId(variables.chapter_id);
-      setApplyingId(null);
-      setError(null);
-      utils.list.lms.marketplaceChapters.invalidate();
-    },
-    onError: (mutationError) => {
-      setApplyingId(null);
-      setError(mutationError.message);
-    },
-  });
-
-  function handleApply(chapterId: number) {
-    setApplyingId(chapterId);
-    setError(null);
-    apply.mutate({ chapter_id: chapterId });
-  }
-
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <PageHeaderOS
         title="Class Marketplace"
-        description="Kelas aktif dari semua project LMS yang belum punya trainer — ajukan diri sebagai trainer untuk kelas yang sesuai."
+        description="Kelas aktif dari semua project LMS beserta status trainernya."
       />
-
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
-          {error}
-        </p>
-      )}
 
       {isLoading && (
         <p className="py-8 text-center text-sm text-gray-400">
@@ -131,22 +100,10 @@ export default function ClassMarketplaceOS({
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                     <Check size={13} /> Trainer: {chapter.trainer_name}
                   </span>
-                ) : submittedId === chapter.id ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-hijau/40 bg-hijau-t px-3 py-1.5 text-xs font-semibold text-hijau dark:bg-green-950/40">
-                    <Check size={13} /> Pengajuan terkirim
-                  </span>
                 ) : (
-                  <AppButton
-                    size="sm"
-                    className="w-full justify-center"
-                    onClick={() => handleApply(chapter.id)}
-                    disabled={applyingId === chapter.id}
-                  >
-                    {applyingId === chapter.id && (
-                      <Loader2 size={14} className="animate-spin" />
-                    )}
-                    Ajukan diri
-                  </AppButton>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:border-zinc-700 dark:text-zinc-400">
+                    <CircleDashed size={13} /> Belum ada trainer
+                  </span>
                 )}
               </div>
             </div>

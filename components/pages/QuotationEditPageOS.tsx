@@ -5,11 +5,22 @@ import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
 import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
 import { getQuotationPDFBlobUrl } from "@/components/pdf/QuotationPDF";
+import type {
+  QuotationApprovalDecision,
+  QuotationOutcomeStatus,
+} from "@/apis/quotations";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
 import { useSession } from "@/contexts/SessionContext";
+import {
+  decideQuotation,
+  getQuotationDetails,
+  submitQuotation,
+  updateQuotation,
+  updateQuotationOutcome,
+} from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import { buildQuotationPDFPropsFromQuotation } from "@/lib/quotation-pdf";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BQuotationApprovalDecisionEnum } from "@prisma/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   BookOpen,
@@ -27,10 +38,15 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 
+type PendingDecision = { decision: "needs_revision" | "rejected" };
 
-type PendingDecision = { decision: "NEEDS_REVISION" | "REJECTED" };
+const decisionLabel: Record<QuotationApprovalDecision, string> = {
+  approved: "Approved",
+  rejected: "Rejected",
+  needs_revision: "Needs Revision",
+};
 
 function EditorRow({
   icon: Icon,
@@ -81,11 +97,7 @@ export default function QuotationEditPageOS({
   sessionToken: string;
   quotationId: number;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const sessionUser = useSession();
   const canViewCostDetails =
@@ -94,17 +106,17 @@ export default function QuotationEditPageOS({
     sessionUser?.role === "ADMINISTRATOR";
 
   const {
-    data: quotationData,
+    data: quotation,
     isLoading,
     isError,
-  } = trpc.read.b2b.quotation.useQuery(
-    { id: quotationId },
-    { enabled: !!sessionToken }
-  );
-  const quotation = quotationData?.quotation;
+  } = useQuery({
+    queryKey: ["quotations", "details", quotationId],
+    queryFn: async () => requireApiData(await getQuotationDetails(quotationId)),
+    enabled: !!sessionToken,
+  });
   const isEditable =
     !!quotation &&
-    (quotation.status === "DRAFT" || quotation.status === "NEEDS_REVISION");
+    (quotation.status === "draft" || quotation.status === "needs_revision");
 
   const builder = usePricingBuilder({
     isEditable,
@@ -117,28 +129,28 @@ export default function QuotationEditPageOS({
   const [isSubmittingQuotation, setIsSubmittingQuotation] = useState(false);
 
   function invalidateQuotationQueries() {
-    utils.list.b2b.quotations.invalidate();
-    utils.list.b2b.quotationApprovalQueue.invalidate();
-    utils.list.b2b.homeSummary.invalidate();
-    utils.read.b2b.quotation.invalidate({ id: quotationId });
+    return queryClient.invalidateQueries({ queryKey: ["quotations"] });
   }
 
-  const updateQuotation = trpc.update.b2b.quotation.useMutation();
-  const submitQuotationMutation = trpc.update.b2b.submitQuotation.useMutation();
-  const outcomeQuotationMutation =
-    trpc.update.b2b.updateQuotationOutcome.useMutation({
-      onError: (err) => setSaveError(err.message),
-    });
+  async function saveDraft() {
+    requireApiData(
+      await updateQuotation({ id: quotationId, ...builder.buildQuotationPayload() })
+    );
+  }
+
+  const outcomeQuotationMutation = useMutation({
+    mutationFn: async (status: QuotationOutcomeStatus) =>
+      requireApiData(await updateQuotationOutcome({ id: quotationId, status })),
+    onSuccess: invalidateQuotationQueries,
+    onError: (err) => setSaveError(err.message),
+  });
 
   async function handleSaveDraft() {
     setSaveError(null);
     setIsSavingDraft(true);
     try {
-      await updateQuotation.mutateAsync({
-        id: quotationId,
-        ...builder.buildQuotationPayload(),
-      });
-      invalidateQuotationQueries();
+      await saveDraft();
+      await invalidateQuotationQueries();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Gagal menyimpan draft.");
     } finally {
@@ -150,12 +162,9 @@ export default function QuotationEditPageOS({
     setSaveError(null);
     setIsSubmittingQuotation(true);
     try {
-      await updateQuotation.mutateAsync({
-        id: quotationId,
-        ...builder.buildQuotationPayload(),
-      });
-      await submitQuotationMutation.mutateAsync({ id: quotationId });
-      invalidateQuotationQueries();
+      await saveDraft();
+      requireApiData(await submitQuotation(quotationId));
+      await invalidateQuotationQueries();
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Gagal membuat quotation."
@@ -165,25 +174,27 @@ export default function QuotationEditPageOS({
     }
   }
 
-  function handleOutcome(status: "SENT" | "ACCEPTED" | "REJECTED" | "EXPIRED") {
-    outcomeQuotationMutation.mutate(
-      { id: quotationId, status },
-      { onSuccess: invalidateQuotationQueries }
-    );
+  function handleOutcome(status: QuotationOutcomeStatus) {
+    setSaveError(null);
+    outcomeQuotationMutation.mutate(status);
   }
 
   const [pendingDecision, setPendingDecision] =
     useState<PendingDecision | null>(null);
-  const decideQuotation = trpc.update.b2b.decideQuotation.useMutation({
-    onSuccess: () => {
-      invalidateQuotationQueries();
+  const decideMutation = useMutation({
+    mutationFn: async (payload: {
+      decision: QuotationApprovalDecision;
+      reason?: string;
+    }) => requireApiData(await decideQuotation({ id: quotationId, ...payload })),
+    onSuccess: async () => {
       setPendingDecision(null);
+      await invalidateQuotationQueries();
     },
     onError: (err) => setSaveError(err.message),
   });
-  function decide(decision: B2BQuotationApprovalDecisionEnum, reason?: string) {
+  function decide(decision: QuotationApprovalDecision, reason?: string) {
     setSaveError(null);
-    decideQuotation.mutate({ id: quotationId, decision, reason });
+    decideMutation.mutate({ decision, reason });
   }
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -256,18 +267,18 @@ export default function QuotationEditPageOS({
     </div>
   );
 
-  const outcomeSentButton = quotation.status === "APPROVED" && (
+  const outcomeSentButton = quotation.status === "approved" && (
     <AppButton
       type="button"
       variant="primary"
       disabled={outcomeQuotationMutation.isPending}
-      onClick={() => handleOutcome("SENT")}
+      onClick={() => handleOutcome("sent")}
     >
       Mark as Sent
     </AppButton>
   );
 
-  const outcomeFinalButtons = quotation.status === "SENT" && (
+  const outcomeFinalButtons = quotation.status === "sent" && (
     <div className="flex gap-2">
       <AppButton
         type="button"
@@ -275,7 +286,7 @@ export default function QuotationEditPageOS({
         size="sm"
         className="flex-1 justify-center"
         disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("ACCEPTED")}
+        onClick={() => handleOutcome("accepted")}
       >
         Accepted
       </AppButton>
@@ -285,7 +296,7 @@ export default function QuotationEditPageOS({
         size="sm"
         className="flex-1 justify-center"
         disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("REJECTED")}
+        onClick={() => handleOutcome("rejected")}
       >
         Rejected
       </AppButton>
@@ -295,7 +306,7 @@ export default function QuotationEditPageOS({
         size="sm"
         className="flex-1 justify-center"
         disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("EXPIRED")}
+        onClick={() => handleOutcome("expired")}
       >
         Expired
       </AppButton>
@@ -313,7 +324,7 @@ export default function QuotationEditPageOS({
           className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
         >
           <p className="font-semibold text-gray-700 dark:text-zinc-300">
-            {approval.decision} · {approval.actor_name}
+            {decisionLabel[approval.decision]} · {approval.actor_name}
           </p>
           {approval.reason && (
             <p className="mt-0.5 text-gray-500 dark:text-zinc-400">
@@ -325,21 +336,21 @@ export default function QuotationEditPageOS({
     </div>
   );
 
-  const managerReviewNote = quotation.status === "MANAGER_REVIEW" && !canDecide && (
+  const managerReviewNote = quotation.status === "manager_review" && !canDecide && (
     <p className="rounded-lg border border-kuning/40 bg-kuning-t px-3 py-2 text-sm text-gray-700">
       Menunggu keputusan Manager.
     </p>
   );
 
-  const managerDecideButtons = canDecide && quotation.status === "MANAGER_REVIEW" && (
+  const managerDecideButtons = canDecide && quotation.status === "manager_review" && (
     <div className="flex flex-wrap items-center gap-1.5">
       <AppButton
         type="button"
         variant="outline"
         size="sm"
         className="bg-hijau text-white border-hijau hover:bg-hijau/90"
-        disabled={decideQuotation.isPending}
-        onClick={() => decide("APPROVED")}
+        disabled={decideMutation.isPending}
+        onClick={() => decide("approved")}
       >
         <Check size={13} />
         Setuju
@@ -349,8 +360,8 @@ export default function QuotationEditPageOS({
         variant="outline"
         size="sm"
         className="bg-oranye text-white border-oranye hover:bg-oranye/90"
-        disabled={decideQuotation.isPending}
-        onClick={() => setPendingDecision({ decision: "NEEDS_REVISION" })}
+        disabled={decideMutation.isPending}
+        onClick={() => setPendingDecision({ decision: "needs_revision" })}
       >
         <RotateCcw size={13} />
         Revisi
@@ -360,8 +371,8 @@ export default function QuotationEditPageOS({
         variant="outline"
         size="sm"
         className="bg-merah text-white border-merah hover:bg-merah/90"
-        disabled={decideQuotation.isPending}
-        onClick={() => setPendingDecision({ decision: "REJECTED" })}
+        disabled={decideMutation.isPending}
+        onClick={() => setPendingDecision({ decision: "rejected" })}
       >
         <X size={13} />
         Tolak
@@ -432,7 +443,7 @@ export default function QuotationEditPageOS({
           </AppButton>
         </div>
         <p className="text-xs text-gray-400 dark:text-zinc-500">
-          {quotation.company_name} · {quotation.pipeline_name} · v
+          {quotation.company_name} · v
           {quotation.version} · Terakhir disimpan{" "}
           {dayjs(quotation.updated_at).format("D MMM YYYY, HH:mm")} oleh{" "}
           {quotation.created_by_name}
@@ -545,15 +556,15 @@ export default function QuotationEditPageOS({
       <QuotationReasonModalOS
         isOpen={pendingDecision !== null}
         title={
-          pendingDecision?.decision === "REJECTED"
+          pendingDecision?.decision === "rejected"
             ? "Reject quotation?"
             : "Kembalikan untuk revisi?"
         }
         confirmLabel={
-          pendingDecision?.decision === "REJECTED" ? "Reject" : "Kembalikan"
+          pendingDecision?.decision === "rejected" ? "Reject" : "Kembalikan"
         }
-        destructive={pendingDecision?.decision === "REJECTED"}
-        isPending={decideQuotation.isPending}
+        destructive={pendingDecision?.decision === "rejected"}
+        isPending={decideMutation.isPending}
         onClose={() => setPendingDecision(null)}
         onConfirm={(reason) => {
           if (!pendingDecision) return;

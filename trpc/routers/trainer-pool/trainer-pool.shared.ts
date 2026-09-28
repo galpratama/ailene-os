@@ -1,12 +1,9 @@
-import { STATUS_BAD_REQUEST } from "@/lib/status_code";
 import {
   TrainerCertificationStatusEnum,
   TrainerLevelEnum,
   TrainerScreeningStatusEnum,
   TrainerStageEnum,
-  TrainerStatusEnum,
 } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 
 // Wire-level step identifiers the frontend sends/receives — these are no
 // longer a Prisma enum (steps are now named columns on TrainerScreening),
@@ -168,26 +165,6 @@ export function deriveTrainerStage(input: {
     input.screening.total_score >= QUALIFYING_SCORE;
 
   return qualified ? TrainerStageEnum.QUALIFIED : TrainerStageEnum.NOT_QUALIFIED;
-}
-
-// Shared eligibility rule for a trainer requesting an LMS chapter slot.
-export function assertTrainerCanRequestChapter(trainer: {
-  stage: TrainerStageEnum;
-  status: TrainerStatusEnum;
-}) {
-  if (trainer.stage !== TrainerStageEnum.ELIGIBLE) {
-    throw new TRPCError({
-      code: STATUS_BAD_REQUEST,
-      message:
-        "Hanya trainer yang sudah eligible yang bisa mengajukan diri untuk sebuah kelas.",
-    });
-  }
-  if (trainer.status !== TrainerStatusEnum.ACTIVE) {
-    throw new TRPCError({
-      code: STATUS_BAD_REQUEST,
-      message: "Akun trainer ini sedang tidak aktif.",
-    });
-  }
 }
 
 export function buildApplicationNotes(input: {

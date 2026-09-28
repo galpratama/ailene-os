@@ -10,7 +10,7 @@ import {
 } from "@/lib/pricing-b2b";
 import dayjs from "dayjs";
 
-// Minimal, loosely-typed shape of trpc.read.b2b.quotation's response so callers avoid importing the full router type.
+// The subset of the Quotations API details response the PDF needs.
 export type QuotationForPdf = {
   id: number;
   version: number;

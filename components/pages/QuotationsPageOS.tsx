@@ -5,21 +5,24 @@ import { downloadQuotationPDF, getQuotationPDFBlobUrl } from "@/components/pdf/Q
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
 import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
+import type { QuotationApprovalDecision } from "@/apis/quotations";
 import { useSession } from "@/contexts/SessionContext";
+import { useQuotationList } from "@/hooks/useQuotationList";
+import { decideQuotation, getQuotationDetails } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import { getRupiahCurrency } from "@/lib/currency";
 import {
   buildQuotationPDFPropsFromQuotation,
   quotationPdfFilename,
 } from "@/lib/quotation-pdf";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BQuotationApprovalDecisionEnum } from "@prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Download, Eye, Loader2, Pencil, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type PendingDecision = {
   id: number;
-  decision: "NEEDS_REVISION" | "REJECTED";
+  decision: "needs_revision" | "rejected";
 };
 
 export default function QuotationsPageOS({
@@ -27,11 +30,7 @@ export default function QuotationsPageOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const sessionUser = useSession();
   const canReview = sessionUser?.role === "ADMINISTRATOR";
@@ -48,33 +47,30 @@ export default function QuotationsPageOS({
   const [pendingDecision, setPendingDecision] =
     useState<PendingDecision | null>(null);
 
-  const { data, isLoading, isError } = trpc.list.b2b.quotations.useQuery(
-    { page_size: 200 },
-    { enabled: !!sessionToken }
-  );
-  const quotations = data?.list ?? [];
+  const { data, isLoading, isError } = useQuotationList({}, !!sessionToken);
+  const quotations = data ?? [];
 
-  const decideQuotation = trpc.update.b2b.decideQuotation.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.quotations.invalidate();
-      utils.list.b2b.homeSummary.invalidate();
+  const decideMutation = useMutation({
+    mutationFn: async (payload: {
+      id: number;
+      decision: QuotationApprovalDecision;
+      reason?: string;
+    }) => requireApiData(await decideQuotation(payload)),
+    onSuccess: async () => {
       setPendingDecision(null);
+      await queryClient.invalidateQueries({ queryKey: ["quotations"] });
     },
     onError: (err) => setActionError(err.message),
   });
 
-  function decide(
-    id: number,
-    decision: B2BQuotationApprovalDecisionEnum,
-    reason?: string
-  ) {
+  function decide(id: number, decision: QuotationApprovalDecision, reason?: string) {
     setActionError(null);
-    decideQuotation.mutate({ id, decision, reason });
+    decideMutation.mutate({ id, decision, reason });
   }
 
   async function loadPdfProps(id: number) {
-    const res = await utils.read.b2b.quotation.fetch({ id });
-    return buildQuotationPDFPropsFromQuotation(res.quotation);
+    const quotation = requireApiData(await getQuotationDetails(id));
+    return buildQuotationPDFPropsFromQuotation(quotation);
   }
 
   async function handleDownload(id: number, companyName: string) {
@@ -151,7 +147,7 @@ export default function QuotationsPageOS({
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
                   <th className="px-5 py-3">ID</th>
-                  <th className="px-5 py-3">Company / Pipeline</th>
+                  <th className="px-5 py-3">Company</th>
                   <th className="px-5 py-3">Version</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Net Value</th>
@@ -175,7 +171,7 @@ export default function QuotationsPageOS({
                         href={`/quotations/${quotation.id}`}
                         className="flex items-center px-5 py-3.5 text-gray-600 dark:text-zinc-300"
                       >
-                        {quotation.company_name} · {quotation.pipeline_name}
+                        {quotation.company_name}
                       </Link>
                     </td>
                     <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
@@ -192,7 +188,7 @@ export default function QuotationsPageOS({
                     </td>
                     {canViewMargin && (
                       <td className="px-5 py-3.5">
-                        {quotation.margin_pct !== undefined ? (
+                        {quotation.margin_pct !== null ? (
                           <span
                             className={`font-semibold ${
                               Number(quotation.margin_pct) < 0.45
@@ -261,15 +257,15 @@ export default function QuotationsPageOS({
                     </td>
                     {canReview && (
                       <td className="px-5 py-3.5">
-                        {quotation.status === "MANAGER_REVIEW" ? (
+                        {quotation.status === "manager_review" ? (
                           <div className="flex flex-wrap items-center gap-1.5">
                             <AppButton
                               type="button"
                               variant="outline"
                               size="sm"
                               className="bg-hijau text-white border-hijau hover:bg-hijau/90"
-                              disabled={decideQuotation.isPending}
-                              onClick={() => decide(quotation.id, "APPROVED")}
+                              disabled={decideMutation.isPending}
+                              onClick={() => decide(quotation.id, "approved")}
                             >
                               <Check size={13} />
                               Setuju
@@ -279,11 +275,11 @@ export default function QuotationsPageOS({
                               variant="outline"
                               size="sm"
                               className="bg-oranye text-white border-oranye hover:bg-oranye/90"
-                              disabled={decideQuotation.isPending}
+                              disabled={decideMutation.isPending}
                               onClick={() =>
                                 setPendingDecision({
                                   id: quotation.id,
-                                  decision: "NEEDS_REVISION",
+                                  decision: "needs_revision",
                                 })
                               }
                             >
@@ -295,11 +291,11 @@ export default function QuotationsPageOS({
                               variant="outline"
                               size="sm"
                               className="bg-merah text-white border-merah hover:bg-merah/90"
-                              disabled={decideQuotation.isPending}
+                              disabled={decideMutation.isPending}
                               onClick={() =>
                                 setPendingDecision({
                                   id: quotation.id,
-                                  decision: "REJECTED",
+                                  decision: "rejected",
                                 })
                               }
                             >
@@ -335,15 +331,15 @@ export default function QuotationsPageOS({
       <QuotationReasonModalOS
         isOpen={pendingDecision !== null}
         title={
-          pendingDecision?.decision === "REJECTED"
+          pendingDecision?.decision === "rejected"
             ? "Reject quotation?"
             : "Kembalikan untuk revisi?"
         }
         confirmLabel={
-          pendingDecision?.decision === "REJECTED" ? "Reject" : "Kembalikan"
+          pendingDecision?.decision === "rejected" ? "Reject" : "Kembalikan"
         }
-        destructive={pendingDecision?.decision === "REJECTED"}
-        isPending={decideQuotation.isPending}
+        destructive={pendingDecision?.decision === "rejected"}
+        isPending={decideMutation.isPending}
         onClose={() => setPendingDecision(null)}
         onConfirm={(reason) => {
           if (!pendingDecision) return;

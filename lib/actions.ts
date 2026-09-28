@@ -35,6 +35,21 @@ import {
   type UpdateLmsMemberPayload,
 } from "@/apis/lms";
 import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from "@/apis/lookup";
+import {
+  createQuotation as createQuotationApi,
+  decideQuotation as decideQuotationApi,
+  getQuotationDetails as getQuotationDetailsApi,
+  getQuotationSummary as getQuotationSummaryApi,
+  listQuotations as listQuotationsApi,
+  submitQuotation as submitQuotationApi,
+  updateQuotation as updateQuotationApi,
+  updateQuotationOutcome as updateQuotationOutcomeApi,
+  type CreateQuotationPayload,
+  type DecideQuotationPayload,
+  type ListQuotationsOptions,
+  type QuotationOutcomeStatus,
+  type UpdateQuotationPayload,
+} from "@/apis/quotations";
 import { logoutUser as logoutUserApi } from "@/apis/session";
 import { createTeam as createTeamApi, listTeams as listTeamsApi } from "@/apis/teams";
 import {
@@ -206,6 +221,41 @@ export async function createAction(payload: CreateActionPayload) {
 
 export async function updateAction(payload: UpdateActionPayload) {
   return updateActionApi(payload);
+}
+
+export async function listQuotations(options: ListQuotationsOptions = {}) {
+  return listQuotationsApi(options);
+}
+
+export async function getQuotationSummary() {
+  return getQuotationSummaryApi();
+}
+
+export async function getQuotationDetails(id: number) {
+  return getQuotationDetailsApi(id);
+}
+
+export async function createQuotation(payload: CreateQuotationPayload) {
+  return createQuotationApi(payload);
+}
+
+export async function updateQuotation(payload: UpdateQuotationPayload) {
+  return updateQuotationApi(payload);
+}
+
+export async function submitQuotation(id: number) {
+  return submitQuotationApi(id);
+}
+
+export async function decideQuotation(payload: DecideQuotationPayload) {
+  return decideQuotationApi(payload);
+}
+
+export async function updateQuotationOutcome(payload: {
+  id: number;
+  status: QuotationOutcomeStatus;
+}) {
+  return updateQuotationOutcomeApi(payload);
 }
 
 export async function listArticleCategories() {

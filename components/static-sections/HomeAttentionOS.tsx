@@ -4,9 +4,9 @@ import PriorityLabel from "@/components/labels/PriorityLabel";
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
 import type { ActionData } from "@/apis/actions";
+import type { QuotationListItem } from "@/apis/quotations";
 import type { PipelineStage } from "@/apis/sales";
 import { getRupiahCurrency } from "@/lib/currency";
-import type { B2BQuotationStatusEnum } from "@prisma/client";
 import {
   AlertCircle,
   CheckCircle2,
@@ -37,15 +37,10 @@ type OwnershipConflict = {
   pipelines: { id: number; name: string; owner_name: string }[];
 };
 
-type PendingQuotation = {
-  id: number;
-  pipeline_id: number;
-  pipeline_name: string;
-  company_name: string;
-  version: number;
-  status: B2BQuotationStatusEnum;
-  net_value: string | number;
-};
+type PendingQuotation = Pick<
+  QuotationListItem,
+  "id" | "company_name" | "version" | "status" | "net_value"
+>;
 
 function formatDueDate(value: string | null) {
   if (!value) return "No due date";
@@ -248,12 +243,12 @@ export default function HomeAttentionOS({
             {attention.quotations_pending.map((quotation) => (
               <Link
                 key={quotation.id}
-                href="/quotations"
+                href={`/quotations/${quotation.id}`}
                 className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-gray-700 dark:text-zinc-300">
-                    {quotation.company_name} · {quotation.pipeline_name}
+                    {quotation.company_name}
                   </p>
                   <p className="truncate text-xs text-gray-400 dark:text-zinc-500">
                     v{quotation.version} · {getRupiahCurrency(Number(quotation.net_value))}

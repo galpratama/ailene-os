@@ -2,7 +2,7 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
-import AppNumberInput from "@/components/fields/AppNumberInput";
+import AppIntegerInput from "@/components/fields/AppIntegerInput";
 import AppSelect from "@/components/fields/AppSelect";
 import Label from "@/components/labels/Label";
 import { getRupiahCurrency } from "@/lib/currency";
@@ -28,9 +28,10 @@ import {
   uniquePax,
 } from "@/lib/pricing-b2b";
 import type {
-  B2BQuotationPackageEnum,
-  B2BQuotationSourceTypeEnum,
-} from "@prisma/client";
+  QuotationPackage,
+  QuotationPricingPayload,
+  QuotationSourceType,
+} from "@/apis/quotations";
 import {
   Check,
   CircleAlert,
@@ -42,10 +43,10 @@ import {
 } from "lucide-react";
 import { ReactNode, useMemo, useState } from "react";
 
-export const PACKAGE_BY_PRESET: Record<string, B2BQuotationPackageEnum> = {
-  foundation: "FOUNDATION",
-  intensive: "INTENSIVE",
-  sprint: "SPRINT",
+export const PACKAGE_BY_PRESET: Record<string, QuotationPackage> = {
+  foundation: "foundation",
+  intensive: "intensive",
+  sprint: "sprint",
 };
 
 export type PresetKey = keyof typeof PRESETS;
@@ -240,8 +241,8 @@ function CopyButton({
 
 export interface PricingSeed {
   id: number;
-  source_type: B2BQuotationSourceTypeEnum;
-  package_type?: B2BQuotationPackageEnum | null;
+  source_type: QuotationSourceType;
+  package_type?: QuotationPackage | null;
   materi: string;
   bd_pct: number | string;
   dc_pct: number | string;
@@ -320,20 +321,20 @@ export function usePricingBuilder({
     setBdPct(Number(seed.bd_pct));
     setDcPct(Number(seed.dc_pct));
     setActivePreset(
-      seed.source_type === "CUSTOM"
+      seed.source_type === "custom"
         ? "blank"
-        : ((seed.package_type?.toLowerCase() ?? "blank") as PresetKey)
+        : ((seed.package_type ?? "blank") as PresetKey)
     );
   }
 
-  function buildQuotationPayload() {
-    const sourceType: B2BQuotationSourceTypeEnum =
-      activePreset === "blank" ? "CUSTOM" : "PACKAGE";
+  function buildQuotationPayload(): QuotationPricingPayload {
+    const sourceType: QuotationSourceType =
+      activePreset === "blank" ? "custom" : "package";
     return {
       source_type: sourceType,
       package_type:
-        sourceType === "PACKAGE" ? PACKAGE_BY_PRESET[activePreset] : undefined,
-      materi: materi.toUpperCase() as "STD" | "RINGAN" | "DALAM",
+        sourceType === "package" ? PACKAGE_BY_PRESET[activePreset] : null,
+      materi,
       bd_pct: bdPct,
       dc_pct: dcPct,
       addon_assessment: addons.assessment,
@@ -345,10 +346,10 @@ export function usePricingBuilder({
       addon_perjalanan: addons.perjalanan,
       addon_perjalanan_rp: addons.perjalananRp,
       days: days.map((d) => ({
-        format: d.format.toUpperCase() as "OFFLINE" | "ONLINE",
+        format: d.format,
         sesi: d.sesi,
         peserta: d.peserta,
-        trainer: d.trainer.toUpperCase() as "CERTIFIED" | "SPECIALIST" | "LEAD",
+        trainer: d.trainer,
       })),
     };
   }
@@ -546,16 +547,13 @@ export function usePricingBuilder({
                   updateDay(d.id, { sesi: Number(v) as SesiValue })
                 }
               />
-              <AppNumberInput
+              <AppIntegerInput
                 inputId={`day-${d.id}-peserta`}
                 label="Peserta"
-                value={String(d.peserta)}
+                value={d.peserta}
+                min={1}
                 disabled={!isEditable}
-                onValueChange={(v) =>
-                  updateDay(d.id, {
-                    peserta: Math.max(1, parseInt(v || "1", 10)),
-                  })
-                }
+                onValueChange={(peserta) => updateDay(d.id, { peserta })}
               />
               <AppSelect
                 selectId={`day-${d.id}-trainer`}
@@ -656,16 +654,12 @@ export function usePricingBuilder({
           </p>
           <p className="text-xs text-gray-400">pendampingan setelah training</p>
         </div>
-        <AppNumberInput
+        <AppIntegerInput
           inputId="addon-klinik-sesi"
-          value={String(addons.klinikSesi)}
+          value={addons.klinikSesi}
+          min={1}
           disabled={!isEditable}
-          onValueChange={(v) =>
-            setAddons((a) => ({
-              ...a,
-              klinikSesi: Math.max(1, parseInt(v || "1", 10)),
-            }))
-          }
+          onValueChange={(klinikSesi) => setAddons((a) => ({ ...a, klinikSesi }))}
           className="py-1.5 text-center"
         />
         <span className="text-right font-mono text-xs font-semibold text-gray-600 dark:text-zinc-400">
@@ -715,15 +709,12 @@ export function usePricingBuilder({
             per peserta unik, mengikuti Susunan hari
           </p>
         </div>
-        <AppNumberInput
+        <AppIntegerInput
           inputId="addon-sertifikat-qty"
-          value={String(addons.sertifikatQty)}
+          value={addons.sertifikatQty}
           disabled={!isEditable}
-          onValueChange={(v) =>
-            setAddons((a) => ({
-              ...a,
-              sertifikatQty: Math.max(0, parseInt(v || "0", 10)),
-            }))
+          onValueChange={(sertifikatQty) =>
+            setAddons((a) => ({ ...a, sertifikatQty }))
           }
           title="Mengikuti jumlah peserta di Susunan hari, bisa diedit manual"
           className="py-1.5 text-center"
@@ -754,15 +745,12 @@ export function usePricingBuilder({
           </p>
         </div>
         <span />
-        <AppNumberInput
+        <AppIntegerInput
           inputId="addon-perjalanan-rp"
-          value={String(addons.perjalananRp)}
+          value={addons.perjalananRp}
           disabled={!isEditable}
-          onValueChange={(v) =>
-            setAddons((a) => ({
-              ...a,
-              perjalananRp: Math.max(0, parseInt(v || "0", 10)),
-            }))
+          onValueChange={(perjalananRp) =>
+            setAddons((a) => ({ ...a, perjalananRp }))
           }
           icon={
             <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400">

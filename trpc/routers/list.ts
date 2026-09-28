@@ -10,8 +10,6 @@ export const listRouter = createTRPCRouter({
 
   b2b: {
     meetings: listB2B.meetings,
-    quotations: listB2B.quotations,
-    quotationApprovalQueue: listB2B.quotationApprovalQueue,
     calendar: listB2B.calendar,
     homeSummary: listB2B.homeSummary,
     dashboardAnalytics: listB2B.dashboardAnalytics,
