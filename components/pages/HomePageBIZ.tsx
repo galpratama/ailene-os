@@ -9,6 +9,7 @@ import AdoptionProofHomeBIZ from "../static-sections/AdoptionProofHomeBIZ";
 import CurriculumHomeBIZ from "../static-sections/CurriculumHomeBIZ";
 import ProgramsHomeBIZ from "../static-sections/ProgramsHomeBIZ";
 import TrainersHomeBIZ from "../static-sections/TrainersHomeBIZ";
+import DocumentationHomeBIZ from "../static-sections/DocumentationHomeBIZ";
 import FAQHomeBIZ from "../static-sections/FAQHomeBIZ";
 import LeadFormHomeBIZ from "../static-sections/LeadFormHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
@@ -49,11 +50,14 @@ export default function HomePageBIZ({
         <RevealOnScroll viewBlock="curriculum">
           <CurriculumHomeBIZ />
         </RevealOnScroll>
-        <RevealOnScroll viewBlock="programs">
-          <ProgramsHomeBIZ />
-        </RevealOnScroll>
         <RevealOnScroll viewBlock="trainers">
           <TrainersHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll viewBlock="documentation">
+          <DocumentationHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll viewBlock="programs">
+          <ProgramsHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="faq">
           <FAQHomeBIZ />

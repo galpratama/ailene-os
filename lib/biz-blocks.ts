@@ -19,6 +19,7 @@ export const BIZ_BLOCKS = [
   "footer",
   "footer_nav",
   "trainer_application",
+  "documentation",
 ] as const;
 
 export type BizBlock = (typeof BIZ_BLOCKS)[number];
@@ -42,8 +43,9 @@ export const BIZ_SCROLL_BLOCKS: BizBlock[] = [
   "adoption_proof",
   "lms",
   "curriculum",
-  "programs",
   "trainers",
+  "documentation",
+  "programs",
   "faq",
   "lead_form",
   "final_cta",
@@ -77,4 +79,5 @@ export const BIZ_BLOCK_LABELS: Record<BizBlock, string> = {
   footer: "Footer",
   footer_nav: "Footer nav",
   trainer_application: "Trainer application",
+  documentation: "Documentation",
 };

@@ -17,6 +17,11 @@ export default function SectionHeaderHomeBIZ({
   dark = false,
   className,
 }: SectionHeaderHomeBIZProps) {
+  // On dark sections the label drops its lime highlight and goes plain white, as in FAQ and Adoption proof.
+  const eyebrowClass = dark
+    ? "biz-topic-label !text-white before:!hidden after:!hidden"
+    : "biz-topic-label";
+
   if (centered) {
     return (
       <div
@@ -27,7 +32,7 @@ export default function SectionHeaderHomeBIZ({
           .filter(Boolean)
           .join(" ")}
       >
-        <p className="biz-topic-label">{eyebrow}</p>
+        <p className={eyebrowClass}>{eyebrow}</p>
         <h2
           className={`mt-3 text-[36px] leading-[0.94] font-medium tracking-[-0.065em] lg:text-[44px] ${dark ? "text-white" : "text-biz-ink"}`}
         >
@@ -54,7 +59,7 @@ export default function SectionHeaderHomeBIZ({
         .join(" ")}
     >
       <div>
-        <p className="biz-topic-label">{eyebrow}</p>
+        <p className={eyebrowClass}>{eyebrow}</p>
         <h2
           className={`mt-3.5 text-[36px] leading-[0.94] font-medium tracking-[-0.065em] lg:text-[44px] ${dark ? "text-white" : "text-biz-ink"}`}
         >

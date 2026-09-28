@@ -150,10 +150,10 @@ function ProgramTable() {
 
 export default function ProgramsHomeBIZ() {
   return (
-    <section id="programs" className="bg-biz-paper py-18 sm:py-28">
+    <section id="programs" className="bg-white py-18 sm:py-28">
       <PageMargin>
         <SectionHeaderHomeBIZ
-          eyebrow="Pilih jalurnya"
+          eyebrow="Learning path"
           title="Pilih program sesuai kebutuhan tim."
           className="mb-5"
         />
