@@ -34,12 +34,6 @@ export type OSNavItem = {
 export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true, segment: "B2B" },
   { href: "/calendar", label: "Calendar", icon: Calendar, segment: "B2B" },
-  {
-    href: "/analytics",
-    label: "Analytics",
-    icon: ChartNoAxesCombined,
-    segment: "B2B",
-  },
   { href: "/tracking", label: "Tracking", icon: ChartNoAxesCombined, segment: "B2C" },
   {
     href: "/organizations",
@@ -103,6 +97,13 @@ export const osMainNav: OSNavItem[] = [
     icon: Store,
     segment: "B2B",
     group: "Trainer Pool",
+  },
+  {
+    href: "/analytics",
+    label: "Analytics",
+    icon: ChartNoAxesCombined,
+    segment: "B2B",
+    group: "Marketing",
   },
   {
     href: "/articles",
