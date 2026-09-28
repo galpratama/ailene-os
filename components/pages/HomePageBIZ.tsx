@@ -33,6 +33,9 @@ export default function HomePageBIZ({
         <RevealOnScroll viewBlock="companies">
           <CompaniesHomeBIZ />
         </RevealOnScroll>
+        <RevealOnScroll viewBlock="documentation">
+          <DocumentationHomeBIZ />
+        </RevealOnScroll>
         <RevealOnScroll viewBlock="solution">
           <SolutionHomeBIZ />
         </RevealOnScroll>
@@ -52,9 +55,6 @@ export default function HomePageBIZ({
         </RevealOnScroll>
         <RevealOnScroll viewBlock="trainers">
           <TrainersHomeBIZ />
-        </RevealOnScroll>
-        <RevealOnScroll viewBlock="documentation">
-          <DocumentationHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="programs">
           <ProgramsHomeBIZ />
