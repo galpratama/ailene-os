@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { showErrorToast } from "@/lib/toast";
 
 const roleOptions: AppSelectOption[] = (
   Object.keys(lmsMemberRoleStyles) as LmsMemberRole[]
@@ -65,7 +66,6 @@ export default function LmsMemberFormOS({
 }: LmsMemberFormOSProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -83,7 +83,6 @@ export default function LmsMemberFormOS({
     setJobTitle(next?.user.job_title ?? "");
     setRole(next?.role ?? "");
     setGroupId(next?.group.id ?? null);
-    setError(null);
   }
 
   // Re-seed the fields whenever a different member (or "invite") is opened, without an effect.
@@ -105,13 +104,12 @@ export default function LmsMemberFormOS({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!member && !email.trim()) return setError("Email is required.");
-    if (!role) return setError("Role is required.");
-    if (!groupId) return setError("Group is required.");
+    if (!member && !email.trim()) return showErrorToast("Email is required.");
+    if (!role) return showErrorToast("Role is required.");
+    if (!groupId) return showErrorToast("Group is required.");
     if (!member && password && (password.length < 8 || password.length > 72))
-      return setError("Password must be 8–72 characters.");
+      return showErrorToast("Password must be 8–72 characters.");
 
     if (member) {
       // `users/update` only touches what's sent, so unchanged fields stay out of the payload.
@@ -133,7 +131,7 @@ export default function LmsMemberFormOS({
       setIsSubmitting(false);
 
       if (!isSuccessStatus(result.status)) {
-        return setError(result.message ?? "Failed to save member.");
+        return showErrorToast(result.message ?? "Failed to save member.");
       }
       toast.success("Member updated.");
     } else {
@@ -150,7 +148,7 @@ export default function LmsMemberFormOS({
       setIsSubmitting(false);
 
       if (!isSuccessStatus(result.status) || !result.data) {
-        return setError(result.message ?? "Failed to invite member.");
+        return showErrorToast(result.message ?? "Failed to invite member.");
       }
       announceInvite(result.data, !!password);
     }
@@ -173,11 +171,6 @@ export default function LmsMemberFormOS({
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           {member ? (
             <AppInput

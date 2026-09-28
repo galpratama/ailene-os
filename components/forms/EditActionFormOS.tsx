@@ -13,6 +13,7 @@ import { requireApiData } from "@/lib/api-result";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 interface EditActionFormOSProps {
   actionId: number | null;
@@ -33,7 +34,6 @@ export default function EditActionFormOS({
   const [priority, setPriority] = useState<ActionPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   const { data: action, isLoading: isLoadingAction } = useQuery({
     queryKey: ["actions", "details", actionId],
@@ -65,7 +65,6 @@ export default function EditActionFormOS({
   const assigneeOptions = useAssigneeOptions(isOpen);
 
   function handleClose() {
-    setError(null);
     onClose();
   }
 
@@ -87,14 +86,13 @@ export default function EditActionFormOS({
       handleClose();
     },
     onError: (cause) =>
-      setError(cause instanceof Error ? cause.message : "Failed to update action."),
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to update action."),
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!name.trim()) return setError("Action name is required.");
+    if (!name.trim()) return showErrorToast("Action name is required.");
     if (actionId == null) return;
 
     updateMutation.mutate(actionId);
@@ -116,11 +114,6 @@ export default function EditActionFormOS({
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-            {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-                {error}
-              </p>
-            )}
 
             <AppInput
               inputId="edit-action-name"

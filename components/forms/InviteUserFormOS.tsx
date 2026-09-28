@@ -12,6 +12,7 @@ import type { UserDataScope, UserJobFunction, UserRole } from "@/apis/users";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const jobFunctionOptions: AppSelectOption[] = [
   { value: "", label: "No job function" },
@@ -49,7 +50,6 @@ export default function InviteUserFormOS({
   const [teamId, setTeamId] = useState<number | null>(null);
   const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
   const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
-  const [error, setError] = useState<string | null>(null);
 
   const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
     value: option.value,
@@ -67,7 +67,6 @@ export default function InviteUserFormOS({
     setTeamId(null);
     setJobFunction("");
     setDataScope("OWN");
-    setError(null);
   }
 
   function handleClose() {
@@ -77,11 +76,10 @@ export default function InviteUserFormOS({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!fullName.trim()) return setError("Name is required.");
-    if (!email.trim()) return setError("Email is required.");
-    if (!role) return setError("Access role is required.");
+    if (!fullName.trim()) return showErrorToast("Name is required.");
+    if (!email.trim()) return showErrorToast("Email is required.");
+    if (!role) return showErrorToast("Access role is required.");
 
     setIsSubmitting(true);
     const result = await inviteUser({
@@ -95,7 +93,7 @@ export default function InviteUserFormOS({
     setIsSubmitting(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to invite user.");
+      return showErrorToast(result.message ?? "Failed to invite user.");
     }
 
     router.refresh();
@@ -111,11 +109,6 @@ export default function InviteUserFormOS({
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           <AppInput
             inputId="invite-user-name"

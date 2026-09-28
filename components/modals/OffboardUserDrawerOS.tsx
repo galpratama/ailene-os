@@ -16,6 +16,7 @@ import type { UserEntry, UserOwnership } from "@/apis/users";
 import { Briefcase, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 interface OffboardUserDrawerOSProps {
   userId: string | null;
@@ -33,7 +34,6 @@ export default function OffboardUserDrawerOS({
 
   const [newOwnerId, setNewOwnerId] = useState("");
   const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserEntry | null>(null);
   const [ownership, setOwnership] = useState<UserOwnership | null>(null);
   const [candidates, setCandidates] = useState<UserEntry[]>([]);
@@ -77,7 +77,6 @@ export default function OffboardUserDrawerOS({
   function handleClose() {
     setNewOwnerId("");
     setReason("");
-    setError(null);
     setUser(null);
     setOwnership(null);
     onClose();
@@ -85,10 +84,9 @@ export default function OffboardUserDrawerOS({
 
   async function handleReassign(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     if (!user) return;
-    if (!newOwnerId) return setError("Pick a replacement owner.");
-    if (!reason.trim()) return setError("A reason is required.");
+    if (!newOwnerId) return showErrorToast("Pick a replacement owner.");
+    if (!reason.trim()) return showErrorToast("A reason is required.");
 
     setIsReassigning(true);
     const result = await reassignOwnership({
@@ -99,7 +97,7 @@ export default function OffboardUserDrawerOS({
     setIsReassigning(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to reassign ownership.");
+      return showErrorToast(result.message ?? "Failed to reassign ownership.");
     }
 
     setNewOwnerId("");
@@ -110,7 +108,6 @@ export default function OffboardUserDrawerOS({
 
   async function handleDeactivate() {
     if (!user) return;
-    setError(null);
 
     setIsDeactivating(true);
     const result = await updateUserStatus({
@@ -121,7 +118,7 @@ export default function OffboardUserDrawerOS({
     setIsDeactivating(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to deactivate user.");
+      return showErrorToast(result.message ?? "Failed to deactivate user.");
     }
 
     router.refresh();
@@ -144,11 +141,6 @@ export default function OffboardUserDrawerOS({
       ) : (
         <div className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-            {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-                {error}
-              </p>
-            )}
 
             <div className="flex items-center gap-2">
               <UserStatusLabel status={user.status} />

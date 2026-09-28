@@ -21,6 +21,7 @@ import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LA
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
@@ -78,7 +79,6 @@ export default function LeadsPageOS({
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [movedStages, setMovedStages] = useState<Partial<Record<number, PipelineStage>>>({});
-  const [stageError, setStageError] = useState<string | null>(null);
   const pageSize = 21;
   const isBoardView = viewMode === "kanban";
   const isWeeklyView = viewMode === "weekly";
@@ -137,7 +137,6 @@ export default function LeadsPageOS({
         })
       ),
     onSuccess: async (_data, { pipeline }) => {
-      setStageError(null);
       await queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] });
       setMovedStages((current) => {
         const next = { ...current };
@@ -179,18 +178,17 @@ export default function LeadsPageOS({
     const pipeline = board.find((entry) => entry.id === id);
     if (!pipeline || pipeline.stage === stage) return;
     if (!pipeline.lead_source) {
-      setStageError("Set this company's lead source before moving its pipeline.");
+      showErrorToast("Set this company's lead source before moving its pipeline.");
       return;
     }
     if (!isStageCompatibleWithLeadSource(stage, pipeline.lead_source)) {
-      setStageError(
+      showErrorToast(
         stage === "triaging"
           ? "Triaging requires an inbound lead source."
           : "Attempting requires an outbound lead source."
       );
       return;
     }
-    setStageError(null);
     setMovedStages((current) => ({ ...current, [id]: stage }));
     updateStage.mutate(
       { pipeline, stage },
@@ -201,7 +199,7 @@ export default function LeadsPageOS({
             delete next[id];
             return next;
           });
-          setStageError(cause instanceof Error ? cause.message : "Failed to move this lead.");
+          showErrorToast(cause instanceof Error ? cause.message : "Failed to move this lead.");
         },
       }
     );
@@ -240,7 +238,6 @@ export default function LeadsPageOS({
 
       {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
       {pipelineQuery.isError && <p className="py-8 text-center text-sm text-red-500">{pipelineQuery.error.message}</p>}
-      {stageError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">{stageError}</p>}
 
       {pipelineList && isBoardView && (
         <>

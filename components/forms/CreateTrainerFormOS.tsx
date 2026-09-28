@@ -12,6 +12,7 @@ import { trpc } from "@/trpc/client";
 import type { TrainerSourceEnum } from "@prisma/client";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const sourceOptions: AppSelectOption[] = [
   { value: "AI_COMMUNITY", label: "AI Community" },
@@ -39,7 +40,6 @@ export default function CreateTrainerFormOS({
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
   const [aiExperienceYears, setAiExperienceYears] = useState("");
   const [notes, setNotes] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   const { data: optionsData } =
     trpc.list.trainerPool.applicationOptions.useQuery(undefined, {
@@ -54,7 +54,6 @@ export default function CreateTrainerFormOS({
     setSpecializationIds([]);
     setAiExperienceYears("");
     setNotes("");
-    setError(null);
   }
 
   function close() {
@@ -67,13 +66,13 @@ export default function CreateTrainerFormOS({
       utils.list.trainerPool.trainers.invalidate();
       close();
     },
-    onError: (mutationError) => setError(mutationError.message),
+    onError: (mutationError) => showErrorToast(mutationError.message),
   });
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!fullName.trim() || !email.trim()) {
-      return setError("Name and email are required.");
+      return showErrorToast("Name and email are required.");
     }
     createTrainer.mutate({
       full_name: fullName.trim(),
@@ -95,11 +94,6 @@ export default function CreateTrainerFormOS({
     >
       <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
           <AppInput
             inputId="candidate-name"
             label="Full Name"

@@ -19,6 +19,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Download, Eye, Loader2, Pencil, RotateCcw, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 type PendingDecision = {
   id: number;
@@ -38,7 +39,6 @@ export default function QuotationsPageOS({
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
@@ -60,11 +60,10 @@ export default function QuotationsPageOS({
       setPendingDecision(null);
       await queryClient.invalidateQueries({ queryKey: ["quotations"] });
     },
-    onError: (err) => setActionError(err.message),
+    onError: (err) => showErrorToast(err.message),
   });
 
   function decide(id: number, decision: QuotationApprovalDecision, reason?: string) {
-    setActionError(null);
     decideMutation.mutate({ id, decision, reason });
   }
 
@@ -74,7 +73,6 @@ export default function QuotationsPageOS({
   }
 
   async function handleDownload(id: number, companyName: string) {
-    setActionError(null);
     setDownloadingId(id);
     try {
       const props = await loadPdfProps(id);
@@ -83,14 +81,13 @@ export default function QuotationsPageOS({
         quotationPdfFilename({ id, company_name: companyName })
       );
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Gagal membuat PDF.");
+      showErrorToast(err instanceof Error ? err.message : "Gagal membuat PDF.");
     } finally {
       setDownloadingId(null);
     }
   }
 
   async function handleView(id: number, companyName: string) {
-    setActionError(null);
     setViewingId(id);
     try {
       const props = await loadPdfProps(id);
@@ -99,7 +96,7 @@ export default function QuotationsPageOS({
       setPreviewTitle(`Quotation #${id} · ${companyName}`);
       setIsPreviewOpen(true);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Gagal membuka PDF.");
+      showErrorToast(err instanceof Error ? err.message : "Gagal membuka PDF.");
     } finally {
       setViewingId(null);
     }
@@ -128,11 +125,6 @@ export default function QuotationsPageOS({
         </Link>
       </div>
 
-      {actionError && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-          {actionError}
-        </p>
-      )}
 
       {isError && (
         <p className="text-sm text-red-500 py-8 text-center">

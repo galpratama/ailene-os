@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 type PendingDecision = { decision: "needs_revision" | "rejected" };
 
@@ -124,7 +125,6 @@ export default function QuotationEditPageOS({
     seed: quotation ?? null,
   });
 
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingQuotation, setIsSubmittingQuotation] = useState(false);
 
@@ -142,31 +142,29 @@ export default function QuotationEditPageOS({
     mutationFn: async (status: QuotationOutcomeStatus) =>
       requireApiData(await updateQuotationOutcome({ id: quotationId, status })),
     onSuccess: invalidateQuotationQueries,
-    onError: (err) => setSaveError(err.message),
+    onError: (err) => showErrorToast(err.message),
   });
 
   async function handleSaveDraft() {
-    setSaveError(null);
     setIsSavingDraft(true);
     try {
       await saveDraft();
       await invalidateQuotationQueries();
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Gagal menyimpan draft.");
+      showErrorToast(err instanceof Error ? err.message : "Gagal menyimpan draft.");
     } finally {
       setIsSavingDraft(false);
     }
   }
 
   async function handleSubmit() {
-    setSaveError(null);
     setIsSubmittingQuotation(true);
     try {
       await saveDraft();
       requireApiData(await submitQuotation(quotationId));
       await invalidateQuotationQueries();
     } catch (err) {
-      setSaveError(
+      showErrorToast(
         err instanceof Error ? err.message : "Gagal membuat quotation."
       );
     } finally {
@@ -175,7 +173,6 @@ export default function QuotationEditPageOS({
   }
 
   function handleOutcome(status: QuotationOutcomeStatus) {
-    setSaveError(null);
     outcomeQuotationMutation.mutate(status);
   }
 
@@ -190,10 +187,9 @@ export default function QuotationEditPageOS({
       setPendingDecision(null);
       await invalidateQuotationQueries();
     },
-    onError: (err) => setSaveError(err.message),
+    onError: (err) => showErrorToast(err.message),
   });
   function decide(decision: QuotationApprovalDecision, reason?: string) {
-    setSaveError(null);
     decideMutation.mutate({ decision, reason });
   }
 
@@ -202,7 +198,6 @@ export default function QuotationEditPageOS({
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   async function handlePreviewClientView() {
     if (!quotation) return;
-    setSaveError(null);
     setIsPreviewLoading(true);
     try {
       const props = buildQuotationPDFPropsFromQuotation(quotation);
@@ -210,7 +205,7 @@ export default function QuotationEditPageOS({
       setPreviewUrl(url);
       setIsPreviewOpen(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Gagal membuka preview.");
+      showErrorToast(err instanceof Error ? err.message : "Gagal membuka preview.");
     } finally {
       setIsPreviewLoading(false);
     }
@@ -235,12 +230,6 @@ export default function QuotationEditPageOS({
       </p>
     );
   }
-
-  const saveErrorBlock = saveError && (
-    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-      {saveError}
-    </p>
-  );
 
   const draftSubmitButtons = isEditable && (
     <div className="flex gap-2">
@@ -493,7 +482,6 @@ export default function QuotationEditPageOS({
 
           {builder.flagsBlock}
           {builder.copyButtonBlock}
-          {saveErrorBlock}
           {draftSubmitButtons}
           {outcomeSentButton}
           {outcomeFinalButtons}

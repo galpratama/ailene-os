@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import { ArrowLeft, Loader2, PlusCircle, Send, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 // Local-only key so React can track sections while they are added/removed; never sent to the API.
 type SectionDraft = { key: number; subHeading: string; content: string };
@@ -71,7 +72,6 @@ export default function ArticleEditorPageOS({
   const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "draft");
 
   const [submitting, setSubmitting] = useState<ArticleStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const categoryOptions: AppSelectOption[] = categories.map((category) => ({
     value: category.id,
@@ -105,8 +105,7 @@ export default function ArticleEditorPageOS({
 
   async function save(nextStatus: ArticleStatus) {
     const problem = validate();
-    if (problem) return setError(problem);
-    setError(null);
+    if (problem) return showErrorToast(problem);
     setSubmitting(nextStatus);
 
     const payload: CreateArticlePayload = {
@@ -135,7 +134,7 @@ export default function ArticleEditorPageOS({
     setSubmitting(null);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to save the article.");
+      return showErrorToast(result.message ?? "Failed to save the article.");
     }
 
     router.push("/articles");
@@ -190,11 +189,6 @@ export default function ArticleEditorPageOS({
         )}
       </PageHeaderOS>
 
-      {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-          {error}
-        </p>
-      )}
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <main className="flex min-w-0 flex-2 flex-col gap-5">

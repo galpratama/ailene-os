@@ -1,8 +1,9 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import { fieldErrorClass, fieldLabelClass } from "@/lib/field-styles";
+import { fieldLabelClass } from "@/lib/field-styles";
 import { SUPABASE_BUCKET, getSupabase } from "@/lib/supabase";
+import { showErrorToast } from "@/lib/toast";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -37,7 +38,6 @@ export default function AppImageUpload({
   aspectRatio,
 }: AppImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState("");
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -47,13 +47,12 @@ export default function AppImageUpload({
 
     const extension = file.name.split(".").pop()?.toLowerCase();
     if (!ALLOWED_TYPES.includes(file.type) || !extension || !ALLOWED_EXTENSIONS.includes(extension)) {
-      return setError("Only JPG, PNG, WEBP, or AVIF images are allowed.");
+      return showErrorToast("Only JPG, PNG, WEBP, or AVIF images are allowed.");
     }
     if (file.size > maxBytes) {
-      return setError(`Image must be smaller than ${maxSizeLabel}.`);
+      return showErrorToast(`Image must be smaller than ${maxSizeLabel}.`);
     }
 
-    setError("");
     setIsUploading(true);
     try {
       const supabase = getSupabase();
@@ -62,11 +61,11 @@ export default function AppImageUpload({
         .from(SUPABASE_BUCKET)
         .upload(path, file, { cacheControl: "3600", upsert: false });
       if (uploadError) {
-        return setError(`Upload failed: ${uploadError.message}`);
+        return showErrorToast(`Upload failed: ${uploadError.message}`);
       }
       onChange(supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(path).data.publicUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
+      showErrorToast(e, "Upload failed.");
     } finally {
       setIsUploading(false);
     }
@@ -128,7 +127,6 @@ export default function AppImageUpload({
         />
       </div>
 
-      {error && <p className={fieldErrorClass}>{error}</p>}
     </div>
   );
 }

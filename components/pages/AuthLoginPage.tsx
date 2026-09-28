@@ -7,6 +7,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 // Hairline that fades at both ends — the main thing selling the glass edge.
 function EdgeLine({ className }: { className: string }) {
@@ -15,28 +16,26 @@ function EdgeLine({ className }: { className: string }) {
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
-        setError(null);
 
         const result = await loginWithGoogle(tokenResponse.access_token);
         if (result.success) {
           window.location.assign("/");
         } else {
-          setError(result.message ?? "Login failed. Please try again.");
+          showErrorToast(result.message ?? "Login failed. Please try again.");
         }
       } catch {
-        setError("Something went wrong. Please try again.");
+        showErrorToast("Something went wrong. Please try again.");
       } finally {
         setIsLoading(false);
       }
     },
     onError: () => {
-      setError("Google login was cancelled or failed.");
+      showErrorToast("Google login was cancelled or failed.");
     },
   });
 
@@ -81,7 +80,6 @@ function LoginForm() {
               Continue with Google
             </AppButton>
 
-            {error && <p className="text-xs text-merah">{error}</p>}
           </div>
         </div>
       </div>

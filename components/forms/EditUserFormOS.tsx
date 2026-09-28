@@ -16,6 +16,7 @@ import type {
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const jobFunctionOptions: AppSelectOption[] = [
   { value: "", label: "No job function" },
@@ -52,7 +53,6 @@ export default function EditUserFormOS({
   const [teamId, setTeamId] = useState<number | null>(null);
   const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
   const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
-  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserEntry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -86,16 +86,14 @@ export default function EditUserFormOS({
   ];
 
   function handleClose() {
-    setError(null);
     setUser(null);
     onClose();
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     if (!user) return;
-    if (!role) return setError("Access role is required.");
+    if (!role) return showErrorToast("Access role is required.");
 
     setIsSubmitting(true);
     const result = await updateUser({
@@ -108,7 +106,7 @@ export default function EditUserFormOS({
     setIsSubmitting(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to update user.");
+      return showErrorToast(result.message ?? "Failed to update user.");
     }
 
     router.refresh();
@@ -131,11 +129,6 @@ export default function EditUserFormOS({
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-            {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-                {error}
-              </p>
-            )}
 
             <AppSelect
               selectId="edit-user-role"

@@ -12,6 +12,7 @@ import { requireApiData } from "@/lib/api-result";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 export const statusOptions: AppSelectOption[] = [
   { value: "to_do", label: "To Do" },
@@ -47,7 +48,6 @@ export default function CreateActionFormOS({
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
 
-  const [error, setError] = useState<string | null>(null);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -64,7 +64,6 @@ export default function CreateActionFormOS({
     setPriority("medium");
     setDueDate("");
     setAssigneeId("");
-    setError(null);
   }
 
   function handleClose() {
@@ -89,14 +88,13 @@ export default function CreateActionFormOS({
       handleClose();
     },
     onError: (cause) =>
-      setError(cause instanceof Error ? cause.message : "Failed to create action."),
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to create action."),
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!name.trim()) return setError("Action name is required.");
+    if (!name.trim()) return showErrorToast("Action name is required.");
 
     createMutation.mutate();
   }
@@ -110,11 +108,6 @@ export default function CreateActionFormOS({
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           <AppInput
             inputId="action-name"

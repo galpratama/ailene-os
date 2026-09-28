@@ -25,6 +25,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 // Mirrors CertificationStepKey in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type CertificationStepKey =
@@ -214,6 +215,7 @@ export default function TrainerDetailOS({
       utils.read.trainerPool.trainer.invalidate({ id: trainerId });
       utils.list.trainerPool.trainers.invalidate();
     },
+    onError: (error) => showErrorToast(error),
   });
 
   if (isLoading) {
@@ -387,11 +389,6 @@ export default function TrainerDetailOS({
                 Save
               </AppButton>
             </div>
-            {updateTrainer.error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                {updateTrainer.error.message}
-              </p>
-            )}
           </div>
         ) : trainer.notes ? (
           <p className="mt-3 whitespace-pre-wrap rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-600 dark:bg-zinc-800/60 dark:text-zinc-300">

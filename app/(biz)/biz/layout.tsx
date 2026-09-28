@@ -1,3 +1,4 @@
+import AppToaster from "@/components/elements/AppToaster";
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
@@ -64,6 +65,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <div className={`${stackSansText.className} ${crayonize.variable}`}>
         {children}
       </div>
+      <AppToaster />
     </ThemeProvider>
   );
 }

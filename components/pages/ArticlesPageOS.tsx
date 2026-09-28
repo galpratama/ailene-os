@@ -16,6 +16,7 @@ import { ExternalLink, FilePlus, Pencil, Search, Tags, Trash2 } from "lucide-rea
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const statusOptions: AppSelectOption[] = [
   { value: "", label: "All statuses" },
@@ -48,7 +49,6 @@ export default function ArticlesPageOS({
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [deleting, setDeleting] = useState<ArticleListItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Adjust state during render when the server hands back a new keyword, rather than syncing in an effect.
   const [seenKeyword, setSeenKeyword] = useState(initialKeyword);
@@ -89,9 +89,8 @@ export default function ArticlesPageOS({
     setIsDeleting(false);
     setDeleting(null);
     if (!isSuccessStatus(result.status)) {
-      return setDeleteError(result.message ?? "Failed to delete the article.");
+      return showErrorToast(result.message ?? "Failed to delete the article.");
     }
-    setDeleteError(null);
     router.refresh();
   }
 
@@ -141,11 +140,6 @@ export default function ArticlesPageOS({
         </div>
       </div>
 
-      {deleteError && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-          {deleteError}
-        </p>
-      )}
 
       <div
         className={`overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 ${isPending ? "opacity-60" : ""}`}

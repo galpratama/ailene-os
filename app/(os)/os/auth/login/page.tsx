@@ -1,3 +1,4 @@
+import AppToaster from "@/components/elements/AppToaster";
 import AuthLoginPage from "@/components/pages/AuthLoginPage";
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
@@ -20,6 +21,7 @@ export default function LoginPage() {
       <div className={stackSansText.className}>
         <AuthLoginPage />
       </div>
+      <AppToaster />
     </ThemeProvider>
   );
 }

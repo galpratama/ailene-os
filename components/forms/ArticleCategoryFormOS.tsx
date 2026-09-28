@@ -16,6 +16,7 @@ import { isSuccessStatus } from "@/lib/status_code";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const statusOptions: AppSelectOption[] = [
   { value: "active", label: "Active" },
@@ -44,14 +45,12 @@ export default function ArticleCategoryFormOS({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<ArticleCategoryData | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setEditingId(null);
     setName("");
     setSlug("");
     setStatus("active");
-    setError(null);
   }
 
   function handleClose() {
@@ -64,14 +63,12 @@ export default function ArticleCategoryFormOS({
     setName(category.name);
     setSlug(category.slug);
     setStatus(category.status);
-    setError(null);
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return setError("Name is required.");
+    if (!name.trim()) return showErrorToast("Name is required.");
 
-    setError(null);
     setIsSubmitting(true);
     const payload = { name: name.trim(), slug: slug.trim() || null, status };
     const result =
@@ -81,7 +78,7 @@ export default function ArticleCategoryFormOS({
     setIsSubmitting(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to save the category.");
+      return showErrorToast(result.message ?? "Failed to save the category.");
     }
     reset();
     router.refresh();
@@ -95,7 +92,7 @@ export default function ArticleCategoryFormOS({
     setDeleting(null);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to delete the category.");
+      return showErrorToast(result.message ?? "Failed to delete the category.");
     }
     if (editingId === deleting.id) reset();
     router.refresh();
@@ -110,11 +107,6 @@ export default function ArticleCategoryFormOS({
     >
       <div className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           <form
             onSubmit={handleSubmit}

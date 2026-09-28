@@ -9,6 +9,7 @@ import type { LmsGroupEntry } from "@/apis/lms";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 interface LmsGroupFormOSProps {
   projectId: string;
@@ -26,7 +27,6 @@ export default function LmsGroupFormOS({
 }: LmsGroupFormOSProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Re-seed the name whenever a different group (or "new") is opened, without an effect.
   const [seenGroup, setSeenGroup] = useState<LmsGroupEntry | null>(group);
@@ -34,20 +34,17 @@ export default function LmsGroupFormOS({
   if (group !== seenGroup) {
     setSeenGroup(group);
     setName(group?.name ?? "");
-    setError(null);
   }
 
   function handleClose() {
     setName(group?.name ?? "");
-    setError(null);
     onClose();
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!name.trim()) return setError("Group name is required.");
+    if (!name.trim()) return showErrorToast("Group name is required.");
 
     setIsSubmitting(true);
     const result = group
@@ -60,7 +57,7 @@ export default function LmsGroupFormOS({
     setIsSubmitting(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setError(result.message ?? "Failed to save group.");
+      return showErrorToast(result.message ?? "Failed to save group.");
     }
 
     router.refresh();
@@ -81,11 +78,6 @@ export default function LmsGroupFormOS({
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           <AppInput
             inputId="lms-group-name"

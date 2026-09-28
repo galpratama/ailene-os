@@ -16,6 +16,7 @@ import { isStageCompatibleWithLeadSource, pipelineStageOptions } from "@/lib/sal
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 
 const leadSourceOptions: AppSelectOption[] = [
@@ -75,7 +76,6 @@ export default function CreateLeadFormOS({
   const [estimatedValue, setEstimatedValue] = useState("");
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [ownerId, setOwnerId] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   const industryList = useIndustryList(!!sessionToken && isOpen);
   const userList = useUserList(isOpen && !isOwnScoped);
@@ -142,7 +142,7 @@ export default function CreateLeadFormOS({
       ]);
       handleClose();
     },
-    onError: (cause) => setError(cause instanceof Error ? cause.message : "Failed to create lead."),
+    onError: (cause) => showErrorToast(cause instanceof Error ? cause.message : "Failed to create lead."),
   });
 
   async function loadCompanyOptions(inputValue: string, page: number) {
@@ -176,7 +176,6 @@ export default function CreateLeadFormOS({
     setEstimatedValue("");
     setExpectedCloseDate("");
     setOwnerId("");
-    setError(null);
   }
 
   function handleClose() {
@@ -186,15 +185,14 @@ export default function CreateLeadFormOS({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
-    if (useExistingCompany && !companyOption) return setError("Pick an existing company.");
-    if (!useExistingCompany && !companyName.trim()) return setError("Company name is required.");
-    if (!useExistingCompany && !contactName.trim()) return setError("Primary contact name is required.");
-    if (!ownerId && !isOwnScoped) return setError("Sales owner is required.");
+    if (useExistingCompany && !companyOption) return showErrorToast("Pick an existing company.");
+    if (!useExistingCompany && !companyName.trim()) return showErrorToast("Company name is required.");
+    if (!useExistingCompany && !contactName.trim()) return showErrorToast("Primary contact name is required.");
+    if (!ownerId && !isOwnScoped) return showErrorToast("Sales owner is required.");
     const companyLeadSource = useExistingCompany ? companyOption?.leadSource : leadSource;
-    if (!companyLeadSource) return setError("Set this company's lead source before creating a pipeline.");
+    if (!companyLeadSource) return showErrorToast("Set this company's lead source before creating a pipeline.");
     if (!isStageCompatibleWithLeadSource(stage, companyLeadSource)) {
-      return setError(
+      return showErrorToast(
         stage === "triaging"
           ? "Triaging requires an inbound lead source."
           : "Attempting requires an outbound lead source."
@@ -207,7 +205,6 @@ export default function CreateLeadFormOS({
     <SheetOS title={`Add ${phase.toUpperCase()} Lead`} description="Create a company-linked sales pipeline in the Java API." isOpen={isOpen} onClose={handleClose}>
       <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
-          {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">{error}</p>}
 
           <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
             <div className="flex items-center justify-between gap-2">

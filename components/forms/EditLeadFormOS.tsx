@@ -26,6 +26,7 @@ import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_LABELS, pipelineStageOp
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const leadSourceOptions: AppSelectOption[] = [
   { value: "inbound", label: "Inbound" },
@@ -69,7 +70,6 @@ export default function EditLeadFormOS({
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [stageNote, setStageNote] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const pipelineId = pipeline?.id ?? null;
@@ -192,7 +192,7 @@ export default function EditLeadFormOS({
       ]);
       handleClose();
     },
-    onError: (cause) => setError(cause instanceof Error ? cause.message : "Failed to update lead."),
+    onError: (cause) => showErrorToast(cause instanceof Error ? cause.message : "Failed to update lead."),
   });
 
   const deleteMutation = useMutation({
@@ -204,23 +204,21 @@ export default function EditLeadFormOS({
     },
     onError: (cause) => {
       setIsConfirmingDelete(false);
-      setError(cause instanceof Error ? cause.message : "Failed to delete lead.");
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to delete lead.");
     },
   });
 
   function handleClose() {
-    setError(null);
     onClose();
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
-    if (!companyName.trim()) return setError("Company name is required.");
-    if (!contactName.trim()) return setError("Primary contact name is required.");
-    if (!ownerId) return setError("Sales owner is required.");
-    if (stage === "triaging" && leadSource !== "inbound") return setError("Triaging requires an inbound lead source.");
-    if (stage === "attempting" && leadSource !== "outbound") return setError("Attempting requires an outbound lead source.");
+    if (!companyName.trim()) return showErrorToast("Company name is required.");
+    if (!contactName.trim()) return showErrorToast("Primary contact name is required.");
+    if (!ownerId) return showErrorToast("Sales owner is required.");
+    if (stage === "triaging" && leadSource !== "inbound") return showErrorToast("Triaging requires an inbound lead source.");
+    if (stage === "attempting" && leadSource !== "outbound") return showErrorToast("Attempting requires an outbound lead source.");
     saveMutation.mutate();
   }
 
@@ -242,7 +240,6 @@ export default function EditLeadFormOS({
       ) : (
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
-            {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">{error}</p>}
             <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p>
               <AppInput inputId="edit-lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />

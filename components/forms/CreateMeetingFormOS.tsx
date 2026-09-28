@@ -11,6 +11,7 @@ import { useUserList } from "@/hooks/useUserList";
 import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 interface CreateMeetingFormOSProps {
   sessionToken: string;
@@ -37,7 +38,6 @@ export default function CreateMeetingFormOS({
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
     null
   );
-  const [error, setError] = useState<string | null>(null);
 
   const userList = useUserList(isOpen);
   const organizerOptions: AppSelectOption[] = [
@@ -61,7 +61,6 @@ export default function CreateMeetingFormOS({
     setLocationOrLink("");
     setNotes("");
     setSelectedPipelineId(null);
-    setError(null);
   }
 
   function handleClose() {
@@ -74,16 +73,15 @@ export default function CreateMeetingFormOS({
       utils.list.b2b.calendar.invalidate();
       handleClose();
     },
-    onError: (err) => setError(err.message),
+    onError: (err) => showErrorToast(err.message),
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
 
-    if (!scheduledAt) return setError("Scheduled date & time is required.");
+    if (!scheduledAt) return showErrorToast("Scheduled date & time is required.");
     const targetPipelineId = pipelineId ?? selectedPipelineId;
-    if (!targetPipelineId) return setError("Pipeline is required.");
+    if (!targetPipelineId) return showErrorToast("Pipeline is required.");
 
     createMeeting.mutate({
       pipeline_id: targetPipelineId,
@@ -107,11 +105,6 @@ export default function CreateMeetingFormOS({
     >
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-          {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
-          )}
 
           {needsPipelinePicker && (
             <AppSelect

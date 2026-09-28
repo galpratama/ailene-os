@@ -9,6 +9,7 @@ import { deleteCompany, getCompanyDetails } from "@/lib/actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, Phone, Trash2, User } from "lucide-react";
 import { useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 export default function OrganizationDetailDrawerOS({
   sessionToken,
@@ -23,7 +24,6 @@ export default function OrganizationDetailDrawerOS({
 }) {
   const queryClient = useQueryClient();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const detailsQuery = useQuery({
     queryKey: ["sales", "company", organizationId],
     queryFn: async () => requireApiData(await getCompanyDetails(organizationId!)),
@@ -38,7 +38,7 @@ export default function OrganizationDetailDrawerOS({
     },
     onError: (cause) => {
       setIsConfirmingDelete(false);
-      setError(cause instanceof Error ? cause.message : "Failed to delete company.");
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to delete company.");
     },
   });
 
@@ -56,7 +56,6 @@ export default function OrganizationDetailDrawerOS({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
-              {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><p className="text-xs text-gray-400">Lead source</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_source ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Lead channel</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_channel ?? "—"}</p></div>

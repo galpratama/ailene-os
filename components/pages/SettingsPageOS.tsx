@@ -10,6 +10,7 @@ import { setSessionToken, trpc } from "@/trpc/client";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 export default function SettingsPageOS({
   sessionToken,
@@ -25,7 +26,6 @@ export default function SettingsPageOS({
 
   const utils = trpc.useUtils();
   const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const { data } = trpc.list.trainerPool.specializations.useQuery(undefined, {
     enabled: !!sessionToken,
   });
@@ -33,11 +33,10 @@ export default function SettingsPageOS({
     trpc.create.trainerPool.specialization.useMutation({
       onSuccess: () => {
         setName("");
-        setError(null);
         utils.list.trainerPool.specializations.invalidate();
         utils.list.trainerPool.applicationOptions.invalidate();
       },
-      onError: (mutationError) => setError(mutationError.message),
+      onError: (mutationError) => showErrorToast(mutationError.message),
     });
   const deleteSpecialization =
     trpc.delete.trainerPool.specialization.useMutation({
@@ -54,7 +53,6 @@ export default function SettingsPageOS({
   }
 
   const [teamName, setTeamName] = useState("");
-  const [teamError, setTeamError] = useState<string | null>(null);
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
   async function submitTeam(event: FormEvent) {
@@ -66,11 +64,10 @@ export default function SettingsPageOS({
     setIsCreatingTeam(false);
 
     if (!isSuccessStatus(result.status)) {
-      return setTeamError(result.message ?? "Failed to create team.");
+      return showErrorToast(result.message ?? "Failed to create team.");
     }
 
     setTeamName("");
-    setTeamError(null);
     router.refresh();
   }
 
@@ -103,7 +100,6 @@ export default function SettingsPageOS({
             placeholder="e.g. Sales Automation"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            errorMessage={error ?? undefined}
           />
           <AppButton
             type="submit"
@@ -173,7 +169,6 @@ export default function SettingsPageOS({
             placeholder="e.g. Business Development"
             value={teamName}
             onChange={(event) => setTeamName(event.target.value)}
-            errorMessage={teamError ?? undefined}
           />
           <AppButton type="submit" disabled={isCreatingTeam}>
             {isCreatingTeam ? (

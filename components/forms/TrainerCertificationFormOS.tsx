@@ -27,6 +27,7 @@ import {
   Video,
 } from "lucide-react";
 import Image from "next/image";
+import { showErrorToast } from "@/lib/toast";
 
 // Mirrors CERTIFICATION_STEP_KEYS in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type CertificationStepKey =
@@ -169,6 +170,7 @@ export default function TrainerCertificationFormOS({
       utils.read.trainerPool.trainer.invalidate({ id: trainerId });
       utils.list.trainerPool.trainers.invalidate();
     },
+    onError: (error) => showErrorToast(error),
   });
 
   function update(entry: Step, status: TrainerCertificationStatusEnum) {
@@ -238,11 +240,6 @@ export default function TrainerCertificationFormOS({
             </div>
           </div>
         </div>
-        {mutation.error && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
-            {mutation.error.message}
-          </p>
-        )}
       </section>
 
       <div className="flex flex-col">

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import PageMargin from "@/components/layouts/PageMargin";
+import { showErrorToast } from "@/lib/toast";
 
 const sourceOptions: AppSelectOption[] = [
   { value: "AI_COMMUNITY", label: "Komunitas AI" },
@@ -61,7 +62,6 @@ const process = [
 
 export default function TrainerApplicationPageBIZ() {
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -82,7 +82,7 @@ export default function TrainerApplicationPageBIZ() {
       // Only fires on a persisted application, so GTM never counts failed submits.
       trackFormSubmit({ placement: "trainer_application" });
     },
-    onError: (mutationError) => setError(mutationError.message),
+    onError: (mutationError) => showErrorToast(mutationError.message),
   });
 
   function toggleSpecialization(id: number) {
@@ -95,17 +95,16 @@ export default function TrainerApplicationPageBIZ() {
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setError(null);
     if (!fullName.trim() || !email.trim()) {
-      return setError("Nama dan email wajib diisi.");
+      return showErrorToast("Nama dan email wajib diisi.");
     }
     if (!teachingExperience.trim() || !aiUseCase.trim()) {
-      return setError(
+      return showErrorToast(
         "Ceritakan pengalaman mengajar dan satu contoh use case AI kamu."
       );
     }
     if (!aiExperienceYears || Number(aiExperienceYears) < 1) {
-      return setError(
+      return showErrorToast(
         "Minimal 1 tahun pengalaman AI diperlukan untuk mendaftar."
       );
     }
@@ -230,11 +229,6 @@ export default function TrainerApplicationPageBIZ() {
                 onSubmit={handleSubmit}
                 className="flex flex-col gap-5 rounded-2xl border border-ink-line bg-white p-6 sm:p-8"
               >
-                {error && (
-                  <p className="rounded-lg border border-merah/30 bg-merah-t px-4 py-3 text-sm text-merah">
-                    {error}
-                  </p>
-                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <AppInput
                     inputId="trainer-full-name"

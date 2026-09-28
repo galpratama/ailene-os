@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 function Block({
   step,
@@ -68,7 +69,6 @@ export default function PricingCalculatorPageOS({
   );
   const [selectedPipelineOption, setSelectedPipelineOption] =
     useState<AppSearchableOption | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function loadPipelineOptions(inputValue: string, page: number) {
     const pageSize = 20;
@@ -113,9 +113,8 @@ export default function PricingCalculatorPageOS({
   const [isSubmittingQuotation, setIsSubmittingQuotation] = useState(false);
 
   async function handleSaveDraft() {
-    setSaveError(null);
     if (!selectedPipelineId) {
-      setSaveError("Pilih lead untuk menyimpan ini sebagai Quotation.");
+      showErrorToast("Pilih lead untuk menyimpan ini sebagai Quotation.");
       return;
     }
     setIsSavingDraft(true);
@@ -123,16 +122,15 @@ export default function PricingCalculatorPageOS({
       const created = await draftQuotation(selectedPipelineId);
       router.push(`/quotations/${created.id}`);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Gagal menyimpan draft.");
+      showErrorToast(err instanceof Error ? err.message : "Gagal menyimpan draft.");
     } finally {
       setIsSavingDraft(false);
     }
   }
 
   async function handleSubmit() {
-    setSaveError(null);
     if (!selectedPipelineId) {
-      setSaveError("Pilih lead untuk menyimpan ini sebagai Quotation.");
+      showErrorToast("Pilih lead untuk menyimpan ini sebagai Quotation.");
       return;
     }
     setIsSubmittingQuotation(true);
@@ -142,7 +140,7 @@ export default function PricingCalculatorPageOS({
       await queryClient.invalidateQueries({ queryKey: ["quotations"] });
       router.push(`/quotations/${created.id}`);
     } catch (err) {
-      setSaveError(
+      showErrorToast(
         err instanceof Error ? err.message : "Gagal membuat quotation."
       );
     } finally {
@@ -214,11 +212,6 @@ export default function PricingCalculatorPageOS({
           {builder.flagsBlock}
           {builder.copyButtonBlock}
 
-          {saveError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-              {saveError}
-            </p>
-          )}
 
           <div className="flex gap-2">
             <AppButton

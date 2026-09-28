@@ -4,7 +4,7 @@ import AppButton from "@/components/buttons/AppButton";
 import { trpc } from "@/trpc/client";
 import { useGoogleLogin } from "@react-oauth/google";
 import { CalendarCheck2, Loader2, Unlink } from "lucide-react";
-import { useState } from "react";
+import { showErrorToast } from "@/lib/toast";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
@@ -14,7 +14,6 @@ export default function GoogleCalendarConnectionOS({
   sessionToken: string;
 }) {
   const utils = trpc.useUtils();
-  const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading } = trpc.read.integrations.googleCalendarConnection.useQuery(
     undefined,
@@ -23,10 +22,9 @@ export default function GoogleCalendarConnectionOS({
 
   const connect = trpc.create.integrations.googleCalendarConnection.useMutation({
     onSuccess: () => {
-      setError(null);
       utils.read.integrations.googleCalendarConnection.invalidate();
     },
-    onError: (err) => setError(err.message),
+    onError: (err) => showErrorToast(err.message),
   });
 
   const disconnect = trpc.delete.integrations.googleCalendarConnection.useMutation({
@@ -39,11 +37,10 @@ export default function GoogleCalendarConnectionOS({
     flow: "auth-code",
     scope: CALENDAR_SCOPE,
     onSuccess: (response) => {
-      setError(null);
       connect.mutate({ code: response.code, redirect_uri: "postmessage" });
     },
     onError: () =>
-      setError("Google Calendar connection was cancelled or failed."),
+      showErrorToast("Google Calendar connection was cancelled or failed."),
   });
 
   const connection = data?.connection;
@@ -58,11 +55,6 @@ export default function GoogleCalendarConnectionOS({
         creates or updates the event on your calendar.
       </p>
 
-      {error && (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
-          {error}
-        </p>
-      )}
 
       <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-zinc-800">
         <div className="flex items-center gap-2.5">
