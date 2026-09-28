@@ -81,14 +81,14 @@ export const osMainNav: OSNavItem[] = [
     label: "LMS",
     icon: BookOpen,
     segment: "B2B",
-    group: "LMS",
+    group: "Operations",
   },
   {
     href: "/trainers",
     label: "Trainers",
     icon: GraduationCap,
     segment: "B2B",
-    group: "Trainer Pool",
+    group: "Operations",
   },
   {
     href: "/analytics",

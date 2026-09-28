@@ -315,7 +315,7 @@ export default function SidebarOS() {
             ))}
           </nav>
 
-          {/* Grouped nav sections (Business Development, Trainer Pool, Administrator, ...) */}
+          {/* Grouped nav sections (Business Development, Operations, Administrator, ...) */}
           {navGroups.map((group) => (
             <div key={group.label} className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
               {!isCollapsed && (
