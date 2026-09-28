@@ -3,13 +3,19 @@
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import GoogleCalendarConnectionOS from "@/components/settings/GoogleCalendarConnectionOS";
-import { createTeam } from "@/lib/actions";
+import {
+  createTeam,
+  createTrainerSpecialization,
+  deleteTrainerSpecialization,
+  listTrainerSpecializations,
+} from "@/lib/actions";
+import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { isSuccessStatus } from "@/lib/status_code";
 import type { TeamEntry } from "@/apis/teams";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
 export default function SettingsPageOS({
@@ -20,36 +26,35 @@ export default function SettingsPageOS({
   teams: TeamEntry[];
 }) {
   const router = useRouter();
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const { data } = trpc.list.trainerPool.specializations.useQuery(undefined, {
+  const { data } = useQuery({
+    queryKey: ["trainer-specializations"],
+    queryFn: async () => requireApiData(await listTrainerSpecializations()),
     enabled: !!sessionToken,
   });
-  const createSpecialization =
-    trpc.create.trainerPool.specialization.useMutation({
-      onSuccess: () => {
-        setName("");
-        utils.list.trainerPool.specializations.invalidate();
-        utils.list.trainerPool.applicationOptions.invalidate();
-      },
-      onError: (mutationError) => showErrorToast(mutationError.message),
-    });
-  const deleteSpecialization =
-    trpc.delete.trainerPool.specialization.useMutation({
-      onSuccess: () => {
-        utils.list.trainerPool.specializations.invalidate();
-        utils.list.trainerPool.applicationOptions.invalidate();
-      },
-    });
+  async function refreshSpecializations() {
+    await queryClient.invalidateQueries({ queryKey: ["trainer-specializations"] });
+  }
+  const createSpecialization = useMutation({
+    mutationFn: async (specializationName: string) =>
+      requireApiData(await createTrainerSpecialization(specializationName)),
+    onSuccess: async () => {
+      setName("");
+      await refreshSpecializations();
+    },
+    onError: (error) => showErrorToast(error),
+  });
+  const deleteSpecialization = useMutation({
+    mutationFn: async (id: number) => requireApiSuccess(await deleteTrainerSpecialization(id)),
+    onSuccess: refreshSpecializations,
+    onError: (error) => showErrorToast(error),
+  });
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!name.trim()) return;
-    createSpecialization.mutate({ name: name.trim() });
+    createSpecialization.mutate(name.trim());
   }
 
   const [teamName, setTeamName] = useState("");
@@ -139,7 +144,7 @@ export default function SettingsPageOS({
                 }
                 disabled={entry.trainer_count > 0}
                 onClick={() =>
-                  deleteSpecialization.mutate({ id: entry.id })
+                  deleteSpecialization.mutate(entry.id)
                 }
               >
                 <Trash2 size={13} />

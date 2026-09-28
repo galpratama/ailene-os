@@ -7,9 +7,9 @@ import CalendarActionModalOS, {
   CalendarActionModalEvent,
 } from "@/components/modals/CalendarActionModalOS";
 import type { ActionPriority } from "@/apis/actions";
+import type { MeetingStatus } from "@/apis/meetings";
 import { useActionList } from "@/hooks/useActionList";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type { B2BMeetingStatusEnum } from "@prisma/client";
+import { useMeetingList } from "@/hooks/useMeetingList";
 import {
   CalendarClock,
   CalendarDays,
@@ -18,7 +18,7 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const DAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -49,46 +49,38 @@ const priorityStyles: Record<
 };
 
 const meetingStatusStyles: Record<
-  B2BMeetingStatusEnum,
+  MeetingStatus,
   { label: string; dot: string; chip: string }
 > = {
-  SCHEDULED: {
+  scheduled: {
     label: "Meeting: Scheduled",
     dot: "bg-biru",
     chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
   },
-  HELD: {
+  held: {
     label: "Meeting: Held",
     dot: "bg-hijau",
     chip: "bg-hijau-t text-green-700 hover:bg-hijau-t/80 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20",
   },
-  CANCELLED: {
+  cancelled: {
     label: "Meeting: Cancelled",
     dot: "bg-gray-400",
     chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
   },
-  NO_SHOW: {
+  no_show: {
     label: "Meeting: No Show",
     dot: "bg-merah",
     chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
   },
 };
 
-// Actions (Actions API) and meetings (tRPC, due_date = scheduled_at) group by the same due_date field.
+// Actions and meetings group by the same due_date: a YYYY-MM-DD day, local time for a meeting.
 type CalendarMeetingEvent = {
   id: number;
   type: "b2b_meeting";
   title: string;
-  pipeline_id: number;
-  pipeline_name: string;
-  company_id: number;
-  company_name: string;
-  due_date: string | Date;
-  status: B2BMeetingStatusEnum;
-  location_or_link: string | null;
-  organizer_id: string;
-  organizer_name: string;
-  organizer_avatar: string | null;
+  due_date: string;
+  status: MeetingStatus;
 };
 
 type CalendarEvent =
@@ -143,10 +135,6 @@ export default function CalendarPageOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const today = useMemo(() => new Date(), []);
   const [current, setCurrent] = useState({
     year: today.getFullYear(),
@@ -169,12 +157,9 @@ export default function CalendarPageOS({
   );
   const visibleEnd = visibleDays[visibleDays.length - 1];
 
-  const meetingQuery = trpc.list.b2b.calendar.useQuery(
-    {
-      start_date: dateKey(visibleStart),
-      end_date: dateKey(visibleEnd),
-    },
-    { enabled: !!sessionToken }
+  const meetingQuery = useMeetingList(
+    { start_date: dateKey(visibleStart), end_date: dateKey(visibleEnd) },
+    !!sessionToken
   );
   const actionQuery = useActionList(
     { due_from: dateKey(visibleStart), due_to: dateKey(visibleEnd) },
@@ -190,7 +175,16 @@ export default function CalendarPageOS({
         type: "b2b_action" as const,
         title: action.name,
       })),
-      ...(meetingQuery.data?.list ?? []),
+      ...(meetingQuery.data ?? []).map((meeting): CalendarMeetingEvent => {
+        const start = new Date(meeting.scheduled_at);
+        return {
+          id: meeting.id,
+          type: "b2b_meeting",
+          title: `${pad(start.getHours())}:${pad(start.getMinutes())} · ${meeting.company_name}`,
+          due_date: dateKey(start),
+          status: meeting.status,
+        };
+      }),
     ];
     const grouped = new Map<string, CalendarEvent[]>();
     for (const event of events) {
@@ -199,7 +193,7 @@ export default function CalendarPageOS({
       grouped.set(key, [...(grouped.get(key) ?? []), event]);
     }
     return grouped;
-  }, [actionQuery.data, meetingQuery.data?.list]);
+  }, [actionQuery.data, meetingQuery.data]);
 
   const goToPreviousMonth = () =>
     setCurrent((value) => {
@@ -307,7 +301,7 @@ export default function CalendarPageOS({
 
       {isError && (
         <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
-          Failed to load calendar actions. You may not have access to this data.
+          Failed to load the calendar. You may not have access to this data.
         </p>
       )}
 
@@ -405,7 +399,7 @@ export default function CalendarPageOS({
       {isLoading && (
         <div className="mt-4 flex items-center gap-2 text-sm text-gray-400 dark:text-zinc-500">
           <Loader2 size={15} className="animate-spin" />
-          Loading calendar actions...
+          Loading calendar...
         </div>
       )}
 

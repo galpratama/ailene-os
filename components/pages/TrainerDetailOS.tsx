@@ -4,12 +4,9 @@ import AppButton from "@/components/buttons/AppButton";
 import AppTextArea from "@/components/fields/AppTextArea";
 import Label, { type LabelVariant } from "@/components/labels/Label";
 import TrainerStatusLabel from "@/components/labels/TrainerStatusLabel";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type {
-  TrainerCertificationStatusEnum,
-  TrainerScreeningStatusEnum,
-  TrainerStageEnum,
-} from "@prisma/client";
+import type { CertificationStatus, ScreeningStatus, TrainerStage } from "@/apis/trainers";
+import { getTrainerDetails, updateTrainer } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import {
   ArrowRight,
   Award,
@@ -24,69 +21,70 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Mirrors CertificationStepKey in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type CertificationStepKey =
-  | "ORIENTATION"
-  | "MATERIAL_MASTERY"
-  | "SHADOWING"
-  | "CO_TRAINING"
-  | "SOLO_OBSERVED_DELIVERY"
-  | "CERTIFICATION_DECISION";
+  | "orientation"
+  | "material_mastery"
+  | "shadowing"
+  | "co_training"
+  | "solo_observed_delivery"
+  | "certification_decision";
 
 const certificationStepTitles: Record<CertificationStepKey, string> = {
-  ORIENTATION: "Orientation",
-  MATERIAL_MASTERY: "Material Mastery",
-  SHADOWING: "Shadowing",
-  CO_TRAINING: "Co-training",
-  SOLO_OBSERVED_DELIVERY: "Solo Observed Delivery",
-  CERTIFICATION_DECISION: "Certification Decision",
+  orientation: "Orientation",
+  material_mastery: "Material Mastery",
+  shadowing: "Shadowing",
+  co_training: "Co-training",
+  solo_observed_delivery: "Solo Observed Delivery",
+  certification_decision: "Certification Decision",
 };
 
 const certificationStatusConfig: Record<
-  TrainerCertificationStatusEnum,
+  CertificationStatus,
   { label: string; variant: LabelVariant }
 > = {
-  NOT_STARTED: { label: "Not started", variant: "gray" },
-  IN_PROGRESS: { label: "In progress", variant: "kuning" },
-  PASSED: { label: "Completed", variant: "hijau" },
-  FAILED: { label: "Failed", variant: "merah" },
+  not_started: { label: "Not started", variant: "gray" },
+  in_progress: { label: "In progress", variant: "kuning" },
+  passed: { label: "Completed", variant: "hijau" },
+  failed: { label: "Failed", variant: "merah" },
 };
 
 // Mirrors ScreeningStepKey in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type ScreeningStepKey =
-  | "APPLICATION_REVIEW"
-  | "INTERVIEW"
-  | "TEACHING_DEMO"
-  | "PRACTICAL_TEST"
-  | "REFERENCE_CHECK";
+  | "application_review"
+  | "interview"
+  | "teaching_demo"
+  | "practical_test"
+  | "reference_check";
 
 const screeningStepTitles: Record<ScreeningStepKey, string> = {
-  APPLICATION_REVIEW: "Application Review",
-  INTERVIEW: "Interview",
-  TEACHING_DEMO: "Teaching Demo",
-  PRACTICAL_TEST: "Practical Test",
-  REFERENCE_CHECK: "Reference Check",
+  application_review: "Application Review",
+  interview: "Interview",
+  teaching_demo: "Teaching Demo",
+  practical_test: "Practical Test",
+  reference_check: "Reference Check",
 };
 
 const screeningStatusConfig: Record<
-  TrainerScreeningStatusEnum,
+  ScreeningStatus,
   { label: string; variant: LabelVariant }
 > = {
-  PENDING: { label: "Pending", variant: "gray" },
-  PASSED: { label: "Passed", variant: "biru" },
-  FAILED: { label: "Failed", variant: "merah" },
-  SKIPPED: { label: "Skipped", variant: "gray" },
+  pending: { label: "Pending", variant: "gray" },
+  passed: { label: "Passed", variant: "biru" },
+  failed: { label: "Failed", variant: "merah" },
+  skipped: { label: "Skipped", variant: "gray" },
 };
 
-const stageValueText: Record<TrainerStageEnum, string> = {
-  CANDIDATE: "Candidate",
-  QUALIFIED: "Qualified",
-  NOT_QUALIFIED: "Not qualified",
-  ELIGIBLE: "Eligible",
-  NOT_ELIGIBLE: "Not eligible",
+const stageValueText: Record<TrainerStage, string> = {
+  candidate: "Candidate",
+  qualified: "Qualified",
+  not_qualified: "Not qualified",
+  eligible: "Eligible",
+  not_eligible: "Not eligible",
 };
 
 type PathwayTone = "passed" | "failed" | "active" | "neutral";
@@ -197,23 +195,20 @@ export default function TrainerDetailOS({
   sessionToken: string;
   trainerId: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState("");
-  const { data, isLoading, isError } = trpc.read.trainerPool.trainer.useQuery(
-    { id: trainerId },
-    { enabled: !!sessionToken }
-  );
-  const trainer = data?.trainer;
+  const { data: trainer, isLoading, isError } = useQuery({
+    queryKey: ["trainers", "details", trainerId],
+    queryFn: async () => requireApiData(await getTrainerDetails(trainerId)),
+    enabled: !!sessionToken,
+  });
 
-  const updateTrainer = trpc.update.trainerPool.trainer.useMutation({
-    onSuccess: () => {
-      utils.read.trainerPool.trainer.invalidate({ id: trainerId });
-      utils.list.trainerPool.trainers.invalidate();
+  const updateTrainerMutation = useMutation({
+    mutationFn: async (payload: Parameters<typeof updateTrainer>[0]) =>
+      requireApiData(await updateTrainer(payload)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["trainers"] });
     },
     onError: (error) => showErrorToast(error),
   });
@@ -239,8 +234,19 @@ export default function TrainerDetailOS({
   }
 
   function saveNotes() {
-    updateTrainer.mutate(
-      { id: trainerId, notes: notesDraft || null },
+    if (!trainer) return;
+    updateTrainerMutation.mutate(
+      {
+        id: trainerId,
+        phone: trainer.phone,
+        source: trainer.source,
+        level: trainer.level,
+        status: trainer.status,
+        ai_experience_years: trainer.ai_experience_years,
+        referred_by: trainer.referred_by,
+        notes: notesDraft.trim() || null,
+        specialization_ids: trainer.specializations.map((specialization) => specialization.id),
+      },
       { onSuccess: () => setEditingNotes(false) }
     );
   }
@@ -253,9 +259,9 @@ export default function TrainerDetailOS({
 
       <section className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
         <div className="flex flex-wrap gap-4">
-          {trainer.user.avatar ? (
+          {trainer.avatar ? (
             <Image
-              src={trainer.user.avatar}
+              src={trainer.avatar}
               alt={trainer.full_name}
               width={72}
               height={72}
@@ -271,7 +277,7 @@ export default function TrainerDetailOS({
               <h3 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
                 {trainer.full_name}
               </h3>
-              {trainer.status === "INACTIVE" && (
+              {trainer.status === "inactive" && (
                 <TrainerStatusLabel status={trainer.status} />
               )}
             </div>
@@ -316,7 +322,7 @@ export default function TrainerDetailOS({
                   Trainer Level
                 </p>
                 <p className="whitespace-nowrap font-bold text-gray-900 dark:text-zinc-100">
-                  {trainer.level === "SENIOR" ? "Senior" : "Junior"}
+                  {trainer.level === "senior" ? "Senior" : "Junior"}
                 </p>
               </div>
             </div>
@@ -339,7 +345,7 @@ export default function TrainerDetailOS({
         </div>
       </section>
 
-      {trainer.referrer && (
+       {trainer.referred_by_name && (
         <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
             Professional Information
@@ -348,7 +354,7 @@ export default function TrainerDetailOS({
             <InfoTile
               icon={UserPlus}
               label="Referred by"
-              value={trainer.referrer.full_name}
+               value={trainer.referred_by_name}
             />
           </div>
         </section>
@@ -384,7 +390,7 @@ export default function TrainerDetailOS({
               <AppButton
                 size="sm"
                 onClick={saveNotes}
-                disabled={updateTrainer.isPending}
+                disabled={updateTrainerMutation.isPending}
               >
                 Save
               </AppButton>
@@ -409,9 +415,9 @@ export default function TrainerDetailOS({
           key: entry.step,
           title: screeningStepTitles[entry.step as ScreeningStepKey],
           tone:
-            entry.status === "PASSED"
+            entry.status === "passed"
               ? "passed"
-              : entry.status === "FAILED"
+              : entry.status === "failed"
                 ? "failed"
                 : "neutral",
           label: screeningStatusConfig[entry.status].label,
@@ -426,11 +432,11 @@ export default function TrainerDetailOS({
           key: entry.step,
           title: certificationStepTitles[entry.step as CertificationStepKey],
           tone:
-            entry.status === "PASSED"
+            entry.status === "passed"
               ? "passed"
-              : entry.status === "FAILED"
+              : entry.status === "failed"
                 ? "failed"
-                : entry.status === "IN_PROGRESS"
+                : entry.status === "in_progress"
                   ? "active"
                   : "neutral",
           label: certificationStatusConfig[entry.status].label,

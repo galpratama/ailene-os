@@ -1,5 +1,5 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { UserAccountStatusEnum } from "@prisma/client";
+import type { UserStatus } from "@/apis/users";
 import {
   Archive,
   Ban,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const statusStyles: Record<
-  UserAccountStatusEnum,
+  UserStatus,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
   INVITED: { variant: "biru", icon: MailQuestion, label: "Invited" },
@@ -23,7 +23,7 @@ const statusStyles: Record<
 export default function UserStatusLabel({
   status,
 }: {
-  status: UserAccountStatusEnum;
+  status: UserStatus;
 }) {
   const { variant, icon: Icon, label } = statusStyles[status];
 

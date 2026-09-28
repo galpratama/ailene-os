@@ -14,11 +14,10 @@ import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type {
-  TrainerLevelEnum,
-  TrainerStageEnum,
-} from "@prisma/client";
+import type { TrainerLevel, TrainerStage } from "@/apis/trainers";
+import { requireApiData } from "@/lib/api-result";
+import { getTrainerSummary, listTrainers } from "@/lib/actions";
+import { useQuery } from "@tanstack/react-query";
 import {
   BadgeCheck,
   CircleUserRound,
@@ -42,16 +41,16 @@ const viewModeOptions = [
 
 const stageOptions: AppSelectOption[] = [
   { value: "", label: "All stages" },
-  { value: "CANDIDATE", label: "Candidate" },
-  { value: "QUALIFIED", label: "Qualified" },
-  { value: "NOT_QUALIFIED", label: "Not qualified" },
-  { value: "ELIGIBLE", label: "Eligible" },
-  { value: "NOT_ELIGIBLE", label: "Not eligible" },
+  { value: "candidate", label: "Candidate" },
+  { value: "qualified", label: "Qualified" },
+  { value: "not_qualified", label: "Not qualified" },
+  { value: "eligible", label: "Eligible" },
+  { value: "not_eligible", label: "Not eligible" },
 ];
 const levelOptions: AppSelectOption[] = [
   { value: "", label: "All levels" },
-  { value: "JUNIOR", label: "Junior" },
-  { value: "SENIOR", label: "Senior" },
+  { value: "junior", label: "Junior" },
+  { value: "senior", label: "Senior" },
 ];
 
 export default function TrainerPoolListOS({
@@ -59,10 +58,6 @@ export default function TrainerPoolListOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const router = useRouter();
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "trainers_view_mode",
@@ -76,8 +71,8 @@ export default function TrainerPoolListOS({
   const [debouncedKeyword, setDebouncedKeyword] = useState<
     string | undefined
   >();
-  const [stage, setStage] = useState<TrainerStageEnum | "">("");
-  const [level, setLevel] = useState<TrainerLevelEnum | "">("");
+  const [stage, setStage] = useState<TrainerStage | "">("");
+  const [level, setLevel] = useState<TrainerLevel | "">("");
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -87,17 +82,23 @@ export default function TrainerPoolListOS({
     return () => clearTimeout(timeout);
   }, [keyword]);
 
-  const { data, isLoading, isError } =
-    trpc.list.trainerPool.trainers.useQuery(
-      {
-        page,
-        page_size: 20,
-        keyword: debouncedKeyword,
-        stage: stage || undefined,
-        level: level || undefined,
-      },
-      { enabled: !!sessionToken }
-    );
+  const filters = {
+    page,
+    page_size: 20,
+    keyword: debouncedKeyword,
+    stage: stage || undefined,
+    level: level || undefined,
+  };
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["trainers", "list", filters],
+    queryFn: async () => requireApiData(await listTrainers(filters)),
+    enabled: !!sessionToken,
+  });
+  const { data: summary } = useQuery({
+    queryKey: ["trainers", "summary"],
+    queryFn: async () => requireApiData(await getTrainerSummary()),
+    enabled: !!sessionToken,
+  });
   const summaryCards: {
     label: string;
     value: number;
@@ -107,43 +108,43 @@ export default function TrainerPoolListOS({
   }[] = [
     {
       label: "Candidate funnel",
-      value: data?.summary.candidates ?? 0,
+      value: summary?.candidates ?? 0,
       icon: UserRoundSearch,
       apply: () => {
-        setStage((current) => (current === "CANDIDATE" ? "" : "CANDIDATE"));
+        setStage((current) => (current === "candidate" ? "" : "candidate"));
         setPage(1);
       },
-      isActive: stage === "CANDIDATE",
+      isActive: stage === "candidate",
     },
     {
       label: "Qualified",
-      value: data?.summary.qualified ?? 0,
+      value: summary?.qualified ?? 0,
       icon: ShieldCheck,
       apply: () => {
-        setStage((current) => (current === "QUALIFIED" ? "" : "QUALIFIED"));
+        setStage((current) => (current === "qualified" ? "" : "qualified"));
         setPage(1);
       },
-      isActive: stage === "QUALIFIED",
+      isActive: stage === "qualified",
     },
     {
       label: "Certified pool",
-      value: data?.summary.eligible ?? 0,
+      value: summary?.eligible ?? 0,
       icon: BadgeCheck,
       apply: () => {
-        setStage((current) => (current === "ELIGIBLE" ? "" : "ELIGIBLE"));
+        setStage((current) => (current === "eligible" ? "" : "eligible"));
         setPage(1);
       },
-      isActive: stage === "ELIGIBLE",
+      isActive: stage === "eligible",
     },
     {
       label: "Senior pool",
-      value: data?.summary.senior ?? 0,
+      value: summary?.senior ?? 0,
       icon: Crown,
       apply: () => {
-        setLevel((current) => (current === "SENIOR" ? "" : "SENIOR"));
+        setLevel((current) => (current === "senior" ? "" : "senior"));
         setPage(1);
       },
-      isActive: level === "SENIOR",
+      isActive: level === "senior",
     },
   ];
   const totalPage = data?.metapaging.total_page ?? 1;
@@ -210,7 +211,7 @@ export default function TrainerPoolListOS({
             placeholder="All stages"
             value={stage}
             onChange={(value) => {
-              setStage((value as TrainerStageEnum) ?? "");
+              setStage((value as TrainerStage) ?? "");
               setPage(1);
             }}
             options={stageOptions}
@@ -222,7 +223,7 @@ export default function TrainerPoolListOS({
             placeholder="All levels"
             value={level}
             onChange={(value) => {
-              setLevel((value as TrainerLevelEnum) ?? "");
+              setLevel((value as TrainerLevel) ?? "");
               setPage(1);
             }}
             options={levelOptions}

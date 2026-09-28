@@ -1,9 +1,9 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { DataScopeEnum } from "@prisma/client";
+import type { UserDataScope } from "@/apis/users";
 import { Globe2, LucideIcon, User, Users } from "lucide-react";
 
 const scopeStyles: Record<
-  DataScopeEnum,
+  UserDataScope,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
   OWN: { variant: "gray", icon: User, label: "Own data" },
@@ -11,7 +11,7 @@ const scopeStyles: Record<
   GLOBAL: { variant: "hijau", icon: Globe2, label: "All data" },
 };
 
-export default function DataScopeLabel({ scope }: { scope: DataScopeEnum }) {
+export default function DataScopeLabel({ scope }: { scope: UserDataScope }) {
   const { variant, icon: Icon, label } = scopeStyles[scope];
 
   return (

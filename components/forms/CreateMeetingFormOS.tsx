@@ -1,17 +1,23 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import AppCheckbox from "@/components/fields/AppCheckbox";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
-import { trpc } from "@/trpc/client";
-import { useUserList } from "@/hooks/useUserList";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
 import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
-import { Loader2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useUserList } from "@/hooks/useUserList";
+import { createMeeting } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { reportMeetingSync } from "@/lib/meetings";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { FormEvent, useState } from "react";
 
 interface CreateMeetingFormOSProps {
   sessionToken: string;
@@ -26,7 +32,7 @@ export default function CreateMeetingFormOS({
   isOpen,
   onClose,
 }: CreateMeetingFormOSProps) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "OWN";
@@ -35,6 +41,7 @@ export default function CreateMeetingFormOS({
   const [organizerId, setOrganizerId] = useState("");
   const [locationOrLink, setLocationOrLink] = useState("");
   const [notes, setNotes] = useState("");
+  const [addGoogleMeet, setAddGoogleMeet] = useState(false);
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
     null
   );
@@ -44,6 +51,11 @@ export default function CreateMeetingFormOS({
     { value: "", label: "Me" },
     ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
   ];
+
+  // The Meet link is created on the organizer's calendar; only our own connection is visible here.
+  const { data: connection } = useGoogleCalendarConnection(!!sessionToken && isOpen);
+  const organizerIsMe = !organizerId || organizerId === sessionUser?.id;
+  const meetUnavailable = organizerIsMe && connection?.connected === false;
 
   const needsPipelinePicker = pipelineId === undefined;
   const { data: pipelineData } = useSalesPipelineList(
@@ -60,6 +72,7 @@ export default function CreateMeetingFormOS({
     setOrganizerId("");
     setLocationOrLink("");
     setNotes("");
+    setAddGoogleMeet(false);
     setSelectedPipelineId(null);
   }
 
@@ -68,12 +81,26 @@ export default function CreateMeetingFormOS({
     onClose();
   }
 
-  const createMeeting = trpc.create.b2b.meeting.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.calendar.invalidate();
+  const meetRequested = addGoogleMeet && !meetUnavailable;
+
+  const mutation = useMutation({
+    mutationFn: async (targetPipelineId: number) =>
+      requireApiData(
+        await createMeeting({
+          pipeline_id: targetPipelineId,
+          organizer_id: organizerId || null,
+          scheduled_at: new Date(scheduledAt).toISOString(),
+          location_or_link: meetRequested ? null : locationOrLink.trim() || null,
+          notes: notes.trim() || null,
+          add_google_meet: meetRequested,
+        })
+      ),
+    onSuccess: async (meeting) => {
+      reportMeetingSync(meeting, meetRequested);
+      await queryClient.invalidateQueries({ queryKey: ["meetings"] });
       handleClose();
     },
-    onError: (err) => showErrorToast(err.message),
+    onError: (error) => showErrorToast(error),
   });
 
   function handleSubmit(e: FormEvent) {
@@ -83,13 +110,7 @@ export default function CreateMeetingFormOS({
     const targetPipelineId = pipelineId ?? selectedPipelineId;
     if (!targetPipelineId) return showErrorToast("Pipeline is required.");
 
-    createMeeting.mutate({
-      pipeline_id: targetPipelineId,
-      organizer_id: organizerId || undefined,
-      scheduled_at: new Date(scheduledAt).toISOString(),
-      location_or_link: locationOrLink.trim() || null,
-      notes: notes.trim() || null,
-    });
+    mutation.mutate(targetPipelineId);
   }
 
   return (
@@ -138,13 +159,36 @@ export default function CreateMeetingFormOS({
             />
           )}
 
-          <AppInput
-            inputId="meeting-location"
-            label="Location / Link"
-            value={locationOrLink}
-            onChange={(e) => setLocationOrLink(e.target.value)}
-            placeholder="e.g. Google Meet link or office address"
+          <AppCheckbox
+            inputId="meeting-google-meet"
+            label="Create a Google Meet link"
+            checked={meetRequested}
+            disabled={meetUnavailable}
+            onChange={setAddGoogleMeet}
+            hint={
+              meetUnavailable ? (
+                <>
+                  Connect your Google Calendar in{" "}
+                  <Link href="/settings" className="text-claude hover:underline">
+                    Settings
+                  </Link>{" "}
+                  first.
+                </>
+              ) : (
+                "Added to the organizer's Google Calendar event and saved as the meeting link."
+              )
+            }
           />
+
+          {!meetRequested && (
+            <AppInput
+              inputId="meeting-location"
+              label="Location / Link"
+              value={locationOrLink}
+              onChange={(e) => setLocationOrLink(e.target.value)}
+              placeholder="e.g. office address or a meeting link"
+            />
+          )}
 
           <AppTextArea
             textAreaId="meeting-notes"
@@ -169,9 +213,9 @@ export default function CreateMeetingFormOS({
             type="submit"
             variant="primary"
             className="flex-1 justify-center"
-            disabled={createMeeting.isPending}
+            disabled={mutation.isPending}
           >
-            {createMeeting.isPending && (
+            {mutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
             Schedule Meeting

@@ -12,7 +12,6 @@ import {
   Settings,
   ShieldCheck,
   SquareCheckBig,
-  Store,
   Users,
 } from "lucide-react";
 
@@ -88,13 +87,6 @@ export const osMainNav: OSNavItem[] = [
     href: "/trainers",
     label: "Trainers",
     icon: GraduationCap,
-    segment: "B2B",
-    group: "Trainer Pool",
-  },
-  {
-    href: "/lms/class-marketplace",
-    label: "Class Marketplace",
-    icon: Store,
     segment: "B2B",
     group: "Trainer Pool",
   },

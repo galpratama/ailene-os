@@ -2,10 +2,11 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import TrainerCertificationFormOS from "@/components/forms/TrainerCertificationFormOS";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { getTrainerDetails } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function TrainerCertificationOS({
   sessionToken,
@@ -14,17 +15,12 @@ export default function TrainerCertificationOS({
   sessionToken: string;
   trainerId: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const router = useRouter();
-  const { data, isLoading, isError } =
-    trpc.read.trainerPool.trainer.useQuery(
-      { id: trainerId },
-      { enabled: !!sessionToken }
-    );
-  const trainer = data?.trainer;
+  const { data: trainer, isLoading, isError } = useQuery({
+    queryKey: ["trainers", "details", trainerId],
+    queryFn: async () => requireApiData(await getTrainerDetails(trainerId)),
+    enabled: !!sessionToken,
+  });
 
   if (isLoading) {
     return (
@@ -66,7 +62,7 @@ export default function TrainerCertificationOS({
         trainerId={trainerId}
         trainer={{
           full_name: trainer.full_name,
-          avatar: trainer.user.avatar,
+          avatar: trainer.avatar,
           ai_experience_years: trainer.ai_experience_years,
           stage: trainer.stage,
           level: trainer.level,

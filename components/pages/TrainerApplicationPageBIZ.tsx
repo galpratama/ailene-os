@@ -8,8 +8,9 @@ import AppTextArea from "@/components/fields/AppTextArea";
 import FooterBIZ from "@/components/navigations/FooterBIZ";
 import HeaderBIZ from "@/components/navigations/HeaderBIZ";
 import { trackFormSubmit } from "@/lib/conversion";
-import { trpc } from "@/trpc/client";
-import type { TrainerSourceEnum } from "@prisma/client";
+import type { TrainerSource } from "@/apis/trainers";
+import { applyAsTrainer, listSpecializationOptions } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import {
   ArrowRight,
   Award,
@@ -24,14 +25,15 @@ import {
 import { FormEvent, useState } from "react";
 import PageMargin from "@/components/layouts/PageMargin";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 const sourceOptions: AppSelectOption[] = [
-  { value: "AI_COMMUNITY", label: "Komunitas AI" },
-  { value: "TOP_ALUMNI", label: "Alumni program Ailene" },
-  { value: "DOMAIN_PRACTITIONER", label: "Praktisi bidang tertentu" },
-  { value: "TRAINER_NETWORK", label: "Network trainer" },
-  { value: "CORPORATE_PRACTITIONER", label: "Praktisi korporat" },
-  { value: "INTERNAL_REFERRAL", label: "Referensi tim Ailene" },
+  { value: "ai_community", label: "Komunitas AI" },
+  { value: "top_alumni", label: "Alumni program Ailene" },
+  { value: "domain_practitioner", label: "Praktisi bidang tertentu" },
+  { value: "trainer_network", label: "Network trainer" },
+  { value: "corporate_practitioner", label: "Praktisi korporat" },
+  { value: "internal_referral", label: "Referensi tim Ailene" },
 ];
 
 const levels = [
@@ -65,7 +67,7 @@ export default function TrainerApplicationPageBIZ() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [source, setSource] = useState<TrainerSourceEnum | "">("");
+  const [source, setSource] = useState<TrainerSource | "">("");
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
   const [teachingExperience, setTeachingExperience] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
@@ -74,15 +76,19 @@ export default function TrainerApplicationPageBIZ() {
   const [availabilityNotes, setAvailabilityNotes] = useState("");
   const [website, setWebsite] = useState("");
 
-  const { data: optionsData } =
-    trpc.list.trainerPool.applicationOptions.useQuery();
-  const apply = trpc.create.trainerPool.candidate.useMutation({
+  const { data: optionsData } = useQuery({
+    queryKey: ["trainer-specializations", "options"],
+    queryFn: async () => requireApiData(await listSpecializationOptions()),
+  });
+  const apply = useMutation({
+    mutationFn: async (payload: Parameters<typeof applyAsTrainer>[0]) =>
+      requireApiData(await applyAsTrainer(payload)),
     onSuccess: () => {
       setSubmitted(true);
       // Only fires on a persisted application, so GTM never counts failed submits.
       trackFormSubmit({ placement: "trainer_application" });
     },
-    onError: (mutationError) => showErrorToast(mutationError.message),
+    onError: (error) => showErrorToast(error),
   });
 
   function toggleSpecialization(id: number) {
@@ -261,7 +267,7 @@ export default function TrainerApplicationPageBIZ() {
                   placeholder="Pilih sumber"
                   value={source}
                   onChange={(value) =>
-                    setSource((value as TrainerSourceEnum) ?? "")
+                    setSource((value as TrainerSource) ?? "")
                   }
                   options={sourceOptions}
                 />
@@ -270,9 +276,9 @@ export default function TrainerApplicationPageBIZ() {
                   <legend className="mb-2 text-sm font-semibold text-gray-700">
                     Domain expertise
                   </legend>
-                  {optionsData?.specializations.length ? (
+                  {optionsData?.list.length ? (
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {optionsData.specializations.map((specialization) => (
+                      {optionsData.list.map((specialization) => (
                         <label
                           key={specialization.id}
                           className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-colors has-[:checked]:border-claude has-[:checked]:bg-claude/5"

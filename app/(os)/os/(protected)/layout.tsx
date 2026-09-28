@@ -4,7 +4,6 @@ import SidebarOS from "@/components/navigations/SidebarOS";
 import { getSession } from "@/apis/session";
 import { SessionProvider } from "@/contexts/SessionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
-import { setSessionToken } from "@/trpc/server";
 import { ThemeProvider } from "next-themes";
 import { Stack_Sans_Headline } from "next/font/google";
 import { redirect } from "next/navigation";
@@ -27,9 +26,6 @@ export default async function OSProtectedLayout({
   // Both roles get in; a rejected token looks like none, so either way the cookie gets dropped first.
   if (!sessionToken || !user) redirect("/auth/clear-session");
 
-  // The rest of the app still talks tRPC, which reads the same JWT row out of `tokens`.
-  setSessionToken(sessionToken);
-
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SessionProvider user={user}>
@@ -37,7 +33,7 @@ export default async function OSProtectedLayout({
           <div
             className={`flex h-screen overflow-hidden bg-os-gradient os-font-scope ${stackSans.className} ${stackSans.variable}`}
           >
-            <SidebarOS sessionToken={sessionToken} />
+            <SidebarOS />
             <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
               <HeaderOS sessionToken={sessionToken} />
               <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">

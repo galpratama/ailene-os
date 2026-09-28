@@ -6,12 +6,9 @@ import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
-import { trpc } from "@/trpc/client";
-import type {
-  TrainerLevelEnum,
-  TrainerScreeningStatusEnum,
-  TrainerStageEnum,
-} from "@prisma/client";
+import type { ScreeningStatus, TrainerLevel, TrainerStage } from "@/apis/trainers";
+import { updateScreeningScore, updateScreeningStep } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import {
   Bot,
   Check,
@@ -34,45 +31,46 @@ import {
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Mirrors SCREENING_STEP_KEYS in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type TrainerScreeningStepKey =
-  | "APPLICATION_REVIEW"
-  | "INTERVIEW"
-  | "TEACHING_DEMO"
-  | "PRACTICAL_TEST"
-  | "REFERENCE_CHECK";
+  | "application_review"
+  | "interview"
+  | "teaching_demo"
+  | "practical_test"
+  | "reference_check";
 
 const statusOptions: AppSelectOption[] = [
-  { value: "PENDING", label: "Pending" },
-  { value: "PASSED", label: "Passed" },
-  { value: "FAILED", label: "Failed" },
-  { value: "SKIPPED", label: "Skipped" },
+  { value: "pending", label: "Pending" },
+  { value: "passed", label: "Passed" },
+  { value: "failed", label: "Failed" },
+  { value: "skipped", label: "Skipped" },
 ];
 
 const stepLabels: Record<TrainerScreeningStepKey, string> = {
-  APPLICATION_REVIEW: "Application review",
-  INTERVIEW: "Interview",
-  TEACHING_DEMO: "Teaching demo",
-  PRACTICAL_TEST: "Practical test",
-  REFERENCE_CHECK: "Reference check",
+  application_review: "Application review",
+  interview: "Interview",
+  teaching_demo: "Teaching demo",
+  practical_test: "Practical test",
+  reference_check: "Reference check",
 };
 
 const stepDescriptions: Record<TrainerScreeningStepKey, string> = {
-  APPLICATION_REVIEW:
+  application_review:
     "Initial review of the candidate's application and portfolio.",
-  INTERVIEW: "Structured interview with the trainer pool team.",
-  TEACHING_DEMO: "Live teaching demo evaluated by reviewers.",
-  PRACTICAL_TEST: "Hands-on practical assessment of AI skills.",
-  REFERENCE_CHECK: "Verification of references from prior work.",
+  interview: "Structured interview with the trainer pool team.",
+  teaching_demo: "Live teaching demo evaluated by reviewers.",
+  practical_test: "Hands-on practical assessment of AI skills.",
+  reference_check: "Verification of references from prior work.",
 };
 
 const stepIcons: Record<TrainerScreeningStepKey, typeof FileText> = {
-  APPLICATION_REVIEW: FileText,
-  INTERVIEW: Users,
-  TEACHING_DEMO: Presentation,
-  PRACTICAL_TEST: ClipboardCheck,
-  REFERENCE_CHECK: PhoneCall,
+  application_review: FileText,
+  interview: Users,
+  teaching_demo: Presentation,
+  practical_test: ClipboardCheck,
+  reference_check: PhoneCall,
 };
 
 // Mirrors MIN_SCREENING_STEPS_PASSED / QUALIFYING_SCORE in
@@ -82,21 +80,21 @@ const MIN_STEPS_PASSED = 4;
 const QUALIFYING_SCORE = 75;
 
 const statusStyle: Record<
-  TrainerScreeningStatusEnum,
+  ScreeningStatus,
   { ring: string; icon?: typeof Check }
 > = {
-  PASSED: {
+  passed: {
     ring: "border-hijau bg-hijau text-white",
     icon: Check,
   },
-  FAILED: {
+  failed: {
     ring: "border-merah bg-merah text-white",
     icon: X,
   },
-  PENDING: {
+  pending: {
     ring: "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
   },
-  SKIPPED: {
+  skipped: {
     ring: "border-gray-200 bg-gray-50 text-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600",
     icon: Minus,
   },
@@ -205,7 +203,7 @@ function RubricScorePanel({
   trainerId: string;
   initial?: Score | null;
 }) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const defaults = {
     ai_hands_on_score: String(initial?.ai_hands_on_score ?? 0),
     facilitation_score: String(initial?.facilitation_score ?? 0),
@@ -216,13 +214,20 @@ function RubricScorePanel({
   const [values, setValues] =
     useState<Record<Criterion["key"], string>>(defaults);
 
-  const mutation = trpc.update.trainerPool.screeningScore.useMutation({
-    onSuccess: (data) => {
+  const mutation = useMutation({
+    mutationFn: async (payload: {
+      trainer_id: string;
+      ai_hands_on_score: number;
+      facilitation_score: number;
+      domain_credibility_score: number;
+      communication_score: number;
+      reliability_score: number;
+    }) => requireApiData(await updateScreeningScore(payload)),
+    onSuccess: async (data) => {
       toast.success("Screening score saved.", {
-        description: `Weighted total ${data.total_score}/100 · suggested level ${data.suggested_level.toLowerCase()}`,
+        description: `Weighted total ${data.total_score}/100 · suggested level ${data.level}`,
       });
-      utils.read.trainerPool.trainer.invalidate({ id: trainerId });
-      utils.list.trainerPool.trainers.invalidate();
+      await queryClient.invalidateQueries({ queryKey: ["trainers"] });
     },
     onError: (error) => {
       toast.error("Failed to save score.", { description: error.message });
@@ -321,24 +326,28 @@ export default function TrainerScreeningFormOS({
     full_name: string;
     avatar: string | null;
     ai_experience_years: number;
-    stage: TrainerStageEnum;
-    level: TrainerLevelEnum;
+    stage: TrainerStage;
+    level: TrainerLevel;
   };
   steps: {
     step: TrainerScreeningStepKey;
-    status: TrainerScreeningStatusEnum;
+    status: ScreeningStatus;
   }[];
   score?: Score | null;
 }) {
-  const utils = trpc.useUtils();
-  const updateStep = trpc.update.trainerPool.screeningStep.useMutation({
-    onSuccess: () => {
-      utils.read.trainerPool.trainer.invalidate({ id: trainerId });
-      utils.list.trainerPool.trainers.invalidate();
+  const queryClient = useQueryClient();
+  const updateStep = useMutation({
+    mutationFn: async (payload: {
+      trainer_id: string;
+      step: TrainerScreeningStepKey;
+      status: ScreeningStatus;
+    }) => requireApiData(await updateScreeningStep(payload)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["trainers"] });
     },
   });
 
-  const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
+  const passedCount = steps.filter((entry) => entry.status === "passed").length;
   const totalScore = score?.total_score ?? 0;
 
   return (
@@ -449,7 +458,7 @@ export default function TrainerScreeningFormOS({
                         updateStep.mutate({
                           trainer_id: trainerId,
                           step: entry.step,
-                          status: value as TrainerScreeningStatusEnum,
+                          status: value as ScreeningStatus,
                         })
                       }
                     />

@@ -1,18 +1,18 @@
-import type { TrainerStatusEnum } from "@prisma/client";
+import type { TrainerStatus } from "@/apis/trainers";
 import Label, { type LabelVariant } from "./Label";
 
 const statusConfig: Record<
-  TrainerStatusEnum,
+  TrainerStatus,
   { label: string; variant: LabelVariant }
 > = {
-  ACTIVE: { label: "Active", variant: "hijau" },
-  INACTIVE: { label: "Inactive", variant: "gray" },
+  active: { label: "Active", variant: "hijau" },
+  inactive: { label: "Inactive", variant: "gray" },
 };
 
 export default function TrainerStatusLabel({
   status,
 }: {
-  status: TrainerStatusEnum;
+  status: TrainerStatus;
 }) {
   const config = statusConfig[status];
   return <Label variant={config.variant}>{config.label}</Label>;

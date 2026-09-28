@@ -8,12 +8,9 @@ import Label, { type LabelVariant } from "@/components/labels/Label";
 import ProgressBar from "@/components/labels/ProgressBar";
 import TrainerLevelLabel from "@/components/labels/TrainerLevelLabel";
 import TrainerStageLabel from "@/components/labels/TrainerStageLabel";
-import { trpc } from "@/trpc/client";
-import type {
-  TrainerCertificationStatusEnum,
-  TrainerLevelEnum,
-  TrainerStageEnum,
-} from "@prisma/client";
+import type { CertificationStatus, TrainerLevel, TrainerStage } from "@/apis/trainers";
+import { updateCertificationStep } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
 import {
   Award,
   BookOpen,
@@ -28,31 +25,32 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Mirrors CERTIFICATION_STEP_KEYS in trpc/routers/trainer-pool/trainer-pool.shared.ts
 type CertificationStepKey =
-  | "ORIENTATION"
-  | "MATERIAL_MASTERY"
-  | "SHADOWING"
-  | "CO_TRAINING"
-  | "SOLO_OBSERVED_DELIVERY"
-  | "CERTIFICATION_DECISION";
+  | "orientation"
+  | "material_mastery"
+  | "shadowing"
+  | "co_training"
+  | "solo_observed_delivery"
+  | "certification_decision";
 
 const statusOptions: AppSelectOption[] = [
-  { value: "NOT_STARTED", label: "Belum mulai" },
-  { value: "IN_PROGRESS", label: "Sedang berlangsung" },
-  { value: "PASSED", label: "Lulus" },
-  { value: "FAILED", label: "Tidak lulus" },
+  { value: "not_started", label: "Belum mulai" },
+  { value: "in_progress", label: "Sedang berlangsung" },
+  { value: "passed", label: "Lulus" },
+  { value: "failed", label: "Tidak lulus" },
 ];
 
 const statusLabelConfig: Record<
-  TrainerCertificationStatusEnum,
+  CertificationStatus,
   { label: string; variant: LabelVariant }
 > = {
-  NOT_STARTED: { label: "Belum mulai", variant: "gray" },
-  IN_PROGRESS: { label: "Sedang berlangsung", variant: "kuning" },
-  PASSED: { label: "Lulus", variant: "hijau" },
-  FAILED: { label: "Tidak lulus", variant: "merah" },
+  not_started: { label: "Belum mulai", variant: "gray" },
+  in_progress: { label: "Sedang berlangsung", variant: "kuning" },
+  passed: { label: "Lulus", variant: "hijau" },
+  failed: { label: "Tidak lulus", variant: "merah" },
 };
 
 type StepMeta = {
@@ -67,7 +65,7 @@ type StepMeta = {
 // Copy is addressed to the admin/evaluator assessing the candidate, not to
 // the trainer being assessed.
 const stepMeta: Record<CertificationStepKey, StepMeta> = {
-  ORIENTATION: {
+  orientation: {
     icon: FileText,
     title: "Orientasi",
     description:
@@ -80,7 +78,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
     ],
     estimate: "30 menit",
   },
-  MATERIAL_MASTERY: {
+  material_mastery: {
     icon: BookOpen,
     title: "Penguasaan materi",
     description:
@@ -93,7 +91,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
     ],
     estimate: "1-2 jam",
   },
-  SHADOWING: {
+  shadowing: {
     icon: Presentation,
     title: "Shadowing",
     description:
@@ -105,7 +103,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
       "Kandidat sudah menyerahkan refleksi dan catatan penting",
     ],
   },
-  CO_TRAINING: {
+  co_training: {
     icon: Users,
     title: "Co-training",
     description:
@@ -117,7 +115,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
       "Kandidat menerima feedback dari lead trainer",
     ],
   },
-  SOLO_OBSERVED_DELIVERY: {
+  solo_observed_delivery: {
     icon: Video,
     title: "Solo observed delivery",
     description:
@@ -129,7 +127,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
       "Kandidat menerima feedback dan skor dari observer",
     ],
   },
-  CERTIFICATION_DECISION: {
+  certification_decision: {
     icon: Award,
     title: "Keputusan sertifikasi",
     description:
@@ -145,7 +143,7 @@ const stepMeta: Record<CertificationStepKey, StepMeta> = {
 
 type Step = {
   step: CertificationStepKey;
-  status: TrainerCertificationStatusEnum;
+  status: CertificationStatus;
   recommended_sessions: number;
 };
 
@@ -159,21 +157,25 @@ export default function TrainerCertificationFormOS({
     full_name: string;
     avatar: string | null;
     ai_experience_years: number;
-    stage: TrainerStageEnum;
-    level: TrainerLevelEnum;
+    stage: TrainerStage;
+    level: TrainerLevel;
   };
   steps: Step[];
 }) {
-  const utils = trpc.useUtils();
-  const mutation = trpc.update.trainerPool.certificationStep.useMutation({
-    onSuccess: () => {
-      utils.read.trainerPool.trainer.invalidate({ id: trainerId });
-      utils.list.trainerPool.trainers.invalidate();
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (payload: {
+      trainer_id: string;
+      step: CertificationStepKey;
+      status: CertificationStatus;
+    }) => requireApiData(await updateCertificationStep(payload)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["trainers"] });
     },
     onError: (error) => showErrorToast(error),
   });
 
-  function update(entry: Step, status: TrainerCertificationStatusEnum) {
+  function update(entry: Step, status: CertificationStatus) {
     mutation.mutate({
       trainer_id: trainerId,
       step: entry.step,
@@ -181,10 +183,10 @@ export default function TrainerCertificationFormOS({
     });
   }
 
-  const passedCount = steps.filter((entry) => entry.status === "PASSED").length;
+  const passedCount = steps.filter((entry) => entry.status === "passed").length;
   const otherStepsPassed = steps
-    .filter((entry) => entry.step !== "CERTIFICATION_DECISION")
-    .every((entry) => entry.status === "PASSED");
+    .filter((entry) => entry.step !== "certification_decision")
+    .every((entry) => entry.status === "passed");
 
   return (
     <div className="flex flex-col gap-5">
@@ -246,7 +248,7 @@ export default function TrainerCertificationFormOS({
         {steps.map((entry, index) => {
           const meta = stepMeta[entry.step];
           const StepIcon = meta.icon;
-          const isDecision = entry.step === "CERTIFICATION_DECISION";
+          const isDecision = entry.step === "certification_decision";
           const isLast = index === steps.length - 1;
           const decisionLocked = isDecision && !otherStepsPassed;
 
@@ -255,16 +257,16 @@ export default function TrainerCertificationFormOS({
               <div className="flex flex-col items-center">
                 <span
                   className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold ${
-                    entry.status === "PASSED"
+                    entry.status === "passed"
                       ? "border-hijau bg-hijau text-white"
-                      : entry.status === "FAILED"
+                      : entry.status === "failed"
                         ? "border-merah bg-merah text-white"
-                        : entry.status === "IN_PROGRESS"
+                        : entry.status === "in_progress"
                           ? "border-claude bg-claude/10 text-claude"
                           : "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
                   }`}
                 >
-                  {entry.status === "PASSED" ? (
+                  {entry.status === "passed" ? (
                     <Check size={16} />
                   ) : (
                     index + 1
@@ -360,7 +362,7 @@ export default function TrainerCertificationFormOS({
                       options={statusOptions}
                       disabled={decisionLocked}
                       onChange={(value) =>
-                        update(entry, value as TrainerCertificationStatusEnum)
+                        update(entry, value as CertificationStatus)
                       }
                     />
                   </div>

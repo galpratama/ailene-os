@@ -2,9 +2,7 @@
 
 import NotificationBellOS from "@/components/navigations/NotificationBellOS";
 import { useSession } from "@/contexts/SessionContext";
-import { setSessionToken } from "@/trpc/client";
 import Image from "next/image";
-import { useEffect } from "react";
 
 function initialsOf(fullName: string) {
   return fullName
@@ -16,9 +14,6 @@ function initialsOf(fullName: string) {
 }
 
 export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
 
   const user = useSession();
 

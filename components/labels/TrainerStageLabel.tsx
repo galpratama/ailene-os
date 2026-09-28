@@ -1,21 +1,21 @@
-import type { TrainerStageEnum } from "@prisma/client";
+import type { TrainerStage } from "@/apis/trainers";
 import Label, { type LabelVariant } from "./Label";
 
 const stageConfig: Record<
-  TrainerStageEnum,
+  TrainerStage,
   { label: string; variant: LabelVariant }
 > = {
-  CANDIDATE: { label: "Candidate", variant: "biru" },
-  QUALIFIED: { label: "Qualified", variant: "kuning" },
-  NOT_QUALIFIED: { label: "Not qualified", variant: "merah" },
-  ELIGIBLE: { label: "Eligible", variant: "hijau" },
-  NOT_ELIGIBLE: { label: "Not eligible", variant: "merah" },
+  candidate: { label: "Candidate", variant: "biru" },
+  qualified: { label: "Qualified", variant: "kuning" },
+  not_qualified: { label: "Not qualified", variant: "merah" },
+  eligible: { label: "Eligible", variant: "hijau" },
+  not_eligible: { label: "Not eligible", variant: "merah" },
 };
 
 export default function TrainerStageLabel({
   stage,
 }: {
-  stage: TrainerStageEnum;
+  stage: TrainerStage;
 }) {
   const config = stageConfig[stage];
   return <Label variant={config.variant}>{config.label}</Label>;

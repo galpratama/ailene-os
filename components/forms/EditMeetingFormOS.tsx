@@ -1,25 +1,36 @@
 "use client";
 
+import type { MeetingStatus } from "@/apis/meetings";
 import AppButton from "@/components/buttons/AppButton";
+import AppCheckbox from "@/components/fields/AppCheckbox";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
-import { trpc } from "@/trpc/client";
+import { useGoogleCalendarConnection } from "@/hooks/useGoogleCalendarConnection";
 import { useUserList } from "@/hooks/useUserList";
-import { B2BMeetingStatusEnum } from "@prisma/client";
-import { Loader2, Trash2 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { deleteMeeting, getMeetingDetails, updateMeeting } from "@/lib/actions";
+import { requireApiData, requireApiSuccess } from "@/lib/api-result";
+import { isGoogleMeetLink, reportMeetingSync } from "@/lib/meetings";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink, Loader2, Trash2 } from "lucide-react";
+import { FormEvent, useState } from "react";
 
 export const meetingStatusOptions: AppSelectOption[] = [
-  { value: "SCHEDULED", label: "Scheduled" },
-  { value: "HELD", label: "Held" },
-  { value: "CANCELLED", label: "Cancelled" },
-  { value: "NO_SHOW", label: "No Show" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "held", label: "Held" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "no_show", label: "No Show" },
 ];
+
+const syncLabel: Record<string, string> = {
+  not_synced: "Not on Google Calendar",
+  synced: "Synced to Google Calendar",
+  sync_failed: "Google Calendar sync failed",
+};
 
 interface EditMeetingFormOSProps {
   sessionToken: string;
@@ -41,22 +52,24 @@ export default function EditMeetingFormOS({
   isOpen,
   onClose,
 }: EditMeetingFormOSProps) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "OWN";
 
   const [scheduledAt, setScheduledAt] = useState("");
-  const [status, setStatus] = useState<B2BMeetingStatusEnum>("SCHEDULED");
+  const [status, setStatus] = useState<MeetingStatus>("scheduled");
   const [organizerId, setOrganizerId] = useState("");
   const [locationOrLink, setLocationOrLink] = useState("");
   const [notes, setNotes] = useState("");
+  const [addGoogleMeet, setAddGoogleMeet] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
-  const { data, isLoading: isLoadingMeeting } = trpc.read.b2b.meeting.useQuery(
-    { id: meetingId ?? 0 },
-    { enabled: !!sessionToken && isOpen && meetingId != null }
-  );
+  const { data: meeting, isLoading: isLoadingMeeting } = useQuery({
+    queryKey: ["meetings", "details", meetingId],
+    queryFn: async () => requireApiData(await getMeetingDetails(meetingId!)),
+    enabled: !!sessionToken && isOpen && meetingId != null,
+  });
 
   // Seed the form once per meeting, adjusting state during render (React's
   // documented pattern for this) rather than in an effect. Reset the seeded
@@ -69,7 +82,6 @@ export default function EditMeetingFormOS({
     if (!isOpen) setSeededMeetingId(null);
   }
 
-  const meeting = data?.meeting;
   if (isOpen && meeting && meeting.id !== seededMeetingId) {
     setSeededMeetingId(meeting.id);
     setScheduledAt(toDateTimeLocalValue(meeting.scheduled_at));
@@ -77,37 +89,57 @@ export default function EditMeetingFormOS({
     setOrganizerId(meeting.organizer_id);
     setLocationOrLink(meeting.location_or_link ?? "");
     setNotes(meeting.notes ?? "");
+    setAddGoogleMeet(false);
   }
 
   const userList = useUserList(isOpen && !isOwnScoped);
   const organizerOptions: AppSelectOption[] =
     userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
 
-  function handleClose() {
-    onClose();
+  const { data: connection } = useGoogleCalendarConnection(!!sessionToken && isOpen);
+  const hasMeetLink = isGoogleMeetLink(locationOrLink);
+  const organizerIsMe = organizerId === sessionUser?.id;
+  const meetUnavailable = organizerIsMe && connection?.connected === false;
+  const meetRequested = addGoogleMeet && !meetUnavailable && !hasMeetLink && status !== "cancelled";
+
+  async function invalidateMeetings() {
+    await queryClient.invalidateQueries({ queryKey: ["meetings"] });
   }
 
-  const updateMeeting = trpc.update.b2b.meeting.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.calendar.invalidate();
-      utils.read.b2b.meeting.invalidate({ id: meetingId ?? 0 });
-      handleClose();
+  const updateMutation = useMutation({
+    mutationFn: async (id: number) =>
+      requireApiData(
+        await updateMeeting({
+          id,
+          scheduled_at: new Date(scheduledAt).toISOString(),
+          status,
+          organizer_id: isOwnScoped ? null : organizerId || null,
+          location_or_link: meetRequested ? null : locationOrLink.trim() || null,
+          notes: notes.trim() || null,
+          add_google_meet: meetRequested,
+        })
+      ),
+    onSuccess: async (saved) => {
+      reportMeetingSync(saved, meetRequested);
+      await invalidateMeetings();
+      onClose();
     },
-    onError: (err) => showErrorToast(err.message),
+    onError: (error) => showErrorToast(error),
   });
 
-  const deleteMeeting = trpc.delete.b2b.meeting.useMutation({
-    onSuccess: () => {
-      utils.list.b2b.calendar.invalidate();
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => requireApiSuccess(await deleteMeeting(id)),
+    onSuccess: async () => {
       setIsConfirmingDelete(false);
-      handleClose();
+      await invalidateMeetings();
+      onClose();
     },
-    onError: (err) => showErrorToast(err.message),
+    onError: (error) => showErrorToast(error),
   });
 
   function handleConfirmDelete() {
     if (meetingId == null) return;
-    deleteMeeting.mutate({ id: meetingId });
+    deleteMutation.mutate(meetingId);
   }
 
   function handleSubmit(e: FormEvent) {
@@ -116,14 +148,7 @@ export default function EditMeetingFormOS({
     if (!scheduledAt) return showErrorToast("Scheduled date & time is required.");
     if (meetingId == null) return;
 
-    updateMeeting.mutate({
-      id: meetingId,
-      scheduled_at: new Date(scheduledAt).toISOString(),
-      status,
-      organizer_id: isOwnScoped ? undefined : organizerId || undefined,
-      location_or_link: locationOrLink.trim() || null,
-      notes: notes.trim() || null,
-    });
+    updateMutation.mutate(meetingId);
   }
 
   const isReady = !isLoadingMeeting && !!meeting;
@@ -134,7 +159,7 @@ export default function EditMeetingFormOS({
       title="Edit Meeting"
       description="Update this meeting's schedule and outcome."
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
     >
       {!isReady ? (
         <div className="flex flex-1 items-center justify-center py-20">
@@ -144,9 +169,21 @@ export default function EditMeetingFormOS({
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
 
-            <p className="text-sm text-gray-500 dark:text-zinc-400">
-              {meeting.company_name} · {meeting.pipeline_name}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm text-gray-500 dark:text-zinc-400">
+                {meeting.company_name}
+              </p>
+              <p
+                className={`text-xs ${
+                  meeting.google_sync_status === "sync_failed"
+                    ? "text-merah"
+                    : "text-gray-400 dark:text-zinc-500"
+                }`}
+                title={meeting.google_sync_error ?? undefined}
+              >
+                {syncLabel[meeting.google_sync_status]}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <AppInput
@@ -162,7 +199,7 @@ export default function EditMeetingFormOS({
                 label="Status"
                 placeholder="Pick a status"
                 value={status}
-                onChange={(v) => setStatus(v as B2BMeetingStatusEnum)}
+                onChange={(v) => setStatus(v as MeetingStatus)}
                 options={meetingStatusOptions}
               />
             </div>
@@ -179,13 +216,42 @@ export default function EditMeetingFormOS({
               />
             )}
 
-            <AppInput
-              inputId="edit-meeting-location"
-              label="Location / Link"
-              value={locationOrLink}
-              onChange={(e) => setLocationOrLink(e.target.value)}
-              placeholder="e.g. Google Meet link or office address"
-            />
+            {hasMeetLink ? (
+              <a
+                href={locationOrLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-claude hover:underline"
+              >
+                <ExternalLink size={14} />
+                Join Google Meet
+              </a>
+            ) : (
+              status !== "cancelled" && (
+                <AppCheckbox
+                  inputId="edit-meeting-google-meet"
+                  label="Create a Google Meet link"
+                  checked={meetRequested}
+                  disabled={meetUnavailable}
+                  onChange={setAddGoogleMeet}
+                  hint={
+                    meetUnavailable
+                      ? "Connect your Google Calendar in Settings first."
+                      : "Replaces the location below with a new Meet link."
+                  }
+                />
+              )
+            )}
+
+            {!meetRequested && (
+              <AppInput
+                inputId="edit-meeting-location"
+                label="Location / Link"
+                value={locationOrLink}
+                onChange={(e) => setLocationOrLink(e.target.value)}
+                placeholder="e.g. office address or a meeting link"
+              />
+            )}
 
             <AppTextArea
               textAreaId="edit-meeting-notes"
@@ -204,10 +270,10 @@ export default function EditMeetingFormOS({
               size="icon"
               title="Delete meeting"
               className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/40"
-              disabled={deleteMeeting.isPending}
+              disabled={deleteMutation.isPending}
               onClick={() => setIsConfirmingDelete(true)}
             >
-              {deleteMeeting.isPending ? (
+              {deleteMutation.isPending ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <Trash2 size={14} />
@@ -217,7 +283,7 @@ export default function EditMeetingFormOS({
               type="button"
               variant="outline"
               className="flex-1 justify-center"
-              onClick={handleClose}
+              onClick={onClose}
             >
               Cancel
             </AppButton>
@@ -225,9 +291,9 @@ export default function EditMeetingFormOS({
               type="submit"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={updateMeeting.isPending}
+              disabled={updateMutation.isPending}
             >
-              {updateMeeting.isPending && (
+              {updateMutation.isPending && (
                 <Loader2 size={14} className="animate-spin" />
               )}
               Save Changes
@@ -249,7 +315,7 @@ export default function EditMeetingFormOS({
       }
       confirmLabel="Delete"
       destructive
-      isPending={deleteMeeting.isPending}
+      isPending={deleteMutation.isPending}
     />,
   ];
 }

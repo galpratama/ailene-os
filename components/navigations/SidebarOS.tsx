@@ -7,7 +7,6 @@ import { useSession } from "@/contexts/SessionContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { logoutUser } from "@/lib/actions";
 import { OSNavItem, OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
-import { setSessionToken } from "@/trpc/client";
 import { LogOut, LucideIcon, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -94,17 +93,7 @@ function initialsOf(fullName: string) {
     .join("");
 }
 
-function UserFooter({
-  sessionToken,
-  collapsed,
-}: {
-  sessionToken: string;
-  collapsed: boolean;
-}) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
+function UserFooter({ collapsed }: { collapsed: boolean }) {
   const user = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -164,10 +153,7 @@ function UserFooter({
   );
 }
 
-export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
+export default function SidebarOS() {
 
   const role = useSession()?.role;
 
@@ -202,7 +188,6 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     (item) => item.segment === segment && visibleToRole(item)
   );
 
-  // Nested hrefs (`/lms` vs `/lms/class-marketplace`) both prefix-match, so only the longest match lights up.
   const activeHref = [...mainNav, ...toolsNav]
     .filter((item) =>
       item.exact
@@ -373,7 +358,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           )}
         </div>
 
-        <UserFooter sessionToken={sessionToken} collapsed={isCollapsed} />
+        <UserFooter collapsed={isCollapsed} />
       </aside>
     </>
   );

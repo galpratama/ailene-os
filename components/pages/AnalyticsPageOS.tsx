@@ -6,9 +6,8 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
-import { setSessionToken } from "@/trpc/client";
 import { CalendarDays } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const periodOptions: AppSelectOption[] = [
   { value: "7", label: "Last 7 days" },
@@ -48,9 +47,6 @@ export default function AnalyticsPageOS({
   sessionToken: string;
 }) {
   // Covers the shell itself; each panel sets the token again for its own query.
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
 
   const today = useMemo(() => jakartaToday(), []);
   const [tab, setTab] = useState<TabKey>("ga4");

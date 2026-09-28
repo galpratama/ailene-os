@@ -1,6 +1,6 @@
 import "server-only";
 
-import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
+import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
 export type ActionStatus = "to_do" | "in_progress" | "review" | "done";
@@ -112,12 +112,5 @@ export async function updateAction(
   return callApi("/api/v1/actions/update", {
     token: await token(),
     body: payload,
-  });
-}
-
-// Cron-only: no user session, so it authenticates with the static client secret.
-export async function notifyOverdueActions(): Promise<ApiEnvelope<{ notified: number }>> {
-  return callApi("/api/v1/actions/notify-overdue", {
-    token: clientSecret(),
   });
 }

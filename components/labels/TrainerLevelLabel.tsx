@@ -1,18 +1,18 @@
-import type { TrainerLevelEnum } from "@prisma/client";
+import type { TrainerLevel } from "@/apis/trainers";
 import Label, { type LabelVariant } from "./Label";
 
 const levelConfig: Record<
-  TrainerLevelEnum,
+  TrainerLevel,
   { label: string; variant: LabelVariant }
 > = {
-  JUNIOR: { label: "Junior", variant: "gray" },
-  SENIOR: { label: "Senior", variant: "biru" },
+  junior: { label: "Junior", variant: "gray" },
+  senior: { label: "Senior", variant: "biru" },
 };
 
 export default function TrainerLevelLabel({
   level,
 }: {
-  level: TrainerLevelEnum;
+  level: TrainerLevel;
 }) {
   const config = levelConfig[level];
   return <Label variant={config.variant}>{config.label}</Label>;

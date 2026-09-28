@@ -2,7 +2,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { TRPCProvider } from "@/trpc/client";
+import QueryProvider from "@/contexts/QueryProvider";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -27,11 +27,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const trpcBaseURL =
-  process.env.DOMAIN_MODE === "local"
-    ? "https://api.example.com:3000/trpc"
-    : "https://api.ailene.id/trpc";
 
 export default function RootLayout({
   children,
@@ -63,7 +58,7 @@ export default function RootLayout({
         <GoogleOAuthProvider
           clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ID!}
         >
-          <TRPCProvider baseURL={trpcBaseURL}>{children}</TRPCProvider>
+          <QueryProvider>{children}</QueryProvider>
         </GoogleOAuthProvider>
       </body>
     </html>

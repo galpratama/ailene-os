@@ -8,19 +8,21 @@ import AppSelect, {
 } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
-import { trpc } from "@/trpc/client";
-import type { TrainerSourceEnum } from "@prisma/client";
+import type { TrainerSource } from "@/apis/trainers";
+import { createTrainer, listSpecializationOptions } from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { showErrorToast } from "@/lib/toast";
 
 const sourceOptions: AppSelectOption[] = [
-  { value: "AI_COMMUNITY", label: "AI Community" },
-  { value: "TOP_ALUMNI", label: "Top Alumni" },
-  { value: "DOMAIN_PRACTITIONER", label: "Domain Practitioner" },
-  { value: "TRAINER_NETWORK", label: "Trainer Network" },
-  { value: "CORPORATE_PRACTITIONER", label: "Corporate Practitioner" },
-  { value: "INTERNAL_REFERRAL", label: "Internal Referral" },
+  { value: "ai_community", label: "AI Community" },
+  { value: "top_alumni", label: "Top Alumni" },
+  { value: "domain_practitioner", label: "Domain Practitioner" },
+  { value: "trainer_network", label: "Trainer Network" },
+  { value: "corporate_practitioner", label: "Corporate Practitioner" },
+  { value: "internal_referral", label: "Internal Referral" },
 ];
 
 export default function CreateTrainerFormOS({
@@ -32,19 +34,20 @@ export default function CreateTrainerFormOS({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [source, setSource] = useState<TrainerSourceEnum | "">("");
+  const [source, setSource] = useState<TrainerSource | "">("");
   const [specializationIds, setSpecializationIds] = useState<number[]>([]);
   const [aiExperienceYears, setAiExperienceYears] = useState("");
   const [notes, setNotes] = useState("");
 
-  const { data: optionsData } =
-    trpc.list.trainerPool.applicationOptions.useQuery(undefined, {
-      enabled: !!sessionToken && isOpen,
-    });
+  const { data: optionsData } = useQuery({
+    queryKey: ["trainer-specializations", "options"],
+    queryFn: async () => requireApiData(await listSpecializationOptions()),
+    enabled: !!sessionToken && isOpen,
+  });
 
   function reset() {
     setFullName("");
@@ -61,12 +64,14 @@ export default function CreateTrainerFormOS({
     onClose();
   }
 
-  const createTrainer = trpc.create.trainerPool.trainer.useMutation({
-    onSuccess: () => {
-      utils.list.trainerPool.trainers.invalidate();
+  const createTrainerMutation = useMutation({
+    mutationFn: async (payload: Parameters<typeof createTrainer>[0]) =>
+      requireApiData(await createTrainer(payload)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["trainers"] });
       close();
     },
-    onError: (mutationError) => showErrorToast(mutationError.message),
+    onError: (error) => showErrorToast(error),
   });
 
   function handleSubmit(event: FormEvent) {
@@ -74,7 +79,7 @@ export default function CreateTrainerFormOS({
     if (!fullName.trim() || !email.trim()) {
       return showErrorToast("Name and email are required.");
     }
-    createTrainer.mutate({
+    createTrainerMutation.mutate({
       full_name: fullName.trim(),
       email: email.trim(),
       phone: phone.trim() || null,
@@ -122,7 +127,7 @@ export default function CreateTrainerFormOS({
             placeholder="Select source"
             value={source}
             onChange={(value) =>
-              setSource((value as TrainerSourceEnum) ?? "")
+              setSource((value as TrainerSource) ?? "")
             }
             options={sourceOptions}
           />
@@ -137,7 +142,7 @@ export default function CreateTrainerFormOS({
               Specializations
             </legend>
             <div className="flex flex-col gap-2">
-              {optionsData?.specializations.map((specialization) => (
+              {optionsData?.list.map((specialization) => (
                 <label
                   key={specialization.id}
                   className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-zinc-700"
@@ -179,9 +184,9 @@ export default function CreateTrainerFormOS({
           <AppButton
             type="submit"
             className="flex-1 justify-center"
-            disabled={createTrainer.isPending}
+            disabled={createTrainerMutation.isPending}
           >
-            {createTrainer.isPending && (
+            {createTrainerMutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
             Add Candidate

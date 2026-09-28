@@ -1,16 +1,16 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { UserRoleEnum } from "@prisma/client";
+import type { UserRole } from "@/apis/users";
 import { LucideIcon, Shield, UserRound } from "lucide-react";
 
 const roleStyles: Record<
-  UserRoleEnum,
+  UserRole,
   { label: string; variant: LabelVariant; icon: LucideIcon }
 > = {
   ADMINISTRATOR: { label: "Administrator", variant: "oranye", icon: Shield },
   MEMBER: { label: "Member", variant: "gray", icon: UserRound },
 };
 
-export default function AccessRoleLabel({ role }: { role: UserRoleEnum }) {
+export default function AccessRoleLabel({ role }: { role: UserRole }) {
   const { label, variant, icon: Icon } = roleStyles[role];
 
   return (

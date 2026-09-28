@@ -5,14 +5,12 @@
   "scripts": {
     "dev": "next dev --experimental-https --experimental-https-key certificates/dev-key.pem --experimental-https-cert certificates/dev.pem",
     "dev:cert": "mkcert -cert-file certificates/dev.pem -key-file certificates/dev-key.pem example.com \"*.example.com\" localhost 127.0.0.1 ::1",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "prisma generate"
+    "lint": "eslint"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",
-    "@prisma/client": "^6.19.3",
     "@react-oauth/google": "^0.13.5",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.117.2",
@@ -21,9 +19,6 @@
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
-    "@trpc/client": "^11.18.0",
-    "@trpc/react-query": "^11.18.0",
-    "@trpc/server": "^11.18.0",
     "dayjs": "^1.11.21",
     "lucide-react": "^1.22.0",
     "mailtrap": "^4.6.1",
@@ -35,8 +30,7 @@
     "react-select": "^5.10.2",
     "recharts": "^3.9.2",
     "server-only": "^0.0.1",
-    "sonner": "^2.0.7",
-    "zod": "^4.4.3"
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -45,7 +39,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
-    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

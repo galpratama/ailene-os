@@ -1,36 +1,25 @@
 # Coding rules for ailene-os
 
-These are project-specific conventions. Follow them exactly — don't fall back to generic Next.js/Prisma/Tailwind habits from training data where they conflict with what's written here.
+These are project-specific conventions. Follow them exactly — don't fall back to generic Next.js/Tailwind habits from training data where they conflict with what's written here.
 
-## Database (Prisma, DDL, migrations)
+## Backend: the Java API (`ailene-os-api`)
 
-- `prisma/schema.prisma` mirrors `docs/db/ailene-os-ddl.sql` (see the comment at the top of the schema file). **Any schema change must update both files** — the `.sql` file is the human-readable source of truth for the actual DDL, the Prisma schema is the generated-client source of truth. They drift silently if you only touch one.
-- The database is a **live shared Neon Postgres instance** (see `DATABASE_URL`/`DIRECT_URL` in `.env` — it's a real `neon.tech` host, not a local Postgres). Treat migrations and any destructive query as production actions: confirm with the user before running `prisma migrate`, `prisma db push`, or raw `DROP`/`TRUNCATE`/`DELETE` without a `WHERE`.
-- **Never run `prisma migrate reset` or any destructive database commands without explicit user confirmation.** This will wipe all data from the database. Always check for backups and consider the impact before running such commands.
-- **Do not commit and push database migration files without user review and approval.** Especially avoid force pushes that could affect production data.
-- **Never commit and push directly to production branches without explicit user approval.** Always verify changes with the user before pushing to remote repositories, especially when database operations are involved.
-- Enums are named `<domain>_enum` in SQL (`b2b_stage_enum`) and `<Domain>Enum` in Prisma (`B2BStageEnum`); model field names stay `snake_case` even though Prisma otherwise camelCases relations. Keep this mapping consistent (`@map(...)` on every enum value and model).
-- Table names are prefixed by domain in SQL (`b2b_pipeline`, `b2b_actions`) via `@@map`. Don't rename a Prisma model without also fixing the `@@map`.
+- This app has **no database access and no API of its own**. Every read and write goes to the Java API in the sibling repo `Documents/ailene-os-api` (Spring Boot, `/api/v1/*`, every route `POST`). New endpoints are built there, not here; its `AGENTS.md` and `docs/api/*.md` are the contract. The DB schema's source of truth is `ailene-os-api/docs/db/ailene-os.sql`.
+- The database is a **live shared Neon Postgres instance**. Treat migrations and any destructive query as production actions: confirm with the user first, and never run a destructive command (`DROP`, `TRUNCATE`, `DELETE` without a `WHERE`, a reset) without explicit confirmation.
+- **Never commit and push directly to production branches without explicit user approval**, and don't push migration files without the user's review.
+- The call chain is always three layers, one file per domain:
+  1. `apis/<domain>.ts` (`import "server-only"`) — typed request/response shapes and one function per endpoint, calling `callApi()` from `apis/api.ts` with the session token from `getSessionToken()`. Public pages (biz) that have no session use `clientSecret()` instead.
+  2. `lib/actions.ts` (`"use server"`) — a thin server-action wrapper per API function, so client components can call it.
+  3. Client components — `useQuery` / `useMutation` from `@tanstack/react-query` (the provider is `contexts/QueryProvider.tsx` in the root layout), unwrapping responses with `requireApiData()` / `requireApiSuccess()` from `lib/api-result.ts`, and invalidating by query-key prefix (`["meetings"]`, `["trainers"]`, ...).
+- Enum values are the API's lowercase `snake_case` spellings (`manager_review`, `closed_won`). Don't reintroduce uppercase variants.
+- List endpoints cap `page_size` at 100; when a view needs every row, walk the pages (see `hooks/useActionList.ts`).
+- Errors from user actions surface through `showErrorToast()` (`lib/toast.ts`); field-level validation stays inline under its field.
 
-## tRPC / backend
+## Auth / session
 
-- Routers are organized **by verb, then by domain**: `trpc/routers/{list,create,read,update,delete}.ts` each aggregate domain sub-routers, e.g. `trpc/routers/b2b/list.b2b.ts` exports a `listB2B` object with one key per entity (`companies`, `pipelines`, `actions`). Add new domain logic as a new file under the matching verb folder, then wire it into the verb's top-level router (`list.ts`, `update.ts`, etc.) — don't create a domain-first router structure.
-- Procedure tiers live in `trpc/init.ts`: `baseProcedure` (no auth) → `loggedInProcedure` (any authenticated user) → `administratorProcedure` / `superAdminProcedure` (role-gated) → `roleBasedProcedure([...])` (custom role list). Pick the loosest tier that's actually correct; almost all B2B/pipeline data is `administratorProcedure`.
-- Reuse the existing input validators from `trpc/utils/validation.ts` (`stringNotBlank`, `numberIsID`, `numberIsPosInt`, `stringIsUUID`, `objectHasOnlyID`, etc.) instead of writing raw `z.string()`/`z.number()` inline — they encode this project's actual constraints (e.g. `numberIsID` is `z.int().min(1)`).
-- Use `calculatePage()` from `trpc/utils/paging.ts` for any paginated list endpoint — it returns both the Prisma `skip`/`take` and the `metapaging` object the frontend expects (`total_data`, `total_page`, `current_page`, `page_size`).
-- Use `checkUpdateResult` / `checkDeleteResult` / `readFailedNotFound` from `trpc/utils/errors.ts` after mutations instead of hand-rolling not-found/multi-row checks.
-- Status codes are the **string enum** in `lib/status_code.ts` (`STATUS_OK`, `STATUS_NOT_FOUND`, ...), not raw HTTP integers — these map directly to `TRPCError` codes, so always import from there.
-- The tRPC HTTP route (`app/(api)/api/trpc/[trpc]/route.ts`) does its own CORS/origin gate before calling `fetchRequestHandler`. Its `isOriginAllowed()` returns `null` (no `Origin` header — same-origin request) vs `false` (`Origin` header present but not allowlisted). Only `=== false` should ever 404. Getting this wrong silently breaks the API for every same-origin caller (this shipped broken once already).
-
-## Auth / session flow (the part that's easy to get wrong)
-
-- Login happens on `os.*` (`/auth/login`, outside the `(protected)` route group so it renders without a session); the session token is set as an **httpOnly cookie** (`SESSION_COOKIE_NAME` from `lib/constants.ts`) on the root domain, shared across `os.*` / `api.*` / `biz.*`. `biz.*` only links across to it.
-- The OS app's tRPC client talks to a **different subdomain** (`api.*`), which is a real cross-origin request from the browser's point of view. httpOnly cookies are not readable by client JS, and aren't auto-sent cross-origin without extra config — so the session has to be bridged manually:
-  1. The page's `page.tsx` (server component) reads the cookie via `cookies()` and passes `sessionToken` as a prop to its client component.
-  2. That client component calls `setSessionToken(token)` (from `@/trpc/client`) inside a `useEffect`, **declared before any `useQuery` call in the same component** — effects run in source order within a component, and the query's own internal fetch-effect must not fire before the token is set.
-  3. Queries that depend on auth use `{ enabled: !!sessionToken }`.
-  4. `trpc/init.ts`'s context also falls back to reading the cookie directly server-side (for same-origin/RSC callers) if there's no `Authorization` header.
-- Don't assume a component higher in the tree calling `setSessionToken` is enough for a child's query — put the effect in the same component that owns the query.
+- Login happens on `os.*` (`/auth/login`, outside the `(protected)` route group so it renders without a session); the session token is set as an **httpOnly cookie** (`SESSION_COOKIE_NAME` from `lib/constants.ts`) on the root domain, shared across `os.*` / `biz.*`. `biz.*` only links across to it.
+- The browser never holds the token. Server actions read the cookie themselves (`getSessionToken()` in `apis/session.ts`) and send it to the Java API as a bearer token, so no client-side token bridging is needed. The protected layout resolves the user once (`getSession()`) and exposes it through `useSession()` from `contexts/SessionContext.tsx`.
+- Queries that depend on auth still use `enabled: !!sessionToken`, with `sessionToken` passed down from the server `page.tsx`.
 
 ## Frontend / components
 
@@ -50,7 +39,7 @@ These are project-specific conventions. Follow them exactly — don't fall back 
 
 ## Helpers / lib
 
-- `lib/constants.ts` — shared string constants (cookie names, etc.) that must match between two otherwise-unrelated files (e.g. the route that sets the cookie and the trpc context that reads it). If you're about to write the same string literal in two files, put it here instead.
-- `lib/status_code.ts` — HTTP/tRPC status constants, see above.
+- `lib/constants.ts` — shared string constants (cookie names, etc.) that must match between two otherwise-unrelated files (e.g. the route that sets the cookie and the code that reads it). If you're about to write the same string literal in two files, put it here instead.
+- `lib/status_code.ts` — the API status names (`STATUS_OK`, `STATUS_NOT_FOUND`, ...) and `isSuccessStatus()`; compare against these, not raw HTTP integers.
 - `lib/currency.ts` — `getRupiahCurrency` / `getShortRupiahCurrency`, use these for any IDR value instead of formatting manually.
 - `lib/valid-redirect.ts` — allowlist check for post-login redirect URLs; extend the allowlist here if a new subdomain needs to be a valid redirect target, don't loosen the check inline at the call site.
