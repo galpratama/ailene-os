@@ -1,16 +1,19 @@
 "use client";
 
-import LostReasonChartOS from "@/components/charts/LostReasonChartOS";
 import PipelineFunnelChartOS from "@/components/charts/PipelineFunnelChartOS";
 import StageDistributionChartOS from "@/components/charts/StageDistributionChartOS";
 import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
 import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
-import { getActionSummary, getQuotationSummary } from "@/lib/actions";
+import { useSession } from "@/contexts/SessionContext";
+import {
+  getActionSummary,
+  getPipelineAnalytics,
+  getPipelineHomeSummary,
+  getQuotationSummary,
+} from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
-import { setSessionToken, trpc } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
 
 function getJakartaHour() {
   const hour = new Intl.DateTimeFormat("en-US", {
@@ -31,19 +34,15 @@ function greeting() {
 }
 
 export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
+  const sessionUser = useSession();
 
-  const {
-    data,
-    isError,
-    isLoading: isSummaryLoading,
-  } = trpc.list.b2b.homeSummary.useQuery(undefined, {
+  const leadSummary = useQuery({
+    queryKey: ["sales", "home-summary"],
+    queryFn: async () => requireApiData(await getPipelineHomeSummary()),
     enabled: !!sessionToken,
   });
+  const leads = leadSummary.data;
 
-  // Tasks and quotations come from the Java API; leads still come from tRPC.
   const actionSummary = useQuery({
     queryKey: ["actions", "summary"],
     queryFn: async () => requireApiData(await getActionSummary()),
@@ -58,12 +57,13 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   });
   const quotations = quotationSummary.data;
 
-  const { data: analytics, isLoading: isAnalyticsLoading } =
-    trpc.list.b2b.dashboardAnalytics.useQuery(undefined, {
-      enabled: !!sessionToken,
-    });
+  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ["sales", "analytics"],
+    queryFn: async () => requireApiData(await getPipelineAnalytics()),
+    enabled: !!sessionToken,
+  });
 
-  const firstName = data?.user.full_name.trim().split(/\s+/)[0] ?? "";
+  const firstName = sessionUser?.full_name.trim().split(/\s+/)[0] ?? "";
 
   return (
     <div className="flex min-h-full flex-col">
@@ -91,7 +91,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
-        {(isError || actionSummary.isError || quotationSummary.isError) && (
+        {(leadSummary.isError || actionSummary.isError || quotationSummary.isError) && (
           <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
             Dashboard data could not be loaded. Please refresh the page.
           </div>
@@ -103,20 +103,18 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
               approvals: tasks?.approvals.total ?? 0,
               overdue_tasks: tasks?.overdue_tasks.total ?? 0,
               due_today_tasks: tasks?.due_today_tasks.total ?? 0,
-              stale_leads: data?.attention.totals.stale_leads ?? 0,
-              ownership_conflicts: data?.attention.totals.ownership_conflicts ?? 0,
+              stale_leads: leads?.stale_leads.total ?? 0,
               quotations_pending: quotations?.total ?? 0,
             },
             approvals: tasks?.approvals.list ?? [],
             overdue_tasks: tasks?.overdue_tasks.list ?? [],
             due_today_tasks: tasks?.due_today_tasks.list ?? [],
-            stale_leads: data?.attention.stale_leads ?? [],
-            ownership_conflicts: data?.attention.ownership_conflicts ?? [],
+            stale_leads: leads?.stale_leads.list ?? [],
             quotations_pending: quotations?.list ?? [],
           }}
-          staleLeadDays={data?.meta.stale_lead_days ?? 0}
+          staleLeadDays={leads?.stale_lead_days ?? 0}
           isLoading={
-            isSummaryLoading || actionSummary.isLoading || quotationSummary.isLoading
+            leadSummary.isLoading || actionSummary.isLoading || quotationSummary.isLoading
           }
         />
 
@@ -138,22 +136,18 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           />
         </div>
 
-        {/* Funnel + lost reason */}
+        {/* Funnel + stage flow */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <PipelineFunnelChartOS
             data={analytics?.funnel ?? []}
             isLoading={isAnalyticsLoading}
           />
-          <LostReasonChartOS
-            data={analytics?.reason_distribution ?? []}
+          <StageFlowSankeyChartOS
+            data={analytics?.sankey ?? { nodes: [], links: [] }}
+            windowDays={analytics?.meta.sankey_window_days ?? 90}
             isLoading={isAnalyticsLoading}
           />
         </div>
-        <StageFlowSankeyChartOS
-          data={analytics?.sankey ?? { nodes: [], links: [] }}
-          windowDays={analytics?.meta.sankey_window_days ?? 90}
-          isLoading={isAnalyticsLoading}
-        />
       </div>
     </div>
   );

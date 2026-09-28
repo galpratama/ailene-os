@@ -94,6 +94,8 @@ import {
   deleteCompany as deleteCompanyApi,
   deletePipeline as deletePipelineApi,
   getCompanyDetails as getCompanyDetailsApi,
+  getPipelineAnalytics as getPipelineAnalyticsApi,
+  getPipelineHomeSummary as getPipelineHomeSummaryApi,
   getPipelineDetails as getPipelineDetailsApi,
   listCompanies as listCompaniesApi,
   listPipelines as listPipelinesApi,
@@ -206,6 +208,14 @@ export async function listPipelines(options: ListPipelinesOptions) {
 
 export async function listPipelineWeeks(options: PipelineWeekOptions) {
   return listPipelineWeeksApi(options);
+}
+
+export async function getPipelineHomeSummary() {
+  return getPipelineHomeSummaryApi();
+}
+
+export async function getPipelineAnalytics() {
+  return getPipelineAnalyticsApi();
 }
 
 export async function getPipelineDetails(id: number) {

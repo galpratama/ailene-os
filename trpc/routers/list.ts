@@ -7,10 +7,7 @@ export const listRouter = createTRPCRouter({
   // B2B Sales Pipeline //
 
   b2b: {
-    meetings: listB2B.meetings,
     calendar: listB2B.calendar,
-    homeSummary: listB2B.homeSummary,
-    dashboardAnalytics: listB2B.dashboardAnalytics,
   },
 
   // Trainer Pool //

@@ -268,6 +268,57 @@ export async function listPipelineWeeks(
   });
 }
 
+export type PipelineHomeSummary = {
+  stale_lead_days: number;
+  stale_leads: {
+    total: number;
+    list: {
+      id: number;
+      company_name: string;
+      stage: PipelineStage;
+      last_activity_at: string;
+      inactive_days: number;
+    }[];
+  };
+};
+
+type StageCount = { stage: PipelineStage; label: string; count: number; percentage: number };
+
+export type PipelineAnalytics = {
+  stage_distribution: StageCount[];
+  funnel: StageCount[];
+  weekly_conversion: {
+    stage: PipelineStage;
+    label: string;
+    this_week: number;
+    trailing_avg: number;
+    delta_pct: number | null;
+  }[];
+  win_rate_this_week: number | null;
+  sankey: {
+    nodes: { name: string }[];
+    links: { source: number; target: number; value: number }[];
+  };
+  meta: {
+    generated_at: string;
+    week_window_days: number;
+    week_start: string;
+    week_end: string;
+    trailing_weeks: number;
+    trailing_start: string;
+    trailing_end: string;
+    sankey_window_days: number;
+  };
+};
+
+export async function getPipelineHomeSummary(): Promise<ApiEnvelope<PipelineHomeSummary>> {
+  return callApi("/api/v1/pipelines/home-summary", { token: await token() });
+}
+
+export async function getPipelineAnalytics(): Promise<ApiEnvelope<PipelineAnalytics>> {
+  return callApi("/api/v1/pipelines/analytics", { token: await token() });
+}
+
 export async function getPipelineDetails(
   id: number
 ): Promise<

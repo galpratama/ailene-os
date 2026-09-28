@@ -11,7 +11,6 @@ export const deleteRouter = createTRPCRouter({
     meeting: deleteB2B.meeting,
   },
   trainerPool: {
-    trainer: deleteTrainerPool.trainer,
     specialization: deleteTrainerPool.specialization,
   },
 });
