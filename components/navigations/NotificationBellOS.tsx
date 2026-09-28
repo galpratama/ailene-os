@@ -1,14 +1,24 @@
 "use client";
 
-import { setSessionToken, trpc } from "@/trpc/client";
+import type { NotificationEntityType } from "@/apis/notifications";
+import {
+  getUnreadNotificationCount,
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/actions";
+import { requireApiData } from "@/lib/api-result";
+import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-const ENTITY_HREF: Record<string, string> = {
-  B2B_PIPELINE: "/os/leads",
-  B2B_ACTION: "/os/tasks",
-  B2B_MEETING: "/os/calendar",
+// Relative to the os.* host, which the rewrite already maps into the /os route group.
+const ENTITY_HREF: Record<NotificationEntityType, string> = {
+  b2b_pipeline: "/leads",
+  b2b_action: "/tasks",
+  b2b_meeting: "/calendar",
 };
 
 export default function NotificationBellOS({
@@ -16,32 +26,35 @@ export default function NotificationBellOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  const { data: countData } = trpc.list.notification.unreadCount.useQuery(
-    undefined,
-    { enabled: !!sessionToken, refetchInterval: 30000 }
-  );
-  const { data: listData } = trpc.list.notification.mine.useQuery(
-    { page: 1, page_size: 10 },
-    { enabled: !!sessionToken && isOpen }
-  );
+  const { data: countData } = useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: async () => requireApiData(await getUnreadNotificationCount()),
+    enabled: !!sessionToken,
+    refetchInterval: 30000,
+  });
+  const { data: listData } = useQuery({
+    queryKey: ["notifications", "list"],
+    queryFn: async () =>
+      requireApiData(await listNotifications({ page: 1, page_size: 10 })),
+    enabled: !!sessionToken && isOpen,
+  });
 
   function invalidate() {
-    utils.list.notification.unreadCount.invalidate();
-    utils.list.notification.mine.invalidate();
+    return queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
-  const markRead = trpc.update.notification.markRead.useMutation({
+  const markRead = useMutation({
+    mutationFn: async (id: number) => requireApiData(await markNotificationRead(id)),
     onSuccess: invalidate,
+    onError: (error) => showErrorToast(error),
   });
-  const markAllRead = trpc.update.notification.markAllRead.useMutation({
+  const markAllRead = useMutation({
+    mutationFn: async () => requireApiData(await markAllNotificationsRead()),
     onSuccess: invalidate,
+    onError: (error) => showErrorToast(error),
   });
 
   useEffect(() => {
@@ -102,9 +115,9 @@ export default function NotificationBellOS({
             {notifications.map((n) => (
               <Link
                 key={n.id}
-                href={ENTITY_HREF[n.entity_type] ?? "/os"}
+                href={ENTITY_HREF[n.entity_type] ?? "/"}
                 onClick={() => {
-                  if (!n.read_at) markRead.mutate({ id: n.id });
+                  if (!n.read_at) markRead.mutate(n.id);
                   setIsOpen(false);
                 }}
                 className={`flex flex-col gap-0.5 border-b border-gray-100 px-3 py-2.5 text-xs last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-700/50 ${

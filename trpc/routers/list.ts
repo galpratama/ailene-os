@@ -2,7 +2,6 @@ import { createTRPCRouter } from "@/trpc/init";
 import { listAnalytics } from "./analytics/list.analytics";
 import { listB2B } from "./b2b/list.b2b";
 import { listLms } from "./lms/list.lms";
-import { listNotification } from "./notification/list.notification";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
 
 export const listRouter = createTRPCRouter({
@@ -35,12 +34,5 @@ export const listRouter = createTRPCRouter({
     ga4Dashboard: listAnalytics.ga4Dashboard,
     bizDashboard: listAnalytics.bizDashboard,
     metaAdsDashboard: listAnalytics.metaAdsDashboard,
-  },
-
-  // Notifications //
-
-  notification: {
-    mine: listNotification.mine,
-    unreadCount: listNotification.unreadCount,
   },
 });

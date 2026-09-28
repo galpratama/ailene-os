@@ -50,6 +50,13 @@ import {
   type QuotationOutcomeStatus,
   type UpdateQuotationPayload,
 } from "@/apis/quotations";
+import {
+  getUnreadNotificationCount as getUnreadNotificationCountApi,
+  listNotifications as listNotificationsApi,
+  markAllNotificationsRead as markAllNotificationsReadApi,
+  markNotificationRead as markNotificationReadApi,
+  type ListNotificationsOptions,
+} from "@/apis/notifications";
 import { logoutUser as logoutUserApi } from "@/apis/session";
 import { createTeam as createTeamApi, listTeams as listTeamsApi } from "@/apis/teams";
 import {
@@ -221,6 +228,22 @@ export async function createAction(payload: CreateActionPayload) {
 
 export async function updateAction(payload: UpdateActionPayload) {
   return updateActionApi(payload);
+}
+
+export async function listNotifications(options: ListNotificationsOptions = {}) {
+  return listNotificationsApi(options);
+}
+
+export async function getUnreadNotificationCount() {
+  return getUnreadNotificationCountApi();
+}
+
+export async function markNotificationRead(id: number) {
+  return markNotificationReadApi(id);
+}
+
+export async function markAllNotificationsRead() {
+  return markAllNotificationsReadApi();
 }
 
 export async function listQuotations(options: ListQuotationsOptions = {}) {
