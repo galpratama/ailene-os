@@ -5,19 +5,20 @@ const trainers = [
   {
     role: "Lead Trainer",
     name: "Galih Pratama",
-    image: "https://si.widyatama.ac.id/wp-content/uploads/2020/10/galih.jpg",
+    image:
+      "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/ChatGPTImageSep28202606_18_51AM.webp",
     bio: "10+ tahun product engineering. Membantu developer dan tim adopsi AI membangun workflow yang benar-benar dipakai.",
     tags: ["AI Workflow", "Prompting", "Vibe Coding", "Agents"],
-    position: "object-[center_28%]",
+    background: "bg-biz-lime",
   },
   {
     role: "Strategy & Leadership",
     name: "Raymond Chin",
     image:
-      "https://assets.promediateknologi.id/crop/0x0:0x0/0x0/webp/photo/p2/108/2023/10/10/Raymond-Chin-3416706656.jpg",
+      "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/raymondfoto.webp",
     bio: "Founder Sevenpreneur. Membawakan AI strategy, business urgency, market framing, dan executive alignment.",
     tags: ["AI Strategy", "Leadership", "Executive Briefing"],
-    position: "object-center",
+    background: "bg-biz-forest",
   },
 ];
 
@@ -30,20 +31,21 @@ export default function TrainersHomeBIZ() {
           title="Experienced people behind the practice."
           centered
         />
-        <div className="grid gap-4.5 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-240 gap-4.5 sm:grid-cols-2">
           {trainers.map((trainer) => (
             <figure
               key={trainer.name}
               tabIndex={0}
-              className="group relative h-90 overflow-hidden rounded-2xl bg-biz-forest outline-none focus-visible:ring-3 focus-visible:ring-biz-lime sm:h-95"
+              className={`group relative aspect-4/5 overflow-hidden rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-biz-lime ${trainer.background}`}
             >
+              {/* Transparent 4:5 cutouts, so the card's color is the photo backdrop. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={trainer.image}
                 alt={`${trainer.name}, ${trainer.role} Ailene`}
                 loading="lazy"
                 decoding="async"
-                className={`h-full w-full object-cover saturate-80 transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:saturate-60 group-hover:brightness-70 group-focus-visible:saturate-60 group-focus-visible:brightness-70 ${trainer.position}`}
+                className="h-full w-full object-cover object-bottom transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:brightness-70 group-focus-visible:brightness-70"
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(1,30,22,0.12)_50%,rgba(1,30,22,0.94)_100%)]" />
               <figcaption className="absolute inset-x-0 bottom-0 z-10 translate-y-0 p-5 text-white transition-transform duration-300 sm:p-7 lg:translate-y-[calc(100%-106px)] lg:group-hover:translate-y-0 lg:group-focus-visible:translate-y-0">
