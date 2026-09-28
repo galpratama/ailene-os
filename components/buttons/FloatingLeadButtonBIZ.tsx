@@ -4,41 +4,25 @@ import AppButton from "@/components/buttons/AppButton";
 import { ArrowDownRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Kept out of the initial viewport: it becomes available after someone has
-// reached the curriculum, then steps aside while the destination form is seen.
+// Visible from the first screen; steps aside while the destination form is seen.
 export default function FloatingLeadButtonBIZ() {
-  const [hasReachedCurriculum, setHasReachedCurriculum] = useState(false);
   const [isContactVisible, setIsContactVisible] = useState(false);
 
   useEffect(() => {
-    const curriculum = document.getElementById("curriculum");
     const contact = document.getElementById("contact");
-    if (!curriculum || !contact) return;
+    if (!contact) return;
 
-    const curriculumObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHasReachedCurriculum(true);
-          curriculumObserver.disconnect();
-        }
-      },
-      { threshold: 0.2 },
-    );
     const contactObserver = new IntersectionObserver(
       ([entry]) => setIsContactVisible(entry.isIntersecting),
       { threshold: 0.15 },
     );
 
-    curriculumObserver.observe(curriculum);
     contactObserver.observe(contact);
 
-    return () => {
-      curriculumObserver.disconnect();
-      contactObserver.disconnect();
-    };
+    return () => contactObserver.disconnect();
   }, []);
 
-  if (!hasReachedCurriculum || isContactVisible) return null;
+  if (isContactVisible) return null;
 
   return (
     <div className="pointer-events-none fixed right-4 bottom-4 z-40 sm:right-6 sm:bottom-6">
