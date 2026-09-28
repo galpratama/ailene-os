@@ -8,7 +8,7 @@ import { useState } from "react";
 // Visuals are hotlinked from multiverse.io (the reference for this section) as placeholders; replace with Ailene's own before launch.
 const steps = [
   {
-    title: "Petakan skill gap tim",
+    title: "Identifikasi Kebutuhan Tim",
     description:
       "Kami asesmen tujuan bisnis dan kesiapan AI tiap divisi sebelum program dimulai.",
     image:

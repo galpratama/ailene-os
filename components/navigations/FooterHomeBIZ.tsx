@@ -24,7 +24,7 @@ const columns = [
   {
     title: "Start a conversation",
     links: [
-      ["Book Meeting", "#contact"],
+      ["Konsultasi Gratis", "#contact"],
       ["Custom AI Adoption Program", "#programs"],
     ],
   },
@@ -46,7 +46,7 @@ export default function FooterHomeBIZ() {
               onClick={() => trackCTAClick({ placement: "footer" })}
               className="text-sm font-medium text-biz-lime hover:text-white"
             >
-              Book Meeting
+              Konsultasi Gratis
             </a>
           </p>
         </div>

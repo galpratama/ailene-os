@@ -153,3 +153,49 @@ export const faqs = [
       "Bisa. Contoh kerja, tools, cohort, dan kedalaman teknis dapat dibuat khusus untuk engineering team atau fungsi tertentu.",
   },
 ];
+
+// Hero copy per decision-maker, picked by ?audience=<key> on ad/outreach links; unknown keys fall back to default.
+export const heroVariants = {
+  default: {
+    headline: "Toolsnya Sama, Hasilnya Jauh Beda",
+    subheadline:
+      "Kompetitormu juga punya ChatGPT. Bedanya, tim yang kami latih benar-benar menguasainya, dan itu kelihatan di hasil kerja.",
+  },
+  ceo: {
+    headline: "Kompetitormu Sudah Pakai AI. Timmu?",
+    subheadline:
+      "Kami bangun kapabilitas AI timmu sampai dampaknya terlihat di angka bisnis, bukan cuma di sertifikat pelatihan.",
+  },
+  hr: {
+    headline: "Training AI yang Benar-Benar Dipakai Tim",
+    subheadline:
+      "Program per divisi, progres tiap peserta terpantau di LMS, dan hasilnya siap kamu laporkan ke leadership.",
+  },
+  operations: {
+    headline: "Kerja Lebih Cepat Tanpa Tambah Orang",
+    subheadline:
+      "Kami latih tim operasional memakai AI untuk memangkas pekerjaan berulang, dengan use case dari proses kerjamu sendiri.",
+  },
+  sales: {
+    headline: "Riset Prospek Lebih Cepat, Follow-up Lebih Tajam",
+    subheadline:
+      "Kami dampingi tim sales memakai AI di setiap tahap pipeline, dari riset akun sampai proposal.",
+  },
+  marketing: {
+    headline: "Konten Lebih Banyak, Suara Brand Tetap Terjaga",
+    subheadline:
+      "Kami dampingi tim marketing memakai AI untuk riset, ide kampanye, dan produksi konten yang tetap on-brand.",
+  },
+  it: {
+    headline: "Adopsi AI yang Aman dan Terarah",
+    subheadline:
+      "Kami bantu tim IT dan engineering memakai AI assistant dan agent dengan workflow dan guardrail yang siap untuk perusahaan.",
+  },
+} as const;
+
+export type HeroAudience = keyof typeof heroVariants;
+
+export function resolveHeroAudience(value: string | string[] | undefined): HeroAudience {
+  const key = (Array.isArray(value) ? value[0] : value)?.trim().toLowerCase();
+  return key && Object.hasOwn(heroVariants, key) ? (key as HeroAudience) : "default";
+}

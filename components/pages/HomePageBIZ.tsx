@@ -15,17 +15,20 @@ import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
 import ScrollLeadModalBIZ from "../modals/ScrollLeadModalBIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
 import type { IndustryEntry } from "@/apis/lookup";
+import type { HeroAudience } from "@/lib/biz-content";
 
 export default function HomePageBIZ({
   industries,
+  audience,
 }: {
   industries: IndustryEntry[];
+  audience: HeroAudience;
 }) {
   return (
     <div id="top" className="bg-biz-paper text-biz-ink [&_[id]]:scroll-mt-17.5">
       <HeaderHomeBIZ />
       <main>
-        <HeroHomeBIZ />
+        <HeroHomeBIZ audience={audience} />
         <RevealOnScroll viewBlock="companies">
           <CompaniesHomeBIZ />
         </RevealOnScroll>

@@ -1,12 +1,15 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { heroVariants, type HeroAudience } from "@/lib/biz-content";
 import { trackFeatureView } from "@/lib/feature-tracking";
 import { useEffect } from "react";
 import PageMargin from "@/components/layouts/PageMargin";
 import RibbonBackgroundBIZ from "@/components/motion/RibbonBackgroundBIZ";
 
-export default function HeroHomeBIZ() {
+export default function HeroHomeBIZ({ audience }: { audience: HeroAudience }) {
+  const { headline, subheadline } = heroVariants[audience];
+
   useEffect(() => {
     trackFeatureView({ name: "home_section", block: "hero" });
   }, []);
@@ -19,11 +22,10 @@ export default function HeroHomeBIZ() {
           <div className="relative z-10 flex w-full flex-col items-center justify-center px-5 py-12 text-center sm:px-10 sm:py-16 lg:px-12">
             <div className="flex flex-col items-center">
               <h1 className="max-w-200 text-[clamp(2.75rem,5vw,4.2rem)] text-balance leading-[0.98] font-medium tracking-[-0.055em]">
-                Bangun kapabilitas AI. Tingkatkan produktivitas tim.
+                {headline}
               </h1>
               <p className="mt-4 max-w-125 text-[15px] leading-[1.65] lg:text-base text-white">
-                Bangun transformasi AI yang benar untuk tim kamu dan tingkatkan
-                cara kerja produktivitas bisnis.
+                {subheadline}
               </p>
               <div className="mt-7.5 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center">
                 <AppButton
@@ -32,7 +34,7 @@ export default function HeroHomeBIZ() {
                   size="lg"
                   trackPlacement="hero"
                 >
-                  Book Meeting
+                  Konsultasi Gratis
                 </AppButton>
                 <AppButton
                   href="#curriculum"

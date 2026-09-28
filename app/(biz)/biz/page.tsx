@@ -1,6 +1,7 @@
 import { listIndustries } from "@/apis/lookup";
 import HomePageBIZ from "@/components/pages/HomePageBIZ";
 import JsonLd from "@/components/seo/JsonLd";
+import { resolveHeroAudience } from "@/lib/biz-content";
 import { homePageGraph } from "@/lib/structured-data";
 import type { Metadata } from "next";
 
@@ -37,13 +38,18 @@ async function loadIndustries() {
   }
 }
 
-export default async function HomePage() {
-  const industries = await loadIndustries();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ audience?: string | string[] }>;
+}) {
+  // Resolved on the server so the audience headline is in the first HTML, not swapped in after load.
+  const [industries, { audience }] = await Promise.all([loadIndustries(), searchParams]);
 
   return (
     <>
       <JsonLd graph={homePageGraph()} />
-      <HomePageBIZ industries={industries} />
+      <HomePageBIZ industries={industries} audience={resolveHeroAudience(audience)} />
     </>
   );
 }

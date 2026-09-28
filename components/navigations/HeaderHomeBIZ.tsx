@@ -67,7 +67,7 @@ export default function HeaderHomeBIZ() {
             size="cta"
             trackPlacement="header"
           >
-            Book Meeting
+            Konsultasi Gratis
           </AppButton>
         </div>
 
@@ -108,7 +108,7 @@ export default function HeaderHomeBIZ() {
             onClick={closeMenu}
             className="mt-1 w-full"
           >
-            Book Meeting
+            Konsultasi Gratis
           </AppButton>
         </nav>
       )}
