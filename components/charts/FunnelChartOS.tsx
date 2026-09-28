@@ -52,7 +52,7 @@ export default function FunnelChartOS({
     entryUsers > 0 && stage ? stage.users / entryUsers : 0;
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
       <div>
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">{title}</h3>
         {description && (

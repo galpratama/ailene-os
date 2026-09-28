@@ -345,7 +345,7 @@ export default function AnalyticsMetaAdsPanelOS({
           {Array.from({ length: 10 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg"
+              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700"
             />
           ))}
         </div>
@@ -383,7 +383,7 @@ export default function AnalyticsMetaAdsPanelOS({
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-300 bg-card-bg p-5"
+                className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
@@ -414,7 +414,7 @@ export default function AnalyticsMetaAdsPanelOS({
               {spotlights.map((spotlight) => (
                 <div
                   key={spotlight.key}
-                  className="flex items-center gap-3.5 rounded-xl border border-gray-300 bg-card-bg p-4"
+                  className="flex items-center gap-3.5 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4"
                 >
                   <CreativeThumbnail
                     url={spotlight.creative.thumbnail_url}
@@ -460,7 +460,7 @@ export default function AnalyticsMetaAdsPanelOS({
             />
           </div>
 
-          <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+          <section className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">
               What counts as a result
             </h3>
@@ -490,7 +490,7 @@ export default function AnalyticsMetaAdsPanelOS({
             </ul>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <div className="flex items-center gap-2">
                 <ImageIcon size={16} className="text-claude" />
@@ -599,7 +599,7 @@ export default function AnalyticsMetaAdsPanelOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <Layers size={16} className="text-claude" />
               <div>
@@ -672,7 +672,7 @@ export default function AnalyticsMetaAdsPanelOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <Gauge size={16} className="text-claude" />
               <div>

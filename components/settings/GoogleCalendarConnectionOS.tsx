@@ -56,7 +56,7 @@ export default function GoogleCalendarConnectionOS({
   const isConnected = connection?.connected ?? false;
 
   return (
-    <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg p-5">
+    <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
       <h3 className="font-bold text-gray-900 dark:text-zinc-100">
         Google Calendar
       </h3>

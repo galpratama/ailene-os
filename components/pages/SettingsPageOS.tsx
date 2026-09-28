@@ -88,7 +88,7 @@ export default function SettingsPageOS({
       </div>
       <GoogleCalendarConnectionOS sessionToken={sessionToken} />
 
-      <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg p-5">
+      <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">
           Trainer specializations
         </h3>
@@ -159,7 +159,7 @@ export default function SettingsPageOS({
         </div>
       </section>
 
-      <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg p-5">
+      <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">Teams</h3>
         <p className="mt-1 text-sm text-gray-500">
           Team membership is used to scope data access and ownership reassignment.

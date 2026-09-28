@@ -215,7 +215,7 @@ export default function AnalyticsGA4PanelOS({
           {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg"
+              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700"
             />
           ))}
         </div>
@@ -238,7 +238,7 @@ export default function AnalyticsGA4PanelOS({
             {cards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-300 bg-card-bg p-5"
+                className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
@@ -307,7 +307,7 @@ export default function AnalyticsGA4PanelOS({
             />
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <LayoutList size={16} className="text-claude" />
               <div>
@@ -378,7 +378,7 @@ export default function AnalyticsGA4PanelOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <MousePointerClick size={16} className="text-claude" />
               <div>

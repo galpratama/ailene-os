@@ -206,7 +206,7 @@ export default function TrackingPageOS({
         </div>
       </div>
 
-      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
+      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
         <AppSelect
           selectId="tracking-website"
           label="Website"
@@ -252,7 +252,7 @@ export default function TrackingPageOS({
           {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg"
+              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700"
             />
           ))}
         </div>
@@ -275,7 +275,7 @@ export default function TrackingPageOS({
             {cards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-300 bg-card-bg p-5"
+                className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
@@ -305,7 +305,7 @@ export default function TrackingPageOS({
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
             <AnalyticsTrendChartOS data={data.daily} />
 
-            <section className="rounded-xl border border-gray-300 bg-card-bg p-5">
+            <section className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-zinc-100">
                   Conversion funnel
@@ -354,7 +354,7 @@ export default function TrackingPageOS({
             </section>
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <h3 className="font-bold text-gray-900 dark:text-zinc-100">
                 Website performance
@@ -409,7 +409,7 @@ export default function TrackingPageOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg">
+          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
             <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
               <MousePointerClick size={16} className="text-claude" />
               <div>

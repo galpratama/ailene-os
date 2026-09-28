@@ -92,7 +92,7 @@ export default function AnalyticsPageOS({
         ))}
       </div>
 
-      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[200px_170px_170px]">
+      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4 md:grid-cols-2 xl:grid-cols-[200px_170px_170px]">
         <AppSelect
           selectId="analytics-period"
           label="Reporting period"
