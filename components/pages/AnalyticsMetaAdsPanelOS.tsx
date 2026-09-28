@@ -15,9 +15,10 @@ import {
   shortDateLabel,
 } from "@/lib/analytics-format";
 import { getAccountCurrency, getShortAccountCurrency } from "@/lib/currency";
-import { setSessionToken, trpc } from "@/trpc/client";
-import type { AppRouter } from "@/trpc/routers/_app";
-import type { inferRouterOutputs } from "@trpc/server";
+import {
+  useMetaAdsDashboard,
+  type MetaAdsDashboard,
+} from "@/hooks/useAnalyticsDashboard";
 import {
   ArrowDownWideNarrow,
   ArrowUpWideNarrow,
@@ -36,12 +37,10 @@ import {
   Wallet,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-type MetaDashboard =
-  inferRouterOutputs<AppRouter>["list"]["analytics"]["metaAdsDashboard"];
 // The procedure returns a short "not connected" shape or the full dashboard.
-type ConnectedDashboard = Extract<MetaDashboard, { configured: true }>;
+type ConnectedDashboard = Extract<MetaAdsDashboard, { configured: true }>;
 type CreativeRow = ConnectedDashboard["creatives"][number];
 
 type SortKey =
@@ -68,17 +67,9 @@ export default function AnalyticsMetaAdsPanelOS({
   startDate: string;
   endDate: string;
 }) {
-  // Must stay above the query: the token has to be set before its fetch effect runs.
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const query = trpc.list.analytics.metaAdsDashboard.useQuery(
+  const query = useMetaAdsDashboard(
     { start_date: startDate, end_date: endDate },
-    {
-      enabled: !!sessionToken && !!startDate && !!endDate,
-      staleTime: 5 * 60 * 1000,
-    }
+    !!sessionToken && !!startDate && !!endDate
   );
 
   const [sortKey, setSortKey] = useState<SortKey>("results");
@@ -366,7 +357,7 @@ export default function AnalyticsMetaAdsPanelOS({
             Meta Ads data could not be loaded
           </h3>
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {query.error.message}
+            {query.error?.message}
           </p>
         </div>
       )}
@@ -377,7 +368,8 @@ export default function AnalyticsMetaAdsPanelOS({
           <p className="mt-1">
             Add <code>META_ADS_ACCOUNT_ID</code> (the account number, with or
             without the <code>act_</code> prefix) and{" "}
-            <code>META_ADS_ACCESS_TOKEN</code> to the environment, then reload.
+            <code>META_ADS_ACCESS_TOKEN</code> to the ailene-os-api environment,
+            redeploy it, then reload.
             The token needs the <code>ads_read</code> permission on that account
             — a system user token from Meta Business Settings is the one that
             does not expire.

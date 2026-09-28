@@ -23,6 +23,20 @@ import {
   type CreateArticlePayload,
   type UpdateArticlePayload,
 } from "@/apis/articles";
+import {
+  getMarketingChannels as getMarketingChannelsApi,
+  getMarketingEngagement as getMarketingEngagementApi,
+  getMarketingOverview as getMarketingOverviewApi,
+  getMetaAdsAudience as getMetaAdsAudienceApi,
+  getMetaAdsCampaigns as getMetaAdsCampaignsApi,
+  getMetaAdsCreatives as getMetaAdsCreativesApi,
+  getMetaAdsOverview as getMetaAdsOverviewApi,
+  getTrackingFunnel as getTrackingFunnelApi,
+  getTrackingOverview as getTrackingOverviewApi,
+  getTrackingSources as getTrackingSourcesApi,
+  type AnalyticsPeriodPayload,
+  type TrackingPeriodPayload,
+} from "@/apis/analytics";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
   createLmsGroup as createLmsGroupApi,
@@ -228,6 +242,46 @@ export async function createAction(payload: CreateActionPayload) {
 
 export async function updateAction(payload: UpdateActionPayload) {
   return updateActionApi(payload);
+}
+
+export async function getTrackingOverview(payload: TrackingPeriodPayload) {
+  return getTrackingOverviewApi(payload);
+}
+
+export async function getTrackingFunnel(payload: TrackingPeriodPayload) {
+  return getTrackingFunnelApi(payload);
+}
+
+export async function getTrackingSources(payload: TrackingPeriodPayload) {
+  return getTrackingSourcesApi(payload);
+}
+
+export async function getMarketingOverview(payload: AnalyticsPeriodPayload) {
+  return getMarketingOverviewApi(payload);
+}
+
+export async function getMarketingEngagement(payload: AnalyticsPeriodPayload) {
+  return getMarketingEngagementApi(payload);
+}
+
+export async function getMarketingChannels(payload: AnalyticsPeriodPayload) {
+  return getMarketingChannelsApi(payload);
+}
+
+export async function getMetaAdsOverview(payload: AnalyticsPeriodPayload) {
+  return getMetaAdsOverviewApi(payload);
+}
+
+export async function getMetaAdsCampaigns(payload: AnalyticsPeriodPayload) {
+  return getMetaAdsCampaignsApi(payload);
+}
+
+export async function getMetaAdsCreatives(payload: AnalyticsPeriodPayload) {
+  return getMetaAdsCreativesApi(payload);
+}
+
+export async function getMetaAdsAudience(payload: AnalyticsPeriodPayload) {
+  return getMetaAdsAudienceApi(payload);
 }
 
 export async function listNotifications(options: ListNotificationsOptions = {}) {

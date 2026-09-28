@@ -14,7 +14,7 @@ import {
   shortDateLabel,
 } from "@/lib/analytics-format";
 import { SITE_URL } from "@/lib/site";
-import { setSessionToken, trpc } from "@/trpc/client";
+import { useMarketingDashboard } from "@/hooks/useAnalyticsDashboard";
 import {
   Activity,
   Eye,
@@ -25,7 +25,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 export default function AnalyticsGA4PanelOS({
   sessionToken,
@@ -36,17 +36,9 @@ export default function AnalyticsGA4PanelOS({
   startDate: string;
   endDate: string;
 }) {
-  // Must stay above the query: the token has to be set before its fetch effect runs.
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
-  const query = trpc.list.analytics.bizDashboard.useQuery(
+  const query = useMarketingDashboard(
     { start_date: startDate, end_date: endDate },
-    {
-      enabled: !!sessionToken && !!startDate && !!endDate,
-      staleTime: 5 * 60 * 1000,
-    }
+    !!sessionToken && !!startDate && !!endDate
   );
 
   const data = query.data;
@@ -235,7 +227,7 @@ export default function AnalyticsGA4PanelOS({
             GA4 data could not be loaded
           </h3>
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {query.error.message}
+            {query.error?.message}
           </p>
         </div>
       )}

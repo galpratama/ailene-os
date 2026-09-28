@@ -1,5 +1,4 @@
 import { createTRPCRouter } from "@/trpc/init";
-import { listAnalytics } from "./analytics/list.analytics";
 import { listB2B } from "./b2b/list.b2b";
 import { listLms } from "./lms/list.lms";
 import { listTrainerPool } from "./trainer-pool/list.trainer-pool";
@@ -26,13 +25,5 @@ export const listRouter = createTRPCRouter({
 
   lms: {
     marketplaceChapters: listLms.marketplaceChapters,
-  },
-
-  // Analytics //
-
-  analytics: {
-    ga4Dashboard: listAnalytics.ga4Dashboard,
-    bizDashboard: listAnalytics.bizDashboard,
-    metaAdsDashboard: listAnalytics.metaAdsDashboard,
   },
 });

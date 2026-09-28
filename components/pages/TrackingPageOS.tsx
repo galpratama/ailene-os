@@ -7,7 +7,8 @@ import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import { getRupiahCurrency } from "@/lib/currency";
-import { setSessionToken, trpc } from "@/trpc/client";
+import type { TrackingWebsiteId } from "@/apis/analytics";
+import { useTrackingDashboard } from "@/hooks/useAnalyticsDashboard";
 import {
   Activity,
   ArrowDown,
@@ -21,7 +22,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const websiteOptions: AppSelectOption[] = [
   { value: null, label: "All websites" },
@@ -87,32 +88,19 @@ export default function TrackingPageOS({
 }: {
   sessionToken: string;
 }) {
-  useEffect(() => {
-    if (sessionToken) setSessionToken(sessionToken);
-  }, [sessionToken]);
-
   const today = useMemo(() => jakartaToday(), []);
   const [period, setPeriod] = useState("28");
   const [startDate, setStartDate] = useState(() => dateDaysBefore(today, 27));
   const [endDate, setEndDate] = useState(today);
   const [website, setWebsite] = useState<string | null>(null);
 
-  const query = trpc.list.analytics.ga4Dashboard.useQuery(
+  const query = useTrackingDashboard(
     {
       start_date: startDate,
       end_date: endDate,
-      website: website
-        ? (website as
-            | "jagohermes.com"
-            | "kelasclaude.com"
-            | "belajarvibecoding.com"
-            | "belajarkoding.com")
-        : undefined,
+      ...(website && { website: website as TrackingWebsiteId }),
     },
-    {
-      enabled: !!sessionToken && !!startDate && !!endDate,
-      staleTime: 5 * 60 * 1000,
-    }
+    !!sessionToken && !!startDate && !!endDate
   );
 
   function selectPeriod(value: string) {
@@ -276,7 +264,7 @@ export default function TrackingPageOS({
             GA4 data could not be loaded
           </h3>
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {query.error.message}
+            {query.error?.message}
           </p>
         </div>
       )}
