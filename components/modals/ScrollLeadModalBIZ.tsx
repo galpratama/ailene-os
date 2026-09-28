@@ -26,21 +26,27 @@ export default function ScrollLeadModalBIZ({
   industries: IndustryEntry[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasShown, setHasShown] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!hasShown && window.scrollY >= 600) {
-        setIsOpen(true);
-        setHasShown(true);
-      }
-    };
+    const curriculum = document.getElementById("curriculum");
+    if (!curriculum) return;
 
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasShown]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // The curriculum is the first high-intent section, so offer the
+          // consultation only once it is genuinely in view.
+          setIsOpen(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(curriculum);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;

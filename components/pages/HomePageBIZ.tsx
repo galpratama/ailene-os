@@ -13,6 +13,7 @@ import DocumentationHomeBIZ from "../static-sections/DocumentationHomeBIZ";
 import FAQHomeBIZ from "../static-sections/FAQHomeBIZ";
 import LeadFormHomeBIZ from "../static-sections/LeadFormHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
+import FloatingLeadButtonBIZ from "../buttons/FloatingLeadButtonBIZ";
 import ScrollLeadModalBIZ from "../modals/ScrollLeadModalBIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
 import type { IndustryEntry } from "@/apis/lookup";
@@ -71,6 +72,7 @@ export default function HomePageBIZ({
       </main>
       <FooterHomeBIZ />
       <ScrollLeadModalBIZ industries={industries} />
+      <FloatingLeadButtonBIZ />
     </div>
   );
 }
