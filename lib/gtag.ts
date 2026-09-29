@@ -4,11 +4,10 @@ declare global {
   }
 }
 
-// Full "AW-XXXXXXXXX/Label" string from the conversion action's Google Ads setup page.
-const CONVERSION_SEND_TO = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_SEND_TO;
+// Google Ads "Submit lead form" conversion (ID/label), hardcoded like the tag ID in GoogleAdsTagBIZ.
+const CONVERSION_SEND_TO = "AW-18418654652/DckgCKuBs4odELy72c5E";
 
-// No-op until BD/Marketing supplies NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_SEND_TO.
 export function sendConversionEvent() {
-  if (typeof window === "undefined" || !window.gtag || !CONVERSION_SEND_TO) return;
+  if (typeof window === "undefined" || !window.gtag) return;
   window.gtag("event", "conversion", { send_to: CONVERSION_SEND_TO });
 }
