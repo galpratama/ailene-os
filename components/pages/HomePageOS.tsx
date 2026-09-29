@@ -67,7 +67,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <div className="border-b border-gray-300 bg-dashboard-bg px-4 py-6 dark:border-zinc-700 sm:px-8">
+      <div className="border-b border-line bg-dashboard-bg px-4 py-6 sm:px-8">
         <p className="mb-1 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-zinc-500">
           {new Date().toLocaleDateString("id-ID", {
             weekday: "long",

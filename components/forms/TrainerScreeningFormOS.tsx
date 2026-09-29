@@ -92,10 +92,10 @@ const statusStyle: Record<
     icon: X,
   },
   pending: {
-    ring: "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+    ring: "border-line bg-gray-50 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500",
   },
   skipped: {
-    ring: "border-gray-200 bg-gray-50 text-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-600",
+    ring: "border-line-soft bg-gray-50 text-gray-300 dark:bg-zinc-800 dark:text-zinc-600",
     icon: Minus,
   },
 };
@@ -247,7 +247,7 @@ function RubricScorePanel({
   }
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+    <section className="rounded-xl border border-line bg-card-bg p-5">
       <h3 className="font-bold text-gray-900 dark:text-zinc-100">
         Rubric score
       </h3>
@@ -259,7 +259,7 @@ function RubricScorePanel({
         {criteria.map((criterion) => (
           <div
             key={criterion.key}
-            className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-zinc-800"
+            className="flex items-center gap-3 rounded-lg border border-line-soft p-3"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
               <criterion.icon size={16} />
@@ -352,7 +352,7 @@ export default function TrainerScreeningFormOS({
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <section className="rounded-xl border border-line bg-card-bg p-5">
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div>
             <div className="flex items-center gap-3">
@@ -410,14 +410,14 @@ export default function TrainerScreeningFormOS({
               vs. Not eligible.
             </p>
           </div>
-          <div className="flex flex-col items-center border-t border-gray-200 pt-4 text-center sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0 dark:border-zinc-800">
+          <div className="flex flex-col items-center border-t border-line-soft pt-4 text-center sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0">
             <ScoreGauge score={totalScore} />
           </div>
         </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+        <section className="rounded-xl border border-line bg-card-bg p-5">
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
             Screening steps
           </h3>
@@ -432,7 +432,7 @@ export default function TrainerScreeningFormOS({
               return (
                 <div
                   key={entry.step}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-zinc-800"
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-line-soft p-3"
                 >
                   <span
                     className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${style.ring}`}

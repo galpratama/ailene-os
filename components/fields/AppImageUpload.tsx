@@ -81,7 +81,7 @@ export default function AppImageUpload({
       )}
 
       <div
-        className="relative w-full overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800"
+        className="relative w-full overflow-hidden rounded-xl border border-dashed border-line bg-gray-50 dark:bg-zinc-800"
         style={{ aspectRatio }}
       >
         {value ? (

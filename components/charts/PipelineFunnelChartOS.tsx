@@ -91,7 +91,7 @@ export default function PipelineFunnelChartOS({
   const hasData = data.some((entry) => entry.count > 0);
 
   return (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+    <div className="rounded-xl border border-line bg-card-bg p-5">
       <p className="text-base font-semibold capitalize text-gray-900 dark:text-zinc-100">
         Conversion Funnel
       </p>
@@ -100,7 +100,7 @@ export default function PipelineFunnelChartOS({
       </p>
 
       {!hasData ? (
-        <div className="mt-5 rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center dark:border-zinc-700">
+        <div className="mt-5 rounded-xl border border-dashed border-line px-4 py-8 text-center">
           <p className="text-sm font-semibold text-gray-600 dark:text-zinc-300">
             {isLoading ? "Loading funnel…" : "No leads in the funnel yet"}
           </p>

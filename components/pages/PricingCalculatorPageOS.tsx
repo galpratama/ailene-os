@@ -29,7 +29,7 @@ function Block({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+    <section className="rounded-xl border border-line bg-card-bg p-4">
       <div className="mb-3.5 flex items-center gap-2.5">
         <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-gray-900 text-xs font-bold text-white dark:bg-zinc-700">
           {step}
@@ -184,7 +184,7 @@ export default function PricingCalculatorPageOS({
       />
 
       {selectedPipelineId === null && (
-        <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+        <div className="rounded-xl border border-line bg-card-bg p-4">
           <AppSearchableSelect
             selectId="quotation-pipeline-picker"
             label="Pilih Lead"

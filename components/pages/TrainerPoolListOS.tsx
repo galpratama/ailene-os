@@ -166,7 +166,7 @@ export default function TrainerPoolListOS({
           const cardClassName = `rounded-xl border p-5 text-left transition-colors ${
             card.isActive
               ? "border-claude bg-claude/5"
-              : "border-gray-300 bg-card-bg dark:border-zinc-700"
+              : "border-line bg-card-bg"
           } ${card.apply ? "cursor-pointer hover:border-claude/60" : ""}`;
           const cardContent = (
             <>
@@ -255,7 +255,7 @@ export default function TrainerPoolListOS({
                 <Link
                   key={trainer.id}
                   href={`/trainers/${trainer.id}`}
-                  className="flex flex-col gap-4 rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
+                  className="flex flex-col gap-4 rounded-xl border border-line bg-card-bg p-5 transition-colors hover:border-claude/60"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     {trainer.avatar ? (
@@ -292,7 +292,7 @@ export default function TrainerPoolListOS({
                       .join(", ") || "No specialization set"}
                   </p>
 
-                  <div className="mt-auto flex flex-col gap-1.5 border-t border-gray-200 pt-3 dark:border-zinc-800">
+                  <div className="mt-auto flex flex-col gap-1.5 border-t border-line-soft pt-3">
                     <div className="flex items-center gap-2">
                       <span className="w-14 shrink-0 text-[11px] text-gray-400">
                         Screen
@@ -344,11 +344,11 @@ export default function TrainerPoolListOS({
       )}
 
       {data && !isLoading && !isError && viewMode === "table" && (
-        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+        <div className="overflow-hidden rounded-xl border border-line bg-card-bg">
           <div className="overflow-x-auto">
             <table className="w-full min-w-210 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Trainer</th>
                   <th className="px-5 py-3">Stage</th>
                   <th className="px-5 py-3">Level</th>
@@ -362,7 +362,7 @@ export default function TrainerPoolListOS({
                   <tr
                     key={trainer.id}
                     onClick={() => router.push(`/trainers/${trainer.id}`)}
-                    className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex min-w-0 items-center gap-2.5">

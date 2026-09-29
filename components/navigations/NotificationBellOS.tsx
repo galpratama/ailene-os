@@ -90,8 +90,8 @@ export default function NotificationBellOS({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 z-30 mt-2 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-800">
-          <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2 dark:border-zinc-700">
+        <div className="absolute top-full right-0 z-30 mt-2 w-80 overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800">
+          <div className="flex items-center justify-between border-b border-line-soft px-3 py-2">
             <p className="text-xs font-semibold text-gray-700 dark:text-zinc-200">
               Notifications
             </p>
@@ -120,7 +120,7 @@ export default function NotificationBellOS({
                   if (!n.read_at) markRead.mutate(n.id);
                   setIsOpen(false);
                 }}
-                className={`flex flex-col gap-0.5 border-b border-gray-100 px-3 py-2.5 text-xs last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-700/50 ${
+                className={`flex flex-col gap-0.5 border-b border-line-soft px-3 py-2.5 text-xs last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-700/50 ${
                   n.read_at
                     ? "text-gray-400"
                     : "text-gray-700 dark:text-zinc-200"

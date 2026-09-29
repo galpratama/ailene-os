@@ -2,6 +2,7 @@
 
 import {
   createAction as createActionApi,
+  deleteAction as deleteActionApi,
   getActionDetails as getActionDetailsApi,
   getActionSummary as getActionSummaryApi,
   listActions as listActionsApi,
@@ -289,6 +290,10 @@ export async function createAction(payload: CreateActionPayload) {
 
 export async function updateAction(payload: UpdateActionPayload) {
   return updateActionApi(payload);
+}
+
+export async function deleteAction(id: number) {
+  return deleteActionApi(id);
 }
 
 export async function getTrackingOverview(payload: TrackingPeriodPayload) {

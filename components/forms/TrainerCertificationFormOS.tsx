@@ -190,7 +190,7 @@ export default function TrainerCertificationFormOS({
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <section className="rounded-xl border border-line bg-card-bg p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             {trainer.avatar ? (
@@ -263,7 +263,7 @@ export default function TrainerCertificationFormOS({
                         ? "border-merah bg-merah text-white"
                         : entry.status === "in_progress"
                           ? "border-claude bg-claude/10 text-claude"
-                          : "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+                          : "border-line bg-gray-50 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500"
                   }`}
                 >
                   {entry.status === "passed" ? (
@@ -278,7 +278,7 @@ export default function TrainerCertificationFormOS({
               </div>
 
               <div
-                className={`mb-5 flex-1 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700 ${
+                className={`mb-5 flex-1 rounded-xl border border-line bg-card-bg p-5 ${
                   decisionLocked ? "opacity-70" : ""
                 }`}
               >
@@ -324,7 +324,7 @@ export default function TrainerCertificationFormOS({
 
                   <div className="flex flex-col gap-2">
                     {meta.estimate && (
-                      <div className="rounded-lg border border-gray-200 p-3 dark:border-zinc-800">
+                      <div className="rounded-lg border border-line-soft p-3">
                         <p className="text-xs text-gray-500">
                           Estimasi waktu
                         </p>
@@ -335,7 +335,7 @@ export default function TrainerCertificationFormOS({
                       </div>
                     )}
                     {entry.recommended_sessions > 0 && (
-                      <div className="rounded-lg border border-gray-200 p-3 dark:border-zinc-800">
+                      <div className="rounded-lg border border-line-soft p-3">
                         <p className="text-xs text-gray-500">
                           Rekomendasi sesi
                         </p>
@@ -346,7 +346,7 @@ export default function TrainerCertificationFormOS({
                       </div>
                     )}
                     {isDecision && (
-                      <div className="rounded-lg border border-gray-200 p-3 dark:border-zinc-800">
+                      <div className="rounded-lg border border-line-soft p-3">
                         <p className="text-xs text-gray-500">Status</p>
                         <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
                           {decisionLocked
@@ -373,7 +373,7 @@ export default function TrainerCertificationFormOS({
         })}
       </div>
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-card-bg p-5">
         <div className="flex items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
             <HelpCircle size={18} />

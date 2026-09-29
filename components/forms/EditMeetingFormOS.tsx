@@ -129,10 +129,12 @@ export default function EditMeetingFormOS({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => requireApiSuccess(await deleteMeeting(id)),
-    onSuccess: async () => {
+    onSuccess: (_data, id) => {
       setIsConfirmingDelete(false);
-      await invalidateMeetings();
       onClose();
+      // Drop the deleted meeting's details first: refetching them 404s and React Query retries with backoff for ~7s.
+      queryClient.removeQueries({ queryKey: ["meetings", "details", id], exact: true });
+      void invalidateMeetings();
     },
     onError: (error) => showErrorToast(error),
   });
@@ -263,7 +265,7 @@ export default function EditMeetingFormOS({
             />
           </div>
 
-          <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
             <AppButton
               type="button"
               variant="outline"

@@ -268,7 +268,7 @@ export default function CalendarPageOS({
               <ChevronRight size={14} />
             </AppButton>
           </div>
-          <div className="flex h-8 items-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-xs font-semibold text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <div className="flex h-8 items-center rounded-lg border border-line bg-gray-50 px-3 text-xs font-semibold text-gray-600 dark:bg-zinc-800 dark:text-zinc-300">
             Month
           </div>
         </div>
@@ -305,9 +305,9 @@ export default function CalendarPageOS({
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-dashboard-border bg-card-bg">
+      <div className="overflow-x-auto rounded-xl border border-line bg-card-bg">
         <div className="min-w-220">
-          <div className="grid grid-cols-7 border-b border-dashboard-border bg-dashboard-bg">
+          <div className="grid grid-cols-7 border-b border-line bg-dashboard-bg">
             {DAYS.map((day) => (
               <div
                 key={day}
@@ -331,7 +331,7 @@ export default function CalendarPageOS({
                 <div
                   key={key}
                   className={[
-                    "min-h-36 border-gray-200 p-2 dark:border-zinc-800",
+                    "min-h-36 border-line-soft p-2",
                     isLastColumn ? "" : "border-r",
                     isLastRow ? "" : "border-b",
                     isCurrentMonth ? "bg-card-bg" : "bg-dashboard-bg/70",

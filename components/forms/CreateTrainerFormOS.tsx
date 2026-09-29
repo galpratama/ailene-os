@@ -145,7 +145,7 @@ export default function CreateTrainerFormOS({
               {optionsData?.list.map((specialization) => (
                 <label
                   key={specialization.id}
-                  className="flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-zinc-700"
+                  className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm"
                 >
                   <input
                     type="checkbox"
@@ -172,7 +172,7 @@ export default function CreateTrainerFormOS({
             onChange={(event) => setNotes(event.target.value)}
           />
         </div>
-        <div className="flex gap-3 border-t border-gray-200 px-6 py-4 dark:border-zinc-800">
+        <div className="flex gap-3 border-t border-line-soft px-6 py-4">
           <AppButton
             type="button"
             variant="outline"

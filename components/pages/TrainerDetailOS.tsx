@@ -96,14 +96,14 @@ const pathwayCircleClass: Record<PathwayAccent, Record<PathwayTone, string>> = {
     failed: "border-merah bg-merah text-white",
     active: "border-claude bg-claude/10 text-claude",
     neutral:
-      "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+      "border-line bg-gray-50 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500",
   },
   claude: {
     passed: "border-claude bg-claude text-white",
     failed: "border-merah bg-merah text-white",
     active: "border-claude bg-claude/10 text-claude",
     neutral:
-      "border-gray-300 bg-gray-50 text-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500",
+      "border-line bg-gray-50 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500",
   },
 };
 
@@ -129,7 +129,7 @@ function PathwaySection({
   const router = useRouter();
 
   return (
-    <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+    <section className="rounded-xl border border-line bg-card-bg p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">{title}</h3>
         <AppButton variant="ghost" size="sm" onClick={() => router.push(href)}>
@@ -172,7 +172,7 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
+    <div className="rounded-xl border border-line-soft p-4">
       <div className="flex items-center gap-2">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
           <Icon size={18} />
@@ -257,7 +257,7 @@ export default function TrainerDetailOS({
         Trainer Profile
       </h2>
 
-      <section className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <section className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-line bg-card-bg p-5">
         <div className="flex flex-wrap gap-4">
           {trainer.avatar ? (
             <Image
@@ -302,7 +302,7 @@ export default function TrainerDetailOS({
                 {trainer.specializations.map((entry) => (
                   <span
                     key={entry.id}
-                    className="rounded-full border border-gray-300 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                    className="rounded-full border border-line bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-zinc-800 dark:text-zinc-300"
                   >
                     {entry.name}
                   </span>
@@ -312,7 +312,7 @@ export default function TrainerDetailOS({
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <div className="min-w-36 rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
+          <div className="min-w-36 rounded-xl border border-line-soft p-4">
             <div className="flex items-center gap-2">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
                 <Award size={18} />
@@ -327,7 +327,7 @@ export default function TrainerDetailOS({
               </div>
             </div>
           </div>
-          <div className="min-w-36 rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
+          <div className="min-w-36 rounded-xl border border-line-soft p-4">
             <div className="flex items-center gap-2">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-claude/10 text-claude">
                 <ShieldCheck size={18} />
@@ -346,7 +346,7 @@ export default function TrainerDetailOS({
       </section>
 
        {trainer.referred_by_name && (
-        <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+        <section className="rounded-xl border border-line bg-card-bg p-5">
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
             Professional Information
           </h3>
@@ -360,7 +360,7 @@ export default function TrainerDetailOS({
         </section>
       )}
 
-      <section className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+      <section className="rounded-xl border border-line bg-card-bg p-5">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">Notes</h3>
           {!editingNotes && (

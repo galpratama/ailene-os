@@ -110,7 +110,7 @@ export default function ArticleCategoryFormOS({
 
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col gap-4 rounded-xl border border-gray-300 p-4 dark:border-zinc-700"
+            className="flex flex-col gap-4 rounded-xl border border-line p-4"
           >
             <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
               {editingId === null ? "New category" : "Edit category"}
@@ -158,7 +158,7 @@ export default function ArticleCategoryFormOS({
             </div>
           </form>
 
-          <div className="overflow-hidden rounded-xl border border-gray-300 dark:border-zinc-700">
+          <div className="overflow-hidden rounded-xl border border-line">
             {categories.length === 0 ? (
               <p className="py-8 text-center text-sm text-gray-400 dark:text-zinc-500">
                 No categories yet.
@@ -167,7 +167,7 @@ export default function ArticleCategoryFormOS({
               categories.map((category) => (
                 <div
                   key={category.id}
-                  className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 last:border-0 dark:border-zinc-800"
+                  className="flex items-center gap-3 border-b border-line-soft px-4 py-3 last:border-0"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">

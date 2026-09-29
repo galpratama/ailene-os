@@ -219,7 +219,7 @@ export default function ArticleEditorPageOS({
           {sections.map((section, index) => (
             <div
               key={section.key}
-              className="flex flex-col gap-4 rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700"
+              className="flex flex-col gap-4 rounded-xl border border-line bg-card-bg p-4"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -270,7 +270,7 @@ export default function ArticleEditorPageOS({
           </AppButton>
         </main>
 
-        <aside className="flex flex-1 flex-col gap-4 rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700 lg:sticky lg:top-4">
+        <aside className="flex flex-1 flex-col gap-4 rounded-xl border border-line bg-card-bg p-4 lg:sticky lg:top-4">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
             Metadata settings
           </h3>

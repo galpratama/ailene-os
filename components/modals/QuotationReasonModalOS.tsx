@@ -49,10 +49,10 @@ export default function QuotationReasonModalOS({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm overflow-hidden rounded-2xl border border-gray-300 bg-card-bg shadow-xl dark:border-zinc-700"
+        className="w-full max-w-sm overflow-hidden rounded-2xl border border-line bg-card-bg shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+        <div className="border-b border-line-soft px-5 py-4">
           <h2 className="text-base font-bold text-gray-900 dark:text-zinc-100">
             {title}
           </h2>
@@ -70,7 +70,7 @@ export default function QuotationReasonModalOS({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-4 dark:border-zinc-800">
+        <div className="flex items-center justify-end gap-2 border-t border-line-soft px-5 py-4">
           <AppButton
             type="button"
             variant="outline"

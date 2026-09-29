@@ -75,7 +75,7 @@ export default function AnalyticsPageOS({
       </div>
 
       {/* Segmented control, not a button group — these switch a view rather than act. */}
-      <div className="flex w-fit rounded-lg border border-gray-300 bg-gray-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="flex w-fit rounded-lg border border-line bg-gray-50 p-0.5 dark:bg-zinc-800">
         {tabs.map((entry) => (
           <button
             key={entry.key}
@@ -92,7 +92,7 @@ export default function AnalyticsPageOS({
         ))}
       </div>
 
-      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4 md:grid-cols-2 xl:grid-cols-[200px_170px_170px]">
+      <section className="grid gap-3 rounded-xl border border-line bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[200px_170px_170px]">
         <AppSelect
           selectId="analytics-period"
           label="Reporting period"

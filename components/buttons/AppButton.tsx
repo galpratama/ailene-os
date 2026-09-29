@@ -12,6 +12,7 @@ export type AppButtonVariant =
   | "outline"
   | "ghost"
   | "sidebarOutline"
+  | "destructive"
   | "ink"
   | "white"
   | "orange"
@@ -45,9 +46,12 @@ const variantClasses: Record<AppButtonVariant, string> = {
   primary:
     "bg-lime-bright text-forest-deep hover:bg-lime-bright/90 active:bg-lime-bright/80",
   outline:
-    "border border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+    "border border-line bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
   ghost:
     "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+  // Irreversible actions (delete); pair with a confirmation dialog.
+  destructive:
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500",
   // Same shape as "outline" but tuned for the sidebar's dark-forest chrome instead of the light page background.
   sidebarOutline:
     "border border-sb-border-soft bg-sb-item-hover text-sb-text-strong hover:bg-sb-item-active-bg",

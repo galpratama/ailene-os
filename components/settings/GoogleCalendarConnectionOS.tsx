@@ -56,7 +56,7 @@ export default function GoogleCalendarConnectionOS({
   const isConnected = connection?.connected ?? false;
 
   return (
-    <section className="max-w-180 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
+    <section className="max-w-180 rounded-xl border border-line bg-card-bg p-5">
       <h3 className="font-bold text-gray-900 dark:text-zinc-100">
         Google Calendar
       </h3>
@@ -65,7 +65,7 @@ export default function GoogleCalendarConnectionOS({
         and kept up to date, and you can give a meeting a Google Meet link.
       </p>
 
-      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 dark:border-zinc-800">
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-line-soft px-4 py-3">
         <div className="flex items-center gap-2.5">
           <CalendarCheck2
             size={16}

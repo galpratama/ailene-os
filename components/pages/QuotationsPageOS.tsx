@@ -133,11 +133,11 @@ export default function QuotationsPageOS({
       )}
 
       {!isError && (
-        <div className="shrink-0 overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+        <div className="shrink-0 overflow-hidden rounded-xl border border-line bg-card-bg">
           <div className="overflow-x-auto">
             <table className="w-full min-w-190 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">ID</th>
                   <th className="px-5 py-3">Company</th>
                   <th className="px-5 py-3">Version</th>
@@ -153,7 +153,7 @@ export default function QuotationsPageOS({
                 {quotations.map((quotation) => (
                   <tr
                     key={quotation.id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <td className="px-5 py-3.5 font-mono text-xs text-gray-400 dark:text-zinc-500">
                       #{quotation.id}

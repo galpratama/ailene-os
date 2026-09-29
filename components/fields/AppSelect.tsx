@@ -73,7 +73,7 @@ export default function AppSelect({
           "relative flex h-9 w-full items-center rounded-lg border bg-gray-50 px-3 text-sm transition dark:bg-zinc-800",
           isOpen
             ? "border-claude ring-2 ring-claude/30"
-            : "border-gray-300 dark:border-zinc-700",
+            : "border-line",
           disabled
             ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-zinc-900 dark:text-zinc-600"
             : "cursor-pointer",
@@ -117,7 +117,7 @@ export default function AppSelect({
         )}
 
         {isOpen && !disabled && (
-          <div className="absolute left-0 top-full z-30 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="absolute left-0 top-full z-30 mt-2 w-full overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800">
             <ul className="flex max-h-60 flex-col overflow-auto text-sm">
               {options.map((opt, index) => (
                 <li

@@ -42,7 +42,7 @@ export default function CTAMixChartOS({ data }: { data: CTASlice[] }) {
     }));
 
   return (
-    <div className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
+    <div className="rounded-xl border border-line bg-card-bg p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">

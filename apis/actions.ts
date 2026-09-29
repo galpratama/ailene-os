@@ -114,3 +114,11 @@ export async function updateAction(
     body: payload,
   });
 }
+
+// Administrators may delete any visible action; members only the ones assigned to them.
+export async function deleteAction(id: number): Promise<ApiEnvelope<null>> {
+  return callApi("/api/v1/actions/delete", {
+    token: await token(),
+    body: { id },
+  });
+}

@@ -124,7 +124,7 @@ export default function AppFilterMenu({
       {isOpen && (
         <div
           id={menuId}
-          className="absolute left-0 top-full z-30 mt-2 w-80 rounded-xl border border-gray-300 bg-card-bg p-4 shadow-md dark:border-zinc-700"
+          className="absolute left-0 top-full z-30 mt-2 w-80 rounded-xl border border-line bg-card-bg p-4 shadow-md"
         >
           <div className="flex flex-col gap-3">
             {fields.map((field) =>
@@ -152,7 +152,7 @@ export default function AppFilterMenu({
               )
             )}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 dark:border-zinc-800">
+          <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-3">
             <span className="text-xs text-gray-500">
               {chips.length === 0
                 ? "No filters applied"

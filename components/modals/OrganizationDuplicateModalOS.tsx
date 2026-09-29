@@ -57,10 +57,10 @@ export default function OrganizationDuplicateModalOS({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-300 bg-card-bg shadow-xl dark:border-zinc-700"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-line bg-card-bg shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+        <div className="flex items-start justify-between gap-4 border-b border-line-soft px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-kuning-t text-kuning">
               <AlertTriangle size={18} />
@@ -90,7 +90,7 @@ export default function OrganizationDuplicateModalOS({
           {matches.map((match) => (
             <div
               key={match.id}
-              className="flex flex-col gap-2 rounded-xl border border-gray-200 p-4 dark:border-zinc-800"
+              className="flex flex-col gap-2 rounded-xl border border-line-soft p-4"
             >
               <p className="font-semibold text-gray-900 dark:text-zinc-100">
                 {match.name}
@@ -125,7 +125,7 @@ export default function OrganizationDuplicateModalOS({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-gray-200 px-5 py-4 dark:border-zinc-800">
+        <div className="flex items-center gap-2 border-t border-line-soft px-5 py-4">
           <AppButton
             type="button"
             variant="outline"

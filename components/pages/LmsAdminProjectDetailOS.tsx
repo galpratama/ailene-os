@@ -164,7 +164,7 @@ export default function LmsAdminProjectDetailOS({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-lg border border-gray-300 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
           <button
             type="button"
             onClick={() => pushParams({ tab: "" })}
@@ -207,13 +207,13 @@ export default function LmsAdminProjectDetailOS({
       </div>
 
       <div
-        className={`overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 ${isPending ? "opacity-60" : ""}`}
+        className={`overflow-hidden rounded-xl border border-line bg-card-bg ${isPending ? "opacity-60" : ""}`}
       >
         <div className="overflow-x-auto">
           {tab === "members" ? (
             <table className="w-full min-w-220 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Job title</th>
                   <th className="px-5 py-3">Role</th>
@@ -227,7 +227,7 @@ export default function LmsAdminProjectDetailOS({
                 {visibleMembers.map((member) => (
                   <tr
                     key={member.access_id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <td className="px-5 py-3.5">
                       <div className="min-w-0">
@@ -285,7 +285,7 @@ export default function LmsAdminProjectDetailOS({
           ) : (
             <table className="w-full min-w-150 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Group</th>
                   <th className="px-5 py-3">Members</th>
                   <th className="px-5 py-3">Created</th>
@@ -296,7 +296,7 @@ export default function LmsAdminProjectDetailOS({
                 {groups.map((group) => (
                   <tr
                     key={group.id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                       {group.name}

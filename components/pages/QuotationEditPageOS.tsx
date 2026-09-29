@@ -64,7 +64,7 @@ function EditorRow({
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
   return (
-    <div className="border-b border-gray-200 last:border-0 dark:border-zinc-800">
+    <div className="border-b border-line-soft last:border-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -83,7 +83,7 @@ function EditorRow({
         />
       </button>
       {open && (
-        <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-4 dark:border-zinc-800/60 dark:bg-zinc-900/40">
+        <div className="border-t border-line-soft bg-gray-50/60 px-4 py-4 dark:bg-zinc-900/40">
           {children}
         </div>
       )}
@@ -303,14 +303,14 @@ export default function QuotationEditPageOS({
   );
 
   const approvalHistoryBlock = quotation.approvals.length > 0 && (
-    <div className="flex flex-col gap-2 rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+    <div className="flex flex-col gap-2 rounded-xl border border-line bg-card-bg p-4">
       <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
         Riwayat approval
       </h4>
       {quotation.approvals.map((approval) => (
         <div
           key={approval.id}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
+          className="rounded-lg border border-line-soft px-3 py-2 text-xs"
         >
           <p className="font-semibold text-gray-700 dark:text-zinc-300">
             {decisionLabel[approval.decision]} · {approval.actor_name}
@@ -442,8 +442,8 @@ export default function QuotationEditPageOS({
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
         <div className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="border-b border-gray-200 px-4 py-3 dark:border-zinc-800">
+          <div className="rounded-xl border border-line bg-card-bg">
+            <div className="border-b border-line-soft px-4 py-3">
               <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">
                 Quotation Editor{" "}
                 <span className="font-normal normal-case text-gray-400">
@@ -457,7 +457,7 @@ export default function QuotationEditPageOS({
           {builder.totalValueBox}
 
           {!canViewCostDetails && (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+            <div className="rounded-xl border border-dashed border-line bg-card-bg p-4">
               <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                 <Lock size={12} /> Staff / BD view — biaya disembunyikan dari
                 non-manager
@@ -467,7 +467,7 @@ export default function QuotationEditPageOS({
                   (label) => (
                     <div
                       key={label}
-                      className="rounded-lg border border-gray-200 px-2.5 py-2 dark:border-zinc-800"
+                      className="rounded-lg border border-line-soft px-2.5 py-2"
                     >
                       <p className="text-[10px] text-gray-400">{label}</p>
                       <p className="font-mono text-sm text-gray-300 dark:text-zinc-600">
@@ -489,8 +489,8 @@ export default function QuotationEditPageOS({
 
         <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-6">
           {canViewCostDetails ? (
-            <div className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-              <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3 dark:border-zinc-800">
+            <div className="rounded-xl border border-line bg-card-bg">
+              <div className="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">
                   Manager Approval{" "}
                   <span className="font-normal normal-case text-gray-400">
@@ -503,7 +503,7 @@ export default function QuotationEditPageOS({
               </div>
               <div className="flex flex-col gap-4 p-4">
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
-                  <div className="rounded-lg border border-gray-200 px-2.5 py-2 dark:border-zinc-800">
+                  <div className="rounded-lg border border-line-soft px-2.5 py-2">
                     <p className="text-[10px] uppercase text-gray-400">
                       Quotation version
                     </p>
@@ -511,7 +511,7 @@ export default function QuotationEditPageOS({
                       v{quotation.version}
                     </p>
                   </div>
-                  <div className="rounded-lg border border-gray-200 px-2.5 py-2 dark:border-zinc-800">
+                  <div className="rounded-lg border border-line-soft px-2.5 py-2">
                     <p className="text-[10px] uppercase text-gray-400">
                       Last updated
                     </p>

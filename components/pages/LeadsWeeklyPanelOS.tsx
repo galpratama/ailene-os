@@ -43,7 +43,7 @@ function WeekLeads({ filters, weekStart, weekEnd, onOpenLead }: {
   if (leads.length === 0) return <p className="px-5 py-4 text-sm text-gray-400">No leads created this week.</p>;
 
   return (
-    <ul className="divide-y divide-gray-200 dark:divide-zinc-800">
+    <ul className="divide-y divide-line-soft">
       {leads.map((lead) => (
         <li key={lead.id}>
           <button
@@ -121,8 +121,8 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
       {weeksQuery.isError && <p className="py-8 text-center text-sm text-red-500">{weeksQuery.error.message}</p>}
 
       {weeksQuery.data && (
-        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-          <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-gray-200 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+        <div className="overflow-hidden rounded-xl border border-line bg-card-bg">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-line-soft px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             <span>Week</span>
             <span className="grid grid-cols-3 gap-4 text-right">
               <span className="w-14">Total</span>
@@ -133,7 +133,7 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
           {list.map((week) => {
             const isExpanded = expandedWeek === week.week_start;
             return (
-              <div key={week.week_start} className="border-b border-gray-200 last:border-0 dark:border-zinc-800">
+              <div key={week.week_start} className="border-b border-line-soft last:border-0">
                 <button
                   type="button"
                   onClick={() => setExpandedWeek(isExpanded ? null : week.week_start)}
@@ -169,7 +169,7 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
                   </span>
                 </button>
                 {isExpanded && (
-                  <div className="border-t border-gray-200 bg-dashboard-bg dark:border-zinc-800">
+                  <div className="border-t border-line-soft bg-dashboard-bg">
                     <WeekLeads
                       filters={filters}
                       weekStart={week.week_start}

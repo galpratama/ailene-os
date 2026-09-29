@@ -222,7 +222,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                 className={`flex w-70 shrink-0 flex-col h-full min-h-0 gap-2 rounded-xl border p-3 transition-colors lg:w-auto lg:min-w-0 ${
                   isOver
                     ? "border-claude bg-claude/5"
-                    : "border-dashboard-border bg-dashboard-bg"
+                    : "border-line bg-dashboard-bg"
                 }`}
               >
                 <div className="flex items-center justify-between px-1 shrink-0">
@@ -247,7 +247,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                         onDragStart={() => setDraggedId(action.id)}
                         onDragEnd={() => setDraggedId(null)}
                         onClick={() => setEditingActionId(action.id)}
-                        className={`rounded-lg border border-dashboard-border bg-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
+                        className={`rounded-lg border border-line bg-kanban-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
                           draggedId === action.id ? "opacity-50" : ""
                         }`}
                       >
@@ -323,7 +323,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                     setEditingActionId(action.id);
                   }
                 }}
-                className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700"
+                className="flex cursor-pointer flex-col gap-3 rounded-xl border border-line bg-card-bg p-5 text-left transition-colors hover:border-claude/60"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-semibold text-gray-900 dark:text-zinc-100 line-clamp-2">
@@ -331,7 +331,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                   </p>
                   <ActionStatusLabel status={action.status} />
                 </div>
-                <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">
+                <div className="mt-1 flex items-center justify-between gap-2 border-t border-line-soft pt-3">
                   <div className="flex items-center gap-2">
                     <PriorityLabel priority={action.priority} />
                     {due && (
@@ -372,11 +372,11 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
       )}
 
       {!isError && viewMode === "table" && (
-        <div className="shrink-0 overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+        <div className="shrink-0 overflow-hidden rounded-xl border border-line bg-card-bg">
           <div className="overflow-x-auto">
             <table className="w-full min-w-190 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Task</th>
                   <th className="px-5 py-3">Status</th>
                   <th className="px-5 py-3">Priority</th>
@@ -391,7 +391,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                     <tr
                       key={action.id}
                       onClick={() => setEditingActionId(action.id)}
-                      className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                      className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {action.name}

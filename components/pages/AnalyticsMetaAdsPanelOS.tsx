@@ -308,7 +308,7 @@ export default function AnalyticsMetaAdsPanelOS({
                   ? "border-merah/40 bg-merah-t text-merah"
                   : connected
                     ? "border-hijau/40 bg-hijau-t text-hijau"
-                    : "border-gray-300 bg-gray-100 text-gray-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                    : "border-line bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
               }`}
             >
               {query.isError
@@ -345,7 +345,7 @@ export default function AnalyticsMetaAdsPanelOS({
           {Array.from({ length: 10 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700"
+              className="h-32 animate-pulse rounded-xl border border-line bg-card-bg"
             />
           ))}
         </div>
@@ -383,7 +383,7 @@ export default function AnalyticsMetaAdsPanelOS({
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5"
+                className="rounded-xl border border-line bg-card-bg p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
@@ -414,7 +414,7 @@ export default function AnalyticsMetaAdsPanelOS({
               {spotlights.map((spotlight) => (
                 <div
                   key={spotlight.key}
-                  className="flex items-center gap-3.5 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4"
+                  className="flex items-center gap-3.5 rounded-xl border border-line bg-card-bg p-4"
                 >
                   <CreativeThumbnail
                     url={spotlight.creative.thumbnail_url}
@@ -460,7 +460,7 @@ export default function AnalyticsMetaAdsPanelOS({
             />
           </div>
 
-          <section className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
+          <section className="rounded-xl border border-line bg-card-bg p-5">
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">
               What counts as a result
             </h3>
@@ -472,7 +472,7 @@ export default function AnalyticsMetaAdsPanelOS({
               {connected.result_mix.map((entry) => (
                 <li
                   key={entry.key}
-                  className="rounded-lg border border-gray-200 px-4 py-3 dark:border-zinc-800"
+                  className="rounded-lg border border-line-soft px-4 py-3"
                 >
                   <p className="text-xs text-gray-500 dark:text-zinc-400">
                     {entry.label}
@@ -490,8 +490,8 @@ export default function AnalyticsMetaAdsPanelOS({
             </ul>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-5 py-4">
               <div className="flex items-center gap-2">
                 <ImageIcon size={16} className="text-claude" />
                 <div>
@@ -512,7 +512,7 @@ export default function AnalyticsMetaAdsPanelOS({
             <div className="overflow-x-auto">
               <table className="w-full min-w-300 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Creative</th>
                     {columns.map((column) => (
                       <th key={column.key} className="px-5 py-3">
@@ -541,7 +541,7 @@ export default function AnalyticsMetaAdsPanelOS({
                   {sortedCreatives.map((creative) => (
                     <tr
                       key={creative.id}
-                      className="border-b border-gray-200 last:border-0 dark:border-zinc-800"
+                      className="border-b border-line-soft last:border-0"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
@@ -599,8 +599,8 @@ export default function AnalyticsMetaAdsPanelOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
+            <div className="flex items-center gap-2 border-b border-line-soft px-5 py-4">
               <Layers size={16} className="text-claude" />
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -614,7 +614,7 @@ export default function AnalyticsMetaAdsPanelOS({
             <div className="overflow-x-auto">
               <table className="w-full min-w-230 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Campaign</th>
                     <th className="px-5 py-3">Spend</th>
                     <th className="px-5 py-3">Impressions</th>
@@ -629,7 +629,7 @@ export default function AnalyticsMetaAdsPanelOS({
                   {connected.campaigns.map((campaign) => (
                     <tr
                       key={campaign.id}
-                      className="border-b border-gray-200 last:border-0 dark:border-zinc-800"
+                      className="border-b border-line-soft last:border-0"
                     >
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-gray-900 dark:text-zinc-100">
@@ -672,8 +672,8 @@ export default function AnalyticsMetaAdsPanelOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
+            <div className="flex items-center gap-2 border-b border-line-soft px-5 py-4">
               <Gauge size={16} className="text-claude" />
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -687,7 +687,7 @@ export default function AnalyticsMetaAdsPanelOS({
             <div className="overflow-x-auto">
               <table className="w-full min-w-190 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Placement</th>
                     <th className="px-5 py-3">Spend</th>
                     <th className="px-5 py-3">Impressions</th>
@@ -701,7 +701,7 @@ export default function AnalyticsMetaAdsPanelOS({
                   {connected.placements.map((placement) => (
                     <tr
                       key={placement.key}
-                      className="border-b border-gray-200 last:border-0 dark:border-zinc-800"
+                      className="border-b border-line-soft last:border-0"
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {placement.label}
@@ -765,7 +765,7 @@ function CreativeThumbnail({
   if (!url) {
     return (
       <div
-        className="flex shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-300 dark:border-zinc-800 dark:bg-zinc-900"
+        className="flex shrink-0 items-center justify-center rounded-lg border border-line-soft bg-gray-50 text-gray-300 dark:bg-zinc-900"
         style={{ width: size, height: size }}
       >
         <ImageIcon size={size / 3} />
@@ -780,7 +780,7 @@ function CreativeThumbnail({
       width={size}
       height={size}
       unoptimized
-      className="shrink-0 rounded-lg border border-gray-200 object-cover dark:border-zinc-800"
+      className="shrink-0 rounded-lg border border-line-soft object-cover"
       style={{ width: size, height: size }}
     />
   );

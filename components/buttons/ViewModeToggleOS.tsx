@@ -34,7 +34,7 @@ export default function ViewModeToggleOS({
 }) {
   return (
     <div
-      className={`flex shrink-0 rounded-lg border border-gray-300 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900 ${
+      className={`flex shrink-0 rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900 ${
         className ?? ""
       }`}
     >

@@ -47,9 +47,9 @@ export default function LmsAdminProjectListOS({
           <Link
             key={project.id}
             href={`/lms/${project.id}`}
-            className="flex gap-4 rounded-xl border border-gray-300 bg-card-bg p-5 transition-colors hover:border-claude/60 dark:border-zinc-700"
+            className="flex gap-4 rounded-xl border border-line bg-card-bg p-5 transition-colors hover:border-claude/60"
           >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-line-soft bg-gray-50 dark:bg-zinc-800">
               <Building2 size={20} className="text-gray-400" />
             </div>
             <div className="min-w-0 flex-1">

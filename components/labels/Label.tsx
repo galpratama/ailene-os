@@ -17,7 +17,7 @@ const variantStyles: Record<
 > = {
   gray: {
     text: "text-gray-600 dark:text-zinc-300",
-    border: "border-gray-300 dark:border-zinc-600",
+    border: "border-line",
     bg: "bg-gray-100 dark:bg-zinc-800",
   },
   biru: {

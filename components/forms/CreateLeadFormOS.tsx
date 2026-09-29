@@ -206,10 +206,10 @@ export default function CreateLeadFormOS({
       <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
 
-          <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
+          <div className="flex flex-col gap-3 rounded-xl border border-line-soft bg-gray-50 p-4 dark:bg-zinc-800/50">
             <div className="flex items-center justify-between gap-2">
               <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p><p className="text-xs text-gray-500">Create a company and primary contact, or use an existing company.</p></div>
-              <div className="flex rounded-lg border border-gray-300 bg-white p-0.5 dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
                 <button type="button" onClick={() => setUseExistingCompany(false)} className={segmentClass(!useExistingCompany)}>New</button>
                 <button type="button" onClick={() => setUseExistingCompany(true)} className={segmentClass(useExistingCompany)}>Existing</button>
               </div>
@@ -254,7 +254,7 @@ export default function CreateLeadFormOS({
           {!isOwnScoped && <AppSelect selectId="lead-owner" label="Sales Owner" required placeholder="Assign an owner" value={ownerId} onChange={(value) => setOwnerId((value as string) ?? "")} options={ownerOptions} />}
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
           <AppButton type="button" variant="outline" className="flex-1 justify-center" onClick={handleClose}>Cancel</AppButton>
           <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={mutation.isPending}>{mutation.isPending && <Loader2 size={14} className="animate-spin" />}Create Lead</AppButton>
         </div>

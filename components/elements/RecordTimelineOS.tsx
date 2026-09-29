@@ -24,7 +24,7 @@ export default function RecordTimelineOS({
       {entries.map((entry) => (
         <div
           key={entry.id}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-zinc-800"
+          className="rounded-lg border border-line-soft px-3 py-2 text-xs"
         >
           <p className="text-gray-700 dark:text-zinc-300">
             <span className="font-semibold">{entry.actor_name}</span> changed{" "}

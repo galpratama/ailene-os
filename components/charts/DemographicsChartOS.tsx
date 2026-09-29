@@ -97,7 +97,7 @@ export default function DemographicsChartOS({
   }, [data, metricKey]);
 
   return (
-    <div className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
+    <div className="rounded-xl border border-line bg-card-bg p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -107,7 +107,7 @@ export default function DemographicsChartOS({
             Who the budget actually reached, by reported age bracket.
           </p>
         </div>
-        <div className="flex flex-wrap rounded-lg border border-gray-300 bg-gray-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="flex flex-wrap rounded-lg border border-line bg-gray-50 p-0.5 dark:bg-zinc-800">
           {demographicMetrics.map((entry) => (
             <button
               key={entry.key}

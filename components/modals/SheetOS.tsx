@@ -35,10 +35,10 @@ export default function SheetOS({
       onClick={onClose}
     >
       <div
-        className="relative flex h-full w-full max-w-md flex-col bg-white border-l border-gray-300 shadow-xl dark:bg-zinc-900 dark:border-zinc-700"
+        className="relative flex h-full w-full max-w-md flex-col bg-white border-l border-line shadow-xl dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-6 py-4 dark:border-zinc-800">
+        <div className="flex items-start justify-between gap-3 border-b border-line-soft px-6 py-4">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">{title}</h2>
             {description && (

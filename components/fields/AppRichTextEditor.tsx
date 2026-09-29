@@ -167,12 +167,12 @@ export default function AppRichTextEditor({
           {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      <div className="overflow-hidden rounded-lg border border-gray-300 bg-gray-50 focus-within:border-claude focus-within:ring-2 focus-within:ring-claude/30 dark:border-zinc-700 dark:bg-zinc-800">
-        <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 bg-white px-1.5 py-1 dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="overflow-hidden rounded-lg border border-line bg-gray-50 focus-within:border-claude focus-within:ring-2 focus-within:ring-claude/30 dark:bg-zinc-800">
+        <div className="flex flex-wrap items-center gap-1 border-b border-line-soft bg-white px-1.5 py-1 dark:bg-zinc-900">
           {toolbarGroups.map((group, groupIndex) => (
             <div
               key={groupIndex}
-              className="flex items-center gap-0.5 border-r border-gray-200 pr-1 last:border-0 dark:border-zinc-700"
+              className="flex items-center gap-0.5 border-r border-line-soft pr-1 last:border-0"
             >
               {group.map((item) => {
                 const isActive = activeStates?.[itemIndex++] ?? false;

@@ -240,7 +240,7 @@ export default function EditLeadFormOS({
       ) : (
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
-            <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
+            <div className="flex flex-col gap-3 rounded-xl border border-line-soft bg-gray-50 p-4 dark:bg-zinc-800/50">
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p>
               <AppInput inputId="edit-lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
               <div className="grid grid-cols-2 gap-3">
@@ -278,7 +278,7 @@ export default function EditLeadFormOS({
             <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Stage History</p><div className="mt-2">{historyQuery.isLoading ? <Loader2 size={14} className="animate-spin text-gray-400" /> : <RecordTimelineOS entries={timeline} />}</div></div>
           </div>
 
-          <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
             <AppButton type="button" variant="outline" size="icon" title="Delete lead" className="text-red-600 border-red-200 hover:bg-red-50" disabled={deleteMutation.isPending} onClick={() => setIsConfirmingDelete(true)}>{deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}</AppButton>
             <AppButton type="button" variant="outline" className="flex-1 justify-center" onClick={handleClose}>Cancel</AppButton>
             <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={saveMutation.isPending}>{saveMutation.isPending && <Loader2 size={14} className="animate-spin" />}Save Changes</AppButton>

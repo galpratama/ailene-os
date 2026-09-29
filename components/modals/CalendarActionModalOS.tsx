@@ -62,10 +62,10 @@ export default function CalendarActionModalOS({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-gray-300 bg-card-bg shadow-xl dark:border-zinc-700"
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-card-bg shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5 dark:border-zinc-800">
+        <div className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">
           <div className="min-w-0">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-claude">
               B2B Action
@@ -88,7 +88,7 @@ export default function CalendarActionModalOS({
 
         <div className="flex flex-col gap-5 px-6 py-5">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-dashboard-border bg-dashboard-bg p-3">
+            <div className="rounded-xl border border-line bg-dashboard-bg p-3">
               <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-zinc-500">
                 <CalendarDays size={13} />
                 Due date
@@ -97,7 +97,7 @@ export default function CalendarActionModalOS({
                 {formatDate(event.due_date)}
               </p>
             </div>
-            <div className="rounded-xl border border-dashboard-border bg-dashboard-bg p-3">
+            <div className="rounded-xl border border-line bg-dashboard-bg p-3">
               <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-zinc-500">
                 <Workflow size={13} />
                 Status

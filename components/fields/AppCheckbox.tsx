@@ -21,7 +21,7 @@ export default function AppCheckbox({
   return (
     <label
       htmlFor={inputId}
-      className={`flex items-start gap-2.5 rounded-lg border border-gray-300 px-3 py-2.5 dark:border-zinc-700 ${
+      className={`flex items-start gap-2.5 rounded-lg border border-line px-3 py-2.5 ${
         disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
       }`}
     >

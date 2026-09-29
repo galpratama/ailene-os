@@ -64,7 +64,7 @@ export default function OrganizationDetailDrawerOS({
                 <div><p className="text-xs text-gray-400">Website</p><p className="break-all text-gray-700 dark:text-zinc-300">{company.website_url ?? "—"}</p></div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
+              <div className="rounded-xl border border-line-soft p-4">
                 <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Primary contact</p>
                 {primaryContact ? (
                   <div className="mt-2 flex flex-col gap-1.5 text-sm text-gray-600 dark:text-zinc-300">
@@ -75,13 +75,13 @@ export default function OrganizationDetailDrawerOS({
                 ) : <p className="mt-1 text-sm text-gray-400">No contact on file.</p>}
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4 dark:border-zinc-800">
+              <div className="rounded-xl border border-line-soft p-4">
                 <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Pipeline</p>
                 {pipeline ? <div className="mt-2 flex items-center justify-between gap-3"><StageLabel stage={pipeline.stage} /><span className="text-xs text-gray-500">{pipeline.sales_owner_name}</span></div> : <p className="mt-1 text-sm text-gray-400">No visible pipeline.</p>}
               </div>
             </div>
 
-            <div className="sticky bottom-0 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="sticky bottom-0 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
               <AppButton type="button" variant="outline" className="w-full justify-center text-red-600 border-red-200 hover:bg-red-50" onClick={() => setIsConfirmingDelete(true)}><Trash2 size={14} />Delete company</AppButton>
             </div>
           </div>

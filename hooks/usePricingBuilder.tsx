@@ -138,7 +138,7 @@ export function ChoiceCard({
       className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
         active
           ? "border-claude bg-claude/10"
-          : "border-gray-300 bg-gray-50 hover:border-gray-400 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-zinc-600"
+          : "border-line bg-gray-50 hover:border-gray-400 dark:bg-zinc-800 dark:hover:border-white/25"
       }`}
     >
       <span
@@ -169,7 +169,7 @@ function BreakdownRow({
       className={`flex items-center justify-between gap-3 py-1.5 text-sm ${
         bold
           ? "mt-1.5 border-t-2 border-gray-900 pt-2.5 font-bold text-gray-900 dark:border-zinc-100 dark:text-zinc-100"
-          : "border-b border-gray-200 text-gray-700 last:border-0 dark:border-zinc-800 dark:text-zinc-300"
+          : "border-b border-line-soft text-gray-700 last:border-0 dark:text-zinc-300"
       }`}
     >
       <span className="min-w-0 truncate">{label}</span>
@@ -576,7 +576,7 @@ export function usePricingBuilder({
         <button
           type="button"
           onClick={addDay}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:border-claude hover:text-claude dark:border-zinc-700 dark:text-zinc-400"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-line py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:border-claude hover:text-claude dark:text-zinc-400"
         >
           <Plus size={14} /> Tambah hari
         </button>
@@ -611,7 +611,7 @@ export function usePricingBuilder({
       </div>
 
       <div
-        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+        className={`${addonGridClass} border-b border-line-soft py-2.5`}
       >
         <input
           type="checkbox"
@@ -637,7 +637,7 @@ export function usePricingBuilder({
       </div>
 
       <div
-        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+        className={`${addonGridClass} border-b border-line-soft py-2.5`}
       >
         <input
           type="checkbox"
@@ -668,7 +668,7 @@ export function usePricingBuilder({
       </div>
 
       <div
-        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+        className={`${addonGridClass} border-b border-line-soft py-2.5`}
       >
         <input
           type="checkbox"
@@ -692,7 +692,7 @@ export function usePricingBuilder({
       </div>
 
       <div
-        className={`${addonGridClass} border-b border-gray-200 py-2.5 dark:border-zinc-800`}
+        className={`${addonGridClass} border-b border-line-soft py-2.5`}
       >
         <input
           type="checkbox"
@@ -814,7 +814,7 @@ export function usePricingBuilder({
   const commercialSummary = `Komisi BD ${bdPct}% · Diskon ${dcPct}%`;
 
   const totalValueBox = (
-    <div className="rounded-xl border border-gray-900 bg-gray-900 p-5 text-white dark:border-zinc-700 dark:bg-zinc-800">
+    <div className="rounded-xl border border-gray-900 bg-gray-900 p-5 text-white dark:border-line dark:bg-zinc-800">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
         Nilai program
       </p>
@@ -841,7 +841,7 @@ export function usePricingBuilder({
   );
 
   const marginCard = (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+    <div className="rounded-xl border border-line bg-card-bg p-4">
       <div className="mb-2.5 flex items-baseline justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
           Net Margin
@@ -873,7 +873,7 @@ export function usePricingBuilder({
   );
 
   const priceBreakdownCard = (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+    <div className="rounded-xl border border-line bg-card-bg p-4">
       <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
         Rincian
       </h4>
@@ -946,7 +946,7 @@ export function usePricingBuilder({
   );
 
   const costBreakdownCard = (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-4 dark:border-zinc-700">
+    <div className="rounded-xl border border-line bg-card-bg p-4">
       <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
         Biaya dan bagi hasil
       </h4>

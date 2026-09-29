@@ -257,7 +257,7 @@ export default function LmsMemberFormOS({
           />
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
           <AppButton
             type="button"
             variant="outline"

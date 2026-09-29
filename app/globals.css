@@ -89,6 +89,10 @@
   --dashboard-bg: #eef3ea;
   --dashboard-border: #dde6d8;
   --card-bg: #ffffff;
+  --kanban-card-bg: #ffffff;
+  /* OS borders: line = structural (cards, inputs, chrome), line-soft = internal row dividers. */
+  --line: #d1d5db;
+  --line-soft: #e5e7eb;
   --sb-bg: #062319;
   --sb-border: #0f4a34;
   --sb-border-soft: #0c3b29;
@@ -106,6 +110,11 @@
   --dashboard-bg: #05120c;
   --dashboard-border: #163a2b;
   --card-bg: #0b2118;
+  /* Kanban cards stay neutral in dark mode instead of the forest-tinted card surface. */
+  --kanban-card-bg: #1f1f22;
+  /* Translucent white so borders sit right on every dark surface (forest page, cards, kanban, inputs). */
+  --line: rgb(255 255 255 / 0.12);
+  --line-soft: rgb(255 255 255 / 0.07);
   --sb-bg: #041a11;
   --sb-border: #123526;
   --sb-border-soft: #0f2c20;
@@ -122,6 +131,17 @@
   --chart-4: #7fc766;
   --chart-5: #afd854;
   --chart-6: #d6ee30;
+}
+
+/* Any bare `border` / `divide` without a color class gets the structural line, not Tailwind v4's currentColor. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--line);
+  }
 }
 
 @theme inline {
@@ -208,6 +228,9 @@
   --color-dashboard-bg: var(--dashboard-bg);
   --color-dashboard-border: var(--dashboard-border);
   --color-card-bg: var(--card-bg);
+  --color-kanban-card-bg: var(--kanban-card-bg);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
   --color-sb-bg: var(--sb-bg);
   --color-sb-border: var(--sb-border);
   --color-sb-border-soft: var(--sb-border-soft);

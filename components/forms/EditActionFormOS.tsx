@@ -4,14 +4,16 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
+import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { priorityOptions, statusOptions } from "@/components/forms/CreateActionFormOS";
 import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
-import { getActionDetails, updateAction } from "@/lib/actions";
-import { requireApiData } from "@/lib/api-result";
+import { deleteAction, getActionDetails, updateAction } from "@/lib/actions";
+import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
@@ -27,6 +29,7 @@ export default function EditActionFormOS({
   onClose,
 }: EditActionFormOSProps) {
   const queryClient = useQueryClient();
+  const sessionUser = useSession();
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
@@ -34,6 +37,7 @@ export default function EditActionFormOS({
   const [priority, setPriority] = useState<ActionPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const { data: action, isLoading: isLoadingAction } = useQuery({
     queryKey: ["actions", "details", actionId],
@@ -89,6 +93,24 @@ export default function EditActionFormOS({
       showErrorToast(cause instanceof Error ? cause.message : "Failed to update action."),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => requireApiSuccess(await deleteAction(id)),
+    onSuccess: (_data, id) => {
+      setIsConfirmingDelete(false);
+      handleClose();
+      // Drop the deleted action's details first: refetching them 404s and React Query retries with backoff for ~7s.
+      queryClient.removeQueries({ queryKey: ["actions", "details", id], exact: true });
+      void queryClient.invalidateQueries({ queryKey: ["actions"] });
+    },
+    onError: (cause) =>
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to delete action."),
+  });
+
+  function handleConfirmDelete() {
+    if (actionId == null) return;
+    deleteMutation.mutate(actionId);
+  }
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
@@ -99,9 +121,15 @@ export default function EditActionFormOS({
   }
 
   const isReady = !isLoadingAction && !!action;
+  // Mirrors the API rule: administrators delete anything, members only their own assigned actions.
+  const canDelete =
+    !!sessionUser &&
+    !!action &&
+    (sessionUser.role === "ADMINISTRATOR" || action.assignee_id === sessionUser.id);
 
-  return (
+  return [
     <SheetOS
+      key="edit-action"
       title="Edit Action"
       description="Update this action's details."
       isOpen={isOpen}
@@ -127,7 +155,7 @@ export default function EditActionFormOS({
             <AppTextArea
               textAreaId="edit-action-summary"
               label="Summary"
-              rows={3}
+              rows={8}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               placeholder="Optional notes about this action..."
@@ -171,7 +199,23 @@ export default function EditActionFormOS({
             </div>
           </div>
 
-          <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
+            {canDelete && (
+              <AppButton
+                type="button"
+                variant="destructive"
+                size="icon"
+                title="Delete action"
+                disabled={deleteMutation.isPending}
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+              </AppButton>
+            )}
             <AppButton
               type="button"
               variant="outline"
@@ -192,6 +236,17 @@ export default function EditActionFormOS({
           </div>
         </form>
       )}
-    </SheetOS>
-  );
+    </SheetOS>,
+    <AlertConfirmationOS
+      key="confirm-delete"
+      isOpen={isConfirmingDelete}
+      onClose={() => setIsConfirmingDelete(false)}
+      onConfirm={handleConfirmDelete}
+      title="Delete this action?"
+      message={action ? `Delete “${action.name}”? This can't be undone.` : ""}
+      confirmLabel="Delete"
+      destructive
+      isPending={deleteMutation.isPending}
+    />,
+  ];
 }

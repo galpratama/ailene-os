@@ -31,10 +31,10 @@ export default function PdfPreviewModalOS({
       onClick={onClose}
     >
       <div
-        className="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-300 bg-card-bg shadow-xl dark:border-zinc-700"
+        className="flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-card-bg shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-3 dark:border-zinc-800">
+        <div className="flex items-center justify-between gap-3 border-b border-line-soft px-5 py-3">
           <h2 className="truncate text-sm font-bold text-gray-900 dark:text-zinc-100">
             {title}
           </h2>

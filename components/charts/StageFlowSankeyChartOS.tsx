@@ -59,7 +59,7 @@ export default function StageFlowSankeyChartOS({
   const hasData = links.length > 0;
 
   return (
-    <div className="rounded-xl border border-gray-300 bg-card-bg p-5 dark:border-zinc-700">
+    <div className="rounded-xl border border-line bg-card-bg p-5">
       <p className="text-base font-semibold capitalize text-gray-900 dark:text-zinc-100">
         Stage Flow
       </p>
@@ -69,7 +69,7 @@ export default function StageFlowSankeyChartOS({
       </p>
 
       {!hasData ? (
-        <div className="mt-5 rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center dark:border-zinc-700">
+        <div className="mt-5 rounded-xl border border-dashed border-line px-4 py-8 text-center">
           <p className="text-sm font-semibold text-gray-600 dark:text-zinc-300">
             {isLoading
               ? "Loading stage flow…"
@@ -122,7 +122,7 @@ export default function StageFlowSankeyChartOS({
             </ResponsiveContainer>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-200 pt-3 dark:border-zinc-800">
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line-soft pt-3">
             {STAGE_LEGEND_ORDER.map((label) => (
               <div key={label} className="flex items-center gap-1.5">
                 <span

@@ -151,7 +151,7 @@ export default function OffboardUserDrawerOS({
                 Active work owned
               </p>
               <div className="mt-2 grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1 rounded-xl border border-gray-200 p-3 dark:border-zinc-800">
+                <div className="flex flex-col gap-1 rounded-xl border border-line-soft p-3">
                   <div className="flex items-center gap-1.5 text-gray-500 dark:text-zinc-400">
                     <ClipboardList size={13} />
                     <span className="text-xs">Pipelines owned</span>
@@ -160,7 +160,7 @@ export default function OffboardUserDrawerOS({
                     {ownership.pipelines_owned}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1 rounded-xl border border-gray-200 p-3 dark:border-zinc-800">
+                <div className="flex flex-col gap-1 rounded-xl border border-line-soft p-3">
                   <div className="flex items-center gap-1.5 text-gray-500 dark:text-zinc-400">
                     <Briefcase size={13} />
                     <span className="text-xs">Actions assigned</span>
@@ -174,7 +174,7 @@ export default function OffboardUserDrawerOS({
 
             <form
               onSubmit={handleReassign}
-              className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50"
+              className="flex flex-col gap-3 rounded-xl border border-line-soft bg-gray-50 p-4 dark:bg-zinc-800/50"
             >
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
                 Reassign ownership
@@ -215,13 +215,13 @@ export default function OffboardUserDrawerOS({
               )}
             </form>
 
-            <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:border-zinc-800 dark:bg-zinc-800/50 dark:text-zinc-400">
+            <p className="rounded-lg border border-line-soft bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-zinc-800/50 dark:text-zinc-400">
               After deactivation, the user account remains but they lose
               access to the system. History and past attribution are kept.
             </p>
           </div>
 
-          <div className="sticky bottom-0 flex gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
             <AppButton
               type="button"
               variant="outline"

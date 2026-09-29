@@ -158,12 +158,12 @@ export default function UsersAccessPageOS({
       </div>
 
       <div
-        className={`overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 ${isPending ? "opacity-60" : ""}`}
+        className={`overflow-hidden rounded-xl border border-line bg-card-bg ${isPending ? "opacity-60" : ""}`}
       >
           <div className="overflow-x-auto">
             <table className="w-full min-w-240 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Access role</th>
                   <th className="px-5 py-3">Job function</th>
@@ -178,7 +178,7 @@ export default function UsersAccessPageOS({
                 {userList.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <td className="px-5 py-3.5">
                       <div className="min-w-0">

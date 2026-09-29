@@ -166,7 +166,7 @@ export default function TrackingPageOS({
                   ? "border-merah/40 bg-merah-t text-merah"
                   : data
                     ? "border-hijau/40 bg-hijau-t text-hijau"
-                    : "border-gray-300 bg-gray-100 text-gray-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                    : "border-line bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
               }`}
             >
               {query.isError
@@ -206,7 +206,7 @@ export default function TrackingPageOS({
         </div>
       </div>
 
-      <section className="grid gap-3 rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
+      <section className="grid gap-3 rounded-xl border border-line bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
         <AppSelect
           selectId="tracking-website"
           label="Website"
@@ -252,7 +252,7 @@ export default function TrackingPageOS({
           {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700"
+              className="h-32 animate-pulse rounded-xl border border-line bg-card-bg"
             />
           ))}
         </div>
@@ -275,7 +275,7 @@ export default function TrackingPageOS({
             {cards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5"
+                className="rounded-xl border border-line bg-card-bg p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
@@ -305,7 +305,7 @@ export default function TrackingPageOS({
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
             <AnalyticsTrendChartOS data={data.daily} />
 
-            <section className="rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700 p-5">
+            <section className="rounded-xl border border-line bg-card-bg p-5">
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-zinc-100">
                   Conversion funnel
@@ -354,8 +354,8 @@ export default function TrackingPageOS({
             </section>
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
+            <div className="border-b border-line-soft px-5 py-4">
               <h3 className="font-bold text-gray-900 dark:text-zinc-100">
                 Website performance
               </h3>
@@ -366,7 +366,7 @@ export default function TrackingPageOS({
             <div className="overflow-x-auto">
               <table className="w-full min-w-190 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Website</th>
                     <th className="px-5 py-3">Users</th>
                     <th className="px-5 py-3">Sessions</th>
@@ -380,7 +380,7 @@ export default function TrackingPageOS({
                   {data.websites.map((site) => (
                     <tr
                       key={site.id}
-                      className="border-b border-gray-200 last:border-0 dark:border-zinc-800"
+                      className="border-b border-line-soft last:border-0"
                     >
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-gray-900 dark:text-zinc-100">
@@ -409,8 +409,8 @@ export default function TrackingPageOS({
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
-            <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-4 dark:border-zinc-800">
+          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
+            <div className="flex items-center gap-2 border-b border-line-soft px-5 py-4">
               <MousePointerClick size={16} className="text-claude" />
               <div>
                 <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -424,7 +424,7 @@ export default function TrackingPageOS({
             <div className="overflow-x-auto">
               <table className="w-full min-w-175 text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Channel</th>
                     <th className="px-5 py-3">Source / Medium</th>
                     <th className="px-5 py-3">Sessions</th>
@@ -437,7 +437,7 @@ export default function TrackingPageOS({
                   {data.channels.map((channel, index) => (
                     <tr
                       key={`${channel.channel}-${channel.source_medium}-${index}`}
-                      className="border-b border-gray-200 last:border-0 dark:border-zinc-800"
+                      className="border-b border-line-soft last:border-0"
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {channel.channel}

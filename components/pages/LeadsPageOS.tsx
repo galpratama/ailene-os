@@ -263,7 +263,7 @@ export default function LeadsPageOS({
                     setDraggedId(null);
                   }}
                   className={`flex max-h-128 w-70 shrink-0 flex-col gap-2 rounded-xl border p-3 transition-colors ${
-                    isOver ? "border-claude bg-claude/5" : "border-dashboard-border bg-dashboard-bg"
+                    isOver ? "border-claude bg-claude/5" : "border-line bg-dashboard-bg"
                   }`}
                 >
                   <div className="flex shrink-0 items-center justify-between px-1">
@@ -285,7 +285,7 @@ export default function LeadsPageOS({
                         onDragStart={() => setDraggedId(entry.id)}
                         onDragEnd={() => setDraggedId(null)}
                         onClick={() => setEditingPipelineId(entry.id)}
-                        className={`flex cursor-grab flex-col gap-2 rounded-lg border border-dashboard-border bg-card-bg p-3 hover:border-claude/40 ${draggedId === entry.id ? "opacity-50" : ""}`}
+                        className={`flex cursor-grab flex-col gap-2 rounded-lg border border-line bg-kanban-card-bg p-3 hover:border-claude/40 ${draggedId === entry.id ? "opacity-50" : ""}`}
                       >
                         <div className="flex items-center gap-2">
                           <Building2 size={14} className="shrink-0 text-gray-400" />
@@ -307,17 +307,17 @@ export default function LeadsPageOS({
       )}
 
       {pipelineList && viewMode === "table" && (
-        <div className="overflow-hidden rounded-xl border border-gray-300 bg-card-bg dark:border-zinc-700">
+        <div className="overflow-hidden rounded-xl border border-line bg-card-bg">
           <div className="overflow-x-auto">
             <table className="w-full min-w-190 text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 dark:border-zinc-800">
+                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <th className="px-5 py-3">Company</th><th className="px-5 py-3">Source</th><th className="px-5 py-3">Stage</th><th className="px-5 py-3">Value</th><th className="px-5 py-3">Expected Close</th><th className="px-5 py-3">Owner</th>
                 </tr>
               </thead>
               <tbody>
                 {pipelineList.map((entry) => (
-                  <tr key={entry.id} onClick={() => setEditingPipelineId(entry.id)} className="cursor-pointer border-b border-gray-200 last:border-0 hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50">
+                  <tr key={entry.id} onClick={() => setEditingPipelineId(entry.id)} className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
                     <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{leadSourceLabel(entry.lead_source)}</td>
                     <td className="px-5 py-3.5"><StageLabel stage={entry.stage} /></td>
@@ -340,13 +340,13 @@ export default function LeadsPageOS({
                 event.preventDefault();
                 setEditingPipelineId(entry.id);
               }
-            }} className="flex cursor-pointer flex-col gap-3 rounded-xl border border-gray-300 bg-card-bg p-5 text-left transition-colors hover:border-claude/60 dark:border-zinc-700">
+            }} className="flex cursor-pointer flex-col gap-3 rounded-xl border border-line bg-card-bg p-5 text-left transition-colors hover:border-claude/60">
               <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800"><Building2 size={18} className="text-gray-400" /></div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-line-soft bg-gray-50 dark:bg-zinc-800"><Building2 size={18} className="text-gray-400" /></div>
                 <div className="min-w-0 flex-1"><h3 className="truncate font-bold text-gray-900 dark:text-zinc-100">{entry.company_name}</h3><p className="truncate text-xs text-gray-500">{leadSourceLabel(entry.lead_source)} lead</p></div>
               </div>
               <StageLabel stage={entry.stage} />
-              <div className="mt-1 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-zinc-800">
+              <div className="mt-1 flex items-center justify-between gap-2 border-t border-line-soft pt-3">
                 <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</span>
                 <span className="truncate text-xs text-gray-700 dark:text-zinc-300">{entry.sales_owner_name}</span>
               </div>
