@@ -32,12 +32,12 @@ export type OSNavItem = {
 // SidebarOS nav, split by the B2B/B2C toggle (B2C has only Tracking); a shared `group` clusters items into a labeled sub-section.
 export const osMainNav: OSNavItem[] = [
   { href: "/", label: "Home", icon: LayoutGrid, exact: true, segment: "B2B" },
-  { href: "/calendar", label: "Calendar", icon: Calendar, segment: "B2B" },
+  { href: "/tasks", label: "Tasks", icon: SquareCheckBig, segment: "B2B" },
   { href: "/tracking", label: "Tracking", icon: ChartNoAxesCombined, segment: "B2C" },
   {
-    href: "/organizations",
-    label: "Organizations",
-    icon: Building2,
+    href: "/calendar",
+    label: "Calendar",
+    icon: Calendar,
     segment: "B2B",
     group: "Business Development",
   },
@@ -56,9 +56,9 @@ export const osMainNav: OSNavItem[] = [
     group: "Business Development",
   },
   {
-    href: "/tasks",
-    label: "Tasks",
-    icon: SquareCheckBig,
+    href: "/organizations",
+    label: "Company Contact",
+    icon: Building2,
     segment: "B2B",
     group: "Business Development",
   },

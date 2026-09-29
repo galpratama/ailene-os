@@ -115,7 +115,11 @@ export default function NotificationBellOS({
             {notifications.map((n) => (
               <Link
                 key={n.id}
-                href={ENTITY_HREF[n.entity_type] ?? "/"}
+                href={
+                  n.entity_type === "b2b_action"
+                    ? `/tasks/${n.entity_id}`
+                    : (ENTITY_HREF[n.entity_type] ?? "/")
+                }
                 onClick={() => {
                   if (!n.read_at) markRead.mutate(n.id);
                   setIsOpen(false);

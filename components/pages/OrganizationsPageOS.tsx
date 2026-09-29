@@ -68,7 +68,7 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 sm:px-8">
-      <PageHeaderOS title="Organizations" description="Company master data served by the Java sales API." />
+      <PageHeaderOS title="Company Contact" description="Company master data served by the Java sales API." />
       <div className="flex flex-wrap items-center gap-3">
         <AppInput inputId="organizations-search" icon={<Search size={14} />} value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Search companies..." className="max-w-full sm:max-w-sm" />
         <div className="w-full max-w-48">

@@ -21,12 +21,17 @@ interface EditActionFormOSProps {
   actionId: number | null;
   isOpen: boolean;
   onClose: () => void;
+  onDeleted?: () => void;
+  // The task detail page hosts this sheet itself, so it hides the full-page link.
+  hideFullPageLink?: boolean;
 }
 
 export default function EditActionFormOS({
   actionId,
   isOpen,
   onClose,
+  onDeleted,
+  hideFullPageLink = false,
 }: EditActionFormOSProps) {
   const queryClient = useQueryClient();
   const sessionUser = useSession();
@@ -45,10 +50,7 @@ export default function EditActionFormOS({
     enabled: isOpen && actionId != null,
   });
 
-  // Seed the form once per action, adjusting state during render (React's
-  // documented pattern for this) rather than in an effect. Reset the seeded
-  // marker on close so re-opening the same action always reverts to its
-  // saved values instead of leaving stale in-progress edits behind.
+  // Seed the form once per open during render; reset on close so reopening reverts unsaved edits.
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const [seededActionId, setSeededActionId] = useState<number | null>(null);
   if (isOpen !== prevIsOpen) {
@@ -98,6 +100,7 @@ export default function EditActionFormOS({
     onSuccess: (_data, id) => {
       setIsConfirmingDelete(false);
       handleClose();
+      onDeleted?.();
       // Drop the deleted action's details first: refetching them 404s and React Query retries with backoff for ~7s.
       queryClient.removeQueries({ queryKey: ["actions", "details", id], exact: true });
       void queryClient.invalidateQueries({ queryKey: ["actions"] });
@@ -134,6 +137,9 @@ export default function EditActionFormOS({
       description="Update this action's details."
       isOpen={isOpen}
       onClose={handleClose}
+      fullPageHref={
+        hideFullPageLink || actionId == null ? undefined : `/tasks/${actionId}`
+      }
     >
       {!isReady ? (
         <div className="flex flex-1 items-center justify-center py-20">

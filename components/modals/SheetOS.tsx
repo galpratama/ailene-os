@@ -1,6 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
+import AppButton from "@/components/buttons/AppButton";
+import { Maximize2, X } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 
 interface SheetOSProps {
@@ -8,6 +9,8 @@ interface SheetOSProps {
   description?: string;
   isOpen: boolean;
   onClose: () => void;
+  // Renders an "open full page" icon next to the close button.
+  fullPageHref?: string;
   children: ReactNode;
 }
 
@@ -17,6 +20,7 @@ export default function SheetOS({
   description,
   isOpen,
   onClose,
+  fullPageHref,
   children,
 }: SheetOSProps) {
   useEffect(() => {
@@ -45,12 +49,24 @@ export default function SheetOS({
               <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">{description}</p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            {fullPageHref && (
+              <AppButton
+                variant="ghost"
+                size="iconSm"
+                href={fullPageHref}
+                title="Open full page"
+              >
+                <Maximize2 size={14} />
+              </AppButton>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
         {children}
       </div>
