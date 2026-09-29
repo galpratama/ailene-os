@@ -2,20 +2,19 @@
 
 import Script from "next/script";
 
-// Renders nothing until BD/Marketing supplies NEXT_PUBLIC_GOOGLE_ADS_ID — safe no-op, never breaks the page.
-export default function GoogleAdsTagBIZ() {
-  const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-  if (!adsId) return null;
+// Hardcoded for now; move back to an env var once it's set on the deploy.
+const GOOGLE_ADS_ID = "AW-18418654652";
 
+export default function GoogleAdsTagBIZ() {
   return (
     <>
       <Script
         id="google-ads-gtag-src"
-        src={`https://www.googletagmanager.com/gtag/js?id=${adsId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
         strategy="afterInteractive"
       />
       <Script id="google-ads-gtag-init" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){window.dataLayer.push(arguments);}gtag("js",new Date());gtag("config","${adsId}");`}
+        {`window.dataLayer=window.dataLayer||[];function gtag(){window.dataLayer.push(arguments);}gtag("js",new Date());gtag("config","${GOOGLE_ADS_ID}");`}
       </Script>
     </>
   );
