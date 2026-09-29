@@ -18,28 +18,17 @@ import { createArticle, updateArticle } from "@/lib/actions";
 import { ARTICLE_STATUS_OPTIONS, articleURL } from "@/lib/article";
 import { isSuccessStatus } from "@/lib/status_code";
 import dayjs from "dayjs";
-import { ArrowLeft, Loader2, PlusCircle, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
-// Local-only key so React can track sections while they are added/removed; never sent to the API.
-type SectionDraft = { key: number; subHeading: string; content: string };
-
 const COVER_MAX_BYTES = 1024 * 500;
 const DATETIME_LOCAL = "YYYY-MM-DDTHH:mm";
 
-let nextSectionKey = 1;
-function newSection(subHeading = "", content = ""): SectionDraft {
-  return { key: nextSectionKey++, subHeading, content };
-}
-
-// The first section is the article's lead and has no sub-heading; every later one needs its own.
-function sectionsFrom(article: ArticleData | null): SectionDraft[] {
-  if (!article || article.body_content.length === 0) return [newSection()];
-  return article.body_content.map((section) =>
-    newSection(section.sub_heading ?? "", section.content ?? "")
-  );
+// The editor emits "<p></p>" when cleared, so emptiness is judged by the text and images inside.
+function isBlankHtml(html: string) {
+  return !/<img/i.test(html) && !html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
 }
 
 export default function ArticleEditorPageOS({
@@ -56,7 +45,7 @@ export default function ArticleEditorPageOS({
 
   const [title, setTitle] = useState(article?.title ?? "");
   const [imageUrl, setImageUrl] = useState(article?.image_url ?? "");
-  const [sections, setSections] = useState<SectionDraft[]>(() => sectionsFrom(article));
+  const [bodyContent, setBodyContent] = useState(article?.body_content ?? "");
   const [insight, setInsight] = useState(article?.insight ?? "");
   // Rendered in the viewer's timezone, which the server doesn't know, so it is filled in after mount.
   const [publishedAt, setPublishedAt] = useState("");
@@ -83,10 +72,6 @@ export default function ArticleEditorPageOS({
     image: user.avatar ?? undefined,
   }));
 
-  function updateSection(key: number, patch: Partial<SectionDraft>) {
-    setSections((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
-  }
-
   function validate(): string | null {
     if (!title.trim()) return "Title is required.";
     if (!imageUrl) return "Cover image is required.";
@@ -96,10 +81,7 @@ export default function ArticleEditorPageOS({
     if (!authorId) return "Author is required.";
     if (!reviewerId) return "Reviewer is required.";
     if (!keywords.trim()) return "Keywords are required.";
-    const invalidSection = sections.some(
-      (s, i) => !s.content.trim() || (i > 0 && !s.subHeading.trim())
-    );
-    if (invalidSection) return "Every paragraph needs content, and every paragraph after the first needs a sub-heading.";
+    if (isBlankHtml(bodyContent)) return "Body content is required.";
     return null;
   }
 
@@ -112,13 +94,7 @@ export default function ArticleEditorPageOS({
       title: title.trim(),
       insight: insight.trim(),
       image_url: imageUrl,
-      body_content: sections.map((s, i) => ({
-        index_order: i + 1,
-        sub_heading: i === 0 ? null : s.subHeading.trim(),
-        image_path: null,
-        image_desc: null,
-        content: s.content,
-      })),
+      body_content: bodyContent,
       status: nextStatus,
       category_id: categoryId as number,
       keywords: keywords.trim(),
@@ -216,58 +192,13 @@ export default function ArticleEditorPageOS({
             />
           </div>
 
-          {sections.map((section, index) => (
-            <div
-              key={section.key}
-              className="flex flex-col gap-4 rounded-xl border border-line bg-card-bg p-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  {index === 0 ? "Introduction" : `Paragraph ${index + 1}`}
-                </span>
-                {sections.length > 1 && (
-                  <AppButton
-                    type="button"
-                    variant="ghost"
-                    size="iconSm"
-                    title="Remove paragraph"
-                    onClick={() => setSections((prev) => prev.filter((s) => s.key !== section.key))}
-                  >
-                    <Trash2 size={13} />
-                  </AppButton>
-                )}
-              </div>
-              {index > 0 && (
-                <AppInput
-                  inputId={`article-section-${section.key}-heading`}
-                  label="Sub-heading"
-                  required
-                  characterLength={255}
-                  value={section.subHeading}
-                  onChange={(e) => updateSection(section.key, { subHeading: e.target.value })}
-                  placeholder="Write the section sub-title..."
-                />
-              )}
-              <AppRichTextEditor
-                editorId={`article-section-${section.key}-content`}
-                label="Body content"
-                required
-                value={section.content}
-                onChange={(content) => updateSection(section.key, { content })}
-              />
-            </div>
-          ))}
-
-          <AppButton
-            type="button"
-            variant="outline"
-            size="md"
-            className="justify-center"
-            onClick={() => setSections((prev) => [...prev, newSection()])}
-          >
-            <PlusCircle size={14} />
-            Add paragraph
-          </AppButton>
+          <AppRichTextEditor
+            editorId="article-body-content"
+            label="Body content"
+            required
+            value={bodyContent}
+            onChange={setBodyContent}
+          />
         </main>
 
         <aside className="flex flex-1 flex-col gap-4 rounded-xl border border-line bg-card-bg p-4 lg:sticky lg:top-4">

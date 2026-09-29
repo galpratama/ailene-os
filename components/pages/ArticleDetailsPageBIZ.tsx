@@ -118,39 +118,11 @@ export default function ArticleDetailsPageBIZ({
               </ul>
             </section>
 
-            {article.body_content.map((section) => (
-              <section key={section.index_order} className="flex scroll-mt-24 flex-col gap-3">
-                {section.sub_heading && (
-                  <h2
-                    id={slugify(section.sub_heading)}
-                    className="scroll-mt-24 pt-2 text-2xl font-bold leading-snug"
-                  >
-                    {section.sub_heading}
-                  </h2>
-                )}
-                {section.image_path && (
-                  <figure className="flex flex-col gap-2 py-2">
-                    <Image
-                      src={section.image_path}
-                      alt={section.image_desc ?? section.sub_heading ?? article.title}
-                      width={1200}
-                      height={675}
-                      className="w-full rounded-xl object-cover"
-                    />
-                    {section.image_desc && (
-                      <figcaption className="text-sm text-ink-soft">{section.image_desc}</figcaption>
-                    )}
-                  </figure>
-                )}
-                {section.content && (
-                  <div
-                    className="article-prose text-[17px] text-biz-copy"
-                    // Sanitized by the API on save (tag/attribute allowlist, no scripts or event handlers).
-                    dangerouslySetInnerHTML={{ __html: section.content }}
-                  />
-                )}
-              </section>
-            ))}
+            <div
+              className="article-prose text-[17px] text-biz-copy"
+              // Sanitized by the API on save (tag/attribute allowlist, no scripts or event handlers).
+              dangerouslySetInnerHTML={{ __html: article.body_content }}
+            />
 
             <div className="flex flex-wrap items-center gap-3 border-t border-ink-line pt-6">
               <span className="text-sm font-semibold">Bagikan</span>

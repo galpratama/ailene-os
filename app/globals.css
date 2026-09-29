@@ -383,6 +383,11 @@ body {
   line-height: 1.35;
   margin-top: 1.2em;
 }
+/* Keeps table-of-contents jumps clear of the sticky BIZ header. */
+.article-prose h2,
+.article-prose h3 {
+  scroll-margin-top: 6rem;
+}
 .article-prose a {
   color: var(--claude);
   text-decoration: underline;

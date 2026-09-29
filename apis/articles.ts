@@ -26,15 +26,6 @@ export type ArticlePerson = {
   avatar: string | null;
 };
 
-// One body block: an optional sub-heading, then rich-text HTML and/or an image.
-export type ArticleSection = {
-  index_order: number;
-  sub_heading: string | null;
-  image_path: string | null;
-  image_desc: string | null;
-  content: string | null;
-};
-
 export type ArticleTocEntry = {
   level: number;
   name: string;
@@ -57,7 +48,7 @@ export type ArticleListItem = {
 };
 
 export type ArticleData = ArticleListItem & {
-  body_content: ArticleSection[];
+  body_content: string;
   reading_time: number;
   table_of_contents: ArticleTocEntry[];
   created_at: string;
@@ -77,7 +68,7 @@ export type CreateArticlePayload = {
   title: string;
   insight: string;
   image_url: string;
-  body_content: ArticleSection[];
+  body_content: string;
   status: ArticleStatus;
   category_id: number;
   keywords: string;
@@ -127,7 +118,9 @@ export async function updateArticleCategory(
   });
 }
 
-export async function deleteArticleCategory(id: number): Promise<ApiEnvelope<null>> {
+export async function deleteArticleCategory(
+  id: number
+): Promise<ApiEnvelope<null>> {
   return callApi("/api/v1/article-categories/delete", {
     token: await token(),
     body: { id },
@@ -143,7 +136,9 @@ export async function listArticles(
   });
 }
 
-export async function getArticleDetails(id: number): Promise<ApiEnvelope<ArticleData>> {
+export async function getArticleDetails(
+  id: number
+): Promise<ApiEnvelope<ArticleData>> {
   return callApi("/api/v1/articles/details", {
     token: await token(),
     body: { id },
@@ -188,7 +183,9 @@ export async function listPublishedArticles(
   });
 }
 
-export async function getPublishedArticle(id: number): Promise<ApiEnvelope<ArticleData>> {
+export async function getPublishedArticle(
+  id: number
+): Promise<ApiEnvelope<ArticleData>> {
   return callApi("/api/v1/articles/details", {
     token: clientSecret(),
     body: { id },
