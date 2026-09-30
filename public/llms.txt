@@ -13,9 +13,9 @@ Ailene runs AI adoption training for organizations in Indonesia. Programs combin
 
 Empat jalur, semuanya quote-based (harga per engagement, bukan per kursi publik):
 
-- **Work Foundation** — 1 hari, full offline. Untuk tim yang baru mulai memakai AI. Output: prompt library starter, workflow examples, use-case shortlist.
-- **Productivity Intensive** — 2 hari, offline atau hybrid. Untuk tim yang ingin menerapkan workflow sesuai fungsi. Output: use-case map, prompt library per role, implementation action plan.
-- **Transformation Sprint** — 13 minggu, hybrid + Demo Day. Untuk organisasi yang siap menjalankan use case prioritas. Output: workflow map, SOP, champion plan, 30-day roadmap, Demo Day. Ini jalur yang paling sering direkomendasikan.
+- **Paket Foundation** — 1 hari, full offline. Untuk tim yang baru mulai memakai AI. Output: prompt library starter, workflow examples, use-case shortlist.
+- **Paket Acceleration** — 2 hari, hybrid. Untuk tim yang ingin menerapkan workflow sesuai fungsi. Output: use-case map, prompt library per role, implementation action plan.
+- **Paket Transformation** — 13 minggu, hybrid + Demo Day. Untuk organisasi yang siap menjalankan use case prioritas. Output: workflow map, SOP, champion plan, 30-day roadmap, Demo Day. Ini jalur yang paling sering direkomendasikan.
 - **Custom Track** — durasi dan format disesuaikan. Untuk kebutuhan lintas fungsi atau track khusus developer/engineering.
 
 ## Kurikulum

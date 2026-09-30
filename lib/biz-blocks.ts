@@ -20,6 +20,7 @@ export const BIZ_BLOCKS = [
   "footer_nav",
   "trainer_application",
   "documentation",
+  "program_overview",
 ] as const;
 
 export type BizBlock = (typeof BIZ_BLOCKS)[number];

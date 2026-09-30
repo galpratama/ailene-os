@@ -357,6 +357,24 @@ body {
   }
 }
 
+@keyframes biz-marquee-y {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes biz-marquee-y-reverse {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .biz-marquee {
     animation: none !important;

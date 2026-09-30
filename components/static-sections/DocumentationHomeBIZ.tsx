@@ -134,9 +134,9 @@ export default function DocumentationHomeBIZ() {
       className="overflow-hidden bg-biz-forest py-18 sm:py-28"
     >
       <SectionHeaderHomeBIZ
-        eyebrow="Track Record"
-        title="Teruji di depan kelas, bukan cuma di atas kertas."
-        copy="Dari workshop per divisi, kelas korporat, sampai panggung industri. Pengalaman melatih tim di 100+ perusahaan jadi bekal di setiap sesi kami."
+        eyebrow="Program overview"
+        title="Belajar AI secara optimal, dari individu sampai tim."
+        copy="Kelas kami dirancang khusus lewat sesi tatap muka yang interaktif, agar tiap peserta praktik langsung sesuai perannya dan tim berkembang bersama."
         centered
         dark
         className="px-5"

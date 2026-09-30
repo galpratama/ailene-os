@@ -16,9 +16,9 @@ const columns = [
   {
     title: "Programs",
     links: [
-      ["Foundation", "#programs"],
-      ["Intensive", "#programs"],
-      ["Sprint", "#programs"],
+      ["Paket Foundation", "#programs"],
+      ["Paket Acceleration", "#programs"],
+      ["Paket Transformation", "#programs"],
     ],
   },
   {
