@@ -1,7 +1,8 @@
 import "server-only";
 
-import { callApi, type ApiEnvelope, type ApiList } from "./api";
-import { getSessionToken } from "./session";
+import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
+import { getSession, getSessionToken } from "./session";
+import { STATUS_UNAUTHORIZED } from "@/lib/status_code";
 
 export type SignalType = "hot_lead" | "warm_account" | "decision_maker";
 export type SignalStatus = "new" | "reviewed" | "converted" | "discarded";
@@ -40,9 +41,12 @@ export type ListSignalsOptions = {
   page_size?: number;
 };
 
-export type CreateSignalPayload = {
+// Update replaces every editable field, so callers send the full record.
+export type UpdateSignalPayload = {
+  id: number;
   type: SignalType;
-  source?: SignalSource;
+  status: SignalStatus;
+  source: SignalSource;
   source_url: string;
   source_query?: string | null;
   source_title?: string | null;
@@ -51,17 +55,29 @@ export type CreateSignalPayload = {
   subject_job_title?: string | null;
   company_name?: string | null;
   intent_score?: number | null;
-  indonesia_signal?: boolean;
+  indonesia_signal: boolean;
   signal_reason?: string | null;
   published_at?: string | null;
 };
 
-// Update replaces every editable field, so callers send the full record.
-export type UpdateSignalPayload = Omit<CreateSignalPayload, "source" | "indonesia_signal"> & {
-  id: number;
-  status: SignalStatus;
-  source: SignalSource;
-  indonesia_signal: boolean;
+type LinkedInTypeCounts = {
+  results_found: number;
+  created: number;
+  skipped_duplicates: number;
+  filtered_out: number;
+};
+
+export type LinkedInGenerationResult = {
+  queries_run: number;
+  serp_api_requests: number;
+  results_found: number;
+  created: number;
+  skipped_duplicates: number;
+  filtered_out: number;
+  failed_queries: string[];
+  hot_leads: LinkedInTypeCounts;
+  warm_accounts: LinkedInTypeCounts;
+  decision_makers: LinkedInTypeCounts;
 };
 
 export async function listSignals(
@@ -80,13 +96,6 @@ export async function getSignalDetails(id: number): Promise<ApiEnvelope<SignalDa
   });
 }
 
-export async function createSignal(payload: CreateSignalPayload): Promise<ApiEnvelope<SignalData>> {
-  return callApi("/api/v1/signals/create", {
-    token: await getSessionToken(),
-    body: payload,
-  });
-}
-
 export async function updateSignal(payload: UpdateSignalPayload): Promise<ApiEnvelope<SignalData>> {
   return callApi("/api/v1/signals/update", {
     token: await getSessionToken(),
@@ -99,4 +108,14 @@ export async function deleteSignal(id: number): Promise<ApiEnvelope<null>> {
     token: await getSessionToken(),
     body: { id },
   });
+}
+
+// Spends up to 56 SerpApi searches and authenticates with the static secret, so a live session is checked here first.
+export async function generateLinkedInSignals(): Promise<ApiEnvelope<LinkedInGenerationResult>> {
+  const { user } = await getSession();
+  if (!user) {
+    return { code: 401, status: STATUS_UNAUTHORIZED, message: "Session not found or already ended" };
+  }
+
+  return callApi("/api/v1/signals/generate/linkedin", { token: clientSecret() });
 }

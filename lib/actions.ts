@@ -117,11 +117,10 @@ import {
   type ListTrendingKeywordsOptions,
 } from "@/apis/trending-keywords";
 import {
-  createSignal as createSignalApi,
   deleteSignal as deleteSignalApi,
+  generateLinkedInSignals as generateLinkedInSignalsApi,
   listSignals as listSignalsApi,
   updateSignal as updateSignalApi,
-  type CreateSignalPayload,
   type ListSignalsOptions,
   type UpdateSignalPayload,
 } from "@/apis/signals";
@@ -577,8 +576,8 @@ export async function listSignals(options: ListSignalsOptions = {}) {
   return listSignalsApi(options);
 }
 
-export async function createSignal(payload: CreateSignalPayload) {
-  return createSignalApi(payload);
+export async function generateLinkedInSignals() {
+  return generateLinkedInSignalsApi();
 }
 
 export async function updateSignal(payload: UpdateSignalPayload) {

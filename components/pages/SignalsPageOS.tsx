@@ -1,7 +1,6 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import CreateSignalFormOS from "@/components/forms/CreateSignalFormOS";
 import EditSignalFormOS from "@/components/forms/EditSignalFormOS";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect from "@/components/fields/AppSelect";
@@ -12,12 +11,12 @@ import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import type { SignalData, SignalSource, SignalStatus, SignalType } from "@/apis/signals";
-import { deleteSignal, listSignals } from "@/lib/actions";
+import { deleteSignal, generateLinkedInSignals, listSignals } from "@/lib/actions";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { SIGNAL_SOURCE_LABELS, SIGNAL_SOURCE_OPTIONS, SIGNAL_STATUS_OPTIONS, SIGNAL_TYPE_OPTIONS } from "@/lib/signals";
 import { showErrorToast } from "@/lib/toast";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -70,7 +69,6 @@ export default function SignalsPageOS({ sessionToken }: { sessionToken: string }
   const [status, setStatus] = useState<SignalStatus | "">("");
   const [source, setSource] = useState<SignalSource | "">("");
   const [page, setPage] = useState(1);
-  const [isCreating, setIsCreating] = useState(false);
   const [editing, setEditing] = useState<SignalData | null>(null);
   const [deleting, setDeleting] = useState<SignalData | null>(null);
 
@@ -98,6 +96,19 @@ export default function SignalsPageOS({ sessionToken }: { sessionToken: string }
     placeholderData: keepPreviousData,
   });
 
+  const refreshMutation = useMutation({
+    mutationFn: async () => requireApiData(await generateLinkedInSignals()),
+    onSuccess: async (result) => {
+      toast.success(`Found ${result.created} new signals (${result.skipped_duplicates} duplicates skipped).`);
+      if (result.failed_queries.length > 0) {
+        toast.warning(`${result.failed_queries.length} queries could not be loaded; their results were skipped.`);
+      }
+      setPage(1);
+      await queryClient.invalidateQueries({ queryKey: ["signals"] });
+    },
+    onError: (error) => showErrorToast(error, "Failed to refresh signals."),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => requireApiSuccess(await deleteSignal(id)),
     onSuccess: async () => {
@@ -122,8 +133,18 @@ export default function SignalsPageOS({ sessionToken }: { sessionToken: string }
       <PageHeaderOS
         title="Signals"
         description="Unqualified sales-research findings: hot leads, warm accounts, and decision makers to review."
-        action={{ label: "Add signal", icon: Plus, onClick: () => setIsCreating(true) }}
-      />
+      >
+        <AppButton
+          variant="primary"
+          size="sm"
+          title="Search LinkedIn for new signals (uses SerpApi quota)"
+          onClick={() => refreshMutation.mutate()}
+          disabled={refreshMutation.isPending}
+        >
+          <RefreshCw size={13} className={refreshMutation.isPending ? "animate-spin" : ""} />
+          {refreshMutation.isPending ? "Refreshing..." : "Refresh Signals"}
+        </AppButton>
+      </PageHeaderOS>
 
       <div className="flex flex-wrap items-center gap-3">
         <AppInput
@@ -234,7 +255,6 @@ export default function SignalsPageOS({ sessionToken }: { sessionToken: string }
 
       <AppPaginationOS currentPage={page} totalPages={metapaging?.total_page ?? 1} onPageChange={setPage} />
 
-      {isCreating && <CreateSignalFormOS onClose={() => setIsCreating(false)} />}
       {editing && <EditSignalFormOS key={editing.id} signal={editing} onClose={() => setEditing(null)} />}
 
       <AlertConfirmationOS
