@@ -19,6 +19,6 @@ export async function GET() {
       path: articlePath(article.slug_url, article.id),
       lastModified: article.updated_at,
       images: article.image_url ? [article.image_url] : undefined,
-    })),
+    }))
   );
 }
