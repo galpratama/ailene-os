@@ -18,7 +18,8 @@ export default async function Page({
   const params = await searchParams;
   const keyword = params.keyword?.trim() ?? "";
   const team = params.team ?? "";
-  const status = params.status ?? "";
+  // No status in the URL means the default Active view; "all" is the explicit unfiltered choice.
+  const status = params.status ?? "ACTIVE";
   const page = Number(params.page ?? "1") || 1;
 
   const [users, teams] = await Promise.all([
@@ -27,7 +28,7 @@ export default async function Page({
       page_size: PAGE_SIZE,
       keyword: keyword || undefined,
       team_id: team ? Number(team) : undefined,
-      status: (status || undefined) as UserStatus | undefined,
+      status: (status === "all" ? undefined : status) as UserStatus | undefined,
     }),
     listTeams(),
   ]);

@@ -28,7 +28,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 const statusOptions: AppSelectOption[] = [
-  { value: "", label: "All statuses" },
+  { value: "all", label: "All statuses" },
   { value: "INVITED", label: "Invited" },
   { value: "ACTIVE", label: "Active" },
   { value: "SUSPENDED", label: "Suspended" },
@@ -152,7 +152,7 @@ export default function UsersAccessPageOS({
             placeholder="Filter by status"
             value={initialStatus}
             options={statusOptions}
-            onChange={(value) => pushParams({ status: (value as string) ?? "" })}
+            onChange={(value) => pushParams({ status: (value as string) || "all" })}
           />
         </div>
       </div>
