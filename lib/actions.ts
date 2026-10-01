@@ -117,6 +117,15 @@ import {
   type ListTrendingKeywordsOptions,
 } from "@/apis/trending-keywords";
 import {
+  createSignal as createSignalApi,
+  deleteSignal as deleteSignalApi,
+  listSignals as listSignalsApi,
+  updateSignal as updateSignalApi,
+  type CreateSignalPayload,
+  type ListSignalsOptions,
+  type UpdateSignalPayload,
+} from "@/apis/signals";
+import {
   getUserDetails as getUserDetailsApi,
   inviteUser as inviteUserApi,
   listUsers as listUsersApi,
@@ -562,6 +571,22 @@ export async function listTrendingKeywords(options: ListTrendingKeywordsOptions 
 
 export async function refreshTrendingKeywords() {
   return refreshTrendingKeywordsApi();
+}
+
+export async function listSignals(options: ListSignalsOptions = {}) {
+  return listSignalsApi(options);
+}
+
+export async function createSignal(payload: CreateSignalPayload) {
+  return createSignalApi(payload);
+}
+
+export async function updateSignal(payload: UpdateSignalPayload) {
+  return updateSignalApi(payload);
+}
+
+export async function deleteSignal(id: number) {
+  return deleteSignalApi(id);
 }
 
 // Public landing page: only a classified outcome crosses back, never the API's own wording.
