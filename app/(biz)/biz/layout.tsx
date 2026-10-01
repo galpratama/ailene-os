@@ -40,6 +40,7 @@ export const metadata: Metadata = {
 const stackSansText = Stack_Sans_Text({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-stack-sans-text",
 });
 
 const crayonize = localFont({
@@ -62,7 +63,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
-      <div className={`${stackSansText.className} ${crayonize.variable}`}>
+      <div className={`${stackSansText.className} ${stackSansText.variable} ${crayonize.variable}`}>
         {children}
       </div>
       <AppToaster />

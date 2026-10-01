@@ -428,6 +428,117 @@ body {
   font-style: italic;
   opacity: 0.85;
 }
+.article-prose-biz {
+  font-family: var(--font-article-body), sans-serif;
+}
+.article-prose-biz blockquote {
+  border-left: 4px solid var(--biz-lime);
+  border-radius: 0 0.75rem 0.75rem 0;
+  background: var(--biz-panel-soft);
+  padding: 1em 1.25em;
+  color: var(--biz-forest);
+  font-family: Georgia, serif;
+  font-size: 1.05em;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.6;
+  opacity: 1;
+}
+.article-prose-biz :not(pre) > code {
+  border-radius: 0.25rem;
+  background: var(--biz-panel-soft);
+  padding: 0.15em 0.35em;
+  color: var(--biz-forest);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.9em;
+}
+.article-prose-biz pre {
+  position: relative;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background: var(--biz-forest);
+  padding: 1.25em 1.35em;
+  padding-right: 6.5em;
+  color: var(--biz-paper);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.875em;
+  line-height: 1.65;
+}
+.article-prose-biz pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+}
+.article-prose-biz .article-code-copy {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+.article-prose-biz .article-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--biz-line);
+  border-radius: 0.75rem;
+  background: var(--background);
+  scrollbar-color: var(--biz-dot) transparent;
+  scrollbar-width: thin;
+}
+.article-prose-biz .article-table-scroll:focus-visible {
+  outline: 2px solid var(--biz-forest);
+  outline-offset: 3px;
+}
+.article-prose-biz table {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--biz-copy);
+  font-size: 0.9em;
+  line-height: 1.55;
+}
+.article-prose-biz th,
+.article-prose-biz td {
+  padding: 0.9em 1em;
+  text-align: left;
+  vertical-align: top;
+}
+.article-prose-biz thead th {
+  background: var(--biz-forest);
+  color: var(--biz-paper);
+  font-family: var(--font-stack-sans-text), sans-serif;
+  font-size: 0.9em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.article-prose-biz tbody th {
+  color: var(--biz-forest);
+  font-weight: 600;
+}
+.article-prose-biz tbody tr:nth-child(even) > * {
+  background: var(--biz-panel);
+}
+.article-prose-biz tbody tr > * {
+  border-bottom: 1px solid var(--biz-line);
+}
+.article-prose-biz tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.article-prose-biz caption {
+  caption-side: bottom;
+  padding: 0.75em 1em;
+  color: var(--biz-muted);
+  font-size: 0.85em;
+  text-align: left;
+}
+@media (max-width: 40rem) {
+  .article-prose-biz .article-table-scroll {
+    margin-right: -0.25rem;
+  }
+  .article-prose-biz table {
+    min-width: 34rem;
+  }
+}
 .article-prose img {
   border-radius: 0.75rem;
 }

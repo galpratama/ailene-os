@@ -1,4 +1,5 @@
 import AppButton from "@/components/buttons/AppButton";
+import ArticleBodyBIZ from "@/components/pages/ArticleBodyBIZ";
 import PageMargin from "@/components/layouts/PageMargin";
 import FooterBIZ from "@/components/navigations/FooterBIZ";
 import HeaderBIZ from "@/components/navigations/HeaderBIZ";
@@ -8,6 +9,13 @@ import { WHATSAPP_URL } from "@/lib/site";
 import { ArrowRight, Clock, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Inter } from "next/font/google";
+
+const articleBodyFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-article-body",
+  display: "swap",
+});
 
 function shareLinks(title: string, url: string) {
   const text = encodeURIComponent(`${title}. Baca selengkapnya di ${url}`);
@@ -118,10 +126,9 @@ export default function ArticleDetailsPageBIZ({
               </ul>
             </section>
 
-            <div
-              className="article-prose text-[17px] text-biz-copy"
-              // Sanitized by the API on save (tag/attribute allowlist, no scripts or event handlers).
-              dangerouslySetInnerHTML={{ __html: article.body_content }}
+            <ArticleBodyBIZ
+              content={article.body_content}
+              className={`${articleBodyFont.variable} article-prose article-prose-biz text-[17px] text-biz-copy`}
             />
 
             <div className="flex flex-wrap items-center gap-3 border-t border-ink-line pt-6">
