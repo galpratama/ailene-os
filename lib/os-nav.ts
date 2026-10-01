@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   SquareCheckBig,
+  TrendingUp,
   Users,
 } from "lucide-react";
 
@@ -94,6 +95,13 @@ export const osMainNav: OSNavItem[] = [
     href: "/analytics",
     label: "Analytics",
     icon: ChartNoAxesCombined,
+    segment: "B2B",
+    group: "Marketing",
+  },
+  {
+    href: "/keywords",
+    label: "Keywords",
+    icon: TrendingUp,
     segment: "B2B",
     group: "Marketing",
   },

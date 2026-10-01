@@ -112,6 +112,11 @@ import {
 } from "@/apis/trainers";
 import { createTeam as createTeamApi, listTeams as listTeamsApi } from "@/apis/teams";
 import {
+  listTrendingKeywords as listTrendingKeywordsApi,
+  refreshTrendingKeywords as refreshTrendingKeywordsApi,
+  type ListTrendingKeywordsOptions,
+} from "@/apis/trending-keywords";
+import {
   getUserDetails as getUserDetailsApi,
   inviteUser as inviteUserApi,
   listUsers as listUsersApi,
@@ -549,6 +554,14 @@ export async function deleteLmsMember(payload: {
   access_id: string;
 }) {
   return deleteLmsMemberApi(payload);
+}
+
+export async function listTrendingKeywords(options: ListTrendingKeywordsOptions = {}) {
+  return listTrendingKeywordsApi(options);
+}
+
+export async function refreshTrendingKeywords() {
+  return refreshTrendingKeywordsApi();
 }
 
 // Public landing page: only a classified outcome crosses back, never the API's own wording.
