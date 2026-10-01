@@ -1,6 +1,7 @@
 import type { SVGProps } from "react";
 
-export type LogoAileneVariant = "default" | "white";
+// "dark" is for dark surfaces: white wordmark, AI symbol keeps the brand gradient.
+export type LogoAileneVariant = "default" | "white" | "dark";
 
 interface LogoAileneProps extends SVGProps<SVGSVGElement> {
   variant?: LogoAileneVariant;
@@ -12,7 +13,7 @@ export function LogoAilene({
   ...props
 }: LogoAileneProps) {
   const isWhite = variant === "white";
-  const wordmarkFill = isWhite ? "white" : "currentColor";
+  const wordmarkFill = isWhite || variant === "dark" ? "white" : "currentColor";
   const symbolFill = isWhite ? "white" : "url(#aileneLogoFinalGradient)";
 
   return (

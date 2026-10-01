@@ -2,7 +2,8 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import ThemeToggleOS from "@/components/buttons/ThemeToggleOS";
-import { LogoAileneStroke } from "@/components/svg/LogoAileneStroke";
+import NotificationBellOS from "@/components/navigations/NotificationBellOS";
+import { LogoAilene } from "@/components/svg/LogoAilene";
 import { useSession } from "@/contexts/SessionContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { logoutUser } from "@/lib/actions";
@@ -153,8 +154,7 @@ function UserFooter({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-export default function SidebarOS() {
-
+export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
   const role = useSession()?.role;
 
   const {
@@ -251,7 +251,7 @@ export default function SidebarOS() {
           }`}
         >
           {!isCollapsed && (
-            <LogoAileneStroke className="h-12 w-auto shrink-0 -rotate-3 drop-shadow-[1px_1px_0_white]" />
+            <LogoAilene variant="dark" className="h-6 w-auto shrink-0" />
           )}
 
           <AppButton
@@ -263,33 +263,20 @@ export default function SidebarOS() {
           >
             <Menu size={18} />
           </AppButton>
-          <AppButton
-            variant="sidebarOutline"
-            size="icon"
-            onClick={toggleSidebar}
-            className="hidden rounded-full md:flex"
-            aria-label="Toggle sidebar"
+          <div
+            className={`hidden items-center gap-2 md:flex ${isCollapsed ? "flex-col" : ""}`}
           >
-            <Menu size={18} />
-          </AppButton>
-        </div>
-
-        {/* Org selector */}
-        <div className={isCollapsed ? "px-2 pb-3" : "px-3 pb-3"}>
-          <AppButton
-            variant="sidebarOutline"
-            size="md"
-            className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-between"}`}
-          >
-            <span className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-claude shrink-0" />
-              {!isCollapsed && (
-                <span className="font-bold text-left text-sm text-sb-text-strong uppercase truncate">
-                  Operating System
-                </span>
-              )}
-            </span>
-          </AppButton>
+            <NotificationBellOS sessionToken={sessionToken} tone="sidebar" />
+            <AppButton
+              variant="sidebarOutline"
+              size="icon"
+              onClick={toggleSidebar}
+              className="rounded-full"
+              aria-label="Toggle sidebar"
+            >
+              <Menu size={18} />
+            </AppButton>
+          </div>
         </div>
 
         {/* B2B / B2C segment toggle */}
@@ -317,7 +304,10 @@ export default function SidebarOS() {
 
           {/* Grouped nav sections (Business Development, Operations, Administrator, ...) */}
           {navGroups.map((group) => (
-            <div key={group.label} className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
+            <div
+              key={group.label}
+              className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}
+            >
               {!isCollapsed && (
                 <p className="font-display px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
                   {group.label}

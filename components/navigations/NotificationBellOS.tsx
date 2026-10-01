@@ -21,10 +21,20 @@ const ENTITY_HREF: Record<NotificationEntityType, string> = {
   b2b_meeting: "/calendar",
 };
 
+const TRIGGER_TONE = {
+  light:
+    "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+  sidebar:
+    "border border-sb-border-soft bg-sb-item-hover text-sb-text-strong hover:bg-sb-item-active-bg",
+} as const;
+
 export default function NotificationBellOS({
   sessionToken,
+  tone = "light",
 }: {
   sessionToken: string;
+  // "sidebar" styles the trigger for the dark sidebar and opens the panel rightward.
+  tone?: keyof typeof TRIGGER_TONE;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,7 +88,7 @@ export default function NotificationBellOS({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex size-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+        className={`relative flex size-8 items-center justify-center rounded-full ${TRIGGER_TONE[tone]}`}
         aria-label="Notifications"
       >
         <Bell size={15} />
@@ -90,7 +100,7 @@ export default function NotificationBellOS({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 z-30 mt-2 w-80 overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800">
+        <div className={`absolute top-full z-30 mt-2 w-80 ${tone === "sidebar" ? "left-0" : "right-0"} overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800`}>
           <div className="flex items-center justify-between border-b border-line-soft px-3 py-2">
             <p className="text-xs font-semibold text-gray-700 dark:text-zinc-200">
               Notifications

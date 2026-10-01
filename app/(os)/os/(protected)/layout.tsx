@@ -33,7 +33,7 @@ export default async function OSProtectedLayout({
           <div
             className={`flex h-screen overflow-hidden bg-os-gradient os-font-scope ${stackSans.className} ${stackSans.variable}`}
           >
-            <SidebarOS />
+            <SidebarOS sessionToken={sessionToken} />
             <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">
               <HeaderOS sessionToken={sessionToken} />
               <main className="flex-1 overflow-auto bg-os-gradient bg-geo-pattern">

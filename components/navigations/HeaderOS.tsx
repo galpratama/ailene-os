@@ -18,7 +18,7 @@ export default function HeaderOS({ sessionToken }: { sessionToken: string }) {
   const user = useSession();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-end gap-3 border-b border-line-soft bg-white px-6 dark:bg-zinc-900">
+    <header className="flex h-14 shrink-0 items-center justify-end md:hidden gap-3 border-b border-line-soft bg-white px-6 dark:bg-zinc-900">
       <NotificationBellOS sessionToken={sessionToken} />
       {user?.avatar ? (
         <Image
