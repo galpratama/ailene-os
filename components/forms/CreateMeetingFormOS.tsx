@@ -14,6 +14,7 @@ import { createMeeting } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { reportMeetingSync } from "@/lib/meetings";
 import { showErrorToast } from "@/lib/toast";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -48,8 +49,13 @@ export default function CreateMeetingFormOS({
 
   const userList = useUserList(isOpen);
   const organizerOptions: AppSelectOption[] = [
-    { value: "", label: "Me" },
-    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+    {
+      value: "",
+      label: "Me",
+      avatar: sessionUser?.avatar ?? null,
+      avatarName: sessionUser?.full_name,
+    },
+    ...userList.map(userSelectOption),
   ];
 
   // The Meet link is created on the organizer's calendar; only our own connection is visible here.

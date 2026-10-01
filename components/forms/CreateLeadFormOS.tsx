@@ -13,6 +13,7 @@ import { useUserList } from "@/hooks/useUserList";
 import { requireApiData } from "@/lib/api-result";
 import { createPipeline, listCompanies } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, pipelineStageOptions } from "@/lib/sales";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -96,10 +97,7 @@ export default function CreateLeadFormOS({
     value: industry.id,
     label: industry.name,
   }));
-  const ownerOptions: AppSelectOption[] = userList.map((user) => ({
-    value: user.id,
-    label: user.full_name,
-  }));
+  const ownerOptions: AppSelectOption[] = userList.map(userSelectOption);
 
   const mutation = useMutation({
     mutationFn: async () => {

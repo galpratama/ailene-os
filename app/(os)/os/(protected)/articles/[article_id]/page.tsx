@@ -17,7 +17,7 @@ export default async function Page({
     getArticleDetails(articleId),
     listArticleCategories({ page: 1, page_size: 100 }),
     // Every status, so a departed author/reviewer still shows by name instead of a blank pick.
-    listUsers({ page: 1, page_size: 100 }),
+    listUsers({ page: 1, page_size: 100, status: "ACTIVE" }),
   ]);
   if (!isSuccessStatus(article.status) || !article.data) notFound();
 

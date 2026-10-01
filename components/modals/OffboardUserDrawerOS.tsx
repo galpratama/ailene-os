@@ -12,6 +12,7 @@ import {
   updateUserStatus,
 } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
+import { userSelectOption } from "@/lib/user-select-option";
 import type { UserEntry, UserOwnership } from "@/apis/users";
 import { Briefcase, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,7 +52,7 @@ export default function OffboardUserDrawerOS({
     let active = true;
     Promise.all([
       getUserDetails(userId),
-      listUsers({ page: 1, page_size: 100 }),
+      listUsers({ page: 1, page_size: 100, status: "ACTIVE" }),
     ]).then(([detail, list]) => {
       if (!active) return;
       setUser(detail.data ?? null);
@@ -68,11 +69,7 @@ export default function OffboardUserDrawerOS({
 
   const ownerOptions: AppSelectOption[] = candidates
     .filter((u) => u.id !== userId)
-    .map((u) => ({
-      value: u.id,
-      label: u.full_name,
-      image: u.avatar ?? undefined,
-    }));
+    .map(userSelectOption);
 
   function handleClose() {
     setNewOwnerId("");

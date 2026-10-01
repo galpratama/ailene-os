@@ -8,10 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 // Stable reference so callers don't re-render on every miss.
 const EMPTY: UserEntry[] = [];
 
-// Owner/assignee pickers want the whole roster in one go; the API caps a page at 100.
-export function useUserList(enabled: boolean, status?: UserStatus) {
+// User pickers only offer active accounts; the API caps a page at 100.
+export function useUserList(enabled: boolean, status: UserStatus = "ACTIVE") {
   const { data } = useQuery({
-    queryKey: ["users", "roster", status ?? "all"],
+    queryKey: ["users", "roster", status],
     queryFn: async () =>
       requireApiData(await listUsers({ page: 1, page_size: 100, status })).list,
     enabled,

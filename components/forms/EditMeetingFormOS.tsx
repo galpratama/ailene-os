@@ -15,6 +15,7 @@ import { deleteMeeting, getMeetingDetails, updateMeeting } from "@/lib/actions";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { isGoogleMeetLink, reportMeetingSync } from "@/lib/meetings";
 import { showErrorToast } from "@/lib/toast";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -93,8 +94,7 @@ export default function EditMeetingFormOS({
   }
 
   const userList = useUserList(isOpen && !isOwnScoped);
-  const organizerOptions: AppSelectOption[] =
-    userList.map((u) => ({ value: u.id, label: u.full_name })) ?? [];
+  const organizerOptions: AppSelectOption[] = userList.map(userSelectOption);
 
   const { data: connection } = useGoogleCalendarConnection(!!sessionToken && isOpen);
   const hasMeetLink = isGoogleMeetLink(locationOrLink);

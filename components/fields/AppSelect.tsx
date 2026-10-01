@@ -8,7 +8,10 @@ import { fieldLabelClass, fieldOptionActiveClass } from "@/lib/field-styles";
 export interface AppSelectOption {
   label: string;
   value: string | number | null;
-  image?: string;
+  // `undefined` means a regular option. User options pass their avatar (including null)
+  // so they always render as an avatar with an initials fallback.
+  avatar?: string | null;
+  avatarName?: string;
 }
 
 interface AppSelectProps {
@@ -58,6 +61,36 @@ export default function AppSelect({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  function initialsOf(name: string) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    return `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`.toUpperCase() || "?";
+  }
+
+  function avatar(option: AppSelectOption, sizeClass: string, textClass: string) {
+    if (option.avatar === undefined) return null;
+    if (option.avatar) {
+      return (
+        <div className={`flex shrink-0 overflow-hidden rounded-full ${sizeClass}`}>
+          <Image
+            className="size-full object-cover"
+            src={option.avatar}
+            alt={option.label}
+            width={100}
+            height={100}
+          />
+        </div>
+      );
+    }
+    return (
+      <span
+        aria-hidden
+        className={`flex shrink-0 items-center justify-center rounded-full bg-claude/10 font-semibold text-claude ${sizeClass} ${textClass}`}
+      >
+        {initialsOf(option.avatarName ?? option.label)}
+      </span>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1.5" ref={containerRef}>
       {label && (
@@ -92,17 +125,7 @@ export default function AppSelect({
         )}
 
         <div className="flex items-center gap-2 truncate">
-          {selectedOption?.image && (
-            <div className="flex aspect-square size-5 overflow-hidden rounded-full">
-              <Image
-                className="h-full w-full object-cover"
-                src={selectedOption.image}
-                alt={selectedOption.label}
-                width={100}
-                height={100}
-              />
-            </div>
-          )}
+          {selectedOption && avatar(selectedOption, "size-5", "text-[9px]")}
           <span
             className={`block truncate ${selectedOption ? "text-gray-900 dark:text-zinc-100" : "text-gray-400 dark:text-zinc-500"}`}
           >
@@ -131,17 +154,7 @@ export default function AppSelect({
                     value === opt.value ? fieldOptionActiveClass : "text-gray-900 dark:text-zinc-100"
                   }`}
                 >
-                  {opt.image && (
-                    <div className="flex aspect-square size-[26px] overflow-hidden rounded-full">
-                      <Image
-                        className="h-full w-full object-cover"
-                        src={opt.image}
-                        alt={opt.label}
-                        width={100}
-                        height={100}
-                      />
-                    </div>
-                  )}
+                  {avatar(opt, "size-6.5", "text-[10px]")}
                   {opt.label}
                 </li>
               ))}

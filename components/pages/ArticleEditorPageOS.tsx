@@ -17,6 +17,7 @@ import type { UserEntry } from "@/apis/users";
 import { createArticle, updateArticle } from "@/lib/actions";
 import { ARTICLE_STATUS_OPTIONS, articleURL } from "@/lib/article";
 import { isSuccessStatus } from "@/lib/status_code";
+import { userSelectOption } from "@/lib/user-select-option";
 import dayjs from "dayjs";
 import { ArrowLeft, Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -66,11 +67,7 @@ export default function ArticleEditorPageOS({
     value: category.id,
     label: category.status === "active" ? category.name : `${category.name} (inactive)`,
   }));
-  const userOptions: AppSelectOption[] = users.map((user) => ({
-    value: user.id,
-    label: user.full_name,
-    image: user.avatar ?? undefined,
-  }));
+  const userOptions: AppSelectOption[] = users.map(userSelectOption);
 
   function validate(): string | null {
     if (!title.trim()) return "Title is required.";

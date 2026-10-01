@@ -23,6 +23,7 @@ import {
   updatePipeline,
 } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_LABELS, pipelineStageOptions } from "@/lib/sales";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -121,10 +122,7 @@ export default function EditLeadFormOS({
     value: industry.id,
     label: industry.name,
   }));
-  const ownerOptions: AppSelectOption[] = userList.map((user) => ({
-    value: user.id,
-    label: user.full_name,
-  }));
+  const ownerOptions: AppSelectOption[] = userList.map(userSelectOption);
 
   const saveMutation = useMutation({
     mutationFn: async () => {

@@ -19,6 +19,7 @@ import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
 import { updateAction } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
@@ -101,7 +102,7 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   const userList = useUserList(!isOwnScoped);
   const assigneeOptions: AppSelectOption[] = [
     { value: "", label: "All PICs" },
-    ...(userList.map((u) => ({ value: u.id, label: u.full_name })) ?? []),
+    ...userList.map(userSelectOption),
   ];
 
   // Optimistic local overrides so a drag feels instant while the mutation is in flight.

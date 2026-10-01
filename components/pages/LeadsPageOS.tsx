@@ -18,6 +18,7 @@ import { requireApiData } from "@/lib/api-result";
 import { listPipelines, updatePipeline } from "@/lib/actions";
 import { getRupiahCurrency } from "@/lib/currency";
 import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
+import { userSelectOption } from "@/lib/user-select-option";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -150,7 +151,7 @@ export default function LeadsPageOS({
   const userList = useUserList(!isOwnScoped, "ACTIVE");
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
-    ...userList.map((user) => ({ value: user.id, label: user.full_name })),
+    ...userList.map(userSelectOption),
   ];
   const phaseStages = PIPELINE_STAGES_BY_PHASE[phase];
   const stageOptions: AppSelectOption[] = [
