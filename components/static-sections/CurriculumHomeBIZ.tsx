@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { curriculumModules as modules } from "@/lib/biz-content";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
+import ToolsHomeBIZ from "./ToolsHomeBIZ";
 import PageMargin from "@/components/layouts/PageMargin";
 
 export default function CurriculumHomeBIZ() {
@@ -112,6 +113,7 @@ export default function CurriculumHomeBIZ() {
             </aside>
           </div>
         </div>
+        <ToolsHomeBIZ embedded />
       </PageMargin>
     </section>
   );

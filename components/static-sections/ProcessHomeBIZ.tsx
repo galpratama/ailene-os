@@ -1,118 +1,115 @@
-const steps = [
-  {
-    num: "01",
-    title: "Discovery",
-    desc: "Audience, objective, industri, timeline, dan constraints.",
-  },
-  {
-    num: "02",
-    title: "Pick Baseline",
-    desc: "Pilih Package A, B, atau C sebagai fondasi.",
-  },
-  {
-    num: "03",
-    title: "Customize",
-    desc: "Use case, contoh, tools, dan format disesuaikan.",
-  },
-  {
-    num: "04",
-    title: "Deliver",
-    desc: "Lead trainer dan specialist sesuai kebutuhan.",
-  },
-  {
-    num: "05",
-    title: "Output",
-    desc: "Prompt library, workflow map, action plan, atau roadmap.",
-  },
-];
+"use client";
 
-const addOns = [
-  "Executive AI Strategy",
-  "AI for Marketing",
-  "AI for Sales & BD",
-  "AI for Finance",
-  "AI for HR & People Ops",
-  "AI for Operations",
-  "AI Builder / Vibe Coding",
-  "AI Agents & Automation",
-];
+import PageMargin from "@/components/layouts/PageMargin";
+import { useRef, useState } from "react";
+import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
+
+const phases = [
+  {
+    title: "Workshop",
+    start: 0,
+    end: 5.2,
+    description: "Belajar memakai AI dengan contoh dari pekerjaan sehari-hari.",
+  },
+  {
+    title: "Penerapan",
+    start: 5.2,
+    end: 10.6,
+    description: "Coba AI langsung pada pekerjaan yang sedang dikerjakan.",
+  },
+  {
+    title: "Demo Day",
+    start: 10.6,
+    end: 16,
+    description: "Tunjukkan hasilnya kepada tim dan pimpinan.",
+  },
+] as const;
 
 export default function ProcessHomeBIZ() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [activePhase, setActivePhase] = useState(0);
+
+  function syncPhase(currentTime: number) {
+    const index = phases.findIndex(
+      (phase) => currentTime >= phase.start && currentTime < phase.end,
+    );
+    if (index < 0) return;
+
+    setActivePhase(index);
+  }
+
+  function selectPhase(index: number) {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = phases[index].start + 0.05;
+    setActivePhase(index);
+    void video.play().catch(() => undefined);
+  }
+
   return (
-    <section className="py-19 sm:py-26">
-      <div className="mx-auto w-[min(1180px,calc(100%-48px))]">
-        <div className="mb-9 grid grid-cols-1 items-end gap-6 lg:grid-cols-2 lg:gap-20">
-          <div>
-            <div className="font-script mb-2.5 text-[34px] leading-none text-coral">
-              How it works
-            </div>
-            <h2 className="text-[36px] leading-[1.02] font-light tracking-[-0.025em] lg:text-[44px]">
-              Nggak mulai dari nol <strong className="font-bold">setiap client.</strong>
-            </h2>
-          </div>
-          <p className="max-w-145 text-lg font-light">
-            Kami mulai dari package baseline, lalu menyesuaikan contoh,
-            tools, dan use case dengan industri serta objective tim.
-          </p>
-        </div>
+    <section id="how-it-works" className="bg-biz-paper py-18 sm:py-28">
+      <PageMargin>
+        <SectionHeaderHomeBIZ
+          centered
+          eyebrow="How it works"
+          title="Belajar AI, terapkan dalam pekerjaan, lalu lihat hasilnya."
+        />
 
-        <div className="border-2 border-ink lg:flex">
-          {steps.map((step, index) => (
-            <div
-              key={step.num}
-              className={`p-6.5 lg:min-h-47.5 lg:flex-1 ${
-                index !== steps.length - 1
-                  ? "border-b-2 border-ink lg:border-r-2 lg:border-b-0"
-                  : ""
-              }`}
-            >
-              <div className="text-[42px] leading-none font-light text-coral">
-                {step.num}
-              </div>
-              <h3 className="mt-5.5 mb-2 text-xl">{step.title}</h3>
-              <p className="text-[13px] opacity-65">{step.desc}</p>
-            </div>
-          ))}
-        </div>
+        <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)] lg:gap-8">
+            <ol className="grid gap-2.5">
+              {phases.map((phase, index) => {
+                const isActive = activePhase === index;
+                return (
+                  <li key={phase.title}>
+                    <button
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => selectPhase(index)}
+                      className={`relative grid w-full grid-cols-[2.125rem_minmax(0,1fr)] gap-x-4 overflow-hidden rounded-xl border p-4.5 text-left transition-colors sm:p-5 ${
+                        isActive
+                          ? "border-biz-forest bg-biz-lime"
+                          : "border-biz-forest/12 bg-white hover:bg-biz-panel"
+                      }`}
+                    >
+                      <span
+                        className={`row-span-2 grid size-8.5 place-items-center rounded-full border font-mono text-xs ${
+                          isActive
+                            ? "border-biz-forest bg-biz-forest text-biz-lime"
+                            : "border-biz-forest/18 text-biz-muted"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <h3 className="text-[21px] leading-tight font-medium tracking-[-0.035em] text-biz-forest">
+                        {phase.title}
+                      </h3>
+                      <p className={`mt-1.5 text-[14px] leading-[1.55] ${isActive ? "text-biz-forest/75" : "text-biz-muted"}`}>
+                        {phase.description}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
 
-        <div className="mt-16 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_2fr]">
-          <div className="bg-amber p-7 shadow-[8px_8px_0_0_var(--color-ink)]">
-            <div className="font-script text-[34px] leading-none">
-              Optional add-ons
-            </div>
-            <h3 className="mt-2.25 text-[32px] leading-[1.05]">
-              Modul tambahan sesuai fungsi tim.
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 border-t-2 border-l-2 border-ink sm:grid-cols-2">
-            {addOns.map((chip) => (
-              <div
-                key={chip}
-                className="border-r-2 border-b-2 border-ink p-4.5 text-sm font-bold"
+            <div className="order-first overflow-hidden rounded-2xl border border-biz-forest/12 bg-white shadow-xl shadow-biz-forest/10 lg:order-none">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                poster="/biz/how-poster.jpg"
+                onTimeUpdate={(event) => syncPhase(event.currentTarget.currentTime)}
+                className="aspect-video w-full object-cover"
+                aria-label="Animasi alur program Ailene: workshop, penerapan di pekerjaan, dan Demo Day"
               >
-                {chip}
-              </div>
-            ))}
-          </div>
+                <source src="/biz/how.mp4" type="video/mp4" />
+              </video>
+            </div>
         </div>
-
-        <div className="mt-14 grid grid-cols-1 items-center gap-10 bg-lime-t p-9 lg:grid-cols-[1fr_auto]">
-          <div>
-            <h3 className="mb-2 text-[32px]">Butuh format yang lebih spesifik?</h3>
-            <p className="max-w-180">
-              Custom training tetap tersedia untuk executive-only session,
-              technical deep dive, full online, multi-batch, atau program
-              berkala.
-            </p>
-          </div>
-          <a
-            href="#contact"
-            className="inline-flex min-h-12.5 items-center justify-center gap-1.5 bg-ink px-5.5 text-[13px] font-bold tracking-[0.06em] text-white uppercase transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
-          >
-            Bahas Custom Scope
-          </a>
-        </div>
-      </div>
+      </PageMargin>
     </section>
   );
 }
