@@ -60,21 +60,29 @@ export default function EditUserFormOS({
   useEffect(() => {
     if (!isOpen || !userId) return;
     let active = true;
-    getUserDetails(userId).then((result) => {
-      if (!active) return;
-      const entry = result.data ?? null;
-      setUser(entry);
-      if (entry) {
+    getUserDetails(userId)
+      .then((result) => {
+        if (!active) return;
+        if (!isSuccessStatus(result.status) || !result.data) {
+          showErrorToast(result.message ?? "Failed to load user.");
+          return onClose();
+        }
+        const entry = result.data;
+        setUser(entry);
         setRole(entry.role);
         setTeamId(entry.team_id);
         setJobFunction(entry.job_function ?? "");
         setDataScope(entry.data_scope);
-      }
-    });
+      })
+      .catch((error) => {
+        if (!active) return;
+        showErrorToast(error, "Failed to load user.");
+        onClose();
+      });
     return () => {
       active = false;
     };
-  }, [isOpen, userId]);
+  }, [isOpen, userId, onClose]);
 
   const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
     value: option.value,
