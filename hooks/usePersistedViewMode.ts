@@ -1,29 +1,41 @@
 "use client";
 
 import type { ViewModeOS } from "@/components/buttons/ViewModeToggleOS";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-// Always start on defaultMode so the client's first render matches the
-// server's (which has no access to localStorage) — read the saved value
-// after mount instead of during the initial render, same pattern as
-// SidebarContext's isCollapsed persistence.
+function readSaved(storageKey: string) {
+  try {
+    return sessionStorage.getItem(storageKey);
+  } catch {
+    return null;
+  }
+}
+
+// Starts on defaultMode so the first client render matches the server, then restores this tab's last pick after mount.
 export function usePersistedViewMode<T extends ViewModeOS>(
   storageKey: string,
   allowed: readonly T[],
   defaultMode: T
 ) {
-  const [viewMode, setViewMode] = useState<T>(defaultMode);
+  const [viewMode, setViewModeState] = useState<T>(defaultMode);
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
+    const saved = readSaved(storageKey);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (allowed.includes(saved as T)) setViewMode(saved as T);
+    if (allowed.includes(saved as T)) setViewModeState(saved as T);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [storageKey]);
 
-  useEffect(() => {
-    localStorage.setItem(storageKey, viewMode);
-  }, [storageKey, viewMode]);
+  // Saved only on an explicit pick, so the default render can never overwrite the stored choice.
+  const setViewMode = useCallback(
+    (next: T) => {
+      setViewModeState(next);
+      try {
+        sessionStorage.setItem(storageKey, next);
+      } catch {}
+    },
+    [storageKey]
+  );
 
   return [viewMode, setViewMode] as const;
 }
