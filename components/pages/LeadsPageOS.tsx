@@ -10,19 +10,19 @@ import EditLeadFormOS from "@/components/forms/EditLeadFormOS";
 import StageLabel from "@/components/labels/StageLabel";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import LeadsKanbanBoardOS from "@/components/pages/LeadsKanbanBoardOS";
 import LeadsWeeklyPanelOS from "@/components/pages/LeadsWeeklyPanelOS";
 import { useSession } from "@/contexts/SessionContext";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
 import { requireApiData } from "@/lib/api-result";
-import { listPipelines, updatePipeline } from "@/lib/actions";
+import { listPipelines } from "@/lib/actions";
 import { getRupiahCurrency } from "@/lib/currency";
-import { isStageCompatibleWithLeadSource, PIPELINE_STAGE_DOTS, PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
+import { PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
 import { userSelectOption } from "@/lib/user-select-option";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { showErrorToast } from "@/lib/toast";
+import { useEffect, useState } from "react";
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
@@ -60,13 +60,13 @@ export default function LeadsPageOS({
   sessionToken: string;
   phase: PipelinePhase;
 }) {
-  const queryClient = useQueryClient();
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "OWN";
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  // Set while the create sheet is open; the kanban "+" seeds it with that column's stage.
+  const [createStage, setCreateStage] = useState<PipelineStage | "default" | null>(null);
   const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
-  // The weekly tab's leads are not in `pipelineList`, so they carry their own row.
-  const [weeklyPipeline, setWeeklyPipeline] = useState<PipelineData | null>(null);
+  // Kanban and weekly leads are not in `pipelineList`, so they carry their own row.
+  const [openedPipeline, setOpenedPipeline] = useState<PipelineData | null>(null);
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     `leads_${phase}_view_mode`,
     ["kanban", "cards", "table", "weekly"],
@@ -77,9 +77,6 @@ export default function LeadsPageOS({
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>();
   // Keyed by the API field each value is sent as, so the filter menu stays generic.
   const [filterValues, setFilterValues] = useState<FilterValues>({});
-  const [draggedId, setDraggedId] = useState<number | null>(null);
-  const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
-  const [movedStages, setMovedStages] = useState<Partial<Record<number, PipelineStage>>>({});
   const pageSize = 21;
   const isBoardView = viewMode === "kanban";
   const isWeeklyView = viewMode === "weekly";
@@ -104,48 +101,18 @@ export default function LeadsPageOS({
     created_to: filterValues.created_to || undefined,
   };
 
-  const filters = {
-    ...baseFilters,
-    page: isBoardView ? 1 : page,
-    page_size: isBoardView ? 100 : pageSize,
-  };
+  const filters = { ...baseFilters, page, page_size: pageSize };
 
+  // The kanban pages each column itself, so this paged list only feeds cards and table.
   const pipelineQuery = useQuery({
     queryKey: ["sales", "pipelines", filters],
     queryFn: async () => requireApiData(await listPipelines(filters)),
-    enabled: !!sessionToken && !isWeeklyView,
+    enabled: !!sessionToken && !isWeeklyView && !isBoardView,
   });
 
   const pipelineList = pipelineQuery.data?.list;
-  // From the raw list, not `board`, so an optimistic drag never becomes the stage baseline the save compares against.
-  const editingPipeline = pipelineList?.find((entry) => entry.id === editingPipelineId) ?? weeklyPipeline;
+  const editingPipeline = pipelineList?.find((entry) => entry.id === editingPipelineId) ?? openedPipeline;
   const totalPage = pipelineQuery.data?.metapaging.total_page ?? 1;
-  const board = useMemo(
-    () => pipelineList?.map((entry) => ({ ...entry, stage: movedStages[entry.id] ?? entry.stage })) ?? [],
-    [pipelineList, movedStages]
-  );
-
-  const updateStage = useMutation({
-    mutationFn: async ({ pipeline, stage }: { pipeline: PipelineData; stage: PipelineStage }) =>
-      requireApiData(
-        await updatePipeline({
-          id: pipeline.id,
-          company_id: pipeline.company_id,
-          sales_owner_id: pipeline.sales_owner_id,
-          stage,
-          estimated_value: Number(pipeline.estimated_value),
-          expected_close_date: pipeline.expected_close_date,
-        })
-      ),
-    onSuccess: async (_data, { pipeline }) => {
-      await queryClient.invalidateQueries({ queryKey: ["sales", "pipelines"] });
-      setMovedStages((current) => {
-        const next = { ...current };
-        delete next[pipeline.id];
-        return next;
-      });
-    },
-  });
 
   // Only active people can be picked as an owner to filter by.
   const userList = useUserList(!isOwnScoped, "ACTIVE");
@@ -175,37 +142,6 @@ export default function LeadsPageOS({
     setPage(1);
   }
 
-  function moveTo(id: number, stage: PipelineStage) {
-    const pipeline = board.find((entry) => entry.id === id);
-    if (!pipeline || pipeline.stage === stage) return;
-    if (!pipeline.lead_source) {
-      showErrorToast("Set this company's lead source before moving its pipeline.");
-      return;
-    }
-    if (!isStageCompatibleWithLeadSource(stage, pipeline.lead_source)) {
-      showErrorToast(
-        stage === "triaging"
-          ? "Triaging requires an inbound lead source."
-          : "Attempting requires an outbound lead source."
-      );
-      return;
-    }
-    setMovedStages((current) => ({ ...current, [id]: stage }));
-    updateStage.mutate(
-      { pipeline, stage },
-      {
-        onError: (cause) => {
-          setMovedStages((current) => {
-            const next = { ...current };
-            delete next[id];
-            return next;
-          });
-          showErrorToast(cause instanceof Error ? cause.message : "Failed to move this lead.");
-        },
-      }
-    );
-  }
-
   const phaseLabel = phase.toUpperCase();
 
   return (
@@ -213,7 +149,7 @@ export default function LeadsPageOS({
       <PageHeaderOS
         title={`${phaseLabel} Leads`}
         description={`Track and manage leads in the ${phaseLabel} sales phase.`}
-        action={{ label: "Add Lead", icon: Plus, onClick: () => setIsCreateOpen(true) }}
+        action={{ label: "Add Lead", icon: Plus, onClick: () => setCreateStage("default") }}
       />
 
       <div className="flex flex-col gap-3">
@@ -240,71 +176,17 @@ export default function LeadsPageOS({
       {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
       {pipelineQuery.isError && <p className="py-8 text-center text-sm text-red-500">{pipelineQuery.error.message}</p>}
 
-      {pipelineList && isBoardView && (
-        <>
-          {pipelineList.length === 100 && <p className="text-xs text-amber-600">Kanban shows at most 100 matching leads.</p>}
-          <div className="flex gap-4 overflow-x-auto pb-1">
-            {phaseStages.map((stage) => {
-              const items = board.filter((entry) => entry.stage === stage);
-              const isOver = dragOverStage === stage;
-              return (
-                <div
-                  key={stage}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setDragOverStage(stage);
-                  }}
-                  onDragLeave={(event) => {
-                    if (event.currentTarget === event.target) setDragOverStage(null);
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    setDragOverStage(null);
-                    if (draggedId !== null) moveTo(draggedId, stage);
-                    setDraggedId(null);
-                  }}
-                  className={`flex max-h-128 w-70 shrink-0 flex-col gap-2 rounded-xl border p-3 transition-colors ${
-                    isOver ? "border-claude bg-claude/5" : "border-line bg-dashboard-bg"
-                  }`}
-                >
-                  <div className="flex shrink-0 items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`size-2 rounded-full ${PIPELINE_STAGE_DOTS[stage]}`} />
-                      <span className="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-zinc-300">
-                        {PIPELINE_STAGE_LABELS[stage]}
-                      </span>
-                    </div>
-                    <span className={`flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${PIPELINE_STAGE_DOTS[stage]}`}>
-                      {items.length}
-                    </span>
-                  </div>
-                  <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-                    {items.map((entry) => (
-                      <div
-                        key={entry.id}
-                        draggable
-                        onDragStart={() => setDraggedId(entry.id)}
-                        onDragEnd={() => setDraggedId(null)}
-                        onClick={() => setEditingPipelineId(entry.id)}
-                        className={`flex cursor-grab flex-col gap-2 rounded-lg border border-line bg-kanban-card-bg p-3 hover:border-claude/40 ${draggedId === entry.id ? "opacity-50" : ""}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Building2 size={14} className="shrink-0 text-gray-400" />
-                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">{entry.company_name}</p>
-                        </div>
-                        <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
-                          <span>{leadSourceLabel(entry.lead_source)}</span>
-                          <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(entry.estimated_value))}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {items.length === 0 && <p className="py-6 text-center text-xs text-gray-400">No leads</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
+      {isBoardView && (
+        <LeadsKanbanBoardOS
+          // A stage filter narrows the board to that one column.
+          stages={baseFilters.stage ? [baseFilters.stage] : phaseStages}
+          filters={baseFilters}
+          onOpenLead={(lead) => {
+            setOpenedPipeline(lead);
+            setEditingPipelineId(lead.id);
+          }}
+          onAddLead={setCreateStage}
+        />
       )}
 
       {pipelineList && viewMode === "table" && (
@@ -360,7 +242,7 @@ export default function LeadsPageOS({
         <LeadsWeeklyPanelOS
           filters={baseFilters}
           onOpenLead={(lead) => {
-            setWeeklyPipeline(lead);
+            setOpenedPipeline(lead);
             setEditingPipelineId(lead.id);
           }}
         />
@@ -370,14 +252,20 @@ export default function LeadsPageOS({
       {!isBoardView && !isWeeklyView && (
         <AppPaginationOS currentPage={page} totalPages={totalPage} onPageChange={setPage} />
       )}
-      <CreateLeadFormOS sessionToken={sessionToken} phase={phase} isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+      <CreateLeadFormOS
+        sessionToken={sessionToken}
+        phase={phase}
+        defaultStage={createStage === "default" ? undefined : (createStage ?? undefined)}
+        isOpen={createStage !== null}
+        onClose={() => setCreateStage(null)}
+      />
       <EditLeadFormOS
         sessionToken={sessionToken}
         pipeline={editingPipeline}
         isOpen={editingPipelineId !== null}
         onClose={() => {
           setEditingPipelineId(null);
-          setWeeklyPipeline(null);
+          setOpenedPipeline(null);
         }}
       />
     </div>

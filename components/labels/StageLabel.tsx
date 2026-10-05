@@ -29,12 +29,12 @@ const stageStyles: Record<
   closed_lost: { variant: "merah", icon: XCircle, label: "Closed Lost" },
 };
 
-export default function StageLabel({ stage }: { stage: PipelineStage }) {
+export default function StageLabel({ stage, withIcon = true }: { stage: PipelineStage; withIcon?: boolean }) {
   const { variant, icon: Icon, label } = stageStyles[stage];
 
   return (
     <Label variant={variant}>
-      <Icon size={12} />
+      {withIcon && <Icon size={12} />}
       {label}
     </Label>
   );

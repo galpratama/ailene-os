@@ -47,14 +47,24 @@ export type ContactData = {
   updated_at: string;
 };
 
+// The company's primary contact, or its earliest one when none is flagged primary.
+export type PipelineContactData = {
+  id: number;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+};
+
 export type PipelineData = {
   id: number;
   company_id: number;
   company_name: string;
+  company_image_url: string | null;
   sales_owner_id: string;
   sales_owner_name: string;
   lead_source: LeadSource | null;
   lead_channel: LeadChannel | null;
+  primary_contact: PipelineContactData | null;
   stage: PipelineStage;
   phase: PipelinePhase;
   terminal: boolean;

@@ -47,11 +47,14 @@ function segmentClass(active: boolean) {
 export default function CreateLeadFormOS({
   sessionToken,
   phase,
+  defaultStage,
   isOpen,
   onClose,
 }: {
   sessionToken: string;
   phase: PipelinePhase;
+  // Preselects the stage, e.g. from a kanban column's "+"; omitted means the phase's first stage.
+  defaultStage?: PipelineStage;
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -89,7 +92,7 @@ export default function CreateLeadFormOS({
   }
   if (isOpen && !seededOpen) {
     setSeededOpen(true);
-    setStage(phase === "sdr" ? "lead_identified" : "discovery_done");
+    setStage(defaultStage ?? (phase === "sdr" ? "lead_identified" : "discovery_done"));
     if (isOwnScoped && sessionUser) setOwnerId(sessionUser.id);
   }
 
