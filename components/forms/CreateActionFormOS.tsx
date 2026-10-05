@@ -6,6 +6,7 @@ import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
 import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
 import { createAction } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
@@ -40,13 +41,17 @@ export default function CreateActionFormOS({
   defaultStatus = "to_do",
 }: CreateActionFormOSProps) {
   const queryClient = useQueryClient();
+  const sessionUser = useSession();
+  // Non-global users get "Me" from the empty pick; global users would otherwise default to Unassigned.
+  const defaultAssigneeId =
+    sessionUser?.data_scope === "GLOBAL" ? sessionUser.id : "";
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState<ActionStatus>(defaultStatus);
   const [priority, setPriority] = useState<ActionPriority>("medium");
   const [dueDate, setDueDate] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeId, setAssigneeId] = useState(defaultAssigneeId);
 
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -63,7 +68,7 @@ export default function CreateActionFormOS({
     setStatus(defaultStatus);
     setPriority("medium");
     setDueDate("");
-    setAssigneeId("");
+    setAssigneeId(defaultAssigneeId);
   }
 
   function handleClose() {
