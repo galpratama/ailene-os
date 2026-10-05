@@ -5,9 +5,7 @@ import ViewModeToggleOS, {
   type ViewModeOS,
 } from "@/components/buttons/ViewModeToggleOS";
 import AppInput from "@/components/fields/AppInput";
-import AppSelect, {
-  type AppSelectOption,
-} from "@/components/fields/AppSelect";
+import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
@@ -58,14 +56,27 @@ function dueLabel(due: string | null, isDone: boolean) {
   const target = new Date(year, month - 1, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  const diffDays = Math.round(
+    (target.getTime() - today.getTime()) / 86_400_000
+  );
 
-  if (diffDays < 0 && !isDone) return { text: `${Math.abs(diffDays)}d late`, late: true };
+  if (diffDays < 0 && !isDone)
+    return { text: `${Math.abs(diffDays)}d late`, late: true };
   if (diffDays === 0 && !isDone) return { text: "Today", late: false };
-  return { text: target.toLocaleDateString("en-US", { month: "short", day: "numeric" }), late: false };
+  return {
+    text: target.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    late: false,
+  };
 }
 
-export default function TasksPageOS({ sessionToken }: { sessionToken: string }) {
+export default function TasksPageOS({
+  sessionToken,
+}: {
+  sessionToken: string;
+}) {
   const queryClient = useQueryClient();
 
   const sessionUser = useSession();
@@ -78,10 +89,13 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   );
 
   const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState<
-    string | undefined
-  >(undefined);
-  const [assigneeFilter, setAssigneeFilter] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState<string | undefined>(
+    undefined
+  );
+  // Open on your own tasks; OWN-scoped users are already limited by the API and have no picker.
+  const [assigneeFilter, setAssigneeFilter] = useState(
+    isOwnScoped ? "" : (sessionUser?.id ?? "")
+  );
   const [createStatus, setCreateStatus] = useState<ActionStatus | null>(null);
 
   useEffect(() => {
@@ -120,7 +134,9 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
   );
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<ActionStatus | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<ActionStatus | null>(
+    null
+  );
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
@@ -146,19 +162,22 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
     }
   };
 
-  const handleDrop = (status: ActionStatus) => (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOverStatus(null);
-    const dragged = board.find((b) => b.id === draggedId);
-    setDraggedId(null);
-    if (dragged) void moveTo(dragged, status);
-  };
+  const handleDrop =
+    (status: ActionStatus) => (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setDragOverStatus(null);
+      const dragged = board.find((b) => b.id === draggedId);
+      setDraggedId(null);
+      if (dragged) void moveTo(dragged, status);
+    };
 
   return (
     <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tasks</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
+            Tasks
+          </h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
             Every action you can see, in one board
           </p>
@@ -240,7 +259,10 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
 
                 <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
                   {items.map((action) => {
-                    const due = dueLabel(action.due_date, action.status === "done");
+                    const due = dueLabel(
+                      action.due_date,
+                      action.status === "done"
+                    );
                     return (
                       <div
                         key={action.id}
@@ -261,7 +283,9 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                             {due && (
                               <span
                                 className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                                  due.late ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
+                                  due.late
+                                    ? "text-red-500"
+                                    : "text-gray-400 dark:text-zinc-500"
                                 }`}
                               >
                                 <CalendarClock size={11} />
@@ -288,7 +312,9 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                   })}
 
                   {!isLoading && items.length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">No tasks</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">
+                      No tasks
+                    </p>
                   )}
                 </div>
 
@@ -338,7 +364,9 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                     {due && (
                       <span
                         className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                          due.late ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
+                          due.late
+                            ? "text-red-500"
+                            : "text-gray-400 dark:text-zinc-500"
                         }`}
                       >
                         <CalendarClock size={11} />
@@ -387,7 +415,10 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
               </thead>
               <tbody>
                 {board.map((action) => {
-                  const due = dueLabel(action.due_date, action.status === "done");
+                  const due = dueLabel(
+                    action.due_date,
+                    action.status === "done"
+                  );
                   return (
                     <tr
                       key={action.id}
@@ -407,14 +438,18 @@ export default function TasksPageOS({ sessionToken }: { sessionToken: string }) 
                         {due ? (
                           <span
                             className={`inline-flex items-center gap-1 ${
-                              due.late ? "text-red-500" : "text-gray-500 dark:text-zinc-400"
+                              due.late
+                                ? "text-red-500"
+                                : "text-gray-500 dark:text-zinc-400"
                             }`}
                           >
                             <CalendarClock size={12} />
                             {due.text}
                           </span>
                         ) : (
-                          <span className="text-gray-300 dark:text-zinc-600">—</span>
+                          <span className="text-gray-300 dark:text-zinc-600">
+                            —
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
