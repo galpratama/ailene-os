@@ -2,6 +2,7 @@ import AppToaster from "@/components/elements/AppToaster";
 import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
+import PostHogBIZ from "@/components/analytics/PostHogBIZ";
 import { siteProfile } from "@/lib/site";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
@@ -63,6 +64,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <GoogleAdsTagBIZ />
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
+      <PostHogBIZ />
       <div className={`${stackSansText.className} ${stackSansText.variable} ${crayonize.variable}`}>
         {children}
       </div>
