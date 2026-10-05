@@ -20,8 +20,15 @@ const stageColors = [
   "var(--chart-2)",
   "var(--chart-3)",
   "var(--chart-4)",
+  "var(--chart-5)",
   "var(--chart-6)",
 ];
+
+// Spreads the ramp over however many stages there are, so the last one always lands on lime.
+function stageColor(index: number, total: number) {
+  const step = total > 1 ? index / (total - 1) : 0;
+  return stageColors[Math.round(step * (stageColors.length - 1))];
+}
 
 // Floor width so a near-zero stage stays visible; the number beside it carries the real value.
 const MIN_WIDTH_RATIO = 0.12;
@@ -86,7 +93,7 @@ export default function FunnelChartOS({
                 <div
                   className="h-14 w-full"
                   style={{
-                    backgroundColor: stageColors[index % stageColors.length],
+                    backgroundColor: stageColor(index, stages.length),
                     clipPath: `polygon(${inset(topRatio)}% 0, ${
                       100 - inset(topRatio)
                     }% 0, ${100 - inset(bottomRatio)}% 100%, ${inset(
