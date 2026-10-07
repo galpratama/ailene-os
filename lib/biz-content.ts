@@ -47,6 +47,15 @@ export const programs = [
 export type Program = (typeof programs)[number];
 
 // Short cards right under the hero; the full comparison lives in the programs table.
+// Options for the lead forms' "Kebutuhan saat ini"; the chosen label is sent as the lead's note.
+export const leadNeeds = [
+  "Pelatihan AI dasar untuk tim",
+  "Workflow AI sesuai fungsi / divisi",
+  "Use case AI prioritas organisasi",
+  "Program custom / track developer",
+  "Masih eksplorasi",
+] as const;
+
 export const programOverview = [
   {
     name: "Paket Foundation",

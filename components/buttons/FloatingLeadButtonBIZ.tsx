@@ -1,8 +1,8 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import { ArrowDownRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 // Visible from the first screen; steps aside while the destination form is seen.
 export default function FloatingLeadButtonBIZ() {
@@ -35,7 +35,7 @@ export default function FloatingLeadButtonBIZ() {
       >
         Mulai percakapan
         <span className="grid size-6 place-items-center rounded-full bg-biz-forest text-white">
-          <ArrowDownRight size={15} aria-hidden="true" strokeWidth={2.5} />
+          <IconBrandWhatsapp size={15} aria-hidden="true" strokeWidth={2.25} />
         </span>
       </AppButton>
     </div>

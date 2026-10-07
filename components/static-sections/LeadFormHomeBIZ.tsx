@@ -1,54 +1,26 @@
 "use client";
 
-import type { IndustryEntry } from "@/apis/lookup";
-import type { LeadChannel } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import { createInboundLead } from "@/lib/actions";
 import { trackFormLead, trackWhatsAppLead } from "@/lib/conversion";
+import InboundLeadFieldsBIZ, {
+  toInboundLeadPayload,
+} from "@/components/forms/InboundLeadFieldsBIZ";
 import { Check } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import PageMargin from "@/components/layouts/PageMargin";
 
-const fieldClass =
-  "min-h-11 w-full rounded-lg border border-biz-forest/15 bg-white px-3.5 text-sm text-biz-ink outline-none placeholder:text-biz-muted/55 focus:border-biz-forest-light focus:ring-3 focus:ring-biz-lime/25";
-
-// Values are the API's `lead_channel` enum; only the labels are localised.
-const channelOptions: { value: LeadChannel; label: string }[] = [
-  { value: "referral", label: "Rekomendasi kolega" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "instagram", label: "Instagram" },
-  { value: "thread", label: "Threads" },
-];
-
 type SubmitState = "idle" | "sending" | "sent" | "duplicate" | "error";
 
-export default function LeadFormHomeBIZ({
-  industries,
-}: {
-  industries: IndustryEntry[];
-}) {
+export default function LeadFormHomeBIZ() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const text = (key: string) => String(data.get(key) ?? "").trim();
-    const channel = text("lead_channel");
+    const payload = toInboundLeadPayload(event.currentTarget);
 
     setSubmitState("sending");
-    const result = await createInboundLead({
-      company_name: text("company"),
-      industry_id: Number(text("industry_id")) || null,
-      website_url: text("website") || null,
-      contact: {
-        full_name: text("name"),
-        email: text("email") || null,
-        phone: text("phone") || null,
-        job_title: text("job_title") || null,
-      },
-      lead_channel: (channel as LeadChannel) || null,
-      note: text("context") || null,
-    });
+    const result = await createInboundLead(payload);
 
     if (result.success) {
       trackFormLead({ placement: "lead_form" });
@@ -97,111 +69,7 @@ export default function LeadFormHomeBIZ({
                 Bagikan konteks singkat.
               </h3>
               <form onSubmit={handleSubmit} className="mt-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Nama lengkap
-                    <input
-                      name="name"
-                      required
-                      maxLength={255}
-                      placeholder="Nama kamu"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Email kerja
-                    <input
-                      name="email"
-                      type="email"
-                      required
-                      maxLength={255}
-                      placeholder="nama@perusahaan.com"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Nomor WhatsApp
-                    <input
-                      name="phone"
-                      maxLength={64}
-                      placeholder="08xxxxxxxxxx"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Jabatan
-                    <input
-                      name="job_title"
-                      maxLength={255}
-                      placeholder="Contoh: HR Manager"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Nama perusahaan
-                    <input
-                      name="company"
-                      required
-                      maxLength={255}
-                      placeholder="Nama perusahaan"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                    Website perusahaan
-                    <input
-                      name="website"
-                      type="url"
-                      maxLength={2048}
-                      placeholder="https://perusahaan.com"
-                      className={fieldClass}
-                    />
-                  </label>
-                  {industries.length > 0 && (
-                    <label className="grid gap-2 text-xs font-semibold text-biz-ink">
-                      Industri
-                      <select
-                        name="industry_id"
-                        defaultValue=""
-                        className={fieldClass}
-                      >
-                        <option value="">Pilih industri (opsional)</option>
-                        {industries.map((industry) => (
-                          <option key={industry.id} value={industry.id}>
-                            {industry.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                  <label
-                    className={`grid gap-2 text-xs font-semibold text-biz-ink ${industries.length > 0 ? "" : "sm:col-span-2"}`}
-                  >
-                    Tahu Ailene dari mana?
-                    <select
-                      name="lead_channel"
-                      defaultValue=""
-                      className={fieldClass}
-                    >
-                      <option value="">Pilih salah satu (opsional)</option>
-                      {channelOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="grid gap-2 text-xs font-semibold text-biz-ink sm:col-span-2">
-                    Kebutuhan saat ini
-                    <textarea
-                      name="context"
-                      rows={5}
-                      maxLength={2000}
-                      placeholder="Ceritakan target atau workflow yang ingin dibantu"
-                      className={`${fieldClass} resize-y py-3`}
-                    />
-                  </label>
-                </div>
+                <InboundLeadFieldsBIZ />
                 <AppButton
                   type="submit"
                   variant="lime"
@@ -215,7 +83,7 @@ export default function LeadFormHomeBIZ({
                 </AppButton>
                 {submitState === "duplicate" && (
                   <p className="mt-3 text-xs text-biz-muted">
-                    Perusahaan ini sudah terdaftar di sistem kami. Tim kami akan
+                    Data Anda sudah pernah kami terima. Tim kami akan
                     menindaklanjuti lewat kontak yang sudah ada.
                   </p>
                 )}

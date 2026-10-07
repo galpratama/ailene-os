@@ -14,15 +14,12 @@ import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
 import FloatingLeadButtonBIZ from "../buttons/FloatingLeadButtonBIZ";
 import ScrollLeadModalBIZ from "../modals/ScrollLeadModalBIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
-import type { IndustryEntry } from "@/apis/lookup";
 import type { HeroAudience, HeroDisplay } from "@/lib/biz-content";
 
 export default function HomePageBIZ({
-  industries,
   audience,
   display,
 }: {
-  industries: IndustryEntry[];
   audience: HeroAudience;
   display: HeroDisplay;
 }) {
@@ -56,14 +53,14 @@ export default function HomePageBIZ({
           <FAQHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="lead_form">
-          <LeadFormHomeBIZ industries={industries} />
+          <LeadFormHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="final_cta">
           <CTAHomeBIZ />
         </RevealOnScroll>
       </main>
       <FooterHomeBIZ />
-      <ScrollLeadModalBIZ industries={industries} />
+      <ScrollLeadModalBIZ />
       <FloatingLeadButtonBIZ />
     </div>
   );

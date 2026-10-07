@@ -3,6 +3,7 @@
 import { LogoAilene } from "@/components/svg/LogoAilene";
 import { trackCTAClick } from "@/lib/conversion";
 import PageMargin from "@/components/layouts/PageMargin";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const columns = [
   {
@@ -44,8 +45,9 @@ export default function FooterHomeBIZ() {
             <a
               href="#contact"
               onClick={() => trackCTAClick({ placement: "footer" })}
-              className="text-sm font-medium text-biz-lime hover:text-white"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-biz-lime hover:text-white"
             >
+              <IconBrandWhatsapp size={17} aria-hidden="true" />
               Konsultasi Gratis
             </a>
           </p>

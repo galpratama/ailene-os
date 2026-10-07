@@ -131,14 +131,13 @@ export default function ProgramOverviewHomeBIZ() {
   return (
     <section
       id="program-overview"
-      className="overflow-hidden bg-biz-forest py-18 sm:py-28"
+      className="overflow-hidden bg-white py-18 sm:py-28"
     >
       <SectionHeaderHomeBIZ
         eyebrow="Program overview"
         title="Belajar AI secara optimal, dari individu sampai tim."
         copy="Pelatihan tatap muka interaktif untuk staff, manager, hingga direktur, agar setiap peserta dapat langsung mempraktikkan AI sesuai perannya dan tim berkembang bersama."
         centered
-        dark
         className="px-5"
       />
       <div className="flex flex-col gap-3 sm:gap-4">

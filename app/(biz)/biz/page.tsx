@@ -1,4 +1,3 @@
-import { listIndustries } from "@/apis/lookup";
 import HomePageBIZ from "@/components/pages/HomePageBIZ";
 import JsonLd from "@/components/seo/JsonLd";
 import { resolveHeroAudience, resolveHeroDisplay } from "@/lib/biz-content";
@@ -28,29 +27,18 @@ export const metadata: Metadata = {
   },
 };
 
-// A lookup outage must never fail this page or the build, so the form just drops the field.
-async function loadIndustries() {
-  try {
-    const result = await listIndustries({ page: 1, page_size: 100 });
-    return result.data?.list ?? [];
-  } catch {
-    return [];
-  }
-}
-
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ audience?: string | string[]; display?: string | string[] }>;
 }) {
   // Resolved on the server so the audience headline and hero visual are in the first HTML, not swapped in after load.
-  const [industries, { audience, display }] = await Promise.all([loadIndustries(), searchParams]);
+  const { audience, display } = await searchParams;
 
   return (
     <>
       <JsonLd graph={homePageGraph()} />
       <HomePageBIZ
-        industries={industries}
         audience={resolveHeroAudience(audience)}
         display={resolveHeroDisplay(display)}
       />

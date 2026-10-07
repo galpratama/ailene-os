@@ -6,6 +6,7 @@ import { LogoAilene } from "@/components/svg/LogoAilene";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const navLinks = [
   { label: "How We Work", fragment: "#how-we-work" },
@@ -58,6 +59,7 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
 
         <div className="hidden lg:block">
           <AppButton href={hrefFor("#contact")} variant="lime" size="cta" trackPlacement="header">
+            <IconBrandWhatsapp size={18} aria-hidden="true" />
             Konsultasi Gratis
           </AppButton>
         </div>
@@ -99,6 +101,7 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
             onClick={closeMenu}
             className="mt-1 w-full"
           >
+            <IconBrandWhatsapp size={18} aria-hidden="true" />
             Konsultasi Gratis
           </AppButton>
         </nav>

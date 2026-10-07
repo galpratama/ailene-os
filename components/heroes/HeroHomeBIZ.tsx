@@ -9,6 +9,7 @@ import PageMargin from "@/components/layouts/PageMargin";
 import HeroProofCardsBIZ from "@/components/heroes/HeroProofCardsBIZ";
 import HeroPeopleBIZ from "@/components/heroes/HeroPeopleBIZ";
 import HeroMentorBIZ from "@/components/heroes/HeroMentorBIZ";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 // three.js stays out of the first-paint bundle; the headline renders without waiting for WebGL.
 const TubeSceneBIZ = dynamic(() => import("@/components/motion/TubeSceneBIZ"), { ssr: false });
@@ -60,6 +61,7 @@ export default function HeroHomeBIZ({
             </p>
             <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <AppButton href="#contact" variant="forest" size="lg" trackPlacement="hero" className="whitespace-nowrap lg:px-7 xl:px-9">
+                <IconBrandWhatsapp size={20} aria-hidden="true" />
                 Konsultasi gratis
               </AppButton>
               <AppButton href="#programs" variant="white" size="lg" trackPlacement="hero" className="whitespace-nowrap lg:px-7 xl:px-9">

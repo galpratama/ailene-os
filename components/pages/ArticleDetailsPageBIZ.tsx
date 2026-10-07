@@ -6,10 +6,11 @@ import HeaderBIZ from "@/components/navigations/HeaderBIZ";
 import type { ArticleData, ArticleListItem } from "@/apis/articles";
 import { articlePath, articleURL, formatArticleDate, slugify } from "@/lib/article";
 import { WHATSAPP_URL } from "@/lib/site";
-import { ArrowRight, Clock, Sparkles } from "lucide-react";
+import { Clock, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const articleBodyFont = Inter({
   subsets: ["latin"],
@@ -172,8 +173,8 @@ export default function ArticleDetailsPageBIZ({
                   Ailene membantu organisasi dari AI training sampai adopsi yang terukur.
                 </p>
                 <AppButton variant="lime" size="md" href={WHATSAPP_URL} className="mt-4 w-full justify-center">
+                  <IconBrandWhatsapp size={17} aria-hidden="true" />
                   Konsultasi gratis
-                  <ArrowRight size={15} />
                 </AppButton>
               </div>
             </div>
