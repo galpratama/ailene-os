@@ -13,7 +13,11 @@ import {
 
 type TrendPoint = { date: string } & Record<string, number | string>;
 
-export type TrendMetric = { key: string; label: string };
+export type TrendMetric = {
+  key: string;
+  label: string;
+  format?: (value: number) => string;
+};
 
 const defaultMetrics: TrendMetric[] = [
   { key: "sessions", label: "Sessions" },
@@ -144,7 +148,7 @@ export default function AnalyticsTrendChartOS({
               labelStyle={{ color: "var(--foreground)", fontWeight: 700 }}
               labelFormatter={(label) => longDate(String(label))}
               formatter={(value) => [
-                compactNumber(Number(value)),
+                (activeMetric.format ?? compactNumber)(Number(value)),
                 activeMetric.label,
               ]}
             />

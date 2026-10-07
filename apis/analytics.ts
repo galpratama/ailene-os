@@ -74,6 +74,28 @@ export type TrackingSources = {
   }[];
 };
 
+type TrackingTraffic = {
+  sessions: number;
+  users: number;
+  purchases: number;
+  revenue: number;
+};
+
+// Product-site sessions whose GA4 sessionSource is ailene.id; referrer-less visits land in (direct) and are absent.
+export type TrackingAileneReferrals = TrackingOverview & {
+  websites: TrackingSources["websites"];
+  landing_pages: (TrackingTraffic & {
+    website: TrackingWebsiteId;
+    landing_page: string;
+  })[];
+  sources: (TrackingTraffic & {
+    source: string;
+    medium: string;
+    campaign: string;
+    content: string;
+  })[];
+};
+
 // --- Marketing site (GA4 biz property) ---
 
 type MarketingMetrics = {
@@ -272,6 +294,10 @@ export async function getTrackingFunnel(payload: TrackingPeriodPayload) {
 
 export async function getTrackingSources(payload: TrackingPeriodPayload) {
   return post<TrackingSources>("tracking/sources", payload);
+}
+
+export async function getTrackingAileneReferrals(payload: TrackingPeriodPayload) {
+  return post<TrackingAileneReferrals>("tracking/ailene-referrals", payload);
 }
 
 export async function getMarketingOverview(payload: AnalyticsPeriodPayload) {

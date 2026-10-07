@@ -10,6 +10,7 @@ import type {
   MetaAdsCreatives,
   MetaAdsOverview,
   ReportPeriod,
+  TrackingAileneReferrals,
   TrackingFunnel,
   TrackingOverview,
   TrackingPeriodPayload,
@@ -24,12 +25,13 @@ import {
   getMetaAdsCampaigns,
   getMetaAdsCreatives,
   getMetaAdsOverview,
+  getTrackingAileneReferrals,
   getTrackingFunnel,
   getTrackingOverview,
   getTrackingSources,
 } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
-import { useQueries, type UseQueryResult } from "@tanstack/react-query";
+import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 const STALE_TIME = 5 * 60 * 1000;
 
@@ -46,17 +48,21 @@ export type MetaAdsDashboard =
         metadata: Connected<MetaAdsOverview>["metadata"] & { min_ranking_impressions: number };
       });
 
+function sectionKey(name: string, section: string, payload: object) {
+  return ["analytics", name, section, payload];
+}
+
 // One query per API section, surfaced as the single dashboard object the page renders.
 function useDashboard<T>(
   name: string,
   payload: object,
   enabled: boolean,
-  sections: (() => Promise<ApiEnvelope<unknown>>)[],
+  sections: Record<string, () => Promise<ApiEnvelope<unknown>>>,
   merge: (parts: unknown[]) => T
 ) {
   return useQueries({
-    queries: sections.map((load, index) => ({
-      queryKey: ["analytics", name, index, payload],
+    queries: Object.entries(sections).map(([section, load]) => ({
+      queryKey: sectionKey(name, section, payload),
       queryFn: async () => requireApiData(await load()),
       enabled,
       staleTime: STALE_TIME,
@@ -81,11 +87,11 @@ export function useTrackingDashboard(payload: TrackingPeriodPayload, enabled: bo
     "tracking",
     payload,
     enabled,
-    [
-      () => getTrackingOverview(payload),
-      () => getTrackingFunnel(payload),
-      () => getTrackingSources(payload),
-    ],
+    {
+      overview: () => getTrackingOverview(payload),
+      funnel: () => getTrackingFunnel(payload),
+      sources: () => getTrackingSources(payload),
+    },
     ([overview, funnel, sources]) => ({
       ...(funnel as TrackingFunnel),
       ...(sources as TrackingSources),
@@ -94,16 +100,34 @@ export function useTrackingDashboard(payload: TrackingPeriodPayload, enabled: bo
   );
 }
 
+// Its own query so a failure stays in this panel; the overview shares the dashboard's cache entry for the traffic share.
+export function useAileneReferrals(payload: TrackingPeriodPayload, enabled: boolean) {
+  const referrals = useQuery<TrackingAileneReferrals>({
+    queryKey: sectionKey("tracking", "ailene-referrals", payload),
+    queryFn: async () => requireApiData(await getTrackingAileneReferrals(payload)),
+    enabled,
+    staleTime: STALE_TIME,
+  });
+  const overview = useQuery<TrackingOverview>({
+    queryKey: sectionKey("tracking", "overview", payload),
+    queryFn: async () => requireApiData(await getTrackingOverview(payload)),
+    enabled,
+    staleTime: STALE_TIME,
+  });
+
+  return { referrals, totalSessions: overview.data?.summary.current.sessions ?? null };
+}
+
 export function useMarketingDashboard(payload: AnalyticsPeriodPayload, enabled: boolean) {
   return useDashboard<MarketingDashboard>(
     "marketing",
     payload,
     enabled,
-    [
-      () => getMarketingOverview(payload),
-      () => getMarketingEngagement(payload),
-      () => getMarketingChannels(payload),
-    ],
+    {
+      overview: () => getMarketingOverview(payload),
+      engagement: () => getMarketingEngagement(payload),
+      channels: () => getMarketingChannels(payload),
+    },
     ([overview, engagement, channels]) => ({
       ...(engagement as MarketingEngagement),
       ...(channels as MarketingChannels),
@@ -117,12 +141,12 @@ export function useMetaAdsDashboard(payload: AnalyticsPeriodPayload, enabled: bo
     "meta-ads",
     payload,
     enabled,
-    [
-      () => getMetaAdsOverview(payload),
-      () => getMetaAdsCampaigns(payload),
-      () => getMetaAdsCreatives(payload),
-      () => getMetaAdsAudience(payload),
-    ],
+    {
+      overview: () => getMetaAdsOverview(payload),
+      campaigns: () => getMetaAdsCampaigns(payload),
+      creatives: () => getMetaAdsCreatives(payload),
+      audience: () => getMetaAdsAudience(payload),
+    },
     ([overviewPart, campaignsPart, creativesPart, audiencePart]) => {
       const overview = overviewPart as MetaAdsOverview;
       const campaigns = campaignsPart as MetaAdsCampaigns;

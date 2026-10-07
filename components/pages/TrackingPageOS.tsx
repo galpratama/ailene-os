@@ -1,26 +1,13 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
-import AnalyticsTrendChartOS from "@/components/charts/AnalyticsTrendChartOS";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
-import { getRupiahCurrency } from "@/lib/currency";
+import TrackingAileneReferralsPanelOS from "@/components/pages/TrackingAileneReferralsPanelOS";
+import TrackingOverviewPanelOS from "@/components/pages/TrackingOverviewPanelOS";
 import type { TrackingWebsiteId } from "@/apis/analytics";
-import { useTrackingDashboard } from "@/hooks/useAnalyticsDashboard";
-import {
-  Activity,
-  ArrowDown,
-  ArrowUp,
-  CalendarDays,
-  Eye,
-  MousePointerClick,
-  RefreshCw,
-  ShoppingBag,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -40,6 +27,13 @@ const periodOptions: AppSelectOption[] = [
   { value: "custom", label: "Custom range" },
 ];
 
+const tabs = [
+  { key: "overview", label: "Overview" },
+  { key: "ailene-referrals", label: "ailene.id referrals" },
+] as const;
+
+type TabKey = (typeof tabs)[number]["key"];
+
 function jakartaToday() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",
@@ -57,51 +51,24 @@ function dateDaysBefore(date: string, days: number) {
   return value.toISOString().slice(0, 10);
 }
 
-function compactNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
-function ChangeIndicator({ value }: { value: number | null }) {
-  if (value === null) {
-    return (
-      <span className="text-xs font-semibold text-claude">New vs previous</span>
-    );
-  }
-  const isPositive = value >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-semibold ${
-        isPositive ? "text-hijau" : "text-merah"
-      }`}
-    >
-      {isPositive ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-      {Math.abs(value).toFixed(1)}%
-    </span>
-  );
-}
-
 export default function TrackingPageOS({
   sessionToken,
 }: {
   sessionToken: string;
 }) {
   const today = useMemo(() => jakartaToday(), []);
+  const [tab, setTab] = useState<TabKey>("overview");
   const [period, setPeriod] = useState("28");
   const [startDate, setStartDate] = useState(() => dateDaysBefore(today, 27));
   const [endDate, setEndDate] = useState(today);
   const [website, setWebsite] = useState<string | null>(null);
 
-  const query = useTrackingDashboard(
-    {
-      start_date: startDate,
-      end_date: endDate,
-      ...(website && { website: website as TrackingWebsiteId }),
-    },
-    !!sessionToken && !!startDate && !!endDate
-  );
+  const payload = {
+    start_date: startDate,
+    end_date: endDate,
+    ...(website && { website: website as TrackingWebsiteId }),
+  };
+  const enabled = !!sessionToken && !!startDate && !!endDate;
 
   function selectPeriod(value: string) {
     setPeriod(value);
@@ -111,99 +78,43 @@ export default function TrackingPageOS({
     setStartDate(dateDaysBefore(today, days - 1));
   }
 
-  const data = query.data;
-  const cards = data
-    ? [
-        {
-          label: "Active Users",
-          value: compactNumber(data.summary.current.users),
-          change: data.summary.changes.users,
-          icon: Users,
-        },
-        {
-          label: "Sessions",
-          value: compactNumber(data.summary.current.sessions),
-          change: data.summary.changes.sessions,
-          icon: Activity,
-        },
-        {
-          label: "Page Views",
-          value: compactNumber(data.summary.current.page_views),
-          change: data.summary.changes.page_views,
-          icon: Eye,
-        },
-        {
-          label: "Purchases",
-          value: compactNumber(data.summary.current.purchases),
-          change: data.summary.changes.purchases,
-          icon: ShoppingBag,
-        },
-        {
-          label: "Revenue",
-          value: getRupiahCurrency(data.summary.current.revenue),
-          change: data.summary.changes.revenue,
-          icon: Wallet,
-        },
-      ]
-    : [];
-  const maxFunnelCount = Math.max(
-    ...(data?.funnel.map((entry) => entry.count) ?? [1]),
-    1
-  );
-  const hasTrackedFunnel = data?.funnel.some((entry) => entry.count > 0);
-
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-              Tracking B2C
-            </h2>
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                query.isError
-                  ? "border-merah/40 bg-merah-t text-merah"
-                  : data
-                    ? "border-hijau/40 bg-hijau-t text-hijau"
-                    : "border-line bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
-            >
-              {query.isError
-                ? "GA4 unavailable"
-                : data
-                  ? "GA4 connected"
-                  : "Connecting GA4"}
-            </span>
-          </div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
+            Tracking B2C
+          </h2>
           <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-            Understand acquisition and purchase intent across Ailene product
-            websites.
+            Acquisition and purchase intent across Ailene product websites.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="https://docs.google.com/spreadsheets/d/1Ew24liu5-scsHoTVkFE4o96S6IHF3ecWkhTsoHfwo_E/edit?gid=1341796980#gid=1341796980"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-gray-500 hover:text-claude"
-          >
-            Event taxonomy ↗
-          </Link>
-          <AppButton
+        <Link
+          href="https://docs.google.com/spreadsheets/d/1Ew24liu5-scsHoTVkFE4o96S6IHF3ecWkhTsoHfwo_E/edit?gid=1341796980#gid=1341796980"
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-semibold text-gray-500 hover:text-claude"
+        >
+          Event taxonomy ↗
+        </Link>
+      </div>
+
+      {/* Segmented control, not a button group — these switch a view rather than act. */}
+      <div className="flex w-fit rounded-lg border border-line bg-gray-50 p-0.5 dark:bg-zinc-800">
+        {tabs.map((entry) => (
+          <button
+            key={entry.key}
             type="button"
-            variant="outline"
-            size="icon"
-            title="Refresh GA4 data"
-            onClick={() => query.refetch()}
-            disabled={query.isFetching}
+            onClick={() => setTab(entry.key)}
+            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors hover:cursor-pointer ${
+              tab === entry.key
+                ? "bg-lime-bright text-forest-deep"
+                : "text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
           >
-            <RefreshCw
-              size={14}
-              className={query.isFetching ? "animate-spin" : ""}
-            />
-          </AppButton>
-        </div>
+            {entry.label}
+          </button>
+        ))}
       </div>
 
       <section className="grid gap-3 rounded-xl border border-line bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
@@ -247,233 +158,10 @@ export default function TrackingPageOS({
         )}
       </section>
 
-      {query.isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-32 animate-pulse rounded-xl border border-line bg-card-bg"
-            />
-          ))}
-        </div>
-      )}
-
-      {query.isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-950/30">
-          <h3 className="text-sm font-bold text-red-700 dark:text-red-300">
-            GA4 data could not be loaded
-          </h3>
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-            {query.error?.message}
-          </p>
-        </div>
-      )}
-
-      {data && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            {cards.map((card) => (
-              <div
-                key={card.label}
-                className="rounded-xl border border-line bg-card-bg p-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-claude/10 text-claude">
-                    <card.icon size={16} />
-                  </div>
-                  <ChangeIndicator value={card.change} />
-                </div>
-                <p className="mt-4 truncate text-2xl font-bold text-gray-900 dark:text-zinc-100">
-                  {card.value}
-                </p>
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-                  {card.label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {!hasTrackedFunnel && (
-            <div className="rounded-xl border border-kuning/50 bg-kuning-t p-4 text-sm text-gray-700">
-              <span className="font-bold">GA4 is connected,</span> but the five
-              tracked funnel events have not appeared in this period yet.
-              Confirm the GTM mapping and production triggers using the event
-              taxonomy.
-            </div>
-          )}
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
-            <AnalyticsTrendChartOS data={data.daily} />
-
-            <section className="rounded-xl border border-line bg-card-bg p-5">
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-                  Conversion funnel
-                </h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-                  Event volume and drop-off between key steps.
-                </p>
-              </div>
-              <div className="mt-5 flex flex-col gap-4">
-                {data.funnel.map((entry, index) => (
-                  <div key={entry.event}>
-                    <div className="mb-1.5 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-                          {index + 1}. {entry.label}
-                        </p>
-                        <p className="text-[11px] text-gray-400">
-                          {entry.event}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">
-                          {compactNumber(entry.count)}
-                        </p>
-                        <p className="text-[11px] text-gray-400">
-                          {entry.from_previous_rate === null
-                            ? "—"
-                            : `${entry.from_previous_rate.toFixed(1)}% from previous`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
-                      <div
-                        className="h-full rounded-full bg-claude"
-                        style={{
-                          width: `${Math.max(
-                            entry.count > 0 ? 3 : 0,
-                            (entry.count / maxFunnelCount) * 100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
-            <div className="border-b border-line-soft px-5 py-4">
-              <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-                Website performance
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-                Compare traffic quality and commercial outcomes by product.
-              </p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-190 text-sm">
-                <thead>
-                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    <th className="px-5 py-3">Website</th>
-                    <th className="px-5 py-3">Users</th>
-                    <th className="px-5 py-3">Sessions</th>
-                    <th className="px-5 py-3">Page Views</th>
-                    <th className="px-5 py-3">Purchases</th>
-                    <th className="px-5 py-3">Session → Purchase</th>
-                    <th className="px-5 py-3">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.websites.map((site) => (
-                    <tr
-                      key={site.id}
-                      className="border-b border-line-soft last:border-0"
-                    >
-                      <td className="px-5 py-3.5">
-                        <p className="font-semibold text-gray-900 dark:text-zinc-100">
-                          {site.label}
-                        </p>
-                        <p className="text-xs text-gray-400">{site.id}</p>
-                      </td>
-                      <td className="px-5 py-3.5">{site.users}</td>
-                      <td className="px-5 py-3.5">{site.sessions}</td>
-                      <td className="px-5 py-3.5">{site.page_views}</td>
-                      <td className="px-5 py-3.5 font-semibold">
-                        {site.purchases}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {site.session_to_purchase_rate === null
-                          ? "—"
-                          : `${site.session_to_purchase_rate.toFixed(1)}%`}
-                      </td>
-                      <td className="px-5 py-3.5 font-semibold">
-                        {getRupiahCurrency(site.revenue)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
-            <div className="flex items-center gap-2 border-b border-line-soft px-5 py-4">
-              <MousePointerClick size={16} className="text-claude" />
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-                  Acquisition channels
-                </h3>
-                <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-                  Where sessions originate and what they contribute.
-                </p>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-175 text-sm">
-                <thead>
-                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    <th className="px-5 py-3">Channel</th>
-                    <th className="px-5 py-3">Source / Medium</th>
-                    <th className="px-5 py-3">Sessions</th>
-                    <th className="px-5 py-3">Users</th>
-                    <th className="px-5 py-3">Purchases</th>
-                    <th className="px-5 py-3">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.channels.map((channel, index) => (
-                    <tr
-                      key={`${channel.channel}-${channel.source_medium}-${index}`}
-                      className="border-b border-line-soft last:border-0"
-                    >
-                      <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
-                        {channel.channel}
-                      </td>
-                      <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                        {channel.source_medium}
-                      </td>
-                      <td className="px-5 py-3.5">{channel.sessions}</td>
-                      <td className="px-5 py-3.5">{channel.users}</td>
-                      <td className="px-5 py-3.5">{channel.purchases}</td>
-                      <td className="px-5 py-3.5 font-semibold">
-                        {getRupiahCurrency(channel.revenue)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {data.channels.length === 0 && (
-                <p className="py-8 text-center text-sm text-gray-400">
-                  No acquisition data for this period.
-                </p>
-              )}
-            </div>
-          </section>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 dark:text-zinc-500">
-            <span>
-              Property {data.property_id} · {data.metadata.timezone} ·{" "}
-              {data.metadata.currency}
-            </span>
-            <span>
-              Updated{" "}
-              {new Date(data.metadata.generated_at).toLocaleString("en-GB")}
-            </span>
-          </div>
-        </>
+      {tab === "overview" ? (
+        <TrackingOverviewPanelOS payload={payload} enabled={enabled} />
+      ) : (
+        <TrackingAileneReferralsPanelOS payload={payload} enabled={enabled} />
       )}
     </div>
   );

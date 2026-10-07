@@ -32,6 +32,7 @@ import {
   getMetaAdsCampaigns as getMetaAdsCampaignsApi,
   getMetaAdsCreatives as getMetaAdsCreativesApi,
   getMetaAdsOverview as getMetaAdsOverviewApi,
+  getTrackingAileneReferrals as getTrackingAileneReferralsApi,
   getTrackingFunnel as getTrackingFunnelApi,
   getTrackingOverview as getTrackingOverviewApi,
   getTrackingSources as getTrackingSourcesApi,
@@ -319,6 +320,10 @@ export async function getTrackingFunnel(payload: TrackingPeriodPayload) {
 
 export async function getTrackingSources(payload: TrackingPeriodPayload) {
   return getTrackingSourcesApi(payload);
+}
+
+export async function getTrackingAileneReferrals(payload: TrackingPeriodPayload) {
+  return getTrackingAileneReferralsApi(payload);
 }
 
 export async function getMarketingOverview(payload: AnalyticsPeriodPayload) {
