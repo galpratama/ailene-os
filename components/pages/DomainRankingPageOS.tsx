@@ -6,6 +6,7 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect from "@/components/fields/AppSelect";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import RankingColumnHeaderOS from "@/components/navigations/RankingColumnHeaderOS";
+import DomainRankingSourcesPanelOS from "@/components/pages/DomainRankingSourcesPanelOS";
 import KeywordRankingsPanelOS from "@/components/pages/KeywordRankingsPanelOS";
 import TrackDomainFormOS from "@/components/pages/TrackDomainFormOS";
 import { listDomainRankings, listRankingSources, listTrackedDomains } from "@/lib/actions";
@@ -18,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const PAGE_SIZE = 50;
-type View = "ranking" | "tracked" | "keywords";
+type View = "ranking" | "tracked" | "keywords" | "sources";
 
 function DomainLink({ domain }: { domain: string }) {
   return (
@@ -110,15 +111,16 @@ export default function DomainRankingPageOS({ sessionToken }: { sessionToken: st
       <TrackDomainFormOS />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft">
-        <div className="flex gap-5">
-          {([ ["tracked", "Tracked domains"], ["keywords", "Keyword rankings"], ["ranking", "Top websites"] ] as const).map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setView(value)} className={`border-b-2 pb-3 text-sm font-semibold transition-colors ${view === value ? "border-claude text-claude dark:border-lime-bright dark:text-lime-bright" : "border-transparent text-gray-500 hover:text-gray-900 dark:text-zinc-400"}`}>{label}</button>
+        <div className="flex gap-5 overflow-x-auto">
+          {([ ["tracked", "Tracked domains"], ["keywords", "Keyword rankings"], ["ranking", "Top websites"], ["sources", "Sources"] ] as const).map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setView(value)} className={`shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm font-semibold transition-colors ${view === value ? "border-claude text-claude dark:border-lime-bright dark:text-lime-bright" : "border-transparent text-gray-500 hover:text-gray-900 dark:text-zinc-400"}`}>{label}</button>
           ))}
         </div>
-        <p className="pb-3 text-xs text-gray-400 dark:text-zinc-500">{view === "tracked" ? "Composite rank across all tracked domains" : view === "keywords" ? "Google positions for tracked keywords" : "Explore public source rankings"}</p>
+        <p className="pb-3 text-xs text-gray-400 dark:text-zinc-500">{view === "tracked" ? "Composite rank across all tracked domains" : view === "keywords" ? "Google positions for tracked keywords" : view === "sources" ? "Where every number comes from" : "Explore public source rankings"}</p>
       </div>
 
       {view === "keywords" && <KeywordRankingsPanelOS sessionToken={sessionToken} />}
+      {view === "sources" && <DomainRankingSourcesPanelOS sessionToken={sessionToken} />}
 
       {view === "ranking" && sources.isError && <div className="rounded-xl border border-line bg-card-bg p-6 text-sm text-merah">{sources.error.message}</div>}
       {view === "ranking" && sources.isLoading && <p className="py-10 text-center text-sm text-gray-500">Loading ranking sources...</p>}
@@ -155,7 +157,7 @@ export default function DomainRankingPageOS({ sessionToken }: { sessionToken: st
           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400"><span>Page {trackedPage} of {tracked.data?.metapaging.total_page ?? 1}</span><div className="flex gap-2"><AppButton variant="outline" size="sm" disabled={trackedPage <= 1} onClick={() => setTrackedPage((page) => page - 1)}><ChevronLeft size={14} /> Previous</AppButton><AppButton variant="outline" size="sm" disabled={trackedPage >= (tracked.data?.metapaging.total_page ?? 1)} onClick={() => setTrackedPage((page) => page + 1)}>Next <ChevronRight size={14} /></AppButton></div></div>
         </>
       )}
-      {view !== "keywords" && <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "tracked" ? "Tracked rank uses the latest composite score across all tracked domains. Domains without a score have no tracked rank. Tranco and CrUX show separate source positions." : <>Rankings represent source specific positions or popularity bands, not traffic or visit estimates. <span className="font-medium">{RANKING_SOURCE_NAMES[effectiveSource ?? source]}</span> data is shown with its original attribution.</>}</p>}
+      {(view === "tracked" || view === "ranking") && <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "tracked" ? "Tracked rank uses the latest composite score across all tracked domains. Domains without a score have no tracked rank. Tranco and CrUX show separate source positions." : <>Rankings represent source specific positions or popularity bands, not traffic or visit estimates. <span className="font-medium">{RANKING_SOURCE_NAMES[effectiveSource ?? source]}</span> data is shown with its original attribution.</>}</p>}
     </div>
   );
 }
