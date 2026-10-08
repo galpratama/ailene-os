@@ -139,6 +139,16 @@ import {
 } from "@/apis/users";
 import { isSuccessStatus } from "@/lib/status_code";
 import {
+  compareDomains as compareDomainsApi,
+  getDomainHistory as getDomainHistoryApi,
+  getDomainOverview as getDomainOverviewApi,
+  listDomainRankings as listDomainRankingsApi,
+  listRankingSources as listRankingSourcesApi,
+  listTrackedDomains as listTrackedDomainsApi,
+  type RankingOptions,
+  type TrackedOptions,
+} from "@/apis/domain-ranking";
+import {
   createCompany as createCompanyApi,
   createContact as createContactApi,
   createInboundLead as createInboundLeadApi,
@@ -173,6 +183,30 @@ export async function loginWithGoogle(accessToken: string) {
 
 export async function logoutUser() {
   await logoutUserApi();
+}
+
+export async function listRankingSources() {
+  return listRankingSourcesApi();
+}
+
+export async function listDomainRankings(options: RankingOptions) {
+  return listDomainRankingsApi(options);
+}
+
+export async function getDomainOverview(domain: string) {
+  return getDomainOverviewApi(domain);
+}
+
+export async function getDomainHistory(domain: string) {
+  return getDomainHistoryApi(domain);
+}
+
+export async function compareDomains(domains: string[]) {
+  return compareDomainsApi(domains);
+}
+
+export async function listTrackedDomains(options: TrackedOptions = {}) {
+  return listTrackedDomainsApi(options);
 }
 
 export async function listUsers(options: ListUsersOptions = {}) {

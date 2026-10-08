@@ -14,6 +14,7 @@ import {
   SquareCheckBig,
   Radar,
   TrendingUp,
+  Globe2,
   Users,
 } from "lucide-react";
 
@@ -110,6 +111,13 @@ export const osMainNav: OSNavItem[] = [
     href: "/keywords",
     label: "Keywords",
     icon: TrendingUp,
+    segment: "B2B",
+    group: "Marketing",
+  },
+  {
+    href: "/domain-ranking",
+    label: "Domain Ranking",
+    icon: Globe2,
     segment: "B2B",
     group: "Marketing",
   },
