@@ -14,7 +14,6 @@ import {
   Eye,
   Info,
   Link2,
-  RefreshCw,
   ShoppingBag,
   SignpostBig,
   Users,
@@ -149,7 +148,7 @@ export default function TrackingAileneReferralsPanelOS({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -166,16 +165,6 @@ export default function TrackingAileneReferralsPanelOS({
             ailene.id.
           </p>
         </div>
-        <AppButton
-          type="button"
-          variant="outline"
-          size="icon"
-          title="Refresh GA4 data"
-          onClick={() => query.refetch()}
-          disabled={query.isFetching}
-        >
-          <RefreshCw size={14} className={query.isFetching ? "animate-spin" : ""} />
-        </AppButton>
       </div>
 
       <div className="flex gap-2.5 rounded-xl border border-line bg-card-bg p-4 text-sm text-gray-600 dark:text-zinc-400">

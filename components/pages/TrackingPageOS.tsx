@@ -1,13 +1,15 @@
 "use client";
 
 import AppInput from "@/components/fields/AppInput";
+import AppButton from "@/components/buttons/AppButton";
 import AppSelect, {
   type AppSelectOption,
 } from "@/components/fields/AppSelect";
 import TrackingAileneReferralsPanelOS from "@/components/pages/TrackingAileneReferralsPanelOS";
 import TrackingOverviewPanelOS from "@/components/pages/TrackingOverviewPanelOS";
 import type { TrackingWebsiteId } from "@/apis/analytics";
-import { CalendarDays } from "lucide-react";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
+import { CalendarDays, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -62,6 +64,9 @@ export default function TrackingPageOS({
   const [startDate, setStartDate] = useState(() => dateDaysBefore(today, 27));
   const [endDate, setEndDate] = useState(today);
   const [website, setWebsite] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const queryKey = ["analytics", "tracking"];
+  const isRefreshing = useIsFetching({ queryKey }) > 0;
 
   const payload = {
     start_date: startDate,
@@ -100,6 +105,7 @@ export default function TrackingPageOS({
       </div>
 
       {/* Segmented control, not a button group — these switch a view rather than act. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex w-fit rounded-lg border border-line bg-gray-50 p-0.5 dark:bg-zinc-800">
         {tabs.map((entry) => (
           <button
@@ -117,10 +123,10 @@ export default function TrackingPageOS({
         ))}
       </div>
 
-      <section className="grid gap-3 rounded-xl border border-line bg-card-bg p-4 md:grid-cols-2 xl:grid-cols-[220px_200px_170px_170px]">
+      <div className="flex flex-wrap items-center gap-2">
         <AppSelect
           selectId="tracking-website"
-          label="Website"
+          className="w-48"
           placeholder="All websites"
           value={website}
           options={websiteOptions}
@@ -128,7 +134,7 @@ export default function TrackingPageOS({
         />
         <AppSelect
           selectId="tracking-period"
-          label="Reporting period"
+          className="w-44"
           icon={<CalendarDays size={14} />}
           placeholder="Select period"
           value={period}
@@ -139,7 +145,8 @@ export default function TrackingPageOS({
           <>
             <AppInput
               inputId="tracking-start-date"
-              label="Start date"
+              containerClassName="w-40"
+              aria-label="Start date"
               type="date"
               max={endDate}
               value={startDate}
@@ -147,7 +154,8 @@ export default function TrackingPageOS({
             />
             <AppInput
               inputId="tracking-end-date"
-              label="End date"
+              containerClassName="w-40"
+              aria-label="End date"
               type="date"
               min={startDate}
               max={today}
@@ -156,7 +164,11 @@ export default function TrackingPageOS({
             />
           </>
         )}
-      </section>
+        <AppButton type="button" variant="outline" size="icon" title="Refresh tracking data" aria-label="Refresh tracking data" onClick={() => queryClient.refetchQueries({ queryKey, type: "active" })} disabled={isRefreshing}>
+          <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+        </AppButton>
+      </div>
+      </div>
 
       {tab === "overview" ? (
         <TrackingOverviewPanelOS payload={payload} enabled={enabled} />

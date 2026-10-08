@@ -1,6 +1,5 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import AnalyticsTrendChartOS from "@/components/charts/AnalyticsTrendChartOS";
 import CTAMixChartOS from "@/components/charts/CTAMixChartOS";
 import DonutChartOS from "@/components/charts/DonutChartOS";
@@ -8,12 +7,14 @@ import FunnelChartOS from "@/components/charts/FunnelChartOS";
 import MetricChangeChartOS from "@/components/charts/MetricChangeChartOS";
 import ScrollDepthChartOS from "@/components/charts/ScrollDepthChartOS";
 import ChangeIndicator from "@/components/labels/ChangeIndicator";
+import AnalyticsTablePaginationOS, {
+  ANALYTICS_TABLE_PAGE_SIZE,
+} from "@/components/navigations/AnalyticsTablePaginationOS";
 import {
   compactNumber,
   percentLabel,
   shortDateLabel,
 } from "@/lib/analytics-format";
-import { SITE_URL } from "@/lib/site";
 import { useMarketingDashboard } from "@/hooks/useAnalyticsDashboard";
 import {
   Activity,
@@ -21,11 +22,11 @@ import {
   Handshake,
   LayoutList,
   MousePointerClick,
-  RefreshCw,
   Users,
 } from "lucide-react";
-import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+
+const HIDDEN_FUNNEL_STAGES = new Set(["trainers", "evaluated"]);
 
 export default function AnalyticsGA4PanelOS({
   sessionToken,
@@ -40,6 +41,8 @@ export default function AnalyticsGA4PanelOS({
     { start_date: startDate, end_date: endDate },
     !!sessionToken && !!startDate && !!endDate
   );
+  const [blocksPage, setBlocksPage] = useState(1);
+  const [channelsPage, setChannelsPage] = useState(1);
 
   const data = query.data;
   const featureSchemaReady = data?.feature_schema.available ?? false;
@@ -149,67 +152,24 @@ export default function AnalyticsGA4PanelOS({
     ...(data?.blocks.map((block) => block.views) ?? [1]),
     1
   );
-  const hasTrackedFunnel = data?.funnel.some((entry) => entry.users > 0);
+  const funnelStages = data?.funnel.filter((stage) => !HIDDEN_FUNNEL_STAGES.has(stage.key)) ?? [];
+  const hasTrackedFunnel = funnelStages.some((entry) => entry.users > 0);
   const previousPeriodLabel = data
     ? `${shortDateLabel(data.period.previous_start_date)} – ${shortDateLabel(
         data.period.previous_end_date
       )}`
     : "";
+  const currentBlocksPage = Math.min(
+    blocksPage,
+    Math.max(1, Math.ceil((data?.blocks.length ?? 0) / ANALYTICS_TABLE_PAGE_SIZE))
+  );
+  const currentChannelsPage = Math.min(
+    channelsPage,
+    Math.max(1, Math.ceil((data?.channels.length ?? 0) / ANALYTICS_TABLE_PAGE_SIZE))
+  );
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Marketing site
-            </h3>
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                query.isError
-                  ? "border-merah/40 bg-merah-t text-merah"
-                  : data
-                    ? "border-hijau/40 bg-hijau-t text-hijau"
-                    : "border-line bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
-            >
-              {query.isError
-                ? "GA4 unavailable"
-                : data
-                  ? "GA4 connected"
-                  : "Connecting GA4"}
-            </span>
-          </div>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-            How the marketing site turns visitors into sales conversations,
-            measured through the GTM feature schema.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={SITE_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-semibold text-gray-500 hover:text-claude"
-          >
-            Open landing page ↗
-          </Link>
-          <AppButton
-            type="button"
-            variant="outline"
-            size="icon"
-            title="Refresh GA4 data"
-            onClick={() => query.refetch()}
-            disabled={query.isFetching}
-          >
-            <RefreshCw
-              size={14}
-              className={query.isFetching ? "animate-spin" : ""}
-            />
-          </AppButton>
-        </div>
-      </div>
-
       {query.isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, index) => (
@@ -234,6 +194,10 @@ export default function AnalyticsGA4PanelOS({
 
       {data && (
         <>
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Traffic overview</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Key metrics for the selected period, compared with {previousPeriodLabel || "the previous period"}.</p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {cards.map((card) => (
               <div
@@ -271,24 +235,31 @@ export default function AnalyticsGA4PanelOS({
 
           {featureSchemaReady && !hasTrackedFunnel && (
             <div className="rounded-xl border border-kuning/50 bg-kuning-t p-4 text-sm text-gray-700">
-              <span className="font-bold">GA4 is connected,</span> but no
-              tracked view or click events landed in this period yet. Confirm the
+              <span className="font-bold">No tracked events yet.</span> No
+              view or click events landed in this period. Confirm the
               GTM triggers are published on the production container.
             </div>
           )}
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-            <AnalyticsTrendChartOS
-              data={data.daily}
-              metrics={trendMetrics}
-              description="Daily movement on the marketing site."
-            />
-            <FunnelChartOS
-              stages={data.funnel}
-              description="Distinct users per stage on the landing page, anchored to one section or event each."
-            />
-          </div>
+          <AnalyticsTrendChartOS
+            data={data.daily}
+            metrics={trendMetrics}
+            description="Daily sessions, users and leads across the reporting period."
+          />
 
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Visitor journey</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Follow visitors from arrival to conversion, left to right.</p>
+          </div>
+          <FunnelChartOS
+            stages={funnelStages}
+            description="Distinct users at each stage; the arrows show drop-off to the next stage."
+          />
+
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Engagement and acquisition</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">How visitors engage with the page and where sessions originate.</p>
+          </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
             <ScrollDepthChartOS data={data.scroll_depth} />
             <CTAMixChartOS data={data.cta_breakdown} />
@@ -307,6 +278,11 @@ export default function AnalyticsGA4PanelOS({
             />
           </div>
 
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Detailed reports</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Explore landing page sections and acquisition sources.</p>
+          </div>
+
           <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
             <div className="flex items-center gap-2 border-b border-line-soft px-5 py-4">
               <LayoutList size={16} className="text-claude" />
@@ -320,7 +296,7 @@ export default function AnalyticsGA4PanelOS({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-190 text-sm">
+              <table className="w-full min-w-190 text-sm tabular-nums">
                 <thead>
                   <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Block</th>
@@ -333,10 +309,13 @@ export default function AnalyticsGA4PanelOS({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.blocks.map((block) => (
+                  {data.blocks.slice(
+                    (currentBlocksPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+                    currentBlocksPage * ANALYTICS_TABLE_PAGE_SIZE
+                  ).map((block) => (
                     <tr
                       key={block.id}
-                      className="border-b border-line-soft last:border-0"
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-gray-900 dark:text-zinc-100">
@@ -376,6 +355,7 @@ export default function AnalyticsGA4PanelOS({
                 </p>
               )}
             </div>
+            <AnalyticsTablePaginationOS page={currentBlocksPage} total={data.blocks.length} onPageChange={setBlocksPage} />
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
@@ -391,7 +371,7 @@ export default function AnalyticsGA4PanelOS({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-175 text-sm">
+              <table className="w-full min-w-175 text-sm tabular-nums">
                 <thead>
                   <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Channel</th>
@@ -403,10 +383,13 @@ export default function AnalyticsGA4PanelOS({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.channels.map((channel, index) => (
+                  {data.channels.slice(
+                    (currentChannelsPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+                    currentChannelsPage * ANALYTICS_TABLE_PAGE_SIZE
+                  ).map((channel, index) => (
                     <tr
-                      key={`${channel.channel}-${channel.source_medium}-${index}`}
-                      className="border-b border-line-soft last:border-0"
+                      key={`${channel.channel}-${channel.source_medium}-${(currentChannelsPage - 1) * ANALYTICS_TABLE_PAGE_SIZE + index}`}
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {channel.channel}
@@ -430,6 +413,7 @@ export default function AnalyticsGA4PanelOS({
                 </p>
               )}
             </div>
+            <AnalyticsTablePaginationOS page={currentChannelsPage} total={data.channels.length} onPageChange={setChannelsPage} />
           </section>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 dark:text-zinc-500">

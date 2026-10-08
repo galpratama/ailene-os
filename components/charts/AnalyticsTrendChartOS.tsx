@@ -87,7 +87,7 @@ export default function AnalyticsTrendChartOS({
                   : "text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               }`}
             >
-              {entry.key}
+              {entry.label}
             </button>
           ))}
         </div>

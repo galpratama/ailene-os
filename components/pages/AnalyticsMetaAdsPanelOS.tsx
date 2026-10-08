@@ -1,12 +1,14 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import CreativeRankChartOS from "@/components/charts/CreativeRankChartOS";
 import DemographicsChartOS from "@/components/charts/DemographicsChartOS";
 import DonutChartOS from "@/components/charts/DonutChartOS";
 import MetaSpendTrendChartOS from "@/components/charts/MetaSpendTrendChartOS";
 import ChangeIndicator from "@/components/labels/ChangeIndicator";
 import Label from "@/components/labels/Label";
+import AnalyticsTablePaginationOS, {
+  ANALYTICS_TABLE_PAGE_SIZE,
+} from "@/components/navigations/AnalyticsTablePaginationOS";
 import {
   compactNumber,
   decimalLabel,
@@ -29,7 +31,6 @@ import {
   Layers,
   MousePointerClick,
   Percent,
-  RefreshCw,
   Repeat,
   Target,
   Trophy,
@@ -74,6 +75,9 @@ export default function AnalyticsMetaAdsPanelOS({
 
   const [sortKey, setSortKey] = useState<SortKey>("results");
   const [sortDescending, setSortDescending] = useState(true);
+  const [creativesPage, setCreativesPage] = useState(1);
+  const [campaignsPage, setCampaignsPage] = useState(1);
+  const [placementsPage, setPlacementsPage] = useState(1);
 
   const data = query.data;
   const connected = data?.configured ? data : null;
@@ -140,6 +144,7 @@ export default function AnalyticsMetaAdsPanelOS({
   ];
 
   function selectSort(key: SortKey) {
+    setCreativesPage(1);
     if (key === sortKey) {
       setSortDescending((current) => !current);
       return;
@@ -250,6 +255,9 @@ export default function AnalyticsMetaAdsPanelOS({
         },
       ]
     : [];
+  const headlineCardLabels = new Set(["Spend", "Results", "Cost / result", "Link CTR"]);
+  const headlineCards = summaryCards.filter((card) => headlineCardLabels.has(card.label));
+  const deliveryCards = summaryCards.filter((card) => !headlineCardLabels.has(card.label));
 
   const creativeById = useMemo(
     () => new Map((connected?.creatives ?? []).map((item) => [item.id, item])),
@@ -293,53 +301,12 @@ export default function AnalyticsMetaAdsPanelOS({
         data.period.previous_end_date
       )}`
     : "";
+  const currentCreativesPage = Math.min(creativesPage, Math.max(1, Math.ceil(sortedCreatives.length / ANALYTICS_TABLE_PAGE_SIZE)));
+  const currentCampaignsPage = Math.min(campaignsPage, Math.max(1, Math.ceil((connected?.campaigns.length ?? 0) / ANALYTICS_TABLE_PAGE_SIZE)));
+  const currentPlacementsPage = Math.min(placementsPage, Math.max(1, Math.ceil((connected?.placements.length ?? 0) / ANALYTICS_TABLE_PAGE_SIZE)));
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              Meta Ads
-            </h3>
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-                query.isError
-                  ? "border-merah/40 bg-merah-t text-merah"
-                  : connected
-                    ? "border-hijau/40 bg-hijau-t text-hijau"
-                    : "border-line bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
-            >
-              {query.isError
-                ? "Meta Ads unavailable"
-                : connected
-                  ? `${connected.account.name} connected`
-                  : data
-                    ? "Not connected"
-                    : "Connecting Meta Ads"}
-            </span>
-          </div>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-            What the paid budget bought, and which creative bought it cheapest.
-            Compared against {previousPeriodLabel || "the previous period"}.
-          </p>
-        </div>
-        <AppButton
-          type="button"
-          variant="outline"
-          size="icon"
-          title="Refresh Meta Ads data"
-          onClick={() => query.refetch()}
-          disabled={query.isFetching}
-        >
-          <RefreshCw
-            size={14}
-            className={query.isFetching ? "animate-spin" : ""}
-          />
-        </AppButton>
-      </div>
-
       {query.isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {Array.from({ length: 10 }).map((_, index) => (
@@ -379,8 +346,12 @@ export default function AnalyticsMetaAdsPanelOS({
 
       {connected && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            {summaryCards.map((card) => (
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Paid performance</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Spend and outcomes for the selected period, compared with {previousPeriodLabel || "the previous period"}.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {headlineCards.map((card) => (
               <div
                 key={card.label}
                 className="rounded-xl border border-line bg-card-bg p-5"
@@ -401,6 +372,23 @@ export default function AnalyticsMetaAdsPanelOS({
             ))}
           </div>
 
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Delivery efficiency</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Reach, impressions and the cost of getting visitors to click.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {deliveryCards.map((card) => (
+              <div key={card.label} className="rounded-xl border border-line bg-card-bg p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <card.icon size={16} className="text-claude" />
+                  <ChangeIndicator value={card.change} invert={card.invert} />
+                </div>
+                <p className="mt-3 truncate text-lg font-bold tabular-nums text-gray-900 dark:text-zinc-100">{card.value}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">{card.label}</p>
+              </div>
+            ))}
+          </div>
+
           {connected.summary.current.impressions === 0 && (
             <div className="rounded-xl border border-kuning/50 bg-kuning-t p-4 text-sm text-gray-700">
               <span className="font-bold">The account is connected,</span> but
@@ -408,6 +396,31 @@ export default function AnalyticsMetaAdsPanelOS({
               or check that the campaigns are still running.
             </div>
           )}
+
+          <section className="rounded-xl border border-line bg-card-bg p-5">
+            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
+              What counts as a result
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+              The headline Results number is these three added together, on a{" "}
+              {connected.metadata.attribution} attribution window.
+            </p>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+              {connected.result_mix.map((entry) => (
+                <li key={entry.key} className="rounded-lg border border-line-soft px-4 py-3">
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">{entry.label}</p>
+                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-zinc-100">
+                    {fullNumber(entry.results)}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {entry.cost_per_result === null
+                      ? "No cost reported"
+                      : `${money(entry.cost_per_result)} each`}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           {spotlights.length > 0 && (
             <div className="grid gap-4 md:grid-cols-3">
@@ -439,56 +452,29 @@ export default function AnalyticsMetaAdsPanelOS({
             </div>
           )}
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-            <MetaSpendTrendChartOS data={connected.daily} currency={currency} />
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Spend and audience</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">See when budget was spent and who it reached.</p>
+          </div>
+          <MetaSpendTrendChartOS data={connected.daily} currency={currency} />
+          <div className="grid gap-5 xl:grid-cols-2">
             <DonutChartOS
               data={placementSlices}
               title="Spend by placement"
               description="Where the budget was actually delivered."
               centerLabel={currency}
             />
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-2">
-            <CreativeRankChartOS
-              data={connected.creatives}
-              currency={currency}
-            />
             <DemographicsChartOS
               data={connected.demographics}
               currency={currency}
             />
           </div>
+          <CreativeRankChartOS data={connected.creatives} currency={currency} />
 
-          <section className="rounded-xl border border-line bg-card-bg p-5">
-            <h3 className="font-bold text-gray-900 dark:text-zinc-100">
-              What counts as a result
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-              The headline Results number is these three added together, on a{" "}
-              {connected.metadata.attribution} attribution window.
-            </p>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
-              {connected.result_mix.map((entry) => (
-                <li
-                  key={entry.key}
-                  className="rounded-lg border border-line-soft px-4 py-3"
-                >
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">
-                    {entry.label}
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-zinc-100">
-                    {fullNumber(entry.results)}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {entry.cost_per_result === null
-                      ? "No cost reported"
-                      : `${money(entry.cost_per_result)} each`}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-zinc-100">Detailed reports</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">Compare creatives, campaigns and placements. Use column headers to sort creatives.</p>
+          </div>
 
           <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-5 py-4">
@@ -499,7 +485,7 @@ export default function AnalyticsMetaAdsPanelOS({
                     Creative performance
                   </h3>
                   <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-                    Every ad that served, best first. Tap a column to re-rank.
+                    Up to 50 highest-spend ads. Select a column to change the order.
                   </p>
                 </div>
               </div>
@@ -510,7 +496,7 @@ export default function AnalyticsMetaAdsPanelOS({
               </p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-300 text-sm">
+              <table className="w-full min-w-300 text-sm tabular-nums">
                 <thead>
                   <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Creative</th>
@@ -538,10 +524,13 @@ export default function AnalyticsMetaAdsPanelOS({
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedCreatives.map((creative) => (
+                  {sortedCreatives.slice(
+                    (currentCreativesPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+                    currentCreativesPage * ANALYTICS_TABLE_PAGE_SIZE
+                  ).map((creative) => (
                     <tr
                       key={creative.id}
-                      className="border-b border-line-soft last:border-0"
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
@@ -597,6 +586,7 @@ export default function AnalyticsMetaAdsPanelOS({
                 </p>
               )}
             </div>
+            <AnalyticsTablePaginationOS page={currentCreativesPage} total={sortedCreatives.length} onPageChange={setCreativesPage} />
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
@@ -612,7 +602,7 @@ export default function AnalyticsMetaAdsPanelOS({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-230 text-sm">
+              <table className="w-full min-w-230 text-sm tabular-nums">
                 <thead>
                   <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Campaign</th>
@@ -626,10 +616,13 @@ export default function AnalyticsMetaAdsPanelOS({
                   </tr>
                 </thead>
                 <tbody>
-                  {connected.campaigns.map((campaign) => (
+                  {connected.campaigns.slice(
+                    (currentCampaignsPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+                    currentCampaignsPage * ANALYTICS_TABLE_PAGE_SIZE
+                  ).map((campaign) => (
                     <tr
                       key={campaign.id}
-                      className="border-b border-line-soft last:border-0"
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5">
                         <p className="font-semibold text-gray-900 dark:text-zinc-100">
@@ -670,6 +663,7 @@ export default function AnalyticsMetaAdsPanelOS({
                 </p>
               )}
             </div>
+            <AnalyticsTablePaginationOS page={currentCampaignsPage} total={connected.campaigns.length} onPageChange={setCampaignsPage} />
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-card-bg">
@@ -685,7 +679,7 @@ export default function AnalyticsMetaAdsPanelOS({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-190 text-sm">
+              <table className="w-full min-w-190 text-sm tabular-nums">
                 <thead>
                   <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
                     <th className="px-5 py-3">Placement</th>
@@ -698,10 +692,13 @@ export default function AnalyticsMetaAdsPanelOS({
                   </tr>
                 </thead>
                 <tbody>
-                  {connected.placements.map((placement) => (
+                  {connected.placements.slice(
+                    (currentPlacementsPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+                    currentPlacementsPage * ANALYTICS_TABLE_PAGE_SIZE
+                  ).map((placement) => (
                     <tr
                       key={placement.key}
-                      className="border-b border-line-soft last:border-0"
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                     >
                       <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
                         {placement.label}
@@ -734,6 +731,7 @@ export default function AnalyticsMetaAdsPanelOS({
                 </p>
               )}
             </div>
+            <AnalyticsTablePaginationOS page={currentPlacementsPage} total={connected.placements.length} onPageChange={setPlacementsPage} />
           </section>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 dark:text-zinc-500">

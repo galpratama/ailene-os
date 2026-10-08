@@ -5,6 +5,7 @@ import { fieldErrorClass, fieldInputClass, fieldLabelClass } from "@/lib/field-s
 
 interface AppInputProps extends InputHTMLAttributes<HTMLInputElement> {
   inputId: string;
+  containerClassName?: string;
   label?: string;
   icon?: ReactNode;
   errorMessage?: string;
@@ -13,6 +14,7 @@ interface AppInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default function AppInput({
   inputId,
+  containerClassName,
   label,
   icon,
   errorMessage,
@@ -38,7 +40,7 @@ export default function AppInput({
   const computedError = errorMessage || internalError;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={["flex flex-col gap-1.5", containerClassName].filter(Boolean).join(" ")}>
       {label && (
         <label htmlFor={inputId} className={fieldLabelClass}>
           {label}

@@ -16,6 +16,7 @@ export interface AppSelectOption {
 
 interface AppSelectProps {
   selectId: string;
+  className?: string;
   label?: string;
   icon?: ReactNode;
   placeholder: string;
@@ -29,6 +30,7 @@ interface AppSelectProps {
 
 export default function AppSelect({
   selectId,
+  className,
   label,
   icon,
   placeholder,
@@ -92,7 +94,7 @@ export default function AppSelect({
   }
 
   return (
-    <div className="flex flex-col gap-1.5" ref={containerRef}>
+    <div className={["flex flex-col gap-1.5", className].filter(Boolean).join(" ")} ref={containerRef}>
       {label && (
         <label htmlFor={selectId} className={fieldLabelClass}>
           {label}

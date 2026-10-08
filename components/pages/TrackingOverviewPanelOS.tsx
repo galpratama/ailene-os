@@ -1,6 +1,5 @@
 "use client";
 
-import AppButton from "@/components/buttons/AppButton";
 import AnalyticsTrendChartOS from "@/components/charts/AnalyticsTrendChartOS";
 import AnalyticsStatCardOS from "@/components/items/AnalyticsStatCardOS";
 import GA4StatusLabel from "@/components/labels/GA4StatusLabel";
@@ -12,7 +11,6 @@ import {
   Activity,
   Eye,
   MousePointerClick,
-  RefreshCw,
   ShoppingBag,
   Users,
   Wallet,
@@ -70,7 +68,7 @@ export default function TrackingOverviewPanelOS({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-gray-900 dark:text-zinc-100">
@@ -87,19 +85,6 @@ export default function TrackingOverviewPanelOS({
             websites.
           </p>
         </div>
-        <AppButton
-          type="button"
-          variant="outline"
-          size="icon"
-          title="Refresh GA4 data"
-          onClick={() => query.refetch()}
-          disabled={query.isFetching}
-        >
-          <RefreshCw
-            size={14}
-            className={query.isFetching ? "animate-spin" : ""}
-          />
-        </AppButton>
       </div>
 
       {query.isLoading && (
