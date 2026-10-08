@@ -71,6 +71,47 @@ export type TrackedOptions = {
   page_size?: number;
 };
 
+export type KeywordDomainPosition = {
+  domain: string;
+  position: number | null;
+  previous_position: number | null;
+  change: number | null;
+  url: string | null;
+  date: string | null;
+};
+export type KeywordRanking = {
+  id: number;
+  keyword: string;
+  country: string;
+  language: string;
+  created_at: string;
+  domains: KeywordDomainPosition[];
+};
+export type DomainKeywordRanking = Omit<KeywordDomainPosition, "domain"> & {
+  keyword_id: number;
+  keyword: string;
+  country: string;
+  language: string;
+};
+export type KeywordOptions = {
+  q?: string;
+  country?: string;
+  language?: string;
+  domain?: string;
+  sort?: "keyword" | "newest";
+  page?: number;
+  page_size?: number;
+};
+export type DomainKeywordOptions = {
+  domain: string;
+  q?: string;
+  country?: string;
+  language?: string;
+  sort?: "position" | "change" | "keyword";
+  page?: number;
+  page_size?: number;
+};
+
 async function post<T>(path: string, body?: unknown): Promise<ApiEnvelope<T>> {
   return callApi(path, { token: await getSessionToken(), ...(body === undefined ? {} : { body }) });
 }
@@ -99,4 +140,16 @@ export function compareDomains(domains: string[]) {
 
 export function listTrackedDomains(options: TrackedOptions = {}) {
   return post<ApiList<TrackedDomain>>( "/api/v1/domain-ranking/tracked", options);
+}
+
+export function listKeywordRankings(options: KeywordOptions = {}) {
+  return post<ApiList<KeywordRanking>>("/api/v1/domain-ranking/keywords", options);
+}
+
+export function listDomainKeywordRankings(options: DomainKeywordOptions) {
+  return post<ApiList<DomainKeywordRanking>>("/api/v1/domain-ranking/domains/keywords", options);
+}
+
+export function trackDomain(domain: string) {
+  return post<{ domain: string; is_tracked: boolean }>("/api/v1/domain-ranking/domains/track", { domain });
 }

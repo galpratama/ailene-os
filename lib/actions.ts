@@ -145,8 +145,13 @@ import {
   listDomainRankings as listDomainRankingsApi,
   listRankingSources as listRankingSourcesApi,
   listTrackedDomains as listTrackedDomainsApi,
+  listKeywordRankings as listKeywordRankingsApi,
+  listDomainKeywordRankings as listDomainKeywordRankingsApi,
+  trackDomain as trackDomainApi,
   type RankingOptions,
   type TrackedOptions,
+  type KeywordOptions,
+  type DomainKeywordOptions,
 } from "@/apis/domain-ranking";
 import {
   createCompany as createCompanyApi,
@@ -207,6 +212,18 @@ export async function compareDomains(domains: string[]) {
 
 export async function listTrackedDomains(options: TrackedOptions = {}) {
   return listTrackedDomainsApi(options);
+}
+
+export async function listKeywordRankings(options: KeywordOptions = {}) {
+  return listKeywordRankingsApi(options);
+}
+
+export async function listDomainKeywordRankings(options: DomainKeywordOptions) {
+  return listDomainKeywordRankingsApi(options);
+}
+
+export async function trackDomain(domain: string) {
+  return trackDomainApi(domain);
 }
 
 export async function listUsers(options: ListUsersOptions = {}) {
