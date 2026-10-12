@@ -5,11 +5,13 @@ export type LogoAileneVariant = "default" | "white" | "dark";
 
 interface LogoAileneProps extends SVGProps<SVGSVGElement> {
   variant?: LogoAileneVariant;
+  markOnly?: boolean;
 }
 
 export function LogoAilene({
   className,
   variant = "default",
+  markOnly = false,
   ...props
 }: LogoAileneProps) {
   const isWhite = variant === "white";
@@ -19,7 +21,8 @@ export function LogoAilene({
   return (
     <svg
       className={className}
-      viewBox="0 0 848 265"
+      viewBox={markOnly ? "0 0 283 265" : "0 0 848 265"}
+      overflow={markOnly ? "hidden" : undefined}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"

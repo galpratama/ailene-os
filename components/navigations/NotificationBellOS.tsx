@@ -27,7 +27,7 @@ export default function NotificationBellOS({
   tone = "light",
 }: {
   sessionToken: string;
-  // "sidebar" styles the trigger for the dark sidebar and opens the panel rightward.
+  // Keep the panel inside the mobile drawer; on desktop it opens beside the sidebar.
   tone?: "light" | "sidebar";
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -96,7 +96,7 @@ export default function NotificationBellOS({
       </AppButton>
 
       {isOpen && (
-        <div className={`absolute top-full z-30 mt-2 w-80 ${tone === "sidebar" ? "left-0" : "right-0"} overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800`}>
+        <div className={`z-30 mt-2 overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800 ${tone === "sidebar" ? "fixed left-3 right-3 top-16 md:absolute md:left-0 md:right-auto md:top-full md:w-80" : "absolute right-0 top-full w-80"}`}>
           <div className="flex items-center justify-between border-b border-line-soft px-3 py-2">
             <p className="text-xs font-semibold text-gray-700 dark:text-zinc-200">
               Notifications

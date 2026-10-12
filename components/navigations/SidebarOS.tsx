@@ -8,18 +8,29 @@ import { useSession } from "@/contexts/SessionContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { logoutUser } from "@/lib/actions";
 import { OSNavItem, OSSegment, osMainNav, osToolsNav } from "@/lib/os-nav";
-import { LogOut, LucideIcon, Menu } from "lucide-react";
+import { LogOut, LucideIcon, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 function segmentClass(active: boolean) {
-  return `flex-1 h-7 rounded-md text-xs font-semibold transition-colors ${
+  return `h-8 flex-1 rounded-lg text-xs transition-colors ${
     active
-      ? "bg-lime-bright text-forest-deep"
-      : "text-sb-text hover:text-sb-text-strong"
+      ? "bg-sb-tab-active-bg font-semibold text-sb-item-active-text shadow-sm"
+      : "font-medium text-sb-text hover:text-sb-text-strong"
   }`;
+}
+
+function SidebarBrand({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className={collapsed ? "flex w-8 justify-center" : "w-24"}>
+      <LogoAilene
+        markOnly={collapsed}
+        className="h-7 w-auto max-w-none text-sb-text-strong"
+      />
+    </div>
+  );
 }
 
 function SegmentToggle({
@@ -30,10 +41,11 @@ function SegmentToggle({
   onChange: (segment: OSSegment) => void;
 }) {
   return (
-    <div className="flex rounded-lg border border-sb-border-soft bg-sb-item-active-bg p-0.5">
+    <div className="flex rounded-xl border border-sb-border-soft bg-sb-tab-track-bg p-0.5">
       <button
         type="button"
         onClick={() => onChange("B2B")}
+        aria-pressed={segment === "B2B"}
         className={segmentClass(segment === "B2B")}
       >
         B2B
@@ -41,6 +53,7 @@ function SegmentToggle({
       <button
         type="button"
         onClick={() => onChange("B2C")}
+        aria-pressed={segment === "B2C"}
         className={segmentClass(segment === "B2C")}
       >
         B2C
@@ -68,17 +81,21 @@ function NavItem({
     <Link
       href={href}
       title={collapsed ? label : undefined}
+      aria-current={active ? "page" : undefined}
       onClick={closeMobileSidebar}
-      className={`flex items-center rounded-md text-sm transition-colors ${
-        collapsed ? "justify-center px-2 py-2" : "px-3 py-1.5"
+      className={`relative flex min-h-9 items-center rounded-lg text-sm transition-colors ${
+        collapsed ? "justify-center px-2" : "px-3"
       } ${
         active
-          ? "bg-linear-to-r from-[rgba(214,238,48,0.18)] to-transparent dark:from-[rgba(214,238,48,0.22)] text-sb-item-active-text"
-          : "text-sb-text hover:bg-linear-to-r hover:from-[rgba(214,238,48,0.1)] hover:to-transparent dark:hover:from-[rgba(214,238,48,0.14)] hover:text-sb-text-strong"
+          ? "bg-sb-item-active-bg font-semibold text-sb-item-active-text"
+          : "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong"
       }`}
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <Icon size={15} className="shrink-0" />
+      {active && (
+        <span aria-hidden="true" className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-claude dark:bg-lime-bright" />
+      )}
+      <div className="flex min-w-0 items-center gap-3">
+        <Icon size={16} className={`shrink-0 ${active ? "text-claude dark:text-lime-bright" : ""}`} />
         {!collapsed && <span className="truncate">{label}</span>}
       </div>
     </Link>
@@ -109,8 +126,8 @@ function UserFooter({ collapsed }: { collapsed: boolean }) {
 
   return (
     <div
-      className={`shrink-0 border-t border-sb-border-soft flex items-center gap-2.5 ${
-        collapsed ? "justify-center px-2 py-3" : "px-3 py-3"
+      className={`flex shrink-0 items-center border-t border-sb-border-soft ${
+        collapsed ? "flex-col gap-2 px-2 py-3" : "gap-2 px-3 py-3"
       }`}
     >
       {user?.avatar ? (
@@ -122,33 +139,33 @@ function UserFooter({ collapsed }: { collapsed: boolean }) {
           className="w-8 h-8 rounded-full shrink-0 object-cover"
         />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-claude flex items-center justify-center text-xs font-bold text-white shrink-0">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sb-item-active-bg text-xs font-bold text-sb-text-strong">
           {initialsOf(user?.full_name ?? "?")}
         </div>
       )}
       {!collapsed && (
-        <>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sb-text-strong truncate">
-              {user?.full_name ?? "Not signed in"}
-            </p>
-            <p className="text-xs text-sb-text truncate">
-              {user?.role === "ADMINISTRATOR" ? "Administrator" : "Member"}
-            </p>
-          </div>
-          <ThemeToggleOS />
-          <AppButton
-            variant="ghost"
-            size="iconRoundSm"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            aria-label="Log out"
-            title="Log out"
-          >
-            <LogOut size={14} />
-          </AppButton>
-        </>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-sb-text-strong">
+            {user?.full_name ?? "Not signed in"}
+          </p>
+          <p className="truncate text-xs text-sb-text">
+            {user?.role === "ADMINISTRATOR" ? "Administrator" : "Member"}
+          </p>
+        </div>
       )}
+      <div className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}>
+        <ThemeToggleOS />
+        <AppButton
+          variant="ghost"
+          size="iconRoundSm"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          aria-label="Log out"
+          title="Log out"
+        >
+          <LogOut size={14} />
+        </AppButton>
+      </div>
     </div>
   );
 }
@@ -164,6 +181,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
     toggleMobileSidebar,
   } = useSidebar();
   const pathname = usePathname();
+  const collapsed = isCollapsed && !isMobileOpen;
 
   // Start on B2B to match SSR (no localStorage there); the saved value is read after mount.
   const [segment, setSegment] = useState<OSSegment>("B2B");
@@ -239,46 +257,48 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-sb-border bg-sb-bg transition-transform duration-200 md:sticky md:top-0 md:z-10 md:translate-x-0 md:transition-[width] md:duration-150 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } ${isCollapsed ? "md:w-16" : "md:w-64"}`}
+        } ${collapsed ? "md:w-16" : "md:w-64"}`}
       >
-        {/* Logo + menu toggle — logo hidden when collapsed, toggle sits to
-            its right. Toggle closes the drawer on mobile, collapses/expands
-            on desktop. */}
+        {/* The desktop controls stack under the mark when collapsed. */}
         <div
-          className={`flex shrink-0 items-center py-5 pb-7 ${
-            isCollapsed ? "justify-center px-2" : "justify-between px-4"
+          className={`flex shrink-0 border-b border-sb-border-soft ${
+            collapsed
+              ? "flex-col items-center gap-3 px-2 py-4"
+              : "items-center justify-between gap-2 px-4 py-4"
           }`}
         >
-          {!isCollapsed && (
-            <LogoAilene variant="dark" className="h-6 w-auto shrink-0" />
-          )}
+          <SidebarBrand collapsed={collapsed} />
 
-          <AppButton
-            variant="ghost"
-            size="iconRound"
-            onClick={closeMobileSidebar}
-            className="md:hidden"
-            aria-label="Close menu"
-          >
-            <Menu size={18} />
-          </AppButton>
           <div
-            className={`hidden items-center gap-2 md:flex ${isCollapsed ? "flex-col" : ""}`}
+            className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}
           >
             <NotificationBellOS sessionToken={sessionToken} tone="sidebar" />
-            <AppButton
-              variant="ghost"
-              size="iconRound"
-              onClick={toggleSidebar}
-              aria-label="Toggle sidebar"
-            >
-              <Menu size={18} />
-            </AppButton>
+            <div className="md:hidden">
+              <AppButton
+                variant="ghost"
+                size="iconRound"
+                onClick={closeMobileSidebar}
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </AppButton>
+            </div>
+            <div className="hidden md:block">
+              <AppButton
+                variant="ghost"
+                size="iconRound"
+                onClick={toggleSidebar}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+              </AppButton>
+            </div>
           </div>
         </div>
 
         {/* B2B / B2C segment toggle */}
-        {!isCollapsed && (
+        {!collapsed && (
           <div className="px-3 pb-3">
             <SegmentToggle segment={segment} onChange={setSegment} />
           </div>
@@ -287,15 +307,13 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
         {/* Scrollable nav region, footer stays pinned below it */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pb-6">
           {/* Main nav */}
-          <nav
-            className={`flex flex-col gap-0.5 py-1 ${isCollapsed ? "px-2" : "px-2"}`}
-          >
+          <nav className="flex flex-col gap-0.5 px-2 pt-3">
             {ungroupedNav.map((item) => (
               <NavItem
                 key={item.href}
                 {...item}
                 active={item.href === activeHref}
-                collapsed={isCollapsed}
+                collapsed={collapsed}
               />
             ))}
           </nav>
@@ -304,20 +322,20 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           {navGroups.map((group) => (
             <div
               key={group.label}
-              className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}
+              className="mx-2 mt-3 border-t border-sb-border-soft pt-3"
             >
-              {!isCollapsed && (
-                <p className="px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+              {!collapsed && (
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-sb-text">
                   {group.label}
                 </p>
               )}
-              <div className="flex flex-col gap-0.5 mt-0.5">
+              <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
                   <NavItem
                     key={item.href}
                     {...item}
                     active={item.href === activeHref}
-                    collapsed={isCollapsed}
+                    collapsed={collapsed}
                   />
                 ))}
               </div>
@@ -326,19 +344,19 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
 
           {/* Tools */}
           {toolsNav.length > 0 && (
-            <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
-              {!isCollapsed && (
-                <p className="px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+            <div className="mx-2 mt-3 border-t border-sb-border-soft pt-3">
+              {!collapsed && (
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-sb-text">
                   Tools
                 </p>
               )}
-              <div className="flex flex-col gap-0.5 mt-0.5">
+              <div className="flex flex-col gap-0.5">
                 {toolsNav.map((item) => (
                   <NavItem
                     key={item.href}
                     {...item}
                     active={item.href === activeHref}
-                    collapsed={isCollapsed}
+                    collapsed={collapsed}
                   />
                 ))}
               </div>
@@ -346,7 +364,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           )}
         </div>
 
-        <UserFooter collapsed={isCollapsed} />
+        <UserFooter collapsed={collapsed} />
       </aside>
     </>
   );
