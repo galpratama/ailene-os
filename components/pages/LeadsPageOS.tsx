@@ -15,10 +15,9 @@ import LeadsWeeklyPanelOS from "@/components/pages/LeadsWeeklyPanelOS";
 import { useSession } from "@/contexts/SessionContext";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
-import { requireApiData } from "@/lib/api-result";
-import { listPipelines } from "@/lib/actions";
 import { getRupiahCurrency } from "@/lib/currency";
-import { PIPELINE_STAGE_LABELS, PIPELINE_STAGES_BY_PHASE } from "@/lib/sales";
+import { listLeadsPage } from "@/lib/leads-list";
+import { LEADS_PAGE_STAGES_BY_PHASE, PIPELINE_STAGE_LABELS, pipelinePhaseOf } from "@/lib/sales";
 import { userSelectOption } from "@/lib/user-select-option";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
@@ -90,10 +89,11 @@ export default function LeadsPageOS({
   }, [keyword]);
 
   // Shared by every view; the weekly tally reuses it without the paging keys.
+  const stageFilter = (filterValues.stage || undefined) as PipelineStage | undefined;
   const baseFilters = {
-    phase,
+    phase: stageFilter ? pipelinePhaseOf(stageFilter) : phase,
     keyword: debouncedKeyword,
-    stage: (filterValues.stage || undefined) as PipelineStage | undefined,
+    stage: stageFilter,
     lead_source: (filterValues.lead_source || undefined) as LeadSource | undefined,
     lead_channel: (filterValues.lead_channel || undefined) as LeadChannel | undefined,
     sales_owner_id: isOwnScoped ? undefined : filterValues.sales_owner_id || undefined,
@@ -106,7 +106,7 @@ export default function LeadsPageOS({
   // The kanban pages each column itself, so this paged list only feeds cards and table.
   const pipelineQuery = useQuery({
     queryKey: ["sales", "pipelines", filters],
-    queryFn: async () => requireApiData(await listPipelines(filters)),
+    queryFn: () => listLeadsPage(filters),
     enabled: !!sessionToken && !isWeeklyView && !isBoardView,
   });
 
@@ -120,7 +120,7 @@ export default function LeadsPageOS({
     { value: "", label: "All Owners" },
     ...userList.map(userSelectOption),
   ];
-  const phaseStages = PIPELINE_STAGES_BY_PHASE[phase];
+  const phaseStages = LEADS_PAGE_STAGES_BY_PHASE[phase];
   const stageOptions: AppSelectOption[] = [
     { value: "", label: "All Stages" },
     ...phaseStages.map((value) => ({ value, label: PIPELINE_STAGE_LABELS[value] })),
@@ -254,7 +254,8 @@ export default function LeadsPageOS({
       )}
       <CreateLeadFormOS
         sessionToken={sessionToken}
-        phase={phase}
+        // A "+" on the BDR board's Meeting Booked column creates an SDR lead.
+        phase={createStage && createStage !== "default" ? pipelinePhaseOf(createStage) : phase}
         defaultStage={createStage === "default" ? undefined : (createStage ?? undefined)}
         isOpen={createStage !== null}
         onClose={() => setCreateStage(null)}

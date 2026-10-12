@@ -18,6 +18,17 @@ export const PIPELINE_STAGES_BY_PHASE: Record<PipelinePhase, PipelineStage[]> = 
   ],
 };
 
+// What each leads page shows; BDR leads with the SDR hand-off stage so booked meetings stay in view.
+export const LEADS_PAGE_STAGES_BY_PHASE: Record<PipelinePhase, PipelineStage[]> = {
+  sdr: PIPELINE_STAGES_BY_PHASE.sdr,
+  bdr: ["meeting_booked", ...PIPELINE_STAGES_BY_PHASE.bdr],
+};
+
+// The API rejects a stage filter sent with another phase, so stage-scoped queries use this.
+export function pipelinePhaseOf(stage: PipelineStage): PipelinePhase {
+  return PIPELINE_STAGES_BY_PHASE.sdr.includes(stage) ? "sdr" : "bdr";
+}
+
 export const PIPELINE_STAGE_LABELS: Record<PipelineStage, string> = {
   lead_identified: "Lead Identified",
   triaging: "Triaging",

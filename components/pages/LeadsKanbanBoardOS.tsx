@@ -6,7 +6,7 @@ import LeadKanbanCardOS from "@/components/items/LeadKanbanCardOS";
 import StageLabel from "@/components/labels/StageLabel";
 import { requireApiData } from "@/lib/api-result";
 import { listPipelines, updatePipeline } from "@/lib/actions";
-import { isStageCompatibleWithLeadSource } from "@/lib/sales";
+import { isStageCompatibleWithLeadSource, pipelinePhaseOf } from "@/lib/sales";
 import { showErrorToast } from "@/lib/toast";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
@@ -47,7 +47,7 @@ function LeadsKanbanColumn({
   onOpenLead,
   onAddLead,
 }: ColumnProps) {
-  const columnFilters = { ...filters, stage };
+  const columnFilters = { ...filters, stage, phase: pipelinePhaseOf(stage) };
   const leadsQuery = useInfiniteQuery({
     queryKey: ["sales", "pipelines", "kanban", columnFilters],
     queryFn: async ({ pageParam }) =>

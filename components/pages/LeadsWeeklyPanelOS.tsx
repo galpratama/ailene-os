@@ -3,9 +3,8 @@
 import type { ListPipelinesOptions, PipelineData } from "@/apis/sales";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import StageLabel from "@/components/labels/StageLabel";
-import { requireApiData } from "@/lib/api-result";
 import { formatDayRange } from "@/lib/date-range";
-import { listPipelines, listPipelineWeeks } from "@/lib/actions";
+import { listLeadsPage, listLeadWeeks } from "@/lib/leads-list";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -33,7 +32,7 @@ function WeekLeads({ filters, weekStart, weekEnd, onOpenLead }: {
   const weekFilters = { ...filters, created_from: weekStart, created_to: weekEnd, page: 1, page_size: 100 };
   const leadsQuery = useQuery({
     queryKey: ["sales", "pipelines", weekFilters],
-    queryFn: async () => requireApiData(await listPipelines(weekFilters)),
+    queryFn: () => listLeadsPage(weekFilters),
   });
 
   if (leadsQuery.isLoading) return <p className="px-5 py-4 text-sm text-gray-400">Loading leads...</p>;
@@ -87,7 +86,7 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
   const weekFilters = { ...filters, weeks: hasDateRange ? undefined : Number(weeks) };
   const weeksQuery = useQuery({
     queryKey: ["sales", "pipeline-weeks", weekFilters],
-    queryFn: async () => requireApiData(await listPipelineWeeks(weekFilters)),
+    queryFn: () => listLeadWeeks(weekFilters),
   });
 
   const list = weeksQuery.data?.list ?? [];
