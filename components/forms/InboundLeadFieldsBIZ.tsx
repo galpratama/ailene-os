@@ -6,19 +6,20 @@ const fieldClass =
 
 const labelClass = "grid gap-2 text-xs font-semibold text-biz-ink";
 
-// The API still requires a unique company name, so a person-level key stands in for it.
-export function toInboundLeadPayload(form: HTMLFormElement): InboundLeadPayload {
+// A company name that is already taken gets the submitter appended by the API, so it is sent as typed.
+export function toInboundLeadPayload(
+  form: HTMLFormElement
+): InboundLeadPayload {
   const data = new FormData(form);
   const text = (key: string) => String(data.get(key) ?? "").trim();
-  const name = text("name");
-  const email = text("email");
 
   return {
-    company_name: `${name} (${email})`.slice(0, 255),
+    company_name: text("company"),
     contact: {
-      full_name: name,
-      email: email || null,
+      full_name: text("name"),
+      email: text("email") || null,
       phone: text("phone") || null,
+      job_title: text("position") || null,
     },
     note: text("need") || null,
   };
@@ -34,6 +35,26 @@ export default function InboundLeadFieldsBIZ() {
           required
           maxLength={255}
           placeholder="Nama kamu"
+          className={fieldClass}
+        />
+      </label>
+      <label className={labelClass}>
+        Nama perusahaan
+        <input
+          name="company"
+          required
+          maxLength={255}
+          placeholder="Nama perusahaan kamu"
+          className={fieldClass}
+        />
+      </label>
+      <label className={labelClass}>
+        Posisi
+        <input
+          name="position"
+          required
+          maxLength={255}
+          placeholder="Contoh: HR Manager"
           className={fieldClass}
         />
       </label>
