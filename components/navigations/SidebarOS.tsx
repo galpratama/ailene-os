@@ -309,7 +309,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
               className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}
             >
               {!isCollapsed && (
-                <p className="font-display px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+                <p className="px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
                   {group.label}
                 </p>
               )}
@@ -330,7 +330,7 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           {toolsNav.length > 0 && (
             <div className={isCollapsed ? "px-2 mt-3" : "px-2 mt-3"}>
               {!isCollapsed && (
-                <p className="font-display px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
+                <p className="px-3 py-1 text-[11px] tracking-wider text-sb-text/45 uppercase">
                   Tools
                 </p>
               )}

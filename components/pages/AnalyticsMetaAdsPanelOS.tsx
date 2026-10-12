@@ -362,7 +362,7 @@ export default function AnalyticsMetaAdsPanelOS({
                   </div>
                   <ChangeIndicator value={card.change} invert={card.invert} />
                 </div>
-                <p className="mt-4 truncate text-2xl font-bold text-gray-900 dark:text-zinc-100">
+                <p className="mt-4 truncate font-heading text-2xl font-bold text-gray-900 dark:text-zinc-100">
                   {card.value}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
@@ -409,7 +409,7 @@ export default function AnalyticsMetaAdsPanelOS({
               {connected.result_mix.map((entry) => (
                 <li key={entry.key} className="rounded-lg border border-line-soft px-4 py-3">
                   <p className="text-xs text-gray-500 dark:text-zinc-400">{entry.label}</p>
-                  <p className="mt-1 text-xl font-bold text-gray-900 dark:text-zinc-100">
+                  <p className="mt-1 font-heading text-xl font-bold text-gray-900 dark:text-zinc-100">
                     {fullNumber(entry.results)}
                   </p>
                   <p className="text-xs text-gray-400">

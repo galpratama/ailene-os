@@ -470,7 +470,7 @@ export default function QuotationEditPageOS({
                       className="rounded-lg border border-line-soft px-2.5 py-2"
                     >
                       <p className="text-[10px] text-gray-400">{label}</p>
-                      <p className="font-mono text-sm text-gray-300 dark:text-zinc-600">
+                      <p className="text-sm text-gray-300 dark:text-zinc-600">
                         — — —
                       </p>
                     </div>

@@ -4,17 +4,10 @@ import SidebarOS from "@/components/navigations/SidebarOS";
 import { getSession } from "@/apis/session";
 import { SessionProvider } from "@/contexts/SessionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { osTypeClassName } from "@/lib/os-fonts";
 import { ThemeProvider } from "next-themes";
-import { Stack_Sans_Headline } from "next/font/google";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-
-// Single OS-wide typeface; os-font-scope (globals.css) points every other font-* utility at this same variable.
-const stackSans = Stack_Sans_Headline({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-stack",
-});
 
 export default async function OSProtectedLayout({
   children,
@@ -31,7 +24,7 @@ export default async function OSProtectedLayout({
       <SessionProvider user={user}>
         <SidebarProvider>
           <div
-            className={`flex h-screen overflow-hidden bg-os-gradient os-font-scope ${stackSans.className} ${stackSans.variable}`}
+            className={`flex h-screen overflow-hidden bg-os-gradient os-font-scope ${osTypeClassName}`}
           >
             <SidebarOS sessionToken={sessionToken} />
             <div className="flex-1 flex flex-col min-w-0 bg-os-gradient">

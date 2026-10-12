@@ -93,7 +93,7 @@ export default function DonutChartOS({
             </ResponsiveContainer>
             {/* Pointer events off so the hole never swallows a slice hover. */}
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <p className="text-xl font-bold text-gray-900 dark:text-zinc-100">
+              <p className="font-heading text-xl font-bold text-gray-900 dark:text-zinc-100">
                 {compactNumber(total)}
               </p>
               <p className="text-[11px] text-gray-400">{centerLabel}</p>

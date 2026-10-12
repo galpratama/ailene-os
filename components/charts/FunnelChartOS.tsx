@@ -72,7 +72,7 @@ export default function FunnelChartOS({
                   <p className="mt-1 min-h-8 text-xs leading-4 text-gray-500 dark:text-zinc-400">
                     {stage.hint}
                   </p>
-                  <p className="mt-auto pt-5 text-2xl font-bold tabular-nums text-gray-900 dark:text-zinc-100">
+                  <p className="mt-auto pt-5 font-heading text-2xl font-bold tabular-nums text-gray-900 dark:text-zinc-100">
                     {stage.users.toLocaleString("en-US")}
                     <span className="ml-1 text-xs font-medium text-gray-500 dark:text-zinc-400">users</span>
                   </p>

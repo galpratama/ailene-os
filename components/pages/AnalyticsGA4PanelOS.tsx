@@ -210,7 +210,7 @@ export default function AnalyticsGA4PanelOS({
                   </div>
                   <ChangeIndicator value={card.change} />
                 </div>
-                <p className="mt-4 truncate text-2xl font-bold text-gray-900 dark:text-zinc-100">
+                <p className="mt-4 truncate font-heading text-2xl font-bold text-gray-900 dark:text-zinc-100">
                   {card.value}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">

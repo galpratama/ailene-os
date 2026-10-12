@@ -17,7 +17,7 @@ import { FormEvent, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 function MetricCard({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="rounded-xl border border-line bg-card-bg p-5"><p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-400">{label}</p><p className="mt-3 text-2xl font-bold tabular-nums text-gray-900 dark:text-zinc-100">{value}</p><p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{note}</p></div>;
+  return <div className="rounded-xl border border-line bg-card-bg p-5"><p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-zinc-400">{label}</p><p className="mt-3 font-heading text-2xl font-bold tabular-nums text-gray-900 dark:text-zinc-100">{value}</p><p className="mt-1 text-xs text-gray-400 dark:text-zinc-500">{note}</p></div>;
 }
 
 function ScoreHistory({ history }: { history: DomainHistory }) {

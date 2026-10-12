@@ -36,7 +36,7 @@ function Block({
         </span>
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">{title}</h3>
         {side && (
-          <span className="ml-auto font-mono text-sm font-semibold text-gray-900 dark:text-zinc-100">
+          <span className="ml-auto text-sm font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
             {side}
           </span>
         )}

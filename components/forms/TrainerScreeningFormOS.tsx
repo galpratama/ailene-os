@@ -187,7 +187,7 @@ function ScoreGauge({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1">
-        <span className="text-4xl font-extrabold leading-none text-gray-900 dark:text-zinc-100">
+        <span className="font-heading text-4xl font-extrabold leading-none text-gray-900 dark:text-zinc-100">
           {score}
         </span>
         <span className="pb-1 text-sm font-semibold text-gray-400">/100</span>
@@ -390,7 +390,7 @@ export default function TrainerScreeningFormOS({
                 Screening progress
               </p>
             </div>
-            <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+            <p className="mt-3 font-heading text-2xl font-bold text-gray-900 dark:text-zinc-100">
               {passedCount} of {steps.length}{" "}
               <span className="text-sm font-normal text-gray-500">
                 steps passed

@@ -1,6 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { osTypeClassName } from "@/lib/os-fonts";
 import { CircleHelp } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -73,7 +74,7 @@ export default function RankingColumnHeaderOS({
         <div
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none fixed z-50 w-max max-w-72 rounded-lg bg-ink px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg"
+          className={`${osTypeClassName} pointer-events-none fixed z-50 w-max max-w-72 rounded-lg bg-ink px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg`}
           style={{ left: position.left, top: position.top, maxWidth: "min(18rem, calc(100vw - 24px))", transform: position.below ? "translate(-50%, 0)" : "translate(-50%, -100%)" }}
         >
           {explanation}

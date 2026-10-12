@@ -155,7 +155,7 @@ export default function QuotationsPageOS({
                     key={quotation.id}
                     className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
-                    <td className="px-5 py-3.5 font-mono text-xs text-gray-400 dark:text-zinc-500">
+                    <td className="px-5 py-3.5 text-xs tabular-nums text-gray-400 dark:text-zinc-500">
                       #{quotation.id}
                     </td>
                     <td className="p-0">
@@ -175,7 +175,7 @@ export default function QuotationsPageOS({
                     <td className="px-5 py-3.5">
                       <QuotationStatusLabel status={quotation.status} />
                     </td>
-                    <td className="px-5 py-3.5 font-mono font-semibold text-gray-900 dark:text-zinc-100">
+                    <td className="px-5 py-3.5 font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
                       {getRupiahCurrency(Number(quotation.net_value))}
                     </td>
                     {canViewMargin && (

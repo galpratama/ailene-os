@@ -28,7 +28,7 @@ export default function RecordTimelineOS({
         >
           <p className="text-gray-700 dark:text-zinc-300">
             <span className="font-semibold">{entry.actor_name}</span> changed{" "}
-            <span className="font-mono">{entry.field_changed}</span>
+            <span className="font-medium">{entry.field_changed}</span>
             {entry.old_value || entry.new_value
               ? `: ${entry.old_value ?? "—"} → ${entry.new_value ?? "—"}`
               : ""}

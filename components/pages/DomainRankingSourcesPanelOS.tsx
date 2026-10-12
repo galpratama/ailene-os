@@ -121,7 +121,7 @@ function SourceCard({ source, live, state }: { source: RankingDataSourceDoc; liv
           </dt>
           <dd className="mt-1 flex flex-wrap gap-1.5">
             {source.tables.map((table) => (
-              <code key={table} className="rounded-md border border-line-soft bg-gray-50 px-1.5 py-0.5 font-mono text-xs text-gray-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <code key={table} className="rounded-md border border-line-soft bg-gray-50 px-1.5 py-0.5 text-xs text-gray-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {table}
               </code>
             ))}

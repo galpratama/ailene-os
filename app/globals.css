@@ -85,7 +85,7 @@
   --biz-stream-teal: #12d6a0;
   --biz-stream-cyan: #00b4f0;
 
-  /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark; sidebar stays dark forest in both modes. */
+  /* ailene os chrome — sidebar/header + page/card surfaces, swapped by .dark; the sidebar is forest in light mode and neutral in dark. */
   --dashboard-bg: #eef3ea;
   --dashboard-border: #dde6d8;
   --card-bg: #ffffff;
@@ -104,24 +104,24 @@
 }
 
 .dark {
-  --background: #05120c;
-  --foreground: #e7f2e9;
+  /* Dark surfaces are pure neutral grays, stepped by lightness only; green stays an accent, never a surface. */
+  --background: #0a0a0a;
+  --foreground: #ededed;
 
-  --dashboard-bg: #05120c;
-  --dashboard-border: #163a2b;
-  --card-bg: #0b2118;
-  /* Kanban cards stay neutral in dark mode instead of the forest-tinted card surface. */
-  --kanban-card-bg: #1f1f22;
-  /* Translucent white so borders sit right on every dark surface (forest page, cards, kanban, inputs). */
+  --dashboard-bg: #0a0a0a;
+  --dashboard-border: #262626;
+  --card-bg: #141414;
+  --kanban-card-bg: #1c1c1c;
+  /* Translucent white so borders sit right on every dark surface (page, cards, kanban, inputs). */
   --line: rgb(255 255 255 / 0.12);
   --line-soft: rgb(255 255 255 / 0.07);
-  --sb-bg: #041a11;
-  --sb-border: #123526;
-  --sb-border-soft: #0f2c20;
-  --sb-text: #93a89b;
-  --sb-text-strong: #f4faf1;
-  --sb-item-hover: #123526;
-  --sb-item-active-bg: #123526;
+  --sb-bg: #111111;
+  --sb-border: #262626;
+  --sb-border-soft: #1f1f1f;
+  --sb-text: #a3a3a3;
+  --sb-text-strong: #f5f5f5;
+  --sb-item-hover: #1f1f1f;
+  --sb-item-active-bg: #1f1f1f;
   --sb-item-active-text: #d6ee30;
 
   /* Same ramp lifted off the dark page background. */
@@ -224,6 +224,7 @@
   --color-biz-stream-cyan: var(--biz-stream-cyan);
 
   --font-script: var(--font-caveat);
+  --font-heading: var(--font-stack-headline);
 
   --color-dashboard-bg: var(--dashboard-bg);
   --color-dashboard-border: var(--dashboard-border);
@@ -287,12 +288,17 @@ body {
   transform: rotate(1.2deg);
 }
 
-/* Ailene OS runs one typeface everywhere and caps weight at medium — scopes every font-* and font-weight-* Tailwind utility within the OS subtree. */
+/* Ailene OS type: Stack Sans Text at normal weight for copy, Stack Sans Headline for headings (and `font-heading`). */
+.os-type {
+  font-family: var(--font-stack-text), sans-serif;
+  font-weight: 400;
+}
+.os-type :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-stack-headline), sans-serif;
+}
+
+/* Ailene OS caps weight at medium — remaps every font-weight-* Tailwind utility within the OS subtree. */
 .os-font-scope {
-  --font-sans: var(--font-stack);
-  --font-mono: var(--font-stack);
-  --font-display: var(--font-stack);
-  --font-script: var(--font-stack);
   --font-weight-semibold: var(--font-weight-medium);
   --font-weight-bold: var(--font-weight-medium);
   --font-weight-extrabold: var(--font-weight-medium);
@@ -315,7 +321,8 @@ body {
   height: 0 !important;
 }
 .dark .bg-os-gradient {
-  background-image: linear-gradient(180deg, #05120c 0%, #05120c 100%);
+  background-image: none;
+  background-color: var(--background);
 }
 
 /* Subtle diamond-lattice texture over the OS background. */
@@ -326,8 +333,8 @@ body {
 }
 .dark .bg-geo-pattern {
   background-image:
-    repeating-linear-gradient(45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px),
-    repeating-linear-gradient(-45deg, rgba(214, 238, 48, 0.035) 0, rgba(214, 238, 48, 0.035) 1px, transparent 1px, transparent 48px);
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 48px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 48px);
 }
 
 /* Faint line lattice behind the auth card, faded out towards the edges. */

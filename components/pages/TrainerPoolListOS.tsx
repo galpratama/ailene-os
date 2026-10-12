@@ -171,7 +171,7 @@ export default function TrainerPoolListOS({
           const cardContent = (
             <>
               <card.icon size={17} className="text-claude" />
-              <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-zinc-100">
+              <p className="mt-3 font-heading text-2xl font-bold text-gray-900 dark:text-zinc-100">
                 {card.value}
               </p>
               <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
