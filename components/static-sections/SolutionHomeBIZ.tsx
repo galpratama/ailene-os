@@ -1,5 +1,6 @@
 "use client";
 
+import AppButton from "@/components/buttons/AppButton";
 import PageMargin from "@/components/layouts/PageMargin";
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
@@ -62,8 +63,10 @@ export default function SolutionHomeBIZ() {
               return (
                 <li key={step.title}>
                   <h3>
-                    <button
+                    <AppButton
                       type="button"
+                      variant="bare"
+                      size="bare"
                       aria-expanded={open}
                       aria-controls={`solution-step-${index}`}
                       onClick={() => toggle(index)}
@@ -78,7 +81,7 @@ export default function SolutionHomeBIZ() {
                           className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`}
                         />
                       </span>
-                    </button>
+                    </AppButton>
                   </h3>
                   {/* 0fr -> 1fr animates the height; inert keeps collapsed copy out of focus and screen readers. */}
                   <div

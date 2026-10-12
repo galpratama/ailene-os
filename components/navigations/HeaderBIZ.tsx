@@ -66,13 +66,13 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
 
         <AppButton
           type="button"
-          variant="ghost"
+          variant="ghostBiz"
           size="icon"
           aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
           aria-expanded={menuOpen}
           aria-controls="biz-mobile-nav"
           onClick={() => setMenuOpen((open) => !open)}
-          className="lg:hidden !text-biz-forest hover:!bg-biz-forest/8"
+          className="lg:hidden"
         >
           {menuOpen ? <X size={19} /> : <Menu size={19} />}
         </AppButton>

@@ -52,7 +52,7 @@ export default function SheetOS({
           <div className="flex shrink-0 items-center gap-1">
             {fullPageHref && (
               <AppButton
-                variant="ghost"
+                variant="secondary"
                 size="iconSm"
                 href={fullPageHref}
                 title="Open full page"
@@ -60,12 +60,15 @@ export default function SheetOS({
                 <Maximize2 size={14} />
               </AppButton>
             )}
-            <button
+            <AppButton
+              type="button"
+              variant="secondary"
+              size="iconSm"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+              aria-label="Close sheet"
             >
               <X size={16} />
-            </button>
+            </AppButton>
           </div>
         </div>
         {children}

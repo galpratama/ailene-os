@@ -1,6 +1,7 @@
 "use client";
 
 import type { NotificationEntityType } from "@/apis/notifications";
+import AppButton from "@/components/buttons/AppButton";
 import {
   getUnreadNotificationCount,
   listNotifications,
@@ -21,20 +22,13 @@ const ENTITY_HREF: Record<NotificationEntityType, string> = {
   b2b_meeting: "/calendar",
 };
 
-const TRIGGER_TONE = {
-  light:
-    "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
-  sidebar:
-    "border border-sb-border-soft bg-sb-item-hover text-sb-text-strong hover:bg-sb-item-active-bg",
-} as const;
-
 export default function NotificationBellOS({
   sessionToken,
   tone = "light",
 }: {
   sessionToken: string;
   // "sidebar" styles the trigger for the dark sidebar and opens the panel rightward.
-  tone?: keyof typeof TRIGGER_TONE;
+  tone?: "light" | "sidebar";
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,19 +79,21 @@ export default function NotificationBellOS({
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
+      <AppButton
         type="button"
+        variant={tone === "sidebar" ? "ghost" : "secondary"}
+        size="iconRound"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`relative flex size-8 items-center justify-center rounded-full ${TRIGGER_TONE[tone]}`}
+        className="relative"
         aria-label="Notifications"
       >
         <Bell size={15} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-merah px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-merah-t px-1 text-[10px] font-bold text-merah dark:bg-red-500/20 dark:text-red-300">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
-      </button>
+      </AppButton>
 
       {isOpen && (
         <div className={`absolute top-full z-30 mt-2 w-80 ${tone === "sidebar" ? "left-0" : "right-0"} overflow-hidden rounded-lg border border-line-soft bg-white shadow-md dark:bg-zinc-800`}>
@@ -106,14 +102,15 @@ export default function NotificationBellOS({
               Notifications
             </p>
             {unreadCount > 0 && (
-              <button
+              <AppButton
                 type="button"
+                variant="textLink"
+                size="textLink"
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
-                className="flex items-center gap-1 text-[11px] text-claude hover:underline disabled:opacity-60"
               >
                 <CheckCheck size={12} /> Mark all read
-              </button>
+              </AppButton>
             )}
           </div>
           <div className="max-h-80 overflow-y-auto">

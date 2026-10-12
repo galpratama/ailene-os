@@ -106,7 +106,7 @@ export default function AppFilterMenu({
   return (
     <div className={`relative shrink-0 ${className ?? ""}`} ref={containerRef}>
       <AppButton
-        variant="outline"
+        variant="white"
         size="md"
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
@@ -159,7 +159,7 @@ export default function AppFilterMenu({
                 : `${chips.length} filter${chips.length > 1 ? "s" : ""} applied`}
             </span>
             <AppButton
-              variant="ghost"
+              variant="secondary"
               size="sm"
               disabled={chips.length === 0}
               onClick={() => onChange(cleared(values, chips.flatMap((chip) => chip.clears)))}
@@ -193,9 +193,9 @@ export function AppFilterChips({
       {chips.map((chip) => (
         <AppButton
           key={chip.key}
-          variant="outline"
-          size="sm"
-          className="max-w-64 rounded-full"
+          variant="white"
+          size="pill"
+          className="max-w-64"
           onClick={() => onChange(cleared(values, chip.clears))}
           title={`Remove the ${chip.label.toLowerCase()} filter`}
           aria-label={`Remove the ${chip.label.toLowerCase()} filter`}
@@ -207,7 +207,7 @@ export function AppFilterChips({
       ))}
       {chips.length > 1 && (
         <AppButton
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onClick={() => onChange(cleared(values, chips.flatMap((chip) => chip.clears)))}
         >

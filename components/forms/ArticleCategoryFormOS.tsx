@@ -179,7 +179,7 @@ export default function ArticleCategoryFormOS({
                     {category.status === "active" ? "Active" : "Inactive"}
                   </Label>
                   <AppButton
-                    variant="ghost"
+                    variant="secondary"
                     size="iconSm"
                     title="Edit category"
                     onClick={() => startEdit(category)}
@@ -187,7 +187,7 @@ export default function ArticleCategoryFormOS({
                     <Pencil size={13} />
                   </AppButton>
                   <AppButton
-                    variant="ghost"
+                    variant="secondary"
                     size="iconSm"
                     title="Delete category"
                     onClick={() => setDeleting(category)}

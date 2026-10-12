@@ -120,9 +120,7 @@ export default function QuotationsPageOS({
           </p>
         </div>
         {/* Drafting/editing lives on the pipeline-aware Pricing Calculator, not here. */}
-        <Link href="/pricing">
-          <AppButton size="sm">New Quotation</AppButton>
-        </Link>
+        <AppButton href="/pricing" size="sm">New Quotation</AppButton>
       </div>
 
 
@@ -202,9 +200,8 @@ export default function QuotationsPageOS({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <AppButton
                           type="button"
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
-                          className="bg-biru text-gray-900 border-biru hover:bg-biru/90"
                           disabled={viewingId === quotation.id}
                           onClick={() =>
                             handleView(quotation.id, quotation.company_name)
@@ -219,9 +216,8 @@ export default function QuotationsPageOS({
                         </AppButton>
                         <AppButton
                           type="button"
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
-                          className="bg-ungu text-white border-ungu hover:bg-ungu/90"
                           disabled={downloadingId === quotation.id}
                           onClick={() =>
                             handleDownload(quotation.id, quotation.company_name)
@@ -234,17 +230,10 @@ export default function QuotationsPageOS({
                           )}
                           Unduh
                         </AppButton>
-                        <Link href={`/quotations/${quotation.id}`}>
-                          <AppButton
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="bg-kuning text-white border-kuning hover:bg-kuning/90"
-                          >
-                            <Pencil size={13} />
-                            Update
-                          </AppButton>
-                        </Link>
+                        <AppButton href={`/quotations/${quotation.id}`} variant="secondary" size="sm">
+                          <Pencil size={13} />
+                          Update
+                        </AppButton>
                       </div>
                     </td>
                     {canReview && (
@@ -253,9 +242,8 @@ export default function QuotationsPageOS({
                           <div className="flex flex-wrap items-center gap-1.5">
                             <AppButton
                               type="button"
-                              variant="outline"
+                              variant="success"
                               size="sm"
-                              className="bg-hijau text-white border-hijau hover:bg-hijau/90"
                               disabled={decideMutation.isPending}
                               onClick={() => decide(quotation.id, "approved")}
                             >
@@ -264,9 +252,8 @@ export default function QuotationsPageOS({
                             </AppButton>
                             <AppButton
                               type="button"
-                              variant="outline"
+                              variant="warning"
                               size="sm"
-                              className="bg-oranye text-white border-oranye hover:bg-oranye/90"
                               disabled={decideMutation.isPending}
                               onClick={() =>
                                 setPendingDecision({
@@ -280,9 +267,8 @@ export default function QuotationsPageOS({
                             </AppButton>
                             <AppButton
                               type="button"
-                              variant="outline"
+                              variant="destructive"
                               size="sm"
-                              className="bg-merah text-white border-merah hover:bg-merah/90"
                               disabled={decideMutation.isPending}
                               onClick={() =>
                                 setPendingDecision({

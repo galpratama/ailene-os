@@ -268,10 +268,9 @@ export default function EditMeetingFormOS({
           <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
             <AppButton
               type="button"
-              variant="outline"
+              variant="destructive"
               size="icon"
               title="Delete meeting"
-              className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/40"
               disabled={deleteMutation.isPending}
               onClick={() => setIsConfirmingDelete(true)}
             >

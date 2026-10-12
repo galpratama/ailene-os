@@ -72,7 +72,7 @@ export default function DomainRankingDetailPageOS({ domain, sessionToken }: { do
   const comparisonRows = compared.length === 2 ? compared : [];
 
   return <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
-    <div><AppButton href="/domain-ranking" variant="ghost" size="sm" className="-ml-3"><ArrowLeft size={14} /> Domain Ranking</AppButton></div>
+    <div><AppButton href="/domain-ranking" variant="secondary" size="sm" className="-ml-3"><ArrowLeft size={14} /> Domain Ranking</AppButton></div>
     <PageHeaderOS title={data?.domain ?? domain} description="Website ranking, authority, and historical performance from public data sources."><AppButton href={`https://${data?.domain ?? domain}`} variant="outline" size="sm">Visit website <ExternalLink size={13} /></AppButton></PageHeaderOS>
     <form onSubmit={submitLookup} className="flex flex-col gap-2 sm:flex-row"><div className="min-w-0 flex-1"><AppInput inputId="detail-domain-lookup" icon={<Search size={15} />} value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="Analyze another domain..." /></div><AppButton type="submit" disabled={!lookup.trim()}>Analyze <ArrowRight size={14} /></AppButton></form>
     {overview.isLoading && <p className="py-16 text-center text-sm text-gray-500">Loading domain analysis...</p>}

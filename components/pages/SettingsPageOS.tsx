@@ -135,7 +135,7 @@ export default function SettingsPageOS({
               </div>
               <AppButton
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="iconSm"
                 title={
                   entry.trainer_count

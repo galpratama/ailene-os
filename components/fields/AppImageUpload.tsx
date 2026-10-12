@@ -89,11 +89,11 @@ export default function AppImageUpload({
             <Image src={value} alt="Uploaded image" fill className="object-cover" />
             <AppButton
               type="button"
-              variant="outline"
+              variant="dangerWhite"
               size="iconSm"
               title="Remove image"
               onClick={() => onChange("")}
-              className="absolute right-2 top-2 text-red-600 dark:text-red-400"
+              className="absolute right-2 top-2"
             >
               <X size={13} />
             </AppButton>

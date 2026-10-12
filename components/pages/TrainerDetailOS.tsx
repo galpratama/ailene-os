@@ -132,7 +132,7 @@ function PathwaySection({
     <section className="rounded-xl border border-line bg-card-bg p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">{title}</h3>
-        <AppButton variant="ghost" size="sm" onClick={() => router.push(href)}>
+        <AppButton variant="secondary" size="sm" onClick={() => router.push(href)}>
           View details
           <ArrowRight size={13} />
         </AppButton>
@@ -364,7 +364,7 @@ export default function TrainerDetailOS({
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-bold text-gray-900 dark:text-zinc-100">Notes</h3>
           {!editingNotes && (
-            <AppButton variant="ghost" size="sm" onClick={openNotesEditor}>
+            <AppButton variant="secondary" size="sm" onClick={openNotesEditor}>
               <Plus size={13} />
               {trainer.notes ? "Edit" : "Add Note"}
             </AppButton>
@@ -381,7 +381,7 @@ export default function TrainerDetailOS({
             />
             <div className="flex justify-end gap-2">
               <AppButton
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={() => setEditingNotes(false)}
               >

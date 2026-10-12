@@ -40,7 +40,7 @@ export default function PdfPreviewModalOS({
           </h2>
           <AppButton
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="icon"
             onClick={onClose}
             aria-label="Close"

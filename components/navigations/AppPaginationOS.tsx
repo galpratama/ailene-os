@@ -75,7 +75,7 @@ export default function AppPaginationOS({
         ) : (
           <AppButton
             key={page}
-            variant={currentPage === page ? "outline" : "ghost"}
+            variant={currentPage === page ? "white" : "secondary"}
             size="iconSm"
             aria-current={currentPage === page ? "page" : undefined}
             onClick={() => goTo(page)}

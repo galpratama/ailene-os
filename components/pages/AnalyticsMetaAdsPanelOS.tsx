@@ -1,5 +1,6 @@
 "use client";
 
+import AppButton from "@/components/buttons/AppButton";
 import CreativeRankChartOS from "@/components/charts/CreativeRankChartOS";
 import DemographicsChartOS from "@/components/charts/DemographicsChartOS";
 import DonutChartOS from "@/components/charts/DonutChartOS";
@@ -502,14 +503,11 @@ export default function AnalyticsMetaAdsPanelOS({
                     <th className="px-5 py-3">Creative</th>
                     {columns.map((column) => (
                       <th key={column.key} className="px-5 py-3">
-                        <button
+                        <AppButton
                           type="button"
+                          variant={sortKey === column.key ? "sortActive" : "sort"}
+                          size="sort"
                           onClick={() => selectSort(column.key)}
-                          className={`inline-flex items-center gap-1 uppercase transition-colors hover:cursor-pointer hover:text-gray-700 dark:hover:text-zinc-200 ${
-                            sortKey === column.key
-                              ? "text-claude"
-                              : "text-gray-400"
-                          }`}
                         >
                           {column.label}
                           {sortKey === column.key &&
@@ -518,7 +516,7 @@ export default function AnalyticsMetaAdsPanelOS({
                             ) : (
                               <ArrowUpWideNarrow size={12} />
                             ))}
-                        </button>
+                        </AppButton>
                       </th>
                     ))}
                   </tr>

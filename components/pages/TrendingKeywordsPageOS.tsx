@@ -162,7 +162,7 @@ export default function TrendingKeywordsPageOS({ sessionToken }: { sessionToken:
           />
         </div>
         {capturedOn && (
-          <AppButton variant="ghost" size="sm" onClick={() => changeFilter(() => setCapturedOn(""))}>
+          <AppButton variant="secondary" size="sm" onClick={() => changeFilter(() => setCapturedOn(""))}>
             Latest
           </AppButton>
         )}

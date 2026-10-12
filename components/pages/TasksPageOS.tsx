@@ -320,9 +320,9 @@ export default function TasksPageOS({
 
                 <AppButton
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  className="shrink-0 w-full justify-start hover:bg-white dark:hover:bg-zinc-800"
+                  className="shrink-0 w-full justify-start"
                   onClick={() => setCreateStatus(col.value)}
                 >
                   <Plus size={13} />

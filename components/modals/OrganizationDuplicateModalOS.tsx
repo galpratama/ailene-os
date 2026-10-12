@@ -76,7 +76,7 @@ export default function OrganizationDuplicateModalOS({
           </div>
           <AppButton
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="icon"
             className="shrink-0"
             onClick={onClose}

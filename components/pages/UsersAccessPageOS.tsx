@@ -216,7 +216,7 @@ export default function UsersAccessPageOS({
                       <div className="flex items-center justify-end gap-1">
                         {entry.status !== "ARCHIVED" && (
                           <AppButton
-                            variant="ghost"
+                            variant="secondary"
                             size="iconSm"
                             title="Edit access"
                             onClick={() => setEditingUserId(entry.id)}
@@ -227,7 +227,7 @@ export default function UsersAccessPageOS({
 
                         {entry.status === "INVITED" && (
                           <AppButton
-                            variant="ghost"
+                            variant="secondary"
                             size="iconSm"
                             title="Revoke invite"
                             onClick={() =>
@@ -241,7 +241,7 @@ export default function UsersAccessPageOS({
                         {entry.status === "ACTIVE" && (
                           <>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Suspend"
                               onClick={() =>
@@ -251,7 +251,7 @@ export default function UsersAccessPageOS({
                               <PauseCircle size={13} />
                             </AppButton>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Offboard"
                               onClick={() => setOffboardingUserId(entry.id)}
@@ -264,7 +264,7 @@ export default function UsersAccessPageOS({
                         {entry.status === "SUSPENDED" && (
                           <>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Reactivate"
                               onClick={() =>
@@ -274,7 +274,7 @@ export default function UsersAccessPageOS({
                               <RotateCcw size={13} />
                             </AppButton>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Offboard"
                               onClick={() => setOffboardingUserId(entry.id)}
@@ -287,7 +287,7 @@ export default function UsersAccessPageOS({
                         {entry.status === "DEACTIVATED" && (
                           <>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Reactivate"
                               onClick={() =>
@@ -297,7 +297,7 @@ export default function UsersAccessPageOS({
                               <RotateCcw size={13} />
                             </AppButton>
                             <AppButton
-                              variant="ghost"
+                              variant="secondary"
                               size="iconSm"
                               title="Archive"
                               onClick={() =>

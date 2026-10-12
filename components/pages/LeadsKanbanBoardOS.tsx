@@ -112,7 +112,7 @@ function LeadsKanbanColumn({
             {leadsQuery.isLoading ? "…" : total}
           </span>
         </div>
-        <AppButton type="button" variant="ghost" size="iconSm" aria-label="Add lead to this stage" onClick={() => onAddLead(stage)}>
+        <AppButton type="button" variant="secondary" size="iconSm" aria-label="Add lead to this stage" onClick={() => onAddLead(stage)}>
           <Plus size={15} />
         </AppButton>
       </div>

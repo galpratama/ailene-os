@@ -5,14 +5,31 @@ import type { BizBlock } from "@/lib/feature-tracking";
 import Link from "next/link";
 import { ComponentPropsWithRef, MouseEvent, ReactNode } from "react";
 
-// OS variants (internal app) + BIZ variants (marketing site) live on one
-// component so every button in the codebase goes through a single class map.
+// Keep button colors and shapes here, including the compact calendar and BIZ CTAs.
 export type AppButtonVariant =
   | "primary"
   | "outline"
-  | "ghost"
-  | "sidebarOutline"
+  | "secondary"
   | "destructive"
+  | "dangerGhost"
+  | "dangerWhite"
+  | "outlineDashed"
+  | "row"
+  | "textLink"
+  | "sort"
+  | "sortActive"
+  | "bare"
+  | "black"
+  | "ghost"
+  | "success"
+  | "warning"
+  | "calendarMuted"
+  | "calendarBlue"
+  | "calendarOrange"
+  | "calendarRed"
+  | "calendarGreen"
+  | "ghostBiz"
+  | "floatingBiz"
   | "ink"
   | "white"
   | "orange"
@@ -20,7 +37,7 @@ export type AppButtonVariant =
   | "forest"
   | "outlineDark"
   | "discord";
-export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "cta" | "lg";
+export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "calendar" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg";
 
 interface AppButtonBaseProps {
   children: ReactNode;
@@ -47,16 +64,33 @@ const variantClasses: Record<AppButtonVariant, string> = {
     "bg-lime-bright text-forest-deep hover:bg-lime-bright/90 active:bg-lime-bright/80",
   outline:
     "border border-line bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
-  ghost:
+  secondary:
     "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
-  // Irreversible actions (delete); pair with a confirmation dialog.
   destructive:
     "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500",
-  // Same shape as "outline" but tuned for the sidebar's dark-forest chrome instead of the light page background.
-  sidebarOutline:
-    "border border-sb-border-soft bg-sb-item-hover text-sb-text-strong hover:bg-sb-item-active-bg",
+  dangerGhost: "text-gray-500 hover:bg-red-50 hover:text-merah dark:text-zinc-400 dark:hover:bg-red-950/40 dark:hover:text-red-300",
+  dangerWhite: "border border-line bg-white text-red-600 hover:bg-red-50 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-zinc-700",
+  outlineDashed: "border-2 border-dashed border-line text-gray-500 hover:border-claude hover:text-claude dark:text-zinc-400",
+  row: "hover:bg-gray-50 dark:hover:bg-zinc-800/50",
+  textLink: "text-claude hover:underline",
+  sort: "text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200",
+  sortActive: "text-claude hover:text-claude",
+  bare: "",
+  black:
+    "border border-black bg-black text-white hover:bg-zinc-800 dark:border-white/20 dark:hover:bg-zinc-800",
+  ghost:
+    "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong",
+  success: "bg-hijau text-white hover:bg-hijau/90",
+  warning: "bg-oranye text-white hover:bg-oranye/90",
+  calendarMuted: "bg-gray-100/50 text-gray-700 hover:bg-gray-100 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:bg-zinc-800",
+  calendarBlue: "bg-biru-t/40 text-blue-700 hover:bg-biru-t/60 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15",
+  calendarOrange: "bg-oranye-t/40 text-oranye hover:bg-oranye-t/60 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/15",
+  calendarRed: "bg-merah-t/40 text-merah hover:bg-merah-t/60 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15",
+  calendarGreen: "bg-hijau-t/40 text-green-700 hover:bg-hijau-t/60 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/15",
 
   // BIZ (marketing site); filled variants carry a same-color border so they line up with outlineDark.
+  ghostBiz: "text-biz-forest hover:bg-biz-forest/8",
+  floatingBiz: "border-2 border-biz-forest bg-biz-lime text-biz-forest shadow-[0_10px_24px_rgba(1,30,22,0.16)] hover:bg-white hover:shadow-[0_14px_30px_rgba(1,30,22,0.22)]",
   ink: "bg-ink text-white hover:bg-ink/90",
   white: "bg-white text-ink border border-ink-line hover:border-ink",
   orange: "bg-oranye text-white hover:bg-oranye/90",
@@ -74,6 +108,18 @@ const sizeClasses: Record<AppButtonSize, string> = {
   md: "h-9 px-3.5 text-sm gap-2 rounded-lg font-medium transition-colors",
   icon: "size-8 justify-center p-0 rounded-lg font-medium transition-colors",
   iconSm: "size-7 justify-center p-0 rounded-lg font-medium transition-colors",
+  iconRound: "size-8 justify-center p-0 rounded-full font-medium transition-colors",
+  iconRoundSm: "size-7 justify-center p-0 rounded-full font-medium transition-colors",
+  pill: "h-8 px-3 text-xs gap-1.5 rounded-full font-medium transition-colors",
+  calendar: "h-auto min-h-7 w-full justify-start rounded-lg px-1.5 py-1 text-xs gap-1.5 font-medium transition-colors",
+  row: "w-full gap-3 px-4 py-3 text-left transition-colors",
+  rowWide: "w-full gap-3 px-5 py-3 text-left transition-colors",
+  rowSummary: "w-full justify-between gap-4 px-5 py-3.5 text-left transition-colors",
+  textLink: "gap-1 text-xs font-medium transition-colors",
+  sort: "gap-1 text-xs font-semibold uppercase transition-colors",
+  bare: "",
+  dashed: "w-full justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors",
+  floating: "h-12 rounded-full px-3.5 py-0 text-[15px] tracking-[-0.02em] gap-1.5 font-medium transition-[background-color,box-shadow,transform]",
   cta: "justify-center px-6 py-3.5 gap-1.5 text-[15px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
   // Hero-only step above cta.
   lg: "h-15 justify-center px-9 gap-2 text-[17px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
@@ -87,7 +133,7 @@ export default function AppButton({
   ...rest
 }: AppButtonProps) {
   const finalClasses = [
-    "inline-flex items-center hover:cursor-pointer disabled:opacity-50 disabled:pointer-events-none",
+    "inline-flex items-center hover:cursor-pointer disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-claude dark:focus-visible:ring-lime-bright",
     variantClasses[variant],
     sizeClasses[size],
     className,

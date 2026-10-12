@@ -196,7 +196,7 @@ export default function ArticlesPageOS({
                     <div className="flex items-center justify-end gap-1">
                       {article.status === "published" && (
                         <AppButton
-                          variant="ghost"
+                          variant="secondary"
                           size="iconSm"
                           title="View on website"
                           href={articleURL(article.slug_url, article.id)}
@@ -205,7 +205,7 @@ export default function ArticlesPageOS({
                         </AppButton>
                       )}
                       <AppButton
-                        variant="ghost"
+                        variant="secondary"
                         size="iconSm"
                         title="Edit article"
                         href={`/articles/${article.id}`}
@@ -213,7 +213,7 @@ export default function ArticlesPageOS({
                         <Pencil size={13} />
                       </AppButton>
                       <AppButton
-                        variant="ghost"
+                        variant="secondary"
                         size="iconSm"
                         title="Delete article"
                         onClick={() => setDeleting(article)}

@@ -55,9 +55,8 @@ export default function RankingColumnHeaderOS({
         <AppButton
           ref={triggerRef}
           type="button"
-          variant="ghost"
+          variant="secondary"
           size="iconSm"
-          className="text-gray-400 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-claude dark:hover:text-zinc-200 dark:focus-visible:ring-lime-bright"
           aria-label={`About ${String(children)}`}
           aria-describedby={open ? tooltipId : undefined}
           onMouseEnter={show}

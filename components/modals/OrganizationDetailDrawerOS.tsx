@@ -82,7 +82,7 @@ export default function OrganizationDetailDrawerOS({
             </div>
 
             <div className="sticky bottom-0 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
-              <AppButton type="button" variant="outline" className="w-full justify-center text-red-600 border-red-200 hover:bg-red-50" onClick={() => setIsConfirmingDelete(true)}><Trash2 size={14} />Delete company</AppButton>
+              <AppButton type="button" variant="destructive" className="w-full justify-center" onClick={() => setIsConfirmingDelete(true)}><Trash2 size={14} />Delete company</AppButton>
             </div>
           </div>
         )}

@@ -1,3 +1,4 @@
+import AppButton from "@/components/buttons/AppButton";
 import { FolderOpen } from "lucide-react";
 
 export default function ProjectsPageOS() {
@@ -8,9 +9,9 @@ export default function ProjectsPageOS() {
           <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Projects</h2>
           <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Track progress across all projects</p>
         </div>
-        <button className="flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg bg-gray-900 text-white hover:bg-gray-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 transition-colors">
+        <AppButton variant="black" size="sm">
           + New Project
-        </button>
+        </AppButton>
       </div>
 
       {/* Empty state */}

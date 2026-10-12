@@ -28,10 +28,10 @@ export default function FloatingLeadButtonBIZ() {
     <div className="pointer-events-none fixed right-4 bottom-4 z-40 sm:right-6 sm:bottom-6">
       <AppButton
         href="#contact"
-        variant="white"
-        size="cta"
+        variant="floatingBiz"
+        size="floating"
         trackPlacement="curriculum"
-        className="pointer-events-auto h-12 rounded-full !border-2 !border-biz-forest !bg-biz-lime !px-3.5 !py-0 !text-[15px] !tracking-[-0.02em] !text-biz-forest shadow-[0_10px_24px_rgba(1,30,22,0.16)] transition-[background-color,box-shadow,transform] hover:!bg-white hover:shadow-[0_14px_30px_rgba(1,30,22,0.22)]"
+        className="pointer-events-auto"
       >
         Mulai percakapan
         <span className="grid size-6 place-items-center rounded-full bg-biz-forest text-white">

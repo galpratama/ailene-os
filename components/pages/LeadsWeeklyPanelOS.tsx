@@ -1,6 +1,7 @@
 "use client";
 
 import type { ListPipelinesOptions, PipelineData } from "@/apis/sales";
+import AppButton from "@/components/buttons/AppButton";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import StageLabel from "@/components/labels/StageLabel";
 import { formatDayRange } from "@/lib/date-range";
@@ -45,10 +46,11 @@ function WeekLeads({ filters, weekStart, weekEnd, onOpenLead }: {
     <ul className="divide-y divide-line-soft">
       {leads.map((lead) => (
         <li key={lead.id}>
-          <button
+          <AppButton
             type="button"
+            variant="row"
+            size="rowWide"
             onClick={() => onOpenLead(lead)}
-            className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50"
           >
             <Building2 size={14} className="shrink-0 text-gray-400" />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">
@@ -61,7 +63,7 @@ function WeekLeads({ filters, weekStart, weekEnd, onOpenLead }: {
             <span className="hidden w-36 shrink-0 truncate text-xs text-gray-700 dark:text-zinc-300 lg:block">
               {lead.sales_owner_name}
             </span>
-          </button>
+          </AppButton>
         </li>
       ))}
       {leadsQuery.data && leadsQuery.data.metapaging.total_data > leads.length && (
@@ -133,11 +135,12 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
             const isExpanded = expandedWeek === week.week_start;
             return (
               <div key={week.week_start} className="border-b border-line-soft last:border-0">
-                <button
+                <AppButton
                   type="button"
+                  variant="row"
+                  size="rowSummary"
                   onClick={() => setExpandedWeek(isExpanded ? null : week.week_start)}
                   aria-expanded={isExpanded}
-                  className="grid w-full grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <ChevronRight
@@ -166,7 +169,7 @@ export default function LeadsWeeklyPanelOS({ filters, onOpenLead }: {
                     <span className="w-14 text-gray-600 dark:text-zinc-300">{week.inbound_leads}</span>
                     <span className="w-14 font-semibold text-gray-900 dark:text-zinc-100">{week.outbound_leads}</span>
                   </span>
-                </button>
+                </AppButton>
                 {isExpanded && (
                   <div className="border-t border-line-soft bg-dashboard-bg">
                     <WeekLeads

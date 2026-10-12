@@ -1,6 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import type { AppButtonVariant } from "@/components/buttons/AppButton";
 import CreateMeetingFormOS from "@/components/forms/CreateMeetingFormOS";
 import EditMeetingFormOS from "@/components/forms/EditMeetingFormOS";
 import CalendarActionModalOS, {
@@ -24,53 +25,53 @@ const DAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 const priorityStyles: Record<
   ActionPriority,
-  { label: string; dot: string; chip: string }
+  { label: string; dot: string; buttonVariant: AppButtonVariant }
 > = {
   low: {
     label: "Low",
     dot: "bg-gray-400",
-    chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+    buttonVariant: "calendarMuted",
   },
   medium: {
     label: "Medium",
     dot: "bg-biru",
-    chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
+    buttonVariant: "calendarBlue",
   },
   high: {
     label: "High",
     dot: "bg-oranye",
-    chip: "bg-oranye-t text-oranye hover:bg-oranye-t/80 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20",
+    buttonVariant: "calendarOrange",
   },
   urgent: {
     label: "Urgent",
     dot: "bg-merah",
-    chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
+    buttonVariant: "calendarRed",
   },
 };
 
 const meetingStatusStyles: Record<
   MeetingStatus,
-  { label: string; dot: string; chip: string }
+  { label: string; dot: string; buttonVariant: AppButtonVariant }
 > = {
   scheduled: {
     label: "Meeting: Scheduled",
     dot: "bg-biru",
-    chip: "bg-biru-t text-blue-700 hover:bg-biru-t/80 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20",
+    buttonVariant: "calendarBlue",
   },
   held: {
     label: "Meeting: Held",
     dot: "bg-hijau",
-    chip: "bg-hijau-t text-green-700 hover:bg-hijau-t/80 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20",
+    buttonVariant: "calendarGreen",
   },
   cancelled: {
     label: "Meeting: Cancelled",
     dot: "bg-gray-400",
-    chip: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+    buttonVariant: "calendarMuted",
   },
   no_show: {
     label: "Meeting: No Show",
     dot: "bg-merah",
-    chip: "bg-merah-t text-merah hover:bg-merah-t/80 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20",
+    buttonVariant: "calendarRed",
   },
 };
 
@@ -370,9 +371,8 @@ export default function CalendarPageOS({
                         <AppButton
                           key={`${event.type}-${event.id}`}
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={`h-auto min-h-7 w-full justify-start rounded-md px-1.5 py-1 ${style.chip}`}
+                          variant={style.buttonVariant}
+                          size="calendar"
                           onClick={() =>
                             event.type === "b2b_meeting"
                               ? setEditingMeetingId(event.id)

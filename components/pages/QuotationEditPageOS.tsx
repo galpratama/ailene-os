@@ -65,10 +65,12 @@ function EditorRow({
   const [open, setOpen] = useState(!!defaultOpen);
   return (
     <div className="border-b border-line-soft last:border-0">
-      <button
+      <AppButton
         type="button"
+        variant="row"
+        size="row"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+        aria-expanded={open}
       >
         <Icon size={16} className="shrink-0 text-gray-400" />
         <span className="w-28 shrink-0 text-sm font-semibold text-gray-900 dark:text-zinc-100 sm:w-36">
@@ -81,7 +83,7 @@ function EditorRow({
           size={16}
           className={`shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
         />
-      </button>
+      </AppButton>
       {open && (
         <div className="border-t border-line-soft bg-gray-50/60 px-4 py-4 dark:bg-zinc-900/40">
           {children}
@@ -335,9 +337,8 @@ export default function QuotationEditPageOS({
     <div className="flex flex-wrap items-center gap-1.5">
       <AppButton
         type="button"
-        variant="outline"
+        variant="success"
         size="sm"
-        className="bg-hijau text-white border-hijau hover:bg-hijau/90"
         disabled={decideMutation.isPending}
         onClick={() => decide("approved")}
       >
@@ -346,9 +347,8 @@ export default function QuotationEditPageOS({
       </AppButton>
       <AppButton
         type="button"
-        variant="outline"
+        variant="warning"
         size="sm"
-        className="bg-oranye text-white border-oranye hover:bg-oranye/90"
         disabled={decideMutation.isPending}
         onClick={() => setPendingDecision({ decision: "needs_revision" })}
       >
@@ -357,9 +357,8 @@ export default function QuotationEditPageOS({
       </AppButton>
       <AppButton
         type="button"
-        variant="outline"
+        variant="destructive"
         size="sm"
-        className="bg-merah text-white border-merah hover:bg-merah/90"
         disabled={decideMutation.isPending}
         onClick={() => setPendingDecision({ decision: "rejected" })}
       >

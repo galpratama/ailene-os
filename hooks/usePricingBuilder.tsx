@@ -218,7 +218,7 @@ function CopyButton({
 }: {
   label: string;
   getText: () => string;
-  variant?: "primary" | "outline";
+  variant?: "primary" | "white";
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -525,14 +525,15 @@ export function usePricingBuilder({
                 {getRupiahCurrency(dayPrice(d, materi))}
               </span>
               {days.length > 1 && isEditable && (
-                <button
+                <AppButton
                   type="button"
+                  variant="dangerGhost"
+                  size="iconSm"
                   onClick={() => removeDay(d.id)}
                   title="Hapus hari"
-                  className="text-gray-500 hover:text-merah dark:text-zinc-400 dark:hover:text-red-300"
                 >
                   <Trash2 size={15} />
-                </button>
+                </AppButton>
               )}
             </div>
             <div className="flex flex-col gap-3 rounded-b-lg bg-card-bg p-3">
@@ -573,13 +574,15 @@ export function usePricingBuilder({
         ))}
       </div>
       {isEditable && (
-        <button
+        <AppButton
           type="button"
+          variant="outlineDashed"
+          size="dashed"
           onClick={addDay}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-line py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:border-claude hover:text-claude dark:text-zinc-400"
+          className="mt-3"
         >
           <Plus size={14} /> Tambah hari
-        </button>
+        </AppButton>
       )}
     </>
   );
@@ -1010,7 +1013,7 @@ export function usePricingBuilder({
       <CopyButton
         label="Salin ringkasan internal"
         getText={internalText}
-        variant="outline"
+        variant="white"
       />
     </div>
   );

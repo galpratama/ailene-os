@@ -83,11 +83,11 @@ export default function ScrollLeadModalBIZ() {
       <div className="relative my-4 max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-biz-paper p-5 text-biz-ink shadow-2xl sm:p-7">
         <AppButton
           type="button"
-          variant="ghost"
+          variant="ghostBiz"
           size="icon"
           aria-label="Tutup form"
           onClick={closeModal}
-          className="absolute top-4 right-4 !text-biz-forest hover:!bg-biz-forest/8"
+          className="absolute top-4 right-4"
         >
           <X size={19} />
         </AppButton>

@@ -82,13 +82,8 @@ export default function QuotationReasonModalOS({
           </AppButton>
           <AppButton
             type="button"
-            variant={destructive ? "outline" : "primary"}
+            variant={destructive ? "destructive" : "primary"}
             size="sm"
-            className={
-              destructive
-                ? "text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900 dark:hover:bg-red-950/40"
-                : undefined
-            }
             disabled={isPending || !reason.trim()}
             onClick={() => onConfirm(reason.trim())}
           >

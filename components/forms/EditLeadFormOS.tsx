@@ -277,7 +277,7 @@ export default function EditLeadFormOS({
           </div>
 
           <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
-            <AppButton type="button" variant="outline" size="icon" title="Delete lead" className="text-red-600 border-red-200 hover:bg-red-50" disabled={deleteMutation.isPending} onClick={() => setIsConfirmingDelete(true)}>{deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}</AppButton>
+            <AppButton type="button" variant="destructive" size="icon" title="Delete lead" disabled={deleteMutation.isPending} onClick={() => setIsConfirmingDelete(true)}>{deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}</AppButton>
             <AppButton type="button" variant="outline" className="flex-1 justify-center" onClick={handleClose}>Cancel</AppButton>
             <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={saveMutation.isPending}>{saveMutation.isPending && <Loader2 size={14} className="animate-spin" />}Save Changes</AppButton>
           </div>

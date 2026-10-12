@@ -139,10 +139,9 @@ function UserFooter({ collapsed }: { collapsed: boolean }) {
           <ThemeToggleOS />
           <AppButton
             variant="ghost"
-            size="iconSm"
+            size="iconRoundSm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="rounded-full text-sb-text hover:bg-sb-item-hover hover:text-red-400"
             aria-label="Log out"
             title="Log out"
           >
@@ -228,9 +227,9 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
       {!isMobileOpen && (
         <AppButton
           variant="outline"
-          size="icon"
+          size="iconRound"
           onClick={toggleMobileSidebar}
-          className="fixed left-4 top-4 z-40 rounded-full shadow-sm md:hidden"
+          className="fixed left-4 top-4 z-40 shadow-sm md:hidden"
           aria-label="Open menu"
         >
           <Menu size={16} />
@@ -255,10 +254,10 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           )}
 
           <AppButton
-            variant="sidebarOutline"
-            size="icon"
+            variant="ghost"
+            size="iconRound"
             onClick={closeMobileSidebar}
-            className="rounded-full md:hidden"
+            className="md:hidden"
             aria-label="Close menu"
           >
             <Menu size={18} />
@@ -268,10 +267,9 @@ export default function SidebarOS({ sessionToken }: { sessionToken: string }) {
           >
             <NotificationBellOS sessionToken={sessionToken} tone="sidebar" />
             <AppButton
-              variant="sidebarOutline"
-              size="icon"
+              variant="ghost"
+              size="iconRound"
               onClick={toggleSidebar}
-              className="rounded-full"
               aria-label="Toggle sidebar"
             >
               <Menu size={18} />

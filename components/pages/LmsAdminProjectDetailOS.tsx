@@ -259,7 +259,7 @@ export default function LmsAdminProjectDetailOS({
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
                         <AppButton
-                          variant="ghost"
+                          variant="secondary"
                           size="iconSm"
                           title="Edit member"
                           onClick={() =>
@@ -269,7 +269,7 @@ export default function LmsAdminProjectDetailOS({
                           <Pencil size={13} />
                         </AppButton>
                         <AppButton
-                          variant="ghost"
+                          variant="secondary"
                           size="iconSm"
                           title="Remove from project"
                           onClick={() => setRemovingMember(member)}
@@ -302,16 +302,17 @@ export default function LmsAdminProjectDetailOS({
                       {group.name}
                     </td>
                     <td className="px-5 py-3.5">
-                      <button
+                      <AppButton
                         type="button"
+                        variant="textLink"
+                        size="textLink"
                         onClick={() =>
                           pushParams({ tab: "", group: String(group.id) })
                         }
-                        className="text-gray-600 hover:text-claude hover:underline dark:text-zinc-300"
                       >
                         {group.member_count}{" "}
                         {group.member_count === 1 ? "member" : "members"}
-                      </button>
+                      </AppButton>
                     </td>
                     <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
                       {formatDate(group.created_at)}
@@ -319,7 +320,7 @@ export default function LmsAdminProjectDetailOS({
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
                         <AppButton
-                          variant="ghost"
+                          variant="secondary"
                           size="iconSm"
                           title="Rename group"
                           onClick={() =>
@@ -329,7 +330,7 @@ export default function LmsAdminProjectDetailOS({
                           <Pencil size={13} />
                         </AppButton>
                         <AppButton
-                          variant="ghost"
+                          variant="secondary"
                           size="iconSm"
                           title={
                             group.member_count > 0

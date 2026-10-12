@@ -120,7 +120,7 @@ export default function ArticleEditorPageOS({
         title={isEdit ? "Edit article" : "New article"}
         description="Write an SEO article for the Ailene website: optimize the title, summary, keywords, and structure."
       >
-        <AppButton variant="ghost" size="sm" href="/articles">
+        <AppButton variant="secondary" size="sm" href="/articles">
           <ArrowLeft size={13} />
           Back
         </AppButton>

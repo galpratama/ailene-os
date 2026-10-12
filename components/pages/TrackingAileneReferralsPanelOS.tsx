@@ -69,7 +69,7 @@ function TableSection({
       <div className="overflow-x-auto">{children}</div>
       {total > PREVIEW_ROWS && (
         <div className="border-t border-line-soft px-5 py-2.5">
-          <AppButton type="button" variant="ghost" size="sm" onClick={onToggle}>
+          <AppButton type="button" variant="secondary" size="sm" onClick={onToggle}>
             {expanded ? `Show top ${PREVIEW_ROWS}` : `Show all ${total}`}
           </AppButton>
         </div>

@@ -229,10 +229,10 @@ export default function SignalsPageOS({ sessionToken }: { sessionToken: string }
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-1">
-                      <AppButton variant="ghost" size="icon" title="Edit signal" onClick={() => setEditing(row)}>
+                      <AppButton variant="secondary" size="icon" title="Edit signal" onClick={() => setEditing(row)}>
                         <Pencil size={14} />
                       </AppButton>
-                      <AppButton variant="ghost" size="icon" title="Delete signal" onClick={() => setDeleting(row)}>
+                      <AppButton variant="secondary" size="icon" title="Delete signal" onClick={() => setDeleting(row)}>
                         <Trash2 size={14} />
                       </AppButton>
                     </div>

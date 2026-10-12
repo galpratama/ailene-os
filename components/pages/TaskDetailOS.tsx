@@ -142,7 +142,7 @@ export default function TaskDetailOS({
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <PageHeaderOS title="Task Details">
-        <AppButton variant="ghost" size="sm" href="/tasks">
+        <AppButton variant="secondary" size="sm" href="/tasks">
           <ArrowLeft size={13} />
           Back
         </AppButton>
@@ -197,7 +197,7 @@ export default function TaskDetailOS({
                     }}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait ${
                       isActive
-                        ? "bg-claude text-white"
+                        ? "bg-lime-bright text-forest-deep"
                         : "text-gray-500 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
                     }`}
                   >
