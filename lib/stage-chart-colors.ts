@@ -5,6 +5,7 @@ export const STAGE_CHART_COLORS: Record<string, string> = {
   attempting: "var(--biru)",
   engaged: "var(--toska)",
   qualified: "var(--ungu)",
+  scheduling_meeting: "var(--oranye)",
   meeting_booked: "var(--ungu)",
   discovery_done: "var(--pink)",
   proposal_negotiation: "var(--kuning)",

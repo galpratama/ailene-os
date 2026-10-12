@@ -2,6 +2,7 @@ import Label, { LabelVariant } from "@/components/labels/Label";
 import type { PipelineStage } from "@/apis/sales";
 import {
   CalendarCheck,
+  CalendarClock,
   CheckCircle2,
   LucideIcon,
   MessagesSquare,
@@ -21,6 +22,7 @@ const stageStyles: Record<
   attempting: { variant: "biru", icon: PhoneCall, label: "Attempting" },
   engaged: { variant: "toska", icon: Reply, label: "Engaged" },
   qualified: { variant: "ungu", icon: Sparkles, label: "Qualified" },
+  scheduling_meeting: { variant: "oranye", icon: CalendarClock, label: "Scheduling Meeting" },
   meeting_booked: { variant: "pink", icon: CalendarCheck, label: "Meeting Booked" },
   disqualified: { variant: "merah", icon: XCircle, label: "Disqualified" },
   discovery_done: { variant: "kuning", icon: CheckCircle2, label: "Discovery Done" },

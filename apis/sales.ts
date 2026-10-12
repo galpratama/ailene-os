@@ -13,6 +13,7 @@ export type PipelineStage =
   | "attempting"
   | "engaged"
   | "qualified"
+  | "scheduling_meeting"
   | "meeting_booked"
   | "disqualified"
   | "discovery_done"
