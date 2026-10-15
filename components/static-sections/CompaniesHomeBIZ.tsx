@@ -2,15 +2,10 @@ import Image from "next/image";
 import PageMargin from "@/components/layouts/PageMargin";
 
 const companies = [
-  { name: "Sinar Mas", src: "/biz/logos/sinarmas.png" },
-  { name: "XL Axiata", src: "/biz/logos/xl-axiata.svg" },
+  { name: "Hypernet by XL", src: "/biz/logos/hypernet-by-xl.png" },
   { name: "Pertamina", src: "/biz/logos/pertamina.svg" },
   { name: "Bank Mandiri", src: "/biz/logos/bank-mandiri.svg" },
-  {
-    name: "Telkom Indonesia",
-    src: "/biz/logos/telkom-indonesia.png",
-  },
-  { name: "Astra", src: "/biz/logos/astra-international.svg" },
+  { name: "Bank SMBC Indonesia", src: "/biz/logos/bank-smbc-indonesia.png" },
 ];
 
 export default function CompaniesHomeBIZ() {
