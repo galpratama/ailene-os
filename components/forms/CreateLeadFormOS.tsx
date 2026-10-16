@@ -30,6 +30,7 @@ const leadChannelOptions: AppSelectOption[] = [
   { value: "linkedin", label: "LinkedIn" },
   { value: "thread", label: "Thread" },
   { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
 ];
 
 type CompanySearchOption = AppSearchableOption & {

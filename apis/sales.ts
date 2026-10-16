@@ -4,7 +4,7 @@ import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
 export type LeadSource = "inbound" | "outbound";
-export type LeadChannel = "referral" | "linkedin" | "thread" | "instagram";
+export type LeadChannel = "referral" | "linkedin" | "thread" | "instagram" | "facebook";
 export type PipelinePhase = "sdr" | "bdr";
 
 export type PipelineStage =
