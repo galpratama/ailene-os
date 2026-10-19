@@ -1,7 +1,7 @@
 "use client";
 
 import PageMargin from "@/components/layouts/PageMargin";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
 
 const phases = [
@@ -28,6 +28,28 @@ const phases = [
 export default function ProcessHomeBIZ() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [activePhase, setActivePhase] = useState(0);
+  const [isNear, setIsNear] = useState(false);
+
+  // Without autoPlay the browser skips the 600 KB video (and the poster) until the section nears the viewport; it also pauses off-screen.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const autoplay = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) {
+          video.pause();
+          return;
+        }
+        setIsNear(true);
+        if (autoplay) void video.play().catch(() => undefined);
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
 
   function syncPhase(currentTime: number) {
     const index = phases.findIndex(
@@ -95,12 +117,11 @@ export default function ProcessHomeBIZ() {
             <div className="order-first overflow-hidden rounded-2xl border border-biz-forest/12 bg-white shadow-xl shadow-biz-forest/10 lg:order-none">
               <video
                 ref={videoRef}
-                autoPlay
                 muted
                 loop
                 playsInline
-                preload="metadata"
-                poster="/biz/how-poster.jpg"
+                preload="none"
+                poster={isNear ? "/biz/how-poster.webp" : undefined}
                 onTimeUpdate={(event) => syncPhase(event.currentTarget.currentTime)}
                 className="aspect-video w-full object-cover"
                 aria-label="Animasi alur program Ailene: workshop, penerapan di pekerjaan, dan Demo Day"

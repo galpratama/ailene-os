@@ -37,6 +37,16 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        // Static media from public/ (overrides the rule above, last match wins); rename a file when replacing it, since browsers keep it for 30 days.
+        source: "/:file(.*\\.(?:avif|webp|png|jpe?g|svg|ico|mp4|woff2))",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, stale-while-revalidate=86400",
+          },
+        ],
+      },
     ];
   },
   async redirects() {

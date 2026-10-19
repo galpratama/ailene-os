@@ -1,5 +1,6 @@
 import TrainerApplicationPageBIZ from "@/components/pages/TrainerApplicationPageBIZ";
 import JsonLd from "@/components/seo/JsonLd";
+import QueryProvider from "@/contexts/QueryProvider";
 import { trainerPageGraph } from "@/lib/structured-data";
 import type { Metadata } from "next";
 
@@ -25,7 +26,10 @@ export default function Page() {
   return (
     <>
       <JsonLd graph={trainerPageGraph()} />
-      <TrainerApplicationPageBIZ />
+      {/* The only biz page using react-query, so it brings its own provider instead of every biz page loading one. */}
+      <QueryProvider>
+        <TrainerApplicationPageBIZ />
+      </QueryProvider>
     </>
   );
 }

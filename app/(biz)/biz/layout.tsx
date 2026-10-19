@@ -1,10 +1,9 @@
 import AppToaster from "@/components/elements/AppToaster";
-import GoogleAdsTagBIZ from "@/components/analytics/GoogleAdsTagBIZ";
+import GoogleTagBIZ from "@/components/analytics/GoogleTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
 import PostHogBIZ from "@/components/analytics/PostHogBIZ";
 import { siteProfile } from "@/lib/site";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
@@ -44,24 +43,24 @@ const stackSansText = Stack_Sans_Text({
   variable: "--font-stack-sans-text",
 });
 
+// Latin-subset woff2, only used by below-the-fold eyebrows, so it isn't preloaded against the hero.
 const crayonize = localFont({
-  src: "../../../public/fonts/crayonize-bold.otf",
+  src: "../../../public/fonts/crayonize-bold.woff2",
   variable: "--font-crayonize",
   display: "swap",
   weight: "700",
+  preload: false,
 });
 
 // Keep the marketing site on the light brand palette; dark mode belongs to the OS app.
 export default function BizLayout({ children }: { children: ReactNode }) {
-  const googleAnalyticsId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
-
   return (
     <ThemeProvider attribute="class" defaultTheme="light">
       {/* Third-party image hosts used below the fold; warm the connections early. */}
       <link rel="preconnect" href="https://cdn.simpleicons.org" />
       <link rel="dns-prefetch" href="https://cdn.simpleicons.org" />
-      {googleAnalyticsId && <GoogleAnalytics gaId={googleAnalyticsId} />}
-      <GoogleAdsTagBIZ />
+      {/* Every tag below loads after the page is idle, keeping them off the first paint and hydration. */}
+      <GoogleTagBIZ />
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
       <PostHogBIZ />

@@ -1,5 +1,6 @@
 "use client";
 
+import { runAfterLoadIdle } from "@/lib/idle";
 import { useEffect } from "react";
 
 // Renders nothing until NEXT_PUBLIC_POSTHOG_KEY is set — safe no-op, never breaks the page.
@@ -9,14 +10,16 @@ export default function PostHogBIZ() {
 
   useEffect(() => {
     if (!apiKey) return;
-    // Loaded after hydration so the SDK stays out of the marketing page's first bundle.
-    void import("posthog-js").then(({ default: posthog }) => {
-      if (posthog.__loaded) return;
-      posthog.init(apiKey, {
-        api_host: apiHost,
-        defaults: "2026-08-30",
-        capture_heatmaps: true,
-        person_profiles: "identified_only",
+    // The SDK and its recorder are heavy, so they wait until the page has loaded and gone idle.
+    return runAfterLoadIdle(() => {
+      void import("posthog-js").then(({ default: posthog }) => {
+        if (posthog.__loaded) return;
+        posthog.init(apiKey, {
+          api_host: apiHost,
+          defaults: "2026-08-30",
+          capture_heatmaps: true,
+          person_profiles: "identified_only",
+        });
       });
     });
   }, [apiKey, apiHost]);

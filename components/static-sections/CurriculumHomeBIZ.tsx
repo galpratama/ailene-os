@@ -64,10 +64,10 @@ export default function CurriculumHomeBIZ() {
           <div className="relative pb-7">
             <figure className="overflow-hidden rounded-2xl border border-biz-forest-light/15 bg-biz-forest shadow-[0_20px_60px_rgba(6,35,25,0.1)]">
               <Image
-                src="/biz/curriculum-training.jpg"
+                src="/biz/curriculum-training.webp"
                 alt="Tim sedang berkolaborasi dalam sesi AI training"
-                width={1400}
-                height={933}
+                width={1200}
+                height={800}
                 sizes="(max-width: 1024px) 100vw, 44vw"
                 className="h-80 w-full object-cover lg:h-135"
               />

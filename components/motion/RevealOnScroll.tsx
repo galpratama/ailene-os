@@ -1,9 +1,9 @@
 "use client";
 
 import { trackFeatureView, type BizBlock } from "@/lib/feature-tracking";
-import { motion, useReducedMotion, type Variants } from "motion/react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
+// Plain IntersectionObserver + a CSS transition (.biz-reveal in globals.css), so the landing page ships no animation library.
 export default function RevealOnScroll({
   children,
   delay = 0,
@@ -16,27 +16,34 @@ export default function RevealOnScroll({
   // Set it to report a GTM view event when this section scrolls in.
   viewBlock?: BizBlock;
 }) {
-  const shouldReduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  const variants: Variants = shouldReduceMotion
-    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
-    : { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsVisible(true);
+        if (viewBlock) trackFeatureView({ name: "home_section", block: viewBlock });
+        observer.disconnect();
+      },
+      { rootMargin: "-80px 0px" },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [viewBlock]);
 
   return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      onViewportEnter={
-        viewBlock
-          ? () => trackFeatureView({ name: "home_section", block: viewBlock })
-          : undefined
-      }
-      variants={variants}
-      transition={{ duration: 0.55, ease: "easeOut", delay }}
+    <div
+      ref={ref}
+      className={`biz-reveal ${isVisible ? "is-visible" : ""} ${className ?? ""}`}
+      style={delay ? { transitionDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

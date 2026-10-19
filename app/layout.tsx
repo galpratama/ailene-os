@@ -1,8 +1,6 @@
-import { GoogleTagManager } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import QueryProvider from "@/contexts/QueryProvider";
+import GoogleTagManager from "@/components/analytics/GoogleTagManager";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -18,14 +16,17 @@ export const metadata: Metadata = {
   },
 };
 
+// Not preloaded: OS and biz each set their own body font, so these are fallbacks that would only compete with the hero's font.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export default function RootLayout({
@@ -44,7 +45,7 @@ export default function RootLayout({
     >
       {googleTagManagerId && <GoogleTagManager gtmId={googleTagManagerId} />}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {/* GoogleTagManager only emits the <head> script, so the no-JS fallback is hand-written here. */}
+        {/* GoogleTagManager only emits the script, so the no-JS fallback is hand-written here. */}
         {googleTagManagerId && (
           <noscript>
             <iframe
@@ -55,11 +56,8 @@ export default function RootLayout({
             />
           </noscript>
         )}
-        <GoogleOAuthProvider
-          clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ID!}
-        >
-          <QueryProvider>{children}</QueryProvider>
-        </GoogleOAuthProvider>
+        {/* Query + Google OAuth providers live in the OS layout, so the marketing site never loads them. */}
+        {children}
       </body>
     </html>
   );

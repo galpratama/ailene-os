@@ -1,3 +1,5 @@
+import QueryProvider from "@/contexts/QueryProvider";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -15,7 +17,11 @@ export const metadata: Metadata = {
   },
 };
 
-// Metadata only: the session gate lives in (protected) so /auth/login can render without one.
+// The session gate lives in (protected) so /auth/login can render without one; the providers stay here so biz never ships them.
 export default function OSLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ID!}>
+      <QueryProvider>{children}</QueryProvider>
+    </GoogleOAuthProvider>
+  );
 }

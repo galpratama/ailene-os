@@ -2,9 +2,9 @@ import Image from "next/image";
 import PageMargin from "@/components/layouts/PageMargin";
 
 const companies = [
-  { name: "Hypernet by XL", src: "/biz/logos/hypernet-by-xl.png" },
+  { name: "Hypernet by XL", src: "/biz/logos/hypernet-by-xl.webp" },
   { name: "Pertamina", src: "/biz/logos/pertamina.svg" },
-  { name: "Bank SMBC Indonesia", src: "/biz/logos/bank-smbc-indonesia.png" },
+  { name: "Bank SMBC Indonesia", src: "/biz/logos/bank-smbc-indonesia.webp" },
   { name: "DANA", src: "/biz/logos/dana.svg" },
 ];
 

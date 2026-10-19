@@ -4,8 +4,7 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import HeroFloatCardBIZ, { ENTER_DELAY, HeroScoreBarBIZ } from "@/components/heroes/HeroFloatCardBIZ";
 
-const MENTOR_PHOTO =
-  "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/ChatGPT%20Image%20Sep%2030,%202026,%2011_37_19%20AM.webp";
+const MENTOR_PHOTO = "/biz/photos/hero-mentor.webp";
 
 const topics = [
   "Struktur prompt",
@@ -43,8 +42,8 @@ export default function HeroMentorBIZ() {
       <Image
         src={MENTOR_PHOTO}
         alt="Mentor Ailene"
-        width={1122}
-        height={1402}
+        width={900}
+        height={1125}
         priority
         className="absolute -bottom-[8%] left-1/2 h-[104%] w-auto max-w-none -translate-x-1/2 lg:-bottom-[12%] lg:h-[114%]"
       />

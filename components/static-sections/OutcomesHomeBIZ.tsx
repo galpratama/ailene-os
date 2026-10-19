@@ -7,7 +7,7 @@ function EfficiencyVisual() {
     <div className="relative -mx-5.5 -mb-5.5 mt-5 aspect-[3/2] overflow-hidden sm:-mx-6 sm:-mb-6">
       {/* eslint-disable-next-line @next/next/no-img-element -- external illustration is intentionally rendered without image optimization */}
       <img
-        src="https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/ChatGPT%20Image%20Sep%2024,%202026,%2003_03_48%20PM.webp"
+        src="/biz/photos/outcome-efficiency.webp"
         alt="Ilustrasi kerja selesai lebih cepat tanpa menambah orang"
         loading="lazy"
         decoding="async"
@@ -118,7 +118,7 @@ function CapacityVisual() {
     <div className="relative -mx-5.5 -mb-5.5 mt-2 aspect-[5/4] overflow-hidden sm:-mx-6 sm:-mb-6">
       {/* eslint-disable-next-line @next/next/no-img-element -- external illustration is intentionally rendered without image optimization */}
       <img
-        src="https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/ChatGPT%20Image%20Sep%2024,%202026,%2003_27_47%20PM.webp"
+        src="/biz/photos/outcome-capacity.webp"
         alt="Ilustrasi lebih banyak yang bisa dikerjakan tanpa menambah beban"
         loading="lazy"
         decoding="async"

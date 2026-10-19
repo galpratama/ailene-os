@@ -5,8 +5,7 @@ const trainers = [
   {
     role: "Lead Trainer",
     name: "Galih Pratama",
-    image:
-      "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/ChatGPTImageSep28202606_18_51AM.webp",
+    image: "/biz/photos/trainer-galih.webp",
     bio: "10+ tahun product engineering. Membantu developer dan tim adopsi AI membangun workflow yang benar-benar dipakai.",
     tags: ["AI Workflow", "Prompting", "Vibe Coding", "Agents"],
     background: "bg-biz-lime",
@@ -14,8 +13,7 @@ const trainers = [
   {
     role: "Strategy & Leadership",
     name: "Raymond Chin",
-    image:
-      "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/raymondfoto.webp",
+    image: "/biz/photos/trainer-raymond.webp",
     bio: "Founder Sevenpreneur. Membawakan AI strategy, business urgency, market framing, dan executive alignment.",
     tags: ["AI Strategy", "Leadership", "Executive Briefing"],
     background: "bg-biz-forest",

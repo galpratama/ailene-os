@@ -1,51 +1,51 @@
 import SectionHeaderHomeBIZ from "./SectionHeaderHomeBIZ";
 import Image from "next/image";
 
-const PHOTO_BASE =
-  "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/ailene/image-web";
+// Resized to 512px tall (2x the sm:h-64 row) from the Supabase originals in ailene/image-web.
+const PHOTO_BASE = "/biz/photos";
 
 type Photo = { file: string; width: number; height: number; alt: string };
 
 // Mixed landscape/portrait shots keep their own ratio at a shared row height.
 const topRow: Photo[] = [
   {
-    file: "20260714_Google_126.webp",
-    width: 4903,
-    height: 3262,
+    file: "overview-google-126.webp",
+    width: 770,
+    height: 512,
     alt: "Diskusi panel AI di depan ratusan peserta",
   },
   {
-    file: "28.webp",
-    width: 2048,
-    height: 1365,
+    file: "overview-28.webp",
+    width: 768,
+    height: 512,
     alt: "Peserta workshop AI memenuhi ruang kelas",
   },
   {
-    file: "HYP02595 (1).webp",
-    width: 1146,
-    height: 645,
+    file: "overview-hyp02595.webp",
+    width: 910,
+    height: 512,
     alt: 'Sesi "AI is a Must, Not a Trend" bersama tim perusahaan',
   },
   {
-    file: "DSC07477.webp",
-    width: 902,
-    height: 601,
+    file: "overview-dsc07477.webp",
+    width: 768,
+    height: 512,
     alt: "Peserta workshop AI di kantor klien",
   },
   {
-    file: "HYP02669 (1).webp",
-    width: 1146,
-    height: 645,
+    file: "overview-hyp02669.webp",
+    width: 910,
+    height: 512,
     alt: "Foto bersama tim peserta setelah sesi AI",
   },
   {
-    file: "DSC07431.webp",
-    width: 902,
-    height: 601,
+    file: "overview-dsc07431.webp",
+    width: 768,
+    height: 512,
     alt: "Presentasi use case AI di depan tim",
   },
   {
-    file: "IMG_9201.webp",
+    file: "overview-img9201.webp",
     width: 563,
     height: 375,
     alt: "Peserta mengangkat tangan saat sesi tanya jawab",
@@ -54,45 +54,45 @@ const topRow: Photo[] = [
 
 const bottomRow: Photo[] = [
   {
-    file: "20260714_Google_163.webp",
-    width: 4899,
-    height: 3266,
+    file: "overview-google-163.webp",
+    width: 768,
+    height: 512,
     alt: "Trainer Ailene berbicara di sesi panel",
   },
   {
-    file: "DSC09696.webp",
-    width: 601,
-    height: 902,
+    file: "overview-dsc09696.webp",
+    width: 341,
+    height: 512,
     alt: "Trainer memandu workshop AI di atas panggung",
   },
   {
-    file: "ANG00255.webp",
+    file: "overview-ang00255.webp",
     width: 592,
     height: 395,
     alt: "Trainer Ailene membawakan sesi di panggung",
   },
   {
-    file: "DSC09694.webp",
-    width: 902,
-    height: 601,
+    file: "overview-dsc09694.webp",
+    width: 768,
+    height: 512,
     alt: "Trainer memaparkan contoh prompt di layar",
   },
   {
-    file: "WhatsApp Image 2026-01-09 at 15.18.35 (2).webp",
-    width: 854,
-    height: 1280,
+    file: "overview-whatsapp-0109.webp",
+    width: 342,
+    height: 512,
     alt: "Trainer Ailene di sesi talkshow",
   },
   {
-    file: "HYP02657 (1).webp",
-    width: 1146,
-    height: 645,
+    file: "overview-hyp02657.webp",
+    width: 910,
+    height: 512,
     alt: "Diskusi bersama peserta di sela sesi",
   },
   {
-    file: "DSC09705.webp",
-    width: 601,
-    height: 902,
+    file: "overview-dsc09705.webp",
+    width: 341,
+    height: 512,
     alt: "Trainer menjawab pertanyaan peserta",
   },
 ];
@@ -112,7 +112,7 @@ function PhotoRow({ photos, reverse }: { photos: Photo[]; reverse?: boolean }) {
           return (
             <Image
               key={`${photo.file}-${index}`}
-              src={`${PHOTO_BASE}/${encodeURIComponent(photo.file)}`}
+              src={`${PHOTO_BASE}/${photo.file}`}
               alt={isClone ? "" : photo.alt}
               aria-hidden={isClone}
               width={photo.width}

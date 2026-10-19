@@ -3,7 +3,10 @@
 import AppButton from "@/components/buttons/AppButton";
 import { heroVariants, type HeroAudience, type HeroDisplay } from "@/lib/biz-content";
 import { trackFeatureView } from "@/lib/feature-tracking";
-import { useEffect } from "react";
+import { runAfterLoadIdle } from "@/lib/idle";
+import { canRenderOffscreenWebGL } from "@/lib/webgl";
+import TubePosterBIZ from "@/components/motion/TubePosterBIZ";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import PageMargin from "@/components/layouts/PageMargin";
 import HeroProofCardsBIZ from "@/components/heroes/HeroProofCardsBIZ";
@@ -11,8 +14,17 @@ import HeroPeopleBIZ from "@/components/heroes/HeroPeopleBIZ";
 import HeroMentorBIZ from "@/components/heroes/HeroMentorBIZ";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
 
-// three.js stays out of the first-paint bundle; the headline renders without waiting for WebGL.
+// The headline renders without waiting for WebGL; the scene itself runs in a worker (see TubeSceneBIZ.worker.ts).
 const TubeSceneBIZ = dynamic(() => import("@/components/motion/TubeSceneBIZ"), { ssr: false });
+
+// The tube's reveal doubles as its entrance, so it waits for load + idle; devices that can't render it off the main thread get a still frame.
+function DeferredTubeScene() {
+  const [mode, setMode] = useState<"live" | "poster" | null>(null);
+  useEffect(() => runAfterLoadIdle(() => setMode(canRenderOffscreenWebGL() ? "live" : "poster")), []);
+  if (mode === "live") return <TubeSceneBIZ />;
+  if (mode === "poster") return <TubePosterBIZ />;
+  return null;
+}
 
 export default function HeroHomeBIZ({
   audience,
@@ -44,7 +56,7 @@ export default function HeroHomeBIZ({
           {showTube && (
             <>
               <div className="absolute inset-x-0 bottom-0 -z-10 h-120 sm:h-130 lg:inset-0 lg:h-auto">
-                <TubeSceneBIZ />
+                <DeferredTubeScene />
               </div>
 
               {/* Keeps the tube's left exit from competing with the headline. */}
