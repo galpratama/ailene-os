@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AttentionAction = Pick<TaskData, "id" | "name" | "due_date" | "priority">;
+type AttentionTask = Pick<TaskData, "id" | "name" | "end_date" | "priority">;
 
 type StaleLead = {
   id: number;
@@ -33,8 +33,8 @@ type PendingQuotation = Pick<
   "id" | "company_name" | "version" | "status" | "net_value"
 >;
 
-function formatDueDate(value: string | null) {
-  if (!value) return "No due date";
+function formatEndDate(value: string | null) {
+  if (!value) return "No end date";
   return new Date(value).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
@@ -84,21 +84,21 @@ function AttentionGroup({
   );
 }
 
-function ActionRow({ action }: { action: AttentionAction }) {
+function TaskRow({ task }: { task: AttentionTask }) {
   return (
     <Link
-      href={`/tasks/${action.id}`}
+      href={`/tasks/${task.id}`}
       className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2 hover:border-claude/40 dark:border-zinc-800"
     >
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-gray-700 dark:text-zinc-300">
-          {action.name}
+          {task.name}
         </p>
         <p className="truncate text-xs text-gray-400 dark:text-zinc-500">
-          {formatDueDate(action.due_date)}
+          {formatEndDate(task.end_date)}
         </p>
       </div>
-      <PriorityLabel priority={action.priority} />
+      <PriorityLabel priority={task.priority} />
     </Link>
   );
 }
@@ -116,9 +116,9 @@ export default function HomeAttentionOS({
       stale_leads: number;
       quotations_pending: number;
     };
-    approvals: AttentionAction[];
-    overdue_tasks: AttentionAction[];
-    due_today_tasks: AttentionAction[];
+    approvals: AttentionTask[];
+    overdue_tasks: AttentionTask[];
+    due_today_tasks: AttentionTask[];
     stale_leads: StaleLead[];
     quotations_pending: PendingQuotation[];
   };
@@ -166,20 +166,20 @@ export default function HomeAttentionOS({
             icon={CircleAlert}
             iconClass="text-merah"
           >
-            {attention.overdue_tasks.map((action) => (
-              <ActionRow key={action.id} action={action} />
+            {attention.overdue_tasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
             ))}
           </AttentionGroup>
 
           <AttentionGroup
             title="Approval requests"
-            description="Actions assigned to you with Review status."
+            description="Tasks assigned to you with Review status."
             count={attention.totals.approvals}
             icon={AlertCircle}
             iconClass="text-kuning"
           >
-            {attention.approvals.map((action) => (
-              <ActionRow key={action.id} action={action} />
+            {attention.approvals.map((task) => (
+              <TaskRow key={task.id} task={task} />
             ))}
           </AttentionGroup>
 
@@ -190,8 +190,8 @@ export default function HomeAttentionOS({
             icon={Clock3}
             iconClass="text-biru"
           >
-            {attention.due_today_tasks.map((action) => (
-              <ActionRow key={action.id} action={action} />
+            {attention.due_today_tasks.map((task) => (
+              <TaskRow key={task.id} task={task} />
             ))}
           </AttentionGroup>
 

@@ -1,14 +1,15 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import EditActionFormOS from "@/components/forms/EditActionFormOS";
-import { statusOptions } from "@/components/forms/CreateActionFormOS";
-import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
+import EditTaskFormOS from "@/components/forms/EditTaskFormOS";
+import { editStatusOptions } from "@/components/forms/CreateTaskFormOS";
+import TaskStatusLabel from "@/components/labels/TaskStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import type { TaskData, TaskStatus } from "@/apis/tasks";
 import { getTaskDetails, updateTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
+import { initialsOf, isTaskClosed, parseDateKey } from "@/lib/tasks";
 import { showErrorToast } from "@/lib/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -18,33 +19,27 @@ import {
   History,
   Pencil,
   UserRound,
-  Video,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
-function initialsOf(name: string | null) {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
-}
-
-// due is a plain YYYY-MM-DD, so parse it as a local calendar day rather than UTC midnight.
-function formatDue(due: string | null, isDone: boolean) {
-  if (!due) return { text: "No due date", note: null, late: false };
-  const [year, month, day] = due.split("-").map(Number);
-  const target = new Date(year, month - 1, day);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
-  const text = target.toLocaleDateString("en-US", {
+function formatDay(value: string) {
+  return parseDateKey(value).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
+
+function formatEnd(end: string | null, isDone: boolean) {
+  if (!end) return { text: "No end date", note: null, late: false };
+  const target = parseDateKey(end);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+  const text = formatDay(end);
 
   if (isDone) return { text, note: null, late: false };
   if (diffDays < 0) return { text, note: `${Math.abs(diffDays)}d late`, late: true };
@@ -103,16 +98,17 @@ export default function TaskDetailOS({
 
   // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
   const statusMutation = useMutation({
-    mutationFn: async ({ action, status }: { action: TaskData; status: TaskStatus }) =>
+    mutationFn: async ({ task, status }: { task: TaskData; status: TaskStatus }) =>
       requireApiData(
         await updateTask({
-          id: action.id,
-          name: action.name,
-          summary: action.summary,
+          id: task.id,
+          name: task.name,
+          summary: task.summary,
           status,
-          priority: action.priority,
-          due_date: action.due_date,
-          assignee_id: action.assignee_id,
+          priority: task.priority,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          assignee_id: task.assignee_id,
         })
       ),
     onSuccess: async () => {
@@ -135,7 +131,7 @@ export default function TaskDetailOS({
     );
   }
 
-  const due = formatDue(task.due_date, task.status === "done");
+  const due = formatEnd(task.end_date, isTaskClosed(task.status));
   const pendingStatus = statusMutation.isPending ? statusMutation.variables?.status : null;
   const shownStatus = pendingStatus ?? task.status;
 
@@ -156,7 +152,7 @@ export default function TaskDetailOS({
         <section className="flex flex-col gap-5 rounded-xl border border-line bg-card-bg p-5">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <ActionStatusLabel status={shownStatus} />
+              <TaskStatusLabel status={shownStatus} />
               <PriorityLabel priority={task.priority} />
             </div>
             <h3 className="mt-3 text-xl font-bold text-gray-900 dark:text-zinc-100">
@@ -184,7 +180,7 @@ export default function TaskDetailOS({
               Status
             </p>
             <div className="mt-2 inline-flex flex-wrap gap-1 rounded-lg border border-line p-1">
-              {statusOptions.map((option) => {
+              {editStatusOptions.map((option) => {
                 const value = option.value as TaskStatus;
                 const isActive = shownStatus === value;
                 return (
@@ -193,7 +189,7 @@ export default function TaskDetailOS({
                     type="button"
                     disabled={statusMutation.isPending}
                     onClick={() => {
-                      if (value !== task.status) statusMutation.mutate({ action: task, status: value });
+                      if (value !== task.status) statusMutation.mutate({ task, status: value });
                     }}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait ${
                       isActive
@@ -210,7 +206,10 @@ export default function TaskDetailOS({
         </section>
 
         <section className="rounded-xl border border-line bg-card-bg px-5 py-2 divide-y divide-line-soft self-start">
-          <DetailRow icon={CalendarClock} label="Due date">
+          <DetailRow icon={CalendarPlus} label="Start date">
+            {task.start_date ? formatDay(task.start_date) : "No start date"}
+          </DetailRow>
+          <DetailRow icon={CalendarClock} label="End date">
             <span className={due.late ? "text-red-500" : undefined}>{due.text}</span>
             {due.note && (
               <span
@@ -240,13 +239,6 @@ export default function TaskDetailOS({
               <span className="truncate">{task.assignee_name ?? "Unassigned"}</span>
             </span>
           </DetailRow>
-          {task.source_meeting_id != null && (
-            <DetailRow icon={Video} label="Source">
-              <Link href="/calendar" className="text-claude hover:underline">
-                Created from a meeting
-              </Link>
-            </DetailRow>
-          )}
           <DetailRow icon={CalendarPlus} label="Created">
             {formatTimestamp(task.created_at)}
           </DetailRow>
@@ -256,8 +248,8 @@ export default function TaskDetailOS({
         </section>
       </div>
 
-      <EditActionFormOS
-        actionId={taskId}
+      <EditTaskFormOS
+        taskId={taskId}
         isOpen={isEditing}
         onClose={() => setIsEditing(false)}
         onDeleted={() => router.replace("/tasks")}

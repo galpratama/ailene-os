@@ -106,7 +106,7 @@ export default function AppFilterMenu({
   return (
     <div className={`relative shrink-0 ${className ?? ""}`} ref={containerRef}>
       <AppButton
-        variant="white"
+        variant="outline"
         size="md"
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
@@ -153,7 +153,7 @@ export default function AppFilterMenu({
             )}
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-3">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-zinc-400">
               {chips.length === 0
                 ? "No filters applied"
                 : `${chips.length} filter${chips.length > 1 ? "s" : ""} applied`}
@@ -193,7 +193,7 @@ export function AppFilterChips({
       {chips.map((chip) => (
         <AppButton
           key={chip.key}
-          variant="white"
+          variant="outline"
           size="pill"
           className="max-w-64"
           onClick={() => onChange(cleared(values, chip.clears))}

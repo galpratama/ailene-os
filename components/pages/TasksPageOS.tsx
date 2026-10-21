@@ -4,35 +4,39 @@ import AppButton from "@/components/buttons/AppButton";
 import ViewModeToggleOS, {
   type ViewModeOS,
 } from "@/components/buttons/ViewModeToggleOS";
+import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
+import AppFilterMenu, { AppFilterChips } from "@/components/fields/AppFilterMenu";
 import AppInput from "@/components/fields/AppInput";
-import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
-import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
-import EditActionFormOS from "@/components/forms/EditActionFormOS";
-import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
+import CreateTaskFormOS from "@/components/forms/CreateTaskFormOS";
+import EditTaskFormOS from "@/components/forms/EditTaskFormOS";
 import PriorityLabel from "@/components/labels/PriorityLabel";
+import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import TaskTableOS from "@/components/static-sections/TaskTableOS";
+import TaskCalendarOS from "@/components/static-sections/TaskCalendarOS";
 import type { TaskData, TaskStatus } from "@/apis/tasks";
-import { useSession } from "@/contexts/SessionContext";
+import { useTaskFilters } from "@/hooks/useTaskFilters";
 import { useTaskList } from "@/hooks/useTaskList";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
-import { useUserList } from "@/hooks/useUserList";
-import { updateTask } from "@/lib/actions";
+import { getTaskDetails, updateTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
+import { endDateLabel, taskUpdatePayload } from "@/lib/tasks";
+import type { TaskDateRange } from "@/lib/task-calendar";
 import { showErrorToast } from "@/lib/toast";
-import { userSelectOption } from "@/lib/user-select-option";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarDays,
   CalendarClock,
   Kanban,
-  LayoutGrid,
   Plus,
   Search,
   Table2,
 } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
+// Archived tasks stay visible in the table and calendar, outside the active kanban.
 const columns: { value: TaskStatus; label: string; dot: string }[] = [
   { value: "to_do", label: "To Do", dot: "bg-lime-bright" },
+  { value: "backlog", label: "Backlog", dot: "bg-lime-bright" },
   { value: "in_progress", label: "In Progress", dot: "bg-lime-bright" },
   { value: "review", label: "Review", dot: "bg-lime-bright" },
   { value: "done", label: "Done", dot: "bg-lime-bright" },
@@ -40,37 +44,23 @@ const columns: { value: TaskStatus; label: string; dot: string }[] = [
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
-  { value: "cards" as const, label: "Cards", icon: LayoutGrid },
+  { value: "calendar" as const, label: "Calendar", icon: CalendarDays },
   { value: "table" as const, label: "Table", icon: Table2 },
 ];
 
-function initialsOf(name: string | null) {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
-}
-
-// due is a plain YYYY-MM-DD, so parse it as a local calendar day rather than UTC midnight.
-function dueLabel(due: string | null, isDone: boolean) {
+function EndDateBadge({ task }: { task: TaskData }) {
+  const due = endDateLabel(task.end_date, task.status);
   if (!due) return null;
-  const [year, month, day] = due.split("-").map(Number);
-  const target = new Date(year, month - 1, day);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round(
-    (target.getTime() - today.getTime()) / 86_400_000
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+        due.late ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
+      }`}
+    >
+      <CalendarClock size={11} />
+      {due.text}
+    </span>
   );
-
-  if (diffDays < 0 && !isDone)
-    return { text: `${Math.abs(diffDays)}d late`, late: true };
-  if (diffDays === 0 && !isDone) return { text: "Today", late: false };
-  return {
-    text: target.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-    late: false,
-  };
 }
 
 export default function TasksPageOS({
@@ -80,23 +70,18 @@ export default function TasksPageOS({
 }) {
   const queryClient = useQueryClient();
 
-  const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "own";
-
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "tasks_view_mode",
-    ["kanban", "cards", "table"],
-    "kanban"
+    ["kanban", "calendar", "table"],
+    "kanban",
+    { cards: "calendar" }
   );
 
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string | undefined>(
     undefined
   );
-  // Open on your own tasks; OWN-scoped users are already limited by the API and have no picker.
-  const [assigneeFilter, setAssigneeFilter] = useState(
-    isOwnScoped ? "" : (sessionUser?.id ?? "")
-  );
+  const filters = useTaskFilters({ includeArchived: viewMode !== "kanban" });
   const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null);
 
   useEffect(() => {
@@ -107,18 +92,23 @@ export default function TasksPageOS({
   }, [keyword]);
 
   const { data, isLoading, isError } = useTaskList(
-    {
-      keyword: debouncedKeyword,
-      assignee_id: assigneeFilter || undefined,
-    },
-    !!sessionToken
+    { ...filters.apiFilters, keyword: debouncedKeyword },
+    !!sessionToken,
+    viewMode !== "kanban"
   );
 
-  const userList = useUserList(!isOwnScoped);
-  const assigneeOptions: AppSelectOption[] = [
-    { value: "", label: "All PICs" },
-    ...userList.map(userSelectOption),
-  ];
+  // A status filter narrows the board to that one column.
+  const statusFilter = filters.apiFilters.status;
+  const shownColumns = statusFilter
+    ? columns.filter((col) => col.value === statusFilter)
+    : columns;
+
+  function changeViewMode(next: ViewModeOS) {
+    if (next === "kanban" && filters.values.status === "archived") {
+      filters.setValues((current) => ({ ...current, status: "" }));
+    }
+    setViewMode(next);
+  }
 
   // Optimistic local overrides so a drag feels instant while the mutation is in flight.
   const [movedStatuses, setMovedStatuses] = useState<
@@ -127,9 +117,9 @@ export default function TasksPageOS({
 
   const board = useMemo(
     () =>
-      data?.map((action) => {
-        const status = movedStatuses[action.id];
-        return status ? { ...action, status } : action;
+      data?.map((task) => {
+        const status = movedStatuses[task.id];
+        return status ? { ...task, status } : task;
       }) ?? [],
     [data, movedStatuses]
   );
@@ -138,31 +128,37 @@ export default function TasksPageOS({
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(
     null
   );
-  const [editingActionId, setEditingActionId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
 
   // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
-  const moveTo = async (action: TaskData, status: TaskStatus) => {
-    if (action.status === status) return;
-    const prevStatus = action.status;
-    setMovedStatuses((prev) => ({ ...prev, [action.id]: status }));
+  const moveTo = async (task: TaskData, status: TaskStatus) => {
+    if (task.status === status) return;
+    setMovedStatuses((prev) => ({ ...prev, [task.id]: status }));
     try {
       requireApiData(
-        await updateTask({
-          id: action.id,
-          name: action.name,
-          summary: action.summary,
-          status,
-          priority: action.priority,
-          due_date: action.due_date,
-          assignee_id: action.assignee_id,
-        })
+        await updateTask(taskUpdatePayload(task, { status }))
       );
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     } catch (error) {
-      setMovedStatuses((prev) => ({ ...prev, [action.id]: prevStatus }));
       showErrorToast(error, "Failed to update task status.");
+    } finally {
+      setMovedStatuses((current) => {
+        const next = { ...current };
+        delete next[task.id];
+        return next;
+      });
     }
   };
+
+  async function resizeDates(task: TaskData, range: TaskDateRange) {
+    const current = requireApiData(await getTaskDetails(task.id));
+    if (current.start_date !== task.start_date || current.end_date !== task.end_date) {
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      throw new Error("Task dates changed while you were resizing. Please try again.");
+    }
+    requireApiData(await updateTask(taskUpdatePayload(current, { start_date: range.start, end_date: range.end })));
+    await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+  }
 
   const handleDrop =
     (status: TaskStatus) => (e: React.DragEvent<HTMLDivElement>) => {
@@ -174,48 +170,44 @@ export default function TasksPageOS({
     };
 
   return (
-    <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-            Tasks
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-            Every action you can see, in one board
-          </p>
-        </div>
-        <AppButton size="sm" onClick={() => setCreateStatus("to_do")}>
-          <Plus size={14} />
-          Create New Task
-        </AppButton>
-      </div>
+    <div className="min-w-0 px-4 py-6 flex flex-col gap-5 sm:px-8">
+      <PageHeaderOS
+        title="Tasks"
+        description="Every task you can see, in one board"
+        action={{
+          label: "Create New Task",
+          icon: Plus,
+          onClick: () => setCreateStatus("to_do"),
+        }}
+      />
 
-      <div className="flex flex-nowrap items-center gap-3">
-        <div className="w-70 shrink-0">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <AppInput
             inputId="tasks-search"
             icon={<Search size={14} />}
             placeholder="Search tasks..."
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
+            className="max-w-full sm:max-w-70"
+          />
+          <AppFilterMenu
+            menuId="tasks-filters"
+            fields={filters.fields}
+            values={filters.values}
+            onChange={filters.setValues}
+          />
+          <ViewModeToggleOS
+            value={viewMode}
+            onChange={changeViewMode}
+            options={viewModeOptions}
+            className="ml-auto shrink-0"
           />
         </div>
-        {!isOwnScoped && (
-          <div className="w-56 shrink-0">
-            <AppSelect
-              selectId="tasks-assignee-filter"
-              placeholder="All PICs"
-              value={assigneeFilter}
-              options={assigneeOptions}
-              onChange={(value) => setAssigneeFilter((value as string) ?? "")}
-            />
-          </div>
-        )}
-        <ViewModeToggleOS
-          value={viewMode}
-          onChange={setViewMode}
-          options={viewModeOptions}
-          className="ml-auto shrink-0"
+        <AppFilterChips
+          fields={filters.fields}
+          values={filters.values}
+          onChange={filters.setValues}
         />
       </div>
 
@@ -226,8 +218,8 @@ export default function TasksPageOS({
       )}
 
       {!isError && viewMode === "kanban" && (
-        <div className="flex flex-1 gap-4 min-h-0 overflow-x-auto pb-1 lg:grid lg:grid-cols-4 lg:overflow-visible">
-          {columns.map((col) => {
+        <div className="flex min-w-0 gap-4 overflow-x-auto pb-2" aria-label="Task kanban board">
+          {shownColumns.map((col) => {
             const items = board.filter((b) => b.status === col.value);
             const isOver = dragOverStatus === col.value;
             return (
@@ -241,7 +233,7 @@ export default function TasksPageOS({
                   if (e.currentTarget === e.target) setDragOverStatus(null);
                 }}
                 onDrop={handleDrop(col.value)}
-                className={`flex w-70 shrink-0 flex-col h-full min-h-0 gap-2 rounded-xl border p-3 transition-colors lg:w-auto lg:min-w-0 ${
+                className={`flex max-h-[calc(100dvh-15rem)] min-h-120 w-72 shrink-0 flex-col gap-2 rounded-xl border p-3 transition-colors ${
                   isOver
                     ? "border-claude bg-claude/5"
                     : "border-line bg-dashboard-bg"
@@ -260,58 +252,32 @@ export default function TasksPageOS({
                 </div>
 
                 <div className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
-                  {items.map((action) => {
-                    const due = dueLabel(
-                      action.due_date,
-                      action.status === "done"
-                    );
-                    return (
-                      <div
-                        key={action.id}
-                        draggable
-                        onDragStart={() => setDraggedId(action.id)}
-                        onDragEnd={() => setDraggedId(null)}
-                        onClick={() => setEditingActionId(action.id)}
-                        className={`rounded-lg border border-line bg-kanban-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
-                          draggedId === action.id ? "opacity-50" : ""
-                        }`}
-                      >
-                        <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100 line-clamp-3">
-                          {action.name}
-                        </p>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <PriorityLabel priority={action.priority} />
-                            {due && (
-                              <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                                  due.late
-                                    ? "text-red-500"
-                                    : "text-gray-400 dark:text-zinc-500"
-                                }`}
-                              >
-                                <CalendarClock size={11} />
-                                {due.text}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex size-5.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
-                            {action.assignee_avatar ? (
-                              <Image
-                                src={action.assignee_avatar}
-                                alt={action.assignee_name ?? ""}
-                                width={22}
-                                height={22}
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              initialsOf(action.assignee_name)
-                            )}
-                          </div>
+                  {items.map((task) => (
+                    <div
+                      key={task.id}
+                      draggable
+                      onDragStart={() => setDraggedId(task.id)}
+                      onDragEnd={() => setDraggedId(null)}
+                      onClick={() => setEditingTaskId(task.id)}
+                      className={`rounded-lg border border-line bg-kanban-card-bg p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity hover:border-claude/40 ${
+                        draggedId === task.id ? "opacity-50" : ""
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100 line-clamp-3">
+                        {task.name}
+                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <PriorityLabel priority={task.priority} />
+                          <EndDateBadge task={task} />
                         </div>
+                        <TaskAssigneeAvatarOS
+                          name={task.assignee_name}
+                          avatar={task.assignee_avatar}
+                        />
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
 
                   {!isLoading && items.length === 0 && (
                     <p className="text-xs text-gray-400 dark:text-zinc-500 text-center py-6">
@@ -336,165 +302,26 @@ export default function TasksPageOS({
         </div>
       )}
 
-      {!isError && viewMode === "cards" && (
-        <div className="grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {board.map((action) => {
-            const due = dueLabel(action.due_date, action.status === "done");
-            return (
-              <div
-                key={action.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => setEditingActionId(action.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setEditingActionId(action.id);
-                  }
-                }}
-                className="flex cursor-pointer flex-col gap-3 rounded-xl border border-line bg-card-bg p-5 text-left transition-colors hover:border-claude/60"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold text-gray-900 dark:text-zinc-100 line-clamp-2">
-                    {action.name}
-                  </p>
-                  <ActionStatusLabel status={action.status} />
-                </div>
-                <div className="mt-1 flex items-center justify-between gap-2 border-t border-line-soft pt-3">
-                  <div className="flex items-center gap-2">
-                    <PriorityLabel priority={action.priority} />
-                    {due && (
-                      <span
-                        className={`inline-flex items-center gap-1 text-[11px] font-medium ${
-                          due.late
-                            ? "text-red-500"
-                            : "text-gray-400 dark:text-zinc-500"
-                        }`}
-                      >
-                        <CalendarClock size={11} />
-                        {due.text}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
-                    {action.assignee_avatar ? (
-                      <Image
-                        src={action.assignee_avatar}
-                        alt={action.assignee_name ?? ""}
-                        width={24}
-                        height={24}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      initialsOf(action.assignee_name)
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {!isLoading && board.length === 0 && (
-            <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10 sm:col-span-2 xl:col-span-3">
-              No tasks found.
-            </p>
-          )}
-        </div>
+      {!isError && viewMode === "calendar" && (
+        <TaskCalendarOS tasks={board} isLoading={isLoading} onOpen={setEditingTaskId} onResize={resizeDates} />
       )}
 
       {!isError && viewMode === "table" && (
-        <div className="shrink-0 overflow-hidden rounded-xl border border-line bg-card-bg">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-190 text-sm">
-              <thead>
-                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  <th className="px-5 py-3">Task</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Priority</th>
-                  <th className="px-5 py-3">Due</th>
-                  <th className="px-5 py-3">Assignee</th>
-                </tr>
-              </thead>
-              <tbody>
-                {board.map((action) => {
-                  const due = dueLabel(
-                    action.due_date,
-                    action.status === "done"
-                  );
-                  return (
-                    <tr
-                      key={action.id}
-                      onClick={() => setEditingActionId(action.id)}
-                      className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
-                    >
-                      <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
-                        {action.name}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <ActionStatusLabel status={action.status} />
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <PriorityLabel priority={action.priority} />
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {due ? (
-                          <span
-                            className={`inline-flex items-center gap-1 ${
-                              due.late
-                                ? "text-red-500"
-                                : "text-gray-500 dark:text-zinc-400"
-                            }`}
-                          >
-                            <CalendarClock size={12} />
-                            {due.text}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-zinc-600">
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex size-5.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300">
-                            {action.assignee_avatar ? (
-                              <Image
-                                src={action.assignee_avatar}
-                                alt={action.assignee_name ?? ""}
-                                width={22}
-                                height={22}
-                                className="size-full object-cover"
-                              />
-                            ) : (
-                              initialsOf(action.assignee_name)
-                            )}
-                          </div>
-                          <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
-                            {action.assignee_name ?? "Unassigned"}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {!isLoading && board.length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
-                No tasks found.
-              </p>
-            )}
-          </div>
-        </div>
+        <TaskTableOS
+          tasks={board}
+          isLoading={isLoading}
+          onOpen={setEditingTaskId}
+          showDoneAt={statusFilter === "archived"}
+        />
       )}
 
-      <EditActionFormOS
-        actionId={editingActionId}
-        isOpen={editingActionId !== null}
-        onClose={() => setEditingActionId(null)}
+      <EditTaskFormOS
+        taskId={editingTaskId}
+        isOpen={editingTaskId !== null}
+        onClose={() => setEditingTaskId(null)}
       />
 
-      <CreateActionFormOS
+      <CreateTaskFormOS
         isOpen={createStatus !== null}
         defaultStatus={createStatus ?? "to_do"}
         onClose={() => setCreateStatus(null)}

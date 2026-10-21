@@ -6,19 +6,20 @@ import AppSelect from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
-import { priorityOptions, statusOptions } from "@/components/forms/CreateActionFormOS";
+import { editStatusOptions, priorityOptions } from "@/components/forms/CreateTaskFormOS";
 import type { TaskPriority, TaskStatus } from "@/apis/tasks";
 import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
 import { deleteTask, getTaskDetails, updateTask } from "@/lib/actions";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
+import { dateOrderError } from "@/lib/tasks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
-interface EditActionFormOSProps {
-  actionId: number | null;
+interface EditTaskFormOSProps {
+  taskId: number | null;
   isOpen: boolean;
   onClose: () => void;
   onDeleted?: () => void;
@@ -26,13 +27,13 @@ interface EditActionFormOSProps {
   hideFullPageLink?: boolean;
 }
 
-export default function EditActionFormOS({
-  actionId,
+export default function EditTaskFormOS({
+  taskId,
   isOpen,
   onClose,
   onDeleted,
   hideFullPageLink = false,
-}: EditActionFormOSProps) {
+}: EditTaskFormOSProps) {
   const queryClient = useQueryClient();
   const sessionUser = useSession();
 
@@ -40,35 +41,38 @@ export default function EditActionFormOS({
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState<TaskStatus>("to_do");
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [dueDate, setDueDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
-  const { data: action, isLoading: isLoadingAction } = useQuery({
-    queryKey: ["tasks", "details", actionId],
-    queryFn: async () => requireApiData(await getTaskDetails(actionId!)),
-    enabled: isOpen && actionId != null,
+  const { data: task, isLoading: isLoadingTask } = useQuery({
+    queryKey: ["tasks", "details", taskId],
+    queryFn: async () => requireApiData(await getTaskDetails(taskId!)),
+    enabled: isOpen && taskId != null,
   });
 
   // Seed the form once per open during render; reset on close so reopening reverts unsaved edits.
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  const [seededActionId, setSeededActionId] = useState<number | null>(null);
+  const [seededTaskId, setSeededTaskId] = useState<number | null>(null);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
-    if (!isOpen) setSeededActionId(null);
+    if (!isOpen) setSeededTaskId(null);
   }
 
-  if (isOpen && action && action.id !== seededActionId) {
-    setSeededActionId(action.id);
-    setName(action.name);
-    setSummary(action.summary ?? "");
-    setStatus(action.status);
-    setPriority(action.priority);
-    setDueDate(action.due_date ?? "");
-    setAssigneeId(action.assignee_id ?? "");
+  if (isOpen && task && task.id !== seededTaskId) {
+    setSeededTaskId(task.id);
+    setName(task.name);
+    setSummary(task.summary ?? "");
+    setStatus(task.status);
+    setPriority(task.priority);
+    setStartDate(task.start_date ?? "");
+    setEndDate(task.end_date ?? "");
+    setAssigneeId(task.assignee_id ?? "");
   }
 
   const assigneeOptions = useAssigneeOptions(isOpen);
+  const dateError = dateOrderError(startDate, endDate);
 
   function handleClose() {
     onClose();
@@ -83,7 +87,8 @@ export default function EditActionFormOS({
           summary: summary.trim() || null,
           status,
           priority,
-          due_date: dueDate || null,
+          start_date: startDate || null,
+          end_date: endDate || null,
           assignee_id: assigneeId || null,
         })
       ),
@@ -92,7 +97,7 @@ export default function EditActionFormOS({
       handleClose();
     },
     onError: (cause) =>
-      showErrorToast(cause instanceof Error ? cause.message : "Failed to update action."),
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to update task."),
   });
 
   const deleteMutation = useMutation({
@@ -101,44 +106,45 @@ export default function EditActionFormOS({
       setIsConfirmingDelete(false);
       handleClose();
       onDeleted?.();
-      // Drop the deleted action's details first: refetching them 404s and React Query retries with backoff for ~7s.
+      // Drop the deleted task's details first: refetching them 404s and React Query retries with backoff for ~7s.
       queryClient.removeQueries({ queryKey: ["tasks", "details", id], exact: true });
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (cause) =>
-      showErrorToast(cause instanceof Error ? cause.message : "Failed to delete action."),
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to delete task."),
   });
 
   function handleConfirmDelete() {
-    if (actionId == null) return;
-    deleteMutation.mutate(actionId);
+    if (taskId == null) return;
+    deleteMutation.mutate(taskId);
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    if (!name.trim()) return showErrorToast("Action name is required.");
-    if (actionId == null) return;
+    if (!name.trim()) return showErrorToast("Task name is required.");
+    if (dateError) return;
+    if (taskId == null) return;
 
-    updateMutation.mutate(actionId);
+    updateMutation.mutate(taskId);
   }
 
-  const isReady = !isLoadingAction && !!action;
-  // Mirrors the API rule: administrators delete anything, members only their own assigned actions.
+  const isReady = !isLoadingTask && !!task;
+  // Mirrors the API rule: administrators delete anything, members only their own assigned tasks.
   const canDelete =
     !!sessionUser &&
-    !!action &&
-    (sessionUser.role === "administrator" || action.assignee_id === sessionUser.id);
+    !!task &&
+    (sessionUser.role === "administrator" || task.assignee_id === sessionUser.id);
 
   return [
     <SheetOS
-      key="edit-action"
-      title="Edit Action"
-      description="Update this action's details."
+      key="edit-task"
+      title="Edit Task"
+      description="Update this task's details."
       isOpen={isOpen}
       onClose={handleClose}
       fullPageHref={
-        hideFullPageLink || actionId == null ? undefined : `/tasks/${actionId}`
+        hideFullPageLink || taskId == null ? undefined : `/tasks/${taskId}`
       }
     >
       {!isReady ? (
@@ -150,8 +156,8 @@ export default function EditActionFormOS({
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
 
             <AppInput
-              inputId="edit-action-name"
-              label="Action Name"
+              inputId="edit-task-name"
+              label="Task Name"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -159,25 +165,25 @@ export default function EditActionFormOS({
             />
 
             <AppTextArea
-              textAreaId="edit-action-summary"
+              textAreaId="edit-task-summary"
               label="Summary"
               rows={8}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Optional notes about this action..."
+              placeholder="Optional notes about this task..."
             />
 
             <div className="grid grid-cols-2 gap-3">
               <AppSelect
-                selectId="edit-action-status"
+                selectId="edit-task-status"
                 label="Status"
                 placeholder="Pick a status"
                 value={status}
                 onChange={(v) => setStatus(v as TaskStatus)}
-                options={statusOptions}
+                options={editStatusOptions}
               />
               <AppSelect
-                selectId="edit-action-priority"
+                selectId="edit-task-priority"
                 label="Priority"
                 placeholder="Pick a priority"
                 value={priority}
@@ -188,21 +194,31 @@ export default function EditActionFormOS({
 
             <div className="grid grid-cols-2 gap-3">
               <AppInput
-                inputId="edit-action-due-date"
-                label="Due Date"
+                inputId="edit-task-start-date"
+                label="Start Date"
                 type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
               />
-              <AppSelect
-                selectId="edit-action-assignee"
-                label="Assignee"
-                placeholder="Assign someone"
-                value={assigneeId}
-                onChange={(v) => setAssigneeId((v as string) ?? "")}
-                options={assigneeOptions}
+              <AppInput
+                inputId="edit-task-end-date"
+                label="End Date"
+                type="date"
+                min={startDate || undefined}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                errorMessage={dateError}
               />
             </div>
+
+            <AppSelect
+              selectId="edit-task-assignee"
+              label="Assignee"
+              placeholder="Assign someone"
+              value={assigneeId}
+              onChange={(v) => setAssigneeId((v as string) ?? "")}
+              options={assigneeOptions}
+            />
           </div>
 
           <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
@@ -211,7 +227,7 @@ export default function EditActionFormOS({
                 type="button"
                 variant="destructive"
                 size="icon"
-                title="Delete action"
+                title="Delete task"
                 disabled={deleteMutation.isPending}
                 onClick={() => setIsConfirmingDelete(true)}
               >
@@ -248,8 +264,8 @@ export default function EditActionFormOS({
       isOpen={isConfirmingDelete}
       onClose={() => setIsConfirmingDelete(false)}
       onConfirm={handleConfirmDelete}
-      title="Delete this action?"
-      message={action ? `Delete “${action.name}”? This can't be undone.` : ""}
+      title="Delete this task?"
+      message={task ? `Delete “${task.name}”? This can't be undone.` : ""}
       confirmLabel="Delete"
       destructive
       isPending={deleteMutation.isPending}

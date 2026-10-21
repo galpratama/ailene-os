@@ -3,7 +3,14 @@ import "server-only";
 import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
-export type TaskStatus = "to_do" | "in_progress" | "review" | "done";
+// Archived tasks leave the board; the list returns them only when asked for by status.
+export type TaskStatus =
+  | "to_do"
+  | "backlog"
+  | "in_progress"
+  | "review"
+  | "done"
+  | "archived";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export type TaskData = {
@@ -12,11 +19,14 @@ export type TaskData = {
   summary: string | null;
   status: TaskStatus;
   priority: TaskPriority;
-  due_date: string | null;
+  // start_date never falls after end_date; overdue and due-today use end_date.
+  start_date: string | null;
+  end_date: string | null;
   assignee_id: string | null;
   assignee_name: string | null;
   assignee_avatar: string | null;
-  source_meeting_id: number | null;
+  // When the task last entered done; the daily sweep archives it 48 hours later.
+  done_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -26,9 +36,9 @@ export type ListTasksOptions = {
   status?: TaskStatus;
   priority?: TaskPriority;
   assignee_id?: string;
-  // Both bounds are inclusive YYYY-MM-DD due dates.
-  due_from?: string;
-  due_to?: string;
+  // Both bounds are inclusive YYYY-MM-DD end dates.
+  end_from?: string;
+  end_to?: string;
   page?: number;
   page_size?: number;
 };
@@ -39,9 +49,9 @@ export type CreateTaskPayload = {
   summary?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
-  due_date?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   assignee_id?: string | null;
-  source_meeting_id?: number | null;
 };
 
 // A full replace: every editable field is sent, including the unchanged ones.
@@ -51,7 +61,8 @@ export type UpdateTaskPayload = {
   summary?: string | null;
   status: TaskStatus;
   priority: TaskPriority;
-  due_date?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   assignee_id?: string | null;
 };
 

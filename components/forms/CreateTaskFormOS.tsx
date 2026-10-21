@@ -10,6 +10,7 @@ import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
 import { createTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
+import { dateOrderError, todayDateKey } from "@/lib/tasks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
@@ -17,9 +18,16 @@ import { showErrorToast } from "@/lib/toast";
 
 export const statusOptions: AppSelectOption[] = [
   { value: "to_do", label: "To Do" },
+  { value: "backlog", label: "Backlog" },
   { value: "in_progress", label: "In Progress" },
   { value: "review", label: "Review" },
   { value: "done", label: "Done" },
+];
+
+// Archiving takes a task off the board, so only an existing task offers it.
+export const editStatusOptions: AppSelectOption[] = [
+  ...statusOptions,
+  { value: "archived", label: "Archived" },
 ];
 
 export const priorityOptions: AppSelectOption[] = [
@@ -29,17 +37,17 @@ export const priorityOptions: AppSelectOption[] = [
   { value: "urgent", label: "Urgent" },
 ];
 
-interface CreateActionFormOSProps {
+interface CreateTaskFormOSProps {
   isOpen: boolean;
   onClose: () => void;
   defaultStatus?: TaskStatus;
 }
 
-export default function CreateActionFormOS({
+export default function CreateTaskFormOS({
   isOpen,
   onClose,
   defaultStatus = "to_do",
-}: CreateActionFormOSProps) {
+}: CreateTaskFormOSProps) {
   const queryClient = useQueryClient();
   const sessionUser = useSession();
   // Non-global users get "Me" from the empty pick; global users would otherwise default to Unassigned.
@@ -50,24 +58,32 @@ export default function CreateActionFormOS({
   const [summary, setSummary] = useState("");
   const [status, setStatus] = useState<TaskStatus>(defaultStatus);
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [dueDate, setDueDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [assigneeId, setAssigneeId] = useState(defaultAssigneeId);
 
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  // Each open starts on today, so a sheet left mounted overnight never offers yesterday.
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
-    if (isOpen) setStatus(defaultStatus);
+    if (isOpen) {
+      setStatus(defaultStatus);
+      setStartDate(todayDateKey());
+      setEndDate(todayDateKey());
+    }
   }
 
   const assigneeOptions = useAssigneeOptions(isOpen);
+  const dateError = dateOrderError(startDate, endDate);
 
   function resetForm() {
     setName("");
     setSummary("");
     setStatus(defaultStatus);
     setPriority("medium");
-    setDueDate("");
+    setStartDate("");
+    setEndDate("");
     setAssigneeId(defaultAssigneeId);
   }
 
@@ -84,7 +100,8 @@ export default function CreateActionFormOS({
           summary: summary.trim() || null,
           status,
           priority,
-          due_date: dueDate || null,
+          start_date: startDate || null,
+          end_date: endDate || null,
           assignee_id: assigneeId || null,
         })
       ),
@@ -93,20 +110,21 @@ export default function CreateActionFormOS({
       handleClose();
     },
     onError: (cause) =>
-      showErrorToast(cause instanceof Error ? cause.message : "Failed to create action."),
+      showErrorToast(cause instanceof Error ? cause.message : "Failed to create task."),
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    if (!name.trim()) return showErrorToast("Action name is required.");
+    if (!name.trim()) return showErrorToast("Task name is required.");
+    if (dateError) return;
 
     createMutation.mutate();
   }
 
   return (
     <SheetOS
-      title="Add New Action"
+      title="Add New Task"
       description="Add a task to the board."
       isOpen={isOpen}
       onClose={handleClose}
@@ -115,8 +133,8 @@ export default function CreateActionFormOS({
         <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
 
           <AppInput
-            inputId="action-name"
-            label="Action Name"
+            inputId="task-name"
+            label="Task Name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -124,17 +142,17 @@ export default function CreateActionFormOS({
           />
 
           <AppTextArea
-            textAreaId="action-summary"
+            textAreaId="task-summary"
             label="Summary"
             rows={3}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="Optional notes about this action..."
+            placeholder="Optional notes about this task..."
           />
 
           <div className="grid grid-cols-2 gap-3">
             <AppSelect
-              selectId="action-status"
+              selectId="task-status"
               label="Status"
               placeholder="Pick a status"
               value={status}
@@ -142,7 +160,7 @@ export default function CreateActionFormOS({
               options={statusOptions}
             />
             <AppSelect
-              selectId="action-priority"
+              selectId="task-priority"
               label="Priority"
               placeholder="Pick a priority"
               value={priority}
@@ -153,21 +171,31 @@ export default function CreateActionFormOS({
 
           <div className="grid grid-cols-2 gap-3">
             <AppInput
-              inputId="action-due-date"
-              label="Due Date"
+              inputId="task-start-date"
+              label="Start Date"
               type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
             />
-            <AppSelect
-              selectId="action-assignee"
-              label="Assignee"
-              placeholder="Assign someone"
-              value={assigneeId}
-              onChange={(v) => setAssigneeId((v as string) ?? "")}
-              options={assigneeOptions}
+            <AppInput
+              inputId="task-end-date"
+              label="End Date"
+              type="date"
+              min={startDate || undefined}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              errorMessage={dateError}
             />
           </div>
+
+          <AppSelect
+            selectId="task-assignee"
+            label="Assignee"
+            placeholder="Assign someone"
+            value={assigneeId}
+            onChange={(v) => setAssigneeId((v as string) ?? "")}
+            options={assigneeOptions}
+          />
         </div>
 
         <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
@@ -188,7 +216,7 @@ export default function CreateActionFormOS({
             {createMutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
-            Create Action
+            Create Task
           </AppButton>
         </div>
       </form>

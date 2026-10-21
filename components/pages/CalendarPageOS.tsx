@@ -4,9 +4,9 @@ import AppButton from "@/components/buttons/AppButton";
 import type { AppButtonVariant } from "@/components/buttons/AppButton";
 import CreateMeetingFormOS from "@/components/forms/CreateMeetingFormOS";
 import EditMeetingFormOS from "@/components/forms/EditMeetingFormOS";
-import CalendarActionModalOS, {
-  CalendarActionModalEvent,
-} from "@/components/modals/CalendarActionModalOS";
+import CalendarTaskModalOS, {
+  CalendarTaskModalEvent,
+} from "@/components/modals/CalendarTaskModalOS";
 import type { TaskPriority } from "@/apis/tasks";
 import type { MeetingStatus } from "@/apis/meetings";
 import { useTaskList } from "@/hooks/useTaskList";
@@ -75,17 +75,17 @@ const meetingStatusStyles: Record<
   },
 };
 
-// Actions and meetings group by the same due_date: a YYYY-MM-DD day, local time for a meeting.
+// Tasks and meetings group by `day`: a task's end date, or a meeting's local YYYY-MM-DD.
 type CalendarMeetingEvent = {
   id: number;
   type: "b2b_meeting";
   title: string;
-  due_date: string;
+  day: string;
   status: MeetingStatus;
 };
 
 type CalendarEvent =
-  | (CalendarActionModalEvent & { type: "b2b_action"; title: string })
+  | (CalendarTaskModalEvent & { type: "task"; title: string; day: string | null })
   | CalendarMeetingEvent;
 
 function pad(value: number) {
@@ -142,7 +142,7 @@ export default function CalendarPageOS({
     month: today.getMonth(),
   });
   const [selectedEvent, setSelectedEvent] =
-    useState<CalendarActionModalEvent | null>(null);
+    useState<CalendarTaskModalEvent | null>(null);
   const [editingMeetingId, setEditingMeetingId] = useState<number | null>(
     null
   );
@@ -162,19 +162,20 @@ export default function CalendarPageOS({
     { start_date: dateKey(visibleStart), end_date: dateKey(visibleEnd) },
     !!sessionToken
   );
-  const actionQuery = useTaskList(
-    { due_from: dateKey(visibleStart), due_to: dateKey(visibleEnd) },
+  const taskQuery = useTaskList(
+    { end_from: dateKey(visibleStart), end_to: dateKey(visibleEnd) },
     !!sessionToken
   );
-  const isLoading = meetingQuery.isLoading || actionQuery.isLoading;
-  const isError = meetingQuery.isError || actionQuery.isError;
+  const isLoading = meetingQuery.isLoading || taskQuery.isLoading;
+  const isError = meetingQuery.isError || taskQuery.isError;
 
   const eventsByDate = useMemo(() => {
     const events: CalendarEvent[] = [
-      ...(actionQuery.data ?? []).map((action) => ({
-        ...action,
-        type: "b2b_action" as const,
-        title: action.name,
+      ...(taskQuery.data ?? []).map((task) => ({
+        ...task,
+        type: "task" as const,
+        title: task.name,
+        day: task.end_date,
       })),
       ...(meetingQuery.data ?? []).map((meeting): CalendarMeetingEvent => {
         const start = new Date(meeting.scheduled_at);
@@ -182,19 +183,19 @@ export default function CalendarPageOS({
           id: meeting.id,
           type: "b2b_meeting",
           title: `${pad(start.getHours())}:${pad(start.getMinutes())} · ${meeting.company_name}`,
-          due_date: dateKey(start),
+          day: dateKey(start),
           status: meeting.status,
         };
       }),
     ];
     const grouped = new Map<string, CalendarEvent[]>();
     for (const event of events) {
-      const key = dateKeyFromValue(event.due_date);
+      const key = dateKeyFromValue(event.day);
       if (!key) continue;
       grouped.set(key, [...(grouped.get(key) ?? []), event]);
     }
     return grouped;
-  }, [actionQuery.data, meetingQuery.data]);
+  }, [taskQuery.data, meetingQuery.data]);
 
   const goToPreviousMonth = () =>
     setCurrent((value) => {
@@ -403,7 +404,7 @@ export default function CalendarPageOS({
         </div>
       )}
 
-      <CalendarActionModalOS
+      <CalendarTaskModalOS
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
       />

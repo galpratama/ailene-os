@@ -3,17 +3,20 @@
 import AppButton from "@/components/buttons/AppButton";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import type { TaskData, TaskPriority, TaskStatus } from "@/apis/tasks";
+import { initialsOf } from "@/lib/tasks";
 import { CalendarDays, UserRound, Workflow, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 
-export type CalendarActionModalEvent = TaskData;
+export type CalendarTaskModalEvent = TaskData;
 
 const statusLabels: Record<TaskStatus, string> = {
   to_do: "To Do",
+  backlog: "Backlog",
   in_progress: "In Progress",
   review: "Review",
   done: "Done",
+  archived: "Archived",
 };
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -23,8 +26,7 @@ const priorityLabels: Record<TaskPriority, string> = {
   urgent: "Urgent",
 };
 
-function formatDate(value: string | null) {
-  if (!value) return "No due date";
+function formatDate(value: string) {
   return new Date(value).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "long",
@@ -33,17 +35,18 @@ function formatDate(value: string | null) {
   });
 }
 
-function initialsOf(name: string | null) {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+// A one-day task shows a single date; either end may be missing.
+function formatDates(start: string | null, end: string | null) {
+  if (!start && !end) return "No dates";
+  if (!start || !end || start === end) return formatDate((start ?? end)!);
+  return `${formatDate(start)} – ${formatDate(end)}`;
 }
 
-export default function CalendarActionModalOS({
+export default function CalendarTaskModalOS({
   event,
   onClose,
 }: {
-  event: CalendarActionModalEvent | null;
+  event: CalendarTaskModalEvent | null;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function CalendarActionModalOS({
         <div className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">
           <div className="min-w-0">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-claude">
-              B2B Action
+              Task
             </p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
               {event.name}
@@ -91,10 +94,10 @@ export default function CalendarActionModalOS({
             <div className="rounded-xl border border-line bg-dashboard-bg p-3">
               <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-zinc-500">
                 <CalendarDays size={13} />
-                Due date
+                Dates
               </span>
               <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
-                {formatDate(event.due_date)}
+                {formatDates(event.start_date, event.end_date)}
               </p>
             </div>
             <div className="rounded-xl border border-line bg-dashboard-bg p-3">

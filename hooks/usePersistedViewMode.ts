@@ -15,14 +15,16 @@ function readSaved(storageKey: string) {
 export function usePersistedViewMode<T extends ViewModeOS>(
   storageKey: string,
   allowed: readonly T[],
-  defaultMode: T
+  defaultMode: T,
+  legacyModes?: Partial<Record<ViewModeOS, T>>
 ) {
   const [viewMode, setViewModeState] = useState<T>(defaultMode);
 
   useEffect(() => {
     const saved = readSaved(storageKey);
+    const restored = legacyModes?.[saved as ViewModeOS] ?? saved;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (allowed.includes(saved as T)) setViewModeState(saved as T);
+    if (allowed.includes(restored as T)) setViewModeState(restored as T);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 

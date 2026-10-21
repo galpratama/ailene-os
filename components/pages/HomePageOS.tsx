@@ -43,12 +43,12 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   });
   const leads = leadSummary.data;
 
-  const actionSummary = useQuery({
+  const taskSummary = useQuery({
     queryKey: ["tasks", "summary"],
     queryFn: async () => requireApiData(await getTaskSummary()),
     enabled: !!sessionToken,
   });
-  const tasks = actionSummary.data;
+  const tasks = taskSummary.data;
 
   const quotationSummary = useQuery({
     queryKey: ["quotations", "summary"],
@@ -91,7 +91,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
-        {(leadSummary.isError || actionSummary.isError || quotationSummary.isError) && (
+        {(leadSummary.isError || taskSummary.isError || quotationSummary.isError) && (
           <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
             Dashboard data could not be loaded. Please refresh the page.
           </div>
@@ -114,7 +114,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           }}
           staleLeadDays={leads?.stale_lead_days ?? 0}
           isLoading={
-            leadSummary.isLoading || actionSummary.isLoading || quotationSummary.isLoading
+            leadSummary.isLoading || taskSummary.isLoading || quotationSummary.isLoading
           }
         />
 
