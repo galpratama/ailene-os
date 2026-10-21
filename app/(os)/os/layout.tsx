@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Ailene OS",
   },
   description:
-    "Internal operating system for managing Ailene leads, tasks, calendar, revenue, and team workflows.",
+    "Internal operating system for managing Ailene leads, tasks, revenue, and team workflows.",
   applicationName: "Ailene OS",
   robots: {
     index: false,

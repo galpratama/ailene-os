@@ -15,21 +15,32 @@ import type {
 } from "@/apis/articles";
 import type { UserEntry } from "@/apis/users";
 import { createArticle, updateArticle } from "@/lib/actions";
-import { ARTICLE_STATUS_OPTIONS, articleURL } from "@/lib/article";
-import { isSuccessStatus } from "@/lib/status_code";
+import {
+  ARTICLE_STATUS_OPTIONS,
+  articleURL,
+  buildArticleUpdatePayload,
+} from "@/lib/article";
+import { requireApiData } from "@/lib/api-result";
 import { userSelectOption } from "@/lib/user-select-option";
 import dayjs from "dayjs";
 import { ArrowLeft, Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const COVER_MAX_BYTES = 1024 * 500;
 const DATETIME_LOCAL = "YYYY-MM-DDTHH:mm";
 
 // The editor emits "<p></p>" when cleared, so emptiness is judged by the text and images inside.
 function isBlankHtml(html: string) {
-  return !/<img/i.test(html) && !html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  return (
+    !/<img\b/i.test(html) &&
+    !html
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim()
+  );
 }
 
 export default function ArticleEditorPageOS({
@@ -42,6 +53,7 @@ export default function ArticleEditorPageOS({
   users: UserEntry[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = article !== null;
 
   const [title, setTitle] = useState(article?.title ?? "");
@@ -54,20 +66,29 @@ export default function ArticleEditorPageOS({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPublishedAt(dayjs(article?.published_at).format(DATETIME_LOCAL));
   }, [article?.published_at]);
-  const [categoryId, setCategoryId] = useState<number | "">(article?.category.id ?? "");
+  const [categoryId, setCategoryId] = useState<number | "">(
+    article?.category.id ?? "",
+  );
   const [authorId, setAuthorId] = useState(article?.author.id ?? "");
   const [reviewerId, setReviewerId] = useState(article?.reviewer.id ?? "");
   const [keywords, setKeywords] = useState(article?.keywords ?? "");
-  const [slugUrl, setSlugUrl] = useState(article?.slug_url ?? "");
-  const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "draft");
-
-  const [submitting, setSubmitting] = useState<ArticleStatus | null>(null);
+  const [status, setStatus] = useState<ArticleStatus>(
+    article?.status ?? "draft",
+  );
 
   const categoryOptions: AppSelectOption[] = categories.map((category) => ({
     value: category.id,
-    label: category.status === "active" ? category.name : `${category.name} (inactive)`,
+    label:
+      category.status === "active"
+        ? category.name
+        : `${category.name} (inactive)`,
   }));
   const userOptions: AppSelectOption[] = users.map(userSelectOption);
+  for (const person of [article?.author, article?.reviewer]) {
+    if (person && !userOptions.some((option) => option.value === person.id)) {
+      userOptions.push(userSelectOption(person));
+    }
+  }
 
   function validate(): string | null {
     if (!title.trim()) return "Title is required.";
@@ -77,41 +98,53 @@ export default function ArticleEditorPageOS({
     if (categoryId === "") return "Category is required.";
     if (!authorId) return "Author is required.";
     if (!reviewerId) return "Reviewer is required.";
-    if (!keywords.trim()) return "Keywords are required.";
-    if (isBlankHtml(bodyContent)) return "Body content is required.";
+    if (!article || bodyContent !== article.body_content) {
+      if (isBlankHtml(bodyContent)) return "Body content is required.";
+      if (Array.from(bodyContent).length > 100000)
+        return "Body content cannot exceed 100,000 characters.";
+    }
     return null;
   }
 
-  async function save(nextStatus: ArticleStatus) {
-    const problem = validate();
-    if (problem) return showErrorToast(problem);
-    setSubmitting(nextStatus);
+  const saveMutation = useMutation({
+    mutationFn: async (nextStatus: ArticleStatus) => {
+      const problem = validate();
+      if (problem) throw new Error(problem);
 
-    const payload: CreateArticlePayload = {
-      title: title.trim(),
-      insight: insight.trim(),
-      image_url: imageUrl,
-      body_content: bodyContent,
-      status: nextStatus,
-      category_id: categoryId as number,
-      keywords: keywords.trim(),
-      author_id: authorId,
-      reviewer_id: reviewerId,
-      slug_url: slugUrl.trim() || null,
-      published_at: dayjs(publishedAt).toISOString(),
-    };
+      const payload: CreateArticlePayload = {
+        title: title.trim(),
+        insight: insight.trim(),
+        image_url: imageUrl,
+        body_content: bodyContent,
+        status: nextStatus,
+        category_id: categoryId as number,
+        keywords: keywords.trim(),
+        author_id: authorId,
+        reviewer_id: reviewerId,
+        // Keep the original seconds/microseconds when the minute-resolution field was not changed.
+        published_at:
+          article &&
+          publishedAt === dayjs(article.published_at).format(DATETIME_LOCAL)
+            ? article.published_at
+            : dayjs(publishedAt).toISOString(),
+      };
 
-    const result = isEdit
-      ? await updateArticle({ ...payload, id: article.id })
-      : await createArticle(payload);
-    setSubmitting(null);
-
-    if (!isSuccessStatus(result.status)) {
-      return showErrorToast(result.message ?? "Failed to save the article.");
-    }
-
-    router.push("/articles");
-    router.refresh();
+      return requireApiData(
+        article
+          ? await updateArticle(buildArticleUpdatePayload(article, payload))
+          : await createArticle(payload),
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["articles"] });
+      router.push("/articles");
+      router.refresh();
+    },
+    onError: (error) => showErrorToast(error),
+  });
+  const submitting = saveMutation.isPending ? saveMutation.variables : null;
+  function save(nextStatus: ArticleStatus) {
+    saveMutation.mutate(nextStatus);
   }
 
   return (
@@ -131,7 +164,11 @@ export default function ArticleEditorPageOS({
             disabled={submitting !== null}
             onClick={() => save(status)}
           >
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+            {submitting ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Send size={13} />
+            )}
             Save changes
           </AppButton>
         ) : (
@@ -142,7 +179,9 @@ export default function ArticleEditorPageOS({
               disabled={submitting !== null}
               onClick={() => save("draft")}
             >
-              {submitting === "draft" && <Loader2 size={13} className="animate-spin" />}
+              {submitting === "draft" && (
+                <Loader2 size={13} className="animate-spin" />
+              )}
               Save as draft
             </AppButton>
             <AppButton
@@ -161,7 +200,6 @@ export default function ArticleEditorPageOS({
           </>
         )}
       </PageHeaderOS>
-
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <main className="flex min-w-0 flex-2 flex-col gap-5">
@@ -237,7 +275,9 @@ export default function ArticleEditorPageOS({
             required
             placeholder="Choose topic category"
             value={categoryId}
-            onChange={(v) => setCategoryId(v === null || v === "" ? "" : Number(v))}
+            onChange={(v) =>
+              setCategoryId(v === null || v === "" ? "" : Number(v))
+            }
             options={categoryOptions}
           />
           <AppSelect
@@ -261,28 +301,30 @@ export default function ArticleEditorPageOS({
           <AppTextArea
             textAreaId="article-keywords"
             label="Keywords"
-            required
             rows={3}
             characterLength={500}
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             placeholder="e.g. AI untuk bisnis, prompt engineering, pelatihan AI"
           />
-          <div className="flex flex-col gap-1">
-            <AppInput
-              inputId="article-slug"
-              label="URL slug"
-              characterLength={255}
-              value={slugUrl}
-              onChange={(e) => setSlugUrl(e.target.value)}
-              placeholder="Generated from the title if empty"
-            />
-            {isEdit && (
+          {article ? (
+            <div className="flex flex-col gap-1">
+              <AppInput
+                inputId="article-slug"
+                label="URL slug"
+                value={article.slug_url}
+                readOnly
+              />
               <p className="break-all pl-1 text-xs text-gray-400">
                 {articleURL(article.slug_url, article.id)}
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              The article URL is generated automatically from the title when you
+              create it.
+            </p>
+          )}
         </aside>
       </div>
     </div>

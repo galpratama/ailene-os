@@ -84,19 +84,6 @@ import {
   type UpdateQuotationPayload,
 } from "@/apis/quotations";
 import {
-  connectGoogleCalendar as connectGoogleCalendarApi,
-  createMeeting as createMeetingApi,
-  deleteMeeting as deleteMeetingApi,
-  disconnectGoogleCalendar as disconnectGoogleCalendarApi,
-  getGoogleCalendarConnection as getGoogleCalendarConnectionApi,
-  getMeetingDetails as getMeetingDetailsApi,
-  listMeetings as listMeetingsApi,
-  updateMeeting as updateMeetingApi,
-  type CreateMeetingPayload,
-  type ListMeetingsOptions,
-  type UpdateMeetingPayload,
-} from "@/apis/meetings";
-import {
   getUnreadNotificationCount as getUnreadNotificationCountApi,
   listNotifications as listNotificationsApi,
   markAllNotificationsRead as markAllNotificationsReadApi,
@@ -453,38 +440,6 @@ export async function getMetaAdsCreatives(payload: AnalyticsPeriodPayload) {
 
 export async function getMetaAdsAudience(payload: AnalyticsPeriodPayload) {
   return getMetaAdsAudienceApi(payload);
-}
-
-export async function listMeetings(options: ListMeetingsOptions) {
-  return listMeetingsApi(options);
-}
-
-export async function getMeetingDetails(id: number) {
-  return getMeetingDetailsApi(id);
-}
-
-export async function createMeeting(payload: CreateMeetingPayload) {
-  return createMeetingApi(payload);
-}
-
-export async function updateMeeting(payload: UpdateMeetingPayload) {
-  return updateMeetingApi(payload);
-}
-
-export async function deleteMeeting(id: number) {
-  return deleteMeetingApi(id);
-}
-
-export async function getGoogleCalendarConnection() {
-  return getGoogleCalendarConnectionApi();
-}
-
-export async function connectGoogleCalendar(payload: { code: string; redirect_uri: string }) {
-  return connectGoogleCalendarApi(payload);
-}
-
-export async function disconnectGoogleCalendar() {
-  return disconnectGoogleCalendarApi();
 }
 
 export async function listTrainers(options: ListTrainersOptions = {}) {

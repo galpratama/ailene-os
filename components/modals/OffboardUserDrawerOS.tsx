@@ -67,7 +67,7 @@ export default function OffboardUserDrawerOS({
     onSuccess: async () => {
       setNewOwnerId("");
       setReason("");
-      await Promise.all(["users", "tasks", "sales", "meetings"].map((key) =>
+      await Promise.all(["users", "tasks", "sales"].map((key) =>
         queryClient.invalidateQueries({ queryKey: [key] })
       ));
       router.refresh();

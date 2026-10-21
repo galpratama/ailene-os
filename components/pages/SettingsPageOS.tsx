@@ -2,7 +2,6 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
-import GoogleCalendarConnectionOS from "@/components/settings/GoogleCalendarConnectionOS";
 import {
   createTeam,
   createTrainerSpecialization,
@@ -86,7 +85,6 @@ export default function SettingsPageOS({
           Manage shared lookup values used across BIZ and OS.
         </p>
       </div>
-      <GoogleCalendarConnectionOS sessionToken={sessionToken} />
 
       <section className="max-w-180 rounded-xl border border-line bg-card-bg p-5">
         <h3 className="font-bold text-gray-900 dark:text-zinc-100">

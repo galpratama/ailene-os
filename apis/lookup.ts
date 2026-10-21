@@ -15,9 +15,9 @@ export type ListIndustriesOptions = {
 
 // Reference data behind the static client secret, so a signed-out form can fill its dropdowns.
 export async function listIndustries(
-  options: ListIndustriesOptions = {}
+  options: ListIndustriesOptions = {},
 ): Promise<ApiEnvelope<ApiList<IndustryEntry>>> {
-  return callApi("/api/v1/industries", {
+  return callApi("/api/v2/industries", {
     token: clientSecret(),
     body: options,
     // Industries barely change, so the marketing page can stay prerendered.

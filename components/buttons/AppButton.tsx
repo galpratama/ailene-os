@@ -5,7 +5,7 @@ import type { BizBlock } from "@/lib/feature-tracking";
 import Link from "next/link";
 import { ComponentPropsWithRef, MouseEvent, ReactNode } from "react";
 
-// Keep button colors and shapes here, including the compact calendar and BIZ CTAs.
+// Keep button colors and shapes here, including BIZ CTAs.
 export type AppButtonVariant =
   | "primary"
   | "outline"
@@ -23,11 +23,6 @@ export type AppButtonVariant =
   | "ghost"
   | "success"
   | "warning"
-  | "calendarMuted"
-  | "calendarBlue"
-  | "calendarOrange"
-  | "calendarRed"
-  | "calendarGreen"
   | "ghostBiz"
   | "floatingBiz"
   | "ink"
@@ -37,7 +32,7 @@ export type AppButtonVariant =
   | "forest"
   | "outlineDark"
   | "discord";
-export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "calendar" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg";
+export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg";
 
 interface AppButtonBaseProps {
   children: ReactNode;
@@ -82,11 +77,6 @@ const variantClasses: Record<AppButtonVariant, string> = {
     "text-sb-text hover:bg-sb-item-hover hover:text-sb-text-strong",
   success: "bg-hijau text-white hover:bg-hijau/90",
   warning: "bg-oranye text-white hover:bg-oranye/90",
-  calendarMuted: "bg-gray-100/50 text-gray-700 hover:bg-gray-100 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:bg-zinc-800",
-  calendarBlue: "bg-biru-t/40 text-blue-700 hover:bg-biru-t/60 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15",
-  calendarOrange: "bg-oranye-t/40 text-oranye hover:bg-oranye-t/60 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/15",
-  calendarRed: "bg-merah-t/40 text-merah hover:bg-merah-t/60 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15",
-  calendarGreen: "bg-hijau-t/40 text-green-700 hover:bg-hijau-t/60 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/15",
 
   // BIZ (marketing site); filled variants carry a same-color border so they line up with outlineDark.
   ghostBiz: "text-biz-forest hover:bg-biz-forest/8",
@@ -111,7 +101,6 @@ const sizeClasses: Record<AppButtonSize, string> = {
   iconRound: "size-8 justify-center p-0 rounded-full font-medium transition-colors",
   iconRoundSm: "size-7 justify-center p-0 rounded-full font-medium transition-colors",
   pill: "h-8 px-3 text-xs gap-1.5 rounded-full font-medium transition-colors",
-  calendar: "h-auto min-h-7 w-full justify-start rounded-lg px-1.5 py-1 text-xs gap-1.5 font-medium transition-colors",
   row: "w-full gap-3 px-4 py-3 text-left transition-colors",
   rowWide: "w-full gap-3 px-5 py-3 text-left transition-colors",
   rowSummary: "w-full justify-between gap-4 px-5 py-3.5 text-left transition-colors",

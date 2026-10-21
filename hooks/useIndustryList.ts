@@ -12,8 +12,21 @@ const EMPTY: IndustryEntry[] = [];
 export function useIndustryList(enabled: boolean) {
   const { data } = useQuery({
     queryKey: ["lookup", "industries"],
-    queryFn: async () =>
-      requireApiData(await listIndustries({ page: 1, page_size: 100 })).list,
+    queryFn: async () => {
+      const first = requireApiData(
+        await listIndustries({ page: 1, page_size: 100 })
+      );
+      const remaining = await Promise.all(
+        Array.from(
+          { length: Math.max(first.metapaging.total_page - 1, 0) },
+          (_, index) => listIndustries({ page: index + 2, page_size: 100 })
+        )
+      );
+      return [
+        ...first.list,
+        ...remaining.flatMap((result) => requireApiData(result).list),
+      ];
+    },
     enabled,
     // Industries barely change, so every picker after the first opens from cache.
     staleTime: 60 * 60 * 1000,

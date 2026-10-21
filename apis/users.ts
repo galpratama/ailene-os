@@ -84,7 +84,9 @@ export async function listUsers(
   });
 }
 
-export async function getUserDetails(id: string): Promise<ApiEnvelope<UserDetail>> {
+export async function getUserDetails(
+  id: string
+): Promise<ApiEnvelope<UserDetail>> {
   return callApi("/api/v2/users/details", {
     token: await getSessionToken(),
     body: { id },
@@ -126,7 +128,7 @@ export async function reassignOwnership(payload: {
   reason: string;
 }): Promise<
   ApiEnvelope<{
-    reassigned: { pipelines: number; actions: number; meetings: number };
+    reassigned: { pipelines: number; actions: number };
   }>
 > {
   return callApi("/api/v2/users/update/reassign-ownership", {

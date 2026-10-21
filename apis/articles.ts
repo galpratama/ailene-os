@@ -63,23 +63,24 @@ export type ListArticlesOptions = {
   page_size?: number;
 };
 
-// Omitted slug_url is derived from the title by the API.
+// The API generates an immutable slug from the title on create.
 export type CreateArticlePayload = {
   title: string;
   insight: string;
   image_url: string;
   body_content: string;
-  status: ArticleStatus;
+  status?: ArticleStatus | null;
   category_id: number;
   keywords: string;
   author_id: string;
   reviewer_id: string;
-  slug_url?: string | null;
-  published_at: string;
+  published_at?: string | null;
 };
 
-// A full replace: every editable field is sent, including the unchanged ones.
-export type UpdateArticlePayload = CreateArticlePayload & { id: number };
+// Omitted or null fields preserve their stored values; an empty keywords string clears them.
+export type UpdateArticlePayload = { id: number } & {
+  [Field in keyof CreateArticlePayload]?: CreateArticlePayload[Field] | null;
+};
 
 export type ArticleCategoryPayload = {
   name: string;
@@ -94,7 +95,7 @@ async function token() {
 export async function listArticleCategories(
   options: { page?: number; page_size?: number } = {}
 ): Promise<ApiEnvelope<ApiList<ArticleCategoryData>>> {
-  return callApi("/api/v1/article-categories", {
+  return callApi("/api/v2/article-categories", {
     token: await token(),
     body: options,
   });
@@ -103,7 +104,7 @@ export async function listArticleCategories(
 export async function createArticleCategory(
   payload: ArticleCategoryPayload
 ): Promise<ApiEnvelope<ArticleCategoryData>> {
-  return callApi("/api/v1/article-categories/create", {
+  return callApi("/api/v2/article-categories/create", {
     token: await token(),
     body: payload,
   });
@@ -112,7 +113,7 @@ export async function createArticleCategory(
 export async function updateArticleCategory(
   payload: ArticleCategoryPayload & { id: number }
 ): Promise<ApiEnvelope<ArticleCategoryData>> {
-  return callApi("/api/v1/article-categories/update", {
+  return callApi("/api/v2/article-categories/update", {
     token: await token(),
     body: payload,
   });
@@ -121,7 +122,7 @@ export async function updateArticleCategory(
 export async function deleteArticleCategory(
   id: number
 ): Promise<ApiEnvelope<null>> {
-  return callApi("/api/v1/article-categories/delete", {
+  return callApi("/api/v2/article-categories/delete", {
     token: await token(),
     body: { id },
   });
@@ -130,7 +131,7 @@ export async function deleteArticleCategory(
 export async function listArticles(
   options: ListArticlesOptions = {}
 ): Promise<ApiEnvelope<ApiList<ArticleListItem>>> {
-  return callApi("/api/v1/articles", {
+  return callApi("/api/v2/articles", {
     token: await token(),
     body: options,
   });
@@ -139,7 +140,7 @@ export async function listArticles(
 export async function getArticleDetails(
   id: number
 ): Promise<ApiEnvelope<ArticleData>> {
-  return callApi("/api/v1/articles/details", {
+  return callApi("/api/v2/articles/details", {
     token: await token(),
     body: { id },
   });
@@ -148,7 +149,7 @@ export async function getArticleDetails(
 export async function createArticle(
   payload: CreateArticlePayload
 ): Promise<ApiEnvelope<ArticleData>> {
-  return callApi("/api/v1/articles/create", {
+  return callApi("/api/v2/articles/create", {
     token: await token(),
     body: payload,
   });
@@ -157,14 +158,14 @@ export async function createArticle(
 export async function updateArticle(
   payload: UpdateArticlePayload
 ): Promise<ApiEnvelope<ArticleData>> {
-  return callApi("/api/v1/articles/update", {
+  return callApi("/api/v2/articles/update", {
     token: await token(),
     body: payload,
   });
 }
 
 export async function deleteArticle(id: number): Promise<ApiEnvelope<null>> {
-  return callApi("/api/v1/articles/delete", {
+  return callApi("/api/v2/articles/delete", {
     token: await token(),
     body: { id },
   });
@@ -176,7 +177,7 @@ const PUBLIC_REVALIDATE_SECONDS = 300;
 export async function listPublishedArticles(
   options: Omit<ListArticlesOptions, "status"> = {}
 ): Promise<ApiEnvelope<ApiList<ArticleListItem>>> {
-  return callApi("/api/v1/articles", {
+  return callApi("/api/v2/articles", {
     token: clientSecret(),
     body: options,
     revalidate: PUBLIC_REVALIDATE_SECONDS,
@@ -186,7 +187,7 @@ export async function listPublishedArticles(
 export async function getPublishedArticle(
   id: number
 ): Promise<ApiEnvelope<ArticleData>> {
-  return callApi("/api/v1/articles/details", {
+  return callApi("/api/v2/articles/details", {
     token: clientSecret(),
     body: { id },
     revalidate: PUBLIC_REVALIDATE_SECONDS,
@@ -196,7 +197,7 @@ export async function getPublishedArticle(
 export async function listActiveArticleCategories(): Promise<
   ApiEnvelope<ApiList<ArticleCategoryData>>
 > {
-  return callApi("/api/v1/article-categories", {
+  return callApi("/api/v2/article-categories", {
     token: clientSecret(),
     body: { page: 1, page_size: 100 },
     revalidate: PUBLIC_REVALIDATE_SECONDS,

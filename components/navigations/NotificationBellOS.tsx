@@ -17,9 +17,8 @@ import { useEffect, useRef, useState } from "react";
 
 // Relative to the os.* host, which the rewrite already maps into the /os route group.
 const ENTITY_HREF: Record<NotificationEntityType, string> = {
-  b2b_pipeline: "/leads",
-  b2b_action: "/tasks",
-  b2b_meeting: "/calendar",
+  pipeline: "/leads",
+  task: "/tasks",
 };
 
 export default function NotificationBellOS({
@@ -123,7 +122,7 @@ export default function NotificationBellOS({
               <Link
                 key={n.id}
                 href={
-                  n.entity_type === "b2b_action"
+                  n.entity_type === "task"
                     ? `/tasks/${n.entity_id}`
                     : (ENTITY_HREF[n.entity_type] ?? "/")
                 }

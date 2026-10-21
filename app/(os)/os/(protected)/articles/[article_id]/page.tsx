@@ -16,7 +16,7 @@ export default async function Page({
   const [article, categories, users] = await Promise.all([
     getArticleDetails(articleId),
     listArticleCategories({ page: 1, page_size: 100 }),
-    // Every status, so a departed author/reviewer still shows by name instead of a blank pick.
+    // Offer active staff as new choices; the editor retains the article's current attribution too.
     listUsers({ page: 1, page_size: 100, status: "active" }),
   ]);
   if (!isSuccessStatus(article.status) || !article.data) notFound();

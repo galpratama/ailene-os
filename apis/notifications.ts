@@ -3,11 +3,8 @@ import "server-only";
 import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
-export type NotificationType =
-  | "new_assignment"
-  | "meeting_time_changed"
-  | "overdue_next_action";
-export type NotificationEntityType = "b2b_pipeline" | "b2b_action" | "b2b_meeting";
+export type NotificationType = "new_assignment_task" | "task_overdue";
+export type NotificationEntityType = "pipeline" | "task";
 
 export type NotificationData = {
   id: number;
@@ -32,14 +29,14 @@ async function token() {
 export async function listNotifications(
   options: ListNotificationsOptions = {}
 ): Promise<ApiEnvelope<ApiList<NotificationData>>> {
-  return callApi("/api/v1/notifications", {
+  return callApi("/api/v2/notifications", {
     token: await token(),
     body: options,
   });
 }
 
 export async function getUnreadNotificationCount(): Promise<ApiEnvelope<{ count: number }>> {
-  return callApi("/api/v1/notifications/unread-count", {
+  return callApi("/api/v2/notifications/unread-count", {
     token: await token(),
   });
 }
@@ -47,14 +44,14 @@ export async function getUnreadNotificationCount(): Promise<ApiEnvelope<{ count:
 export async function markNotificationRead(
   id: number
 ): Promise<ApiEnvelope<NotificationData>> {
-  return callApi("/api/v1/notifications/mark-read", {
+  return callApi("/api/v2/notifications/mark-read", {
     token: await token(),
     body: { id },
   });
 }
 
 export async function markAllNotificationsRead(): Promise<ApiEnvelope<{ count: number }>> {
-  return callApi("/api/v1/notifications/mark-all-read", {
+  return callApi("/api/v2/notifications/mark-all-read", {
     token: await token(),
   });
 }
