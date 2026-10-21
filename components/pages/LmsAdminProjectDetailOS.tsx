@@ -8,6 +8,7 @@ import LmsMemberFormOS from "@/components/forms/LmsMemberFormOS";
 import LmsMemberRoleLabel from "@/components/labels/LmsMemberRoleLabel";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import LmsCurriculumOS from "@/components/static-sections/LmsCurriculumOS";
 import { deleteLmsGroup, deleteLmsMember } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
 import type { LmsGroupEntry, LmsMemberEntry } from "@/apis/lms";
@@ -17,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type Tab = "members" | "groups";
+type Tab = "members" | "groups" | "content";
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
@@ -36,6 +37,7 @@ type SheetState<T> = { open: false } | { open: true; entry: T | null };
 
 export default function LmsAdminProjectDetailOS({
   projectId,
+  sessionToken,
   projectName,
   companyName,
   groups,
@@ -45,6 +47,7 @@ export default function LmsAdminProjectDetailOS({
   loadError,
 }: {
   projectId: string;
+  sessionToken: string;
   projectName: string;
   companyName: string | null;
   groups: LmsGroupEntry[];
@@ -65,14 +68,23 @@ export default function LmsAdminProjectDetailOS({
     open: false,
   });
   const [removingMember, setRemovingMember] = useState<LmsMemberEntry | null>(
-    null
+    null,
   );
   const [deletingGroup, setDeletingGroup] = useState<LmsGroupEntry | null>(
-    null
+    null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [contentDirty, setContentDirty] = useState(false);
+  const [pendingParams, setPendingParams] = useState<Record<
+    string,
+    string
+  > | null>(null);
 
-  function pushParams(next: Record<string, string>) {
+  function pushParams(next: Record<string, string>, discard = false) {
+    if (contentDirty && !discard) {
+      setPendingParams(next);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(next)) {
       if (value) params.set(key, value);
@@ -94,7 +106,7 @@ export default function LmsAdminProjectDetailOS({
     ? members.filter(
         (member) =>
           member.user.full_name.toLowerCase().includes(query) ||
-          member.user.email.toLowerCase().includes(query)
+          member.user.email.toLowerCase().includes(query),
       )
     : members;
 
@@ -154,11 +166,13 @@ export default function LmsAdminProjectDetailOS({
                   icon: UserPlus,
                   onClick: () => setMemberSheet({ open: true, entry: null }),
                 }
-              : {
-                  label: "New group",
-                  icon: Plus,
-                  onClick: () => setGroupSheet({ open: true, entry: null }),
-                }
+              : tab === "groups"
+                ? {
+                    label: "New group",
+                    icon: Plus,
+                    onClick: () => setGroupSheet({ open: true, entry: null }),
+                  }
+                : undefined
           }
         />
       </div>
@@ -167,7 +181,14 @@ export default function LmsAdminProjectDetailOS({
         <div className="flex rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
           <button
             type="button"
-            onClick={() => pushParams({ tab: "" })}
+            onClick={() => pushParams({ tab: "content" })}
+            className={segmentClass(tab === "content")}
+          >
+            Content
+          </button>
+          <button
+            type="button"
+            onClick={() => pushParams({ tab: "members" })}
             className={segmentClass(tab === "members")}
           >
             Members ({members.length})
@@ -206,165 +227,188 @@ export default function LmsAdminProjectDetailOS({
         )}
       </div>
 
-      <div
-        className={`overflow-hidden rounded-xl border border-line bg-card-bg ${isPending ? "opacity-60" : ""}`}
-      >
-        <div className="overflow-x-auto">
-          {tab === "members" ? (
-            <table className="w-full min-w-220 text-sm">
-              <thead>
-                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Job title</th>
-                  <th className="px-5 py-3">Role</th>
-                  <th className="px-5 py-3">Group</th>
-                  <th className="px-5 py-3">Last active</th>
-                  <th className="px-5 py-3">Joined</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleMembers.map((member) => (
-                  <tr
-                    key={member.access_id}
-                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
-                  >
-                    <td className="px-5 py-3.5">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
-                          {member.user.full_name}
-                        </p>
-                        <p className="truncate text-xs text-gray-400">
-                          {member.user.email}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
-                      {member.user.job_title || "—"}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <LmsMemberRoleLabel role={member.role} />
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
-                      {member.group.name}
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                      {member.user.last_active_at
-                        ? formatDate(member.user.last_active_at)
-                        : "Never signed in"}
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                      {formatDate(member.joined_at)}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <AppButton
-                          variant="secondary"
-                          size="iconSm"
-                          title="Edit member"
-                          onClick={() =>
-                            setMemberSheet({ open: true, entry: member })
-                          }
-                        >
-                          <Pencil size={13} />
-                        </AppButton>
-                        <AppButton
-                          variant="secondary"
-                          size="iconSm"
-                          title="Remove from project"
-                          onClick={() => setRemovingMember(member)}
-                        >
-                          <Trash2 size={13} />
-                        </AppButton>
-                      </div>
-                    </td>
+      {tab === "content" ? (
+        <LmsCurriculumOS
+          projectId={projectId}
+          sessionToken={sessionToken}
+          groups={groups}
+          onDirtyChange={setContentDirty}
+        />
+      ) : (
+        <div
+          className={`overflow-hidden rounded-xl border border-line bg-card-bg ${isPending ? "opacity-60" : ""}`}
+        >
+          <div className="overflow-x-auto">
+            {tab === "members" ? (
+              <table className="w-full min-w-220 text-sm">
+                <thead>
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    <th className="px-5 py-3">Name</th>
+                    <th className="px-5 py-3">Job title</th>
+                    <th className="px-5 py-3">Role</th>
+                    <th className="px-5 py-3">Group</th>
+                    <th className="px-5 py-3">Last active</th>
+                    <th className="px-5 py-3">Joined</th>
+                    <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <table className="w-full min-w-150 text-sm">
-              <thead>
-                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  <th className="px-5 py-3">Group</th>
-                  <th className="px-5 py-3">Members</th>
-                  <th className="px-5 py-3">Created</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map((group) => (
-                  <tr
-                    key={group.id}
-                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
-                  >
-                    <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
-                      {group.name}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <AppButton
-                        type="button"
-                        variant="textLink"
-                        size="textLink"
-                        onClick={() =>
-                          pushParams({ tab: "", group: String(group.id) })
-                        }
-                      >
-                        {group.member_count}{" "}
-                        {group.member_count === 1 ? "member" : "members"}
-                      </AppButton>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                      {formatDate(group.created_at)}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <AppButton
-                          variant="secondary"
-                          size="iconSm"
-                          title="Rename group"
-                          onClick={() =>
-                            setGroupSheet({ open: true, entry: group })
-                          }
-                        >
-                          <Pencil size={13} />
-                        </AppButton>
-                        <AppButton
-                          variant="secondary"
-                          size="iconSm"
-                          title={
-                            group.member_count > 0
-                              ? "Move or remove its members before deleting"
-                              : "Delete group"
-                          }
-                          disabled={group.member_count > 0}
-                          onClick={() => setDeletingGroup(group)}
-                        >
-                          <Trash2 size={13} />
-                        </AppButton>
-                      </div>
-                    </td>
+                </thead>
+                <tbody>
+                  {visibleMembers.map((member) => (
+                    <tr
+                      key={member.access_id}
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
+                            {member.user.full_name}
+                          </p>
+                          <p className="truncate text-xs text-gray-400">
+                            {member.user.email}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
+                        {member.user.job_title || "—"}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <LmsMemberRoleLabel role={member.role} />
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">
+                        {member.group.name}
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
+                        {member.user.last_active_at
+                          ? formatDate(member.user.last_active_at)
+                          : "Never signed in"}
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
+                        {formatDate(member.joined_at)}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <AppButton
+                            variant="secondary"
+                            size="iconSm"
+                            title="Edit member"
+                            onClick={() =>
+                              setMemberSheet({ open: true, entry: member })
+                            }
+                          >
+                            <Pencil size={13} />
+                          </AppButton>
+                          <AppButton
+                            variant="secondary"
+                            size="iconSm"
+                            title="Remove from project"
+                            onClick={() => setRemovingMember(member)}
+                          >
+                            <Trash2 size={13} />
+                          </AppButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full min-w-150 text-sm">
+                <thead>
+                  <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    <th className="px-5 py-3">Group</th>
+                    <th className="px-5 py-3">Members</th>
+                    <th className="px-5 py-3">Created</th>
+                    <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {groups.map((group) => (
+                    <tr
+                      key={group.id}
+                      className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+                    >
+                      <td className="px-5 py-3.5 font-semibold text-gray-900 dark:text-zinc-100">
+                        {group.name}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <AppButton
+                          type="button"
+                          variant="textLink"
+                          size="textLink"
+                          onClick={() =>
+                            pushParams({
+                              tab: "members",
+                              group: String(group.id),
+                            })
+                          }
+                        >
+                          {group.member_count}{" "}
+                          {group.member_count === 1 ? "member" : "members"}
+                        </AppButton>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
+                        {formatDate(group.created_at)}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
+                          <AppButton
+                            variant="secondary"
+                            size="iconSm"
+                            title="Rename group"
+                            onClick={() =>
+                              setGroupSheet({ open: true, entry: group })
+                            }
+                          >
+                            <Pencil size={13} />
+                          </AppButton>
+                          <AppButton
+                            variant="secondary"
+                            size="iconSm"
+                            title={
+                              group.member_count > 0
+                                ? "Move or remove its members before deleting"
+                                : "Delete group"
+                            }
+                            disabled={group.member_count > 0}
+                            onClick={() => setDeletingGroup(group)}
+                          >
+                            <Trash2 size={13} />
+                          </AppButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
 
-          {(tab === "members" ? visibleMembers : groups).length === 0 && (
-            <p
-              className={`text-sm text-center py-10 ${loadError ? "text-merah" : "text-gray-400 dark:text-zinc-500"}`}
-            >
-              {loadError ??
-                (tab === "groups"
-                  ? "No groups yet. Create one before inviting members."
-                  : query
-                    ? `No members found for "${keyword.trim()}"`
-                    : "No members yet.")}
-            </p>
-          )}
+            {(tab === "members" ? visibleMembers : groups).length === 0 && (
+              <p
+                className={`text-sm text-center py-10 ${loadError ? "text-merah" : "text-gray-400 dark:text-zinc-500"}`}
+              >
+                {loadError ??
+                  (tab === "groups"
+                    ? "No groups yet. Create one before inviting members."
+                    : query
+                      ? `No members found for "${keyword.trim()}"`
+                      : "No members yet.")}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-
+      )}
+      <AlertConfirmationOS
+        isOpen={!!pendingParams}
+        onClose={() => setPendingParams(null)}
+        onConfirm={() => {
+          if (pendingParams) pushParams(pendingParams, true);
+          setPendingParams(null);
+        }}
+        title="Discard unsaved changes?"
+        message="Your changes have not been saved. Discard them and switch tabs?"
+        confirmLabel="Discard changes"
+        destructive
+      />
       <LmsMemberFormOS
         projectId={projectId}
         groups={groups}

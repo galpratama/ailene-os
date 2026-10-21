@@ -24,6 +24,7 @@ interface AppRichTextEditorProps {
   editorId: string;
   label?: string;
   required?: boolean;
+  disabled?: boolean;
   placeholder?: string;
   value: string;
   onChange: (html: string) => void;
@@ -115,6 +116,7 @@ export default function AppRichTextEditor({
   editorId,
   label,
   required,
+  disabled = false,
   placeholder = "Write something...",
   value,
   onChange,
@@ -122,6 +124,7 @@ export default function AppRichTextEditor({
   const editor = useEditor({
     // Server render has no DOM; let the client mount it to avoid a hydration mismatch.
     immediatelyRender: false,
+    editable: !disabled,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
@@ -149,6 +152,10 @@ export default function AppRichTextEditor({
   });
 
   // Pick up a value set from outside (e.g. an edit form loading its article) without echoing our own updates.
+  useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [editor, disabled]);
+
   useEffect(() => {
     if (!editor) return;
     const current = editor.isEmpty ? "" : editor.getHTML();
@@ -184,7 +191,7 @@ export default function AppRichTextEditor({
                     title={item.label}
                     aria-label={item.label}
                     aria-pressed={isActive}
-                    disabled={!editor}
+                    disabled={!editor || disabled}
                     onClick={() => editor && item.run(editor)}
                     className={`rounded-md p-1.5 transition ${
                       isActive

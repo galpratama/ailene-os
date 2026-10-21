@@ -41,6 +41,22 @@ import {
 } from "@/apis/analytics";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
+  getLmsCurriculum as getLmsCurriculumApi,
+  createLmsChapter as createLmsChapterApi,
+  updateLmsChapter as updateLmsChapterApi,
+  deleteLmsChapter as deleteLmsChapterApi,
+  createLmsSchedule as createLmsScheduleApi,
+  updateLmsSchedule as updateLmsScheduleApi,
+  deleteLmsSchedule as deleteLmsScheduleApi,
+  createLmsContent as createLmsContentApi,
+  updateLmsContent as updateLmsContentApi,
+  deleteLmsContent as deleteLmsContentApi,
+  type LmsChapterPayload,
+  type LmsChapterRef,
+  type LmsSchedulePayload,
+  type LmsScheduleRef,
+  type LmsContentPayload,
+  type LmsContentRef,
   createLmsGroup as createLmsGroupApi,
   deleteLmsGroup as deleteLmsGroupApi,
   deleteLmsMember as deleteLmsMemberApi,
@@ -623,6 +639,17 @@ export async function createLmsGroup(payload: {
 }) {
   return createLmsGroupApi(payload);
 }
+
+export async function getLmsCurriculum(projectId: string) { return getLmsCurriculumApi(projectId); }
+export async function createLmsChapter(payload: LmsChapterPayload) { return createLmsChapterApi(payload); }
+export async function updateLmsChapter(payload: LmsChapterPayload & { chapter_id: number }) { return updateLmsChapterApi(payload); }
+export async function deleteLmsChapter(payload: LmsChapterRef) { return deleteLmsChapterApi(payload); }
+export async function createLmsSchedule(payload: LmsSchedulePayload) { return createLmsScheduleApi(payload); }
+export async function updateLmsSchedule(payload: LmsSchedulePayload & { session_id: number }) { return updateLmsScheduleApi(payload); }
+export async function deleteLmsSchedule(payload: LmsScheduleRef) { return deleteLmsScheduleApi(payload); }
+export async function createLmsContent(payload: LmsContentPayload) { return createLmsContentApi(payload); }
+export async function updateLmsContent(payload: LmsContentPayload) { return updateLmsContentApi(payload); }
+export async function deleteLmsContent(payload: LmsContentRef) { return deleteLmsContentApi(payload); }
 
 export async function updateLmsGroup(payload: {
   project_id: string;

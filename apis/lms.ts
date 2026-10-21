@@ -86,7 +86,7 @@ export async function listLmsProjects(): Promise<
 }
 
 export async function listLmsGroups(
-  projectId: string
+  projectId: string,
 ): Promise<ApiEnvelope<LmsGroupEntry[]>> {
   return callLmsAdmin("groups", { project_id: projectId });
 }
@@ -121,13 +121,13 @@ export async function listLmsMembers(payload: {
 }
 
 export async function inviteLmsMember(
-  payload: InviteLmsMemberPayload
+  payload: InviteLmsMemberPayload,
 ): Promise<ApiEnvelope<LmsInviteResult>> {
   return callLmsAdmin("users/invite", payload);
 }
 
 export async function updateLmsMember(
-  payload: UpdateLmsMemberPayload
+  payload: UpdateLmsMemberPayload,
 ): Promise<ApiEnvelope<LmsMemberEntry>> {
   return callLmsAdmin("users/update", payload);
 }
@@ -137,4 +137,127 @@ export async function deleteLmsMember(payload: {
   access_id: string;
 }): Promise<ApiEnvelope<{ deleted: boolean }>> {
   return callLmsAdmin("users/delete", payload);
+}
+
+export type LmsContentKind =
+  | "pre_test"
+  | "post_test"
+  | "quiz"
+  | "material"
+  | "video";
+export type LmsContentStatus = "active" | "inactive";
+export type LmsQuestion = {
+  id?: number;
+  type: "multiple_choice" | "essay";
+  question: string;
+  explanation: string | null;
+  xp_reward: number;
+  options: { option_code: string; text: string; is_correct: boolean }[];
+};
+export type LmsVideoTimestamp = { start_seconds: number; title: string };
+export type LmsContent = {
+  id: string;
+  kind: LmsContentKind;
+  title: string;
+  description: string | null;
+  status: LmsContentStatus;
+  content: string | null;
+  file_url: string | null;
+  image_url: string | null;
+  video_url: string | null;
+  xp_reward: number;
+  questions: LmsQuestion[];
+  timestamps: LmsVideoTimestamp[];
+  has_progress: boolean;
+};
+export type LmsSchedule = {
+  id: number;
+  only_group_id: number | null;
+  session_date: string;
+  duration_minutes: number;
+  location_name: string;
+  location_url: string;
+  method: "online" | "offline";
+  trainer_id: string | null;
+  status: LmsContentStatus;
+  is_locked: boolean;
+};
+export type LmsChapter = {
+  id: number;
+  level_id: number;
+  name: string;
+  description: string | null;
+  status: LmsContentStatus;
+  sessions: LmsSchedule[];
+  contents: LmsContent[];
+};
+export type LmsCurriculum = {
+  levels: { id: number; name: string }[];
+  chapters: LmsChapter[];
+};
+export type LmsChapterRef = { project_id: string; chapter_id: number };
+export type LmsChapterPayload = {
+  project_id: string;
+  chapter_id?: number;
+  level_id: number;
+  name: string;
+  description: string | null;
+  status: LmsContentStatus;
+};
+export type LmsContentRef = LmsChapterRef & { kind: LmsContentKind };
+export type LmsContentPayload = LmsContentRef &
+  Omit<LmsContent, "id" | "has_progress">;
+export type LmsSchedulePayload = LmsChapterRef &
+  Omit<LmsSchedule, "id"> & { session_id?: number };
+export type LmsScheduleRef = LmsChapterRef & { session_id: number };
+
+export async function getLmsCurriculum(
+  projectId: string,
+): Promise<ApiEnvelope<LmsCurriculum>> {
+  return callLmsAdmin("curriculum", { project_id: projectId });
+}
+export async function createLmsChapter(
+  payload: LmsChapterPayload,
+): Promise<ApiEnvelope<{ id: number }>> {
+  return callLmsAdmin("curriculum/chapters/create", payload);
+}
+export async function updateLmsChapter(
+  payload: LmsChapterPayload & { chapter_id: number },
+): Promise<ApiEnvelope<{ id: number }>> {
+  return callLmsAdmin("curriculum/chapters/update", payload);
+}
+export async function deleteLmsChapter(
+  payload: LmsChapterRef,
+): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  return callLmsAdmin("curriculum/chapters/delete", payload);
+}
+export async function createLmsSchedule(
+  payload: LmsSchedulePayload,
+): Promise<ApiEnvelope<{ id: number }>> {
+  return callLmsAdmin("curriculum/schedules/create", payload);
+}
+export async function updateLmsSchedule(
+  payload: LmsSchedulePayload & { session_id: number },
+): Promise<ApiEnvelope<{ id: number }>> {
+  return callLmsAdmin("curriculum/schedules/update", payload);
+}
+export async function deleteLmsSchedule(
+  payload: LmsScheduleRef,
+): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  return callLmsAdmin("curriculum/schedules/delete", payload);
+}
+export async function createLmsContent(
+  payload: LmsContentPayload,
+): Promise<ApiEnvelope<{ saved: boolean }>> {
+  return callLmsAdmin("curriculum/contents/create", payload);
+}
+export async function updateLmsContent(
+  payload: LmsContentPayload,
+): Promise<ApiEnvelope<{ saved: boolean }>> {
+  return callLmsAdmin("curriculum/contents/update", payload);
+}
+export async function deleteLmsContent(
+  payload: LmsContentRef,
+): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  return callLmsAdmin("curriculum/contents/delete", payload);
 }
