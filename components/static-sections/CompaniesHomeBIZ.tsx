@@ -4,8 +4,7 @@ import PageMargin from "@/components/layouts/PageMargin";
 const companies = [
   { name: "Hypernet by XL", src: "/biz/logos/hypernet-by-xl.webp" },
   { name: "Pertamina", src: "/biz/logos/pertamina.svg" },
-  { name: "Bank SMBC Indonesia", src: "/biz/logos/bank-smbc-indonesia.webp" },
-  { name: "DANA", src: "/biz/logos/dana.svg" },
+  { name: "Bank Indonesia", src: "/biz/logos/bank-indonesia.webp" },
 ];
 
 export default function CompaniesHomeBIZ() {
