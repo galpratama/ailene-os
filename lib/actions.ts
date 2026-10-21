@@ -64,6 +64,13 @@ import {
   updateLmsGroup as updateLmsGroupApi,
   updateLmsMember as updateLmsMemberApi,
   type InviteLmsMemberPayload,
+  getLmsInsightsOverview as getLmsInsightsOverviewApi,
+  getLmsPreAssessmentInsights as getLmsPreAssessmentInsightsApi,
+  getLmsGuidedInsights as getLmsGuidedInsightsApi,
+  getLmsReviewInsights as getLmsReviewInsightsApi,
+  getLmsTestInsights as getLmsTestInsightsApi,
+  getLmsQuizInsights as getLmsQuizInsightsApi,
+  type LmsInsightsFilter,
   type UpdateLmsMemberPayload,
 } from "@/apis/lms";
 import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from "@/apis/lookup";
@@ -596,6 +603,12 @@ export async function createLmsGroup(payload: {
 }
 
 export async function getLmsCurriculum(projectId: string) { return getLmsCurriculumApi(projectId); }
+export async function getLmsInsightsOverview(filter: LmsInsightsFilter) { return getLmsInsightsOverviewApi(filter); }
+export async function getLmsPreAssessmentInsights(filter: LmsInsightsFilter) { return getLmsPreAssessmentInsightsApi(filter); }
+export async function getLmsGuidedInsights(filter: LmsInsightsFilter) { return getLmsGuidedInsightsApi(filter); }
+export async function getLmsReviewInsights(filter: LmsInsightsFilter) { return getLmsReviewInsightsApi(filter); }
+export async function getLmsTestInsights(filter: LmsInsightsFilter) { return getLmsTestInsightsApi(filter); }
+export async function getLmsQuizInsights(filter: LmsInsightsFilter) { return getLmsQuizInsightsApi(filter); }
 export async function createLmsChapter(payload: LmsChapterPayload) { return createLmsChapterApi(payload); }
 export async function updateLmsChapter(payload: LmsChapterPayload & { chapter_id: number }) { return updateLmsChapterApi(payload); }
 export async function deleteLmsChapter(payload: LmsChapterRef) { return deleteLmsChapterApi(payload); }

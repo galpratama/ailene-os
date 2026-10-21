@@ -9,7 +9,9 @@ import LmsMemberRoleLabel from "@/components/labels/LmsMemberRoleLabel";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import LmsCurriculumOS from "@/components/static-sections/LmsCurriculumOS";
+import LmsInsightsOS from "@/components/static-sections/LmsInsightsOS";
 import { deleteLmsGroup, deleteLmsMember } from "@/lib/actions";
+import type { LmsInsightSection } from "@/lib/lms-insights";
 import { isSuccessStatus } from "@/lib/status_code";
 import type { LmsGroupEntry, LmsMemberEntry } from "@/apis/lms";
 import { Pencil, Plus, Search, Trash2, UserPlus } from "lucide-react";
@@ -18,7 +20,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-type Tab = "members" | "groups" | "content";
+type Tab = "insights" | "members" | "groups" | "content";
 
 function segmentClass(active: boolean) {
   return `h-7 px-3 rounded-md text-xs font-semibold transition-colors ${
@@ -43,6 +45,7 @@ export default function LmsAdminProjectDetailOS({
   groups,
   members,
   initialTab,
+  initialInsight,
   initialGroup,
   loadError,
 }: {
@@ -53,6 +56,7 @@ export default function LmsAdminProjectDetailOS({
   groups: LmsGroupEntry[];
   members: LmsMemberEntry[];
   initialTab: Tab;
+  initialInsight: LmsInsightSection;
   initialGroup: number | null;
   loadError: string | null;
 }) {
@@ -94,6 +98,15 @@ export default function LmsAdminProjectDetailOS({
   }
 
   const tab = initialTab;
+  const [insight, setInsight] = useState(initialInsight);
+
+  // Switching sections only changes client state, so the URL is updated without a server round trip.
+  function changeInsight(next: LmsInsightSection) {
+    setInsight(next);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("insight", next);
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  }
 
   const groupFilterOptions: AppSelectOption[] = [
     { value: "", label: "All groups" },
@@ -181,6 +194,13 @@ export default function LmsAdminProjectDetailOS({
         <div className="flex rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
           <button
             type="button"
+            onClick={() => pushParams({ tab: "insights" })}
+            className={segmentClass(tab === "insights")}
+          >
+            Insights
+          </button>
+          <button
+            type="button"
             onClick={() => pushParams({ tab: "content" })}
             className={segmentClass(tab === "content")}
           >
@@ -201,6 +221,20 @@ export default function LmsAdminProjectDetailOS({
             Groups ({groups.length})
           </button>
         </div>
+
+        {tab === "insights" && (
+          <div className="w-full max-w-52">
+            <AppSelect
+              selectId="lms-insights-group-filter"
+              placeholder="All groups"
+              value={initialGroup ?? ""}
+              options={groupFilterOptions}
+              onChange={(value) =>
+                pushParams({ group: value ? String(value) : "" })
+              }
+            />
+          </div>
+        )}
 
         {tab === "members" && (
           <>
@@ -227,7 +261,18 @@ export default function LmsAdminProjectDetailOS({
         )}
       </div>
 
-      {tab === "content" ? (
+      {tab === "insights" ? (
+        <LmsInsightsOS
+          projectId={projectId}
+          groupId={initialGroup}
+          groupName={
+            groups.find((group) => group.id === initialGroup)?.name ?? null
+          }
+          sessionToken={sessionToken}
+          section={insight}
+          onSectionChange={changeInsight}
+        />
+      ) : tab === "content" ? (
         <LmsCurriculumOS
           projectId={projectId}
           sessionToken={sessionToken}

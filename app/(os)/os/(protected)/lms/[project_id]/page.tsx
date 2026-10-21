@@ -1,6 +1,7 @@
 import { listLmsGroups, listLmsMembers, listLmsProjects } from "@/apis/lms";
 import { getSessionToken } from "@/apis/session";
 import LmsAdminProjectDetailOS from "@/components/pages/LmsAdminProjectDetailOS";
+import { isLmsInsightSection } from "@/lib/lms-insights";
 import { isSuccessStatus } from "@/lib/status_code";
 import { notFound } from "next/navigation";
 
@@ -9,10 +10,10 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ project_id: string }>;
-  searchParams: Promise<{ tab?: string; group?: string }>;
+  searchParams: Promise<{ tab?: string; group?: string; insight?: string }>;
 }) {
   const { project_id: projectId } = await params;
-  const { tab, group } = await searchParams;
+  const { tab, group, insight } = await searchParams;
   const groupId = Number(group) || null;
   const sessionToken = (await getSessionToken()) ?? "";
 
@@ -41,8 +42,11 @@ export default async function Page({
       groups={groups.data ?? []}
       members={members.data ?? []}
       initialTab={
-        tab === "groups" ? "groups" : tab === "members" ? "members" : "content"
+        tab === "groups" || tab === "members" || tab === "content"
+          ? tab
+          : "insights"
       }
+      initialInsight={isLmsInsightSection(insight) ? insight : "pre_assessment"}
       initialGroup={groupId}
       loadError={failed ? (failed.message ?? "Failed to load project.") : null}
     />

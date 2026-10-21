@@ -261,3 +261,272 @@ export async function deleteLmsContent(
 ): Promise<ApiEnvelope<{ deleted: boolean }>> {
   return callLmsAdmin("curriculum/contents/delete", payload);
 }
+
+export type LmsInsightsFilter = { project_id: string; group_id: number | null };
+export type LmsInsightLearner = {
+  access_id: string;
+  role: LmsMemberRole;
+  full_name: string;
+  email: string;
+  avatar: string | null;
+  group_id: number | null;
+  group_name: string | null;
+};
+export type LmsInsightChapter = { id: number; name: string; level_id: number };
+export type LmsPaBand = { band: number; name: string | null; level: number | null };
+export type LmsPaCluster = { code: string; name: string; score: number | null };
+export type LmsPaSummary = {
+  total: number;
+  submitted: number;
+  scored: number;
+  meets_target: number;
+  average_score: number | null;
+  flagged_security: number;
+  flagged_overclaim: number;
+  flagged_shadow_ai: number;
+};
+export type LmsPaStatus = "not_started" | "submitted" | "scored";
+export type LmsPaMember = {
+  access_id: string;
+  full_name: string;
+  avatar: string | null;
+  group_id: number;
+  group_name: string | null;
+  status: LmsPaStatus;
+  band: LmsPaBand | null;
+  average_score: number | null;
+  meets_target: boolean;
+  submitted_at: string | null;
+  clusters: LmsPaCluster[];
+  flags: {
+    knowledge_score: number | null;
+    skills_score: number | null;
+    behaviours_score: number | null;
+    security_gate_passed: boolean | null;
+    behaviour_gate_passed: boolean | null;
+    is_overclaim: boolean | null;
+    is_shadow_ai: boolean | null;
+  } | null;
+};
+export type LmsPreAssessmentInsights = {
+  summary: LmsPaSummary;
+  target_band: LmsPaBand;
+  bands: (LmsPaBand & { count: number })[];
+  clusters: LmsPaCluster[];
+  groups: {
+    group_id: number;
+    group_name: string | null;
+    total: number;
+    scored: number;
+    meets_target: number;
+    average_score: number | null;
+  }[];
+  members: LmsPaMember[];
+};
+
+export type LmsGuidedStatus =
+  | "intake"
+  | "steps_ready"
+  | "in_progress"
+  | "ready_to_submit"
+  | "submitted";
+export type LmsGuidedReviewStatus =
+  | "in_progress"
+  | "awaiting_review"
+  | "needs_revision"
+  | "accepted";
+export type LmsGuidedSummary = {
+  total: number;
+  in_progress: number;
+  awaiting_review: number;
+  needs_revision: number;
+  accepted: number;
+  minutes_saved_per_run: number | null;
+  hours_saved: number | null;
+  average_helpfulness: number | null;
+};
+export type LmsGuidedSession = {
+  id: number;
+  learner: LmsInsightLearner;
+  status: LmsGuidedStatus;
+  current_step: number;
+  review_status: LmsGuidedReviewStatus;
+  use_case_name: string | null;
+  daily_task: string | null;
+  frequency: string | null;
+  pain_point: string | null;
+  summary: string | null;
+  minutes_without_ai: number | null;
+  estimated_minutes_with_ai: number | null;
+  step_count: number;
+  steps_done: number;
+  hours_saved: number | null;
+  helpfulness_rating: number | null;
+  testimonial: string | null;
+  review_comment: string | null;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type LmsGuidedInsights = {
+  summary: LmsGuidedSummary;
+  funnel: { status: LmsGuidedStatus; count: number }[];
+  sessions: LmsGuidedSession[];
+};
+
+export type LmsSurveyRatings = {
+  trainer_clarity: number | null;
+  trainer_mastery: number | null;
+  trainer_responsiveness: number | null;
+  trainer_engagement: number | null;
+  material_relevance: number | null;
+  material_flow: number | null;
+  material_depth: number | null;
+  learning_value: number | null;
+};
+export type LmsReviewSummary = {
+  learner_count: number;
+  responses: number;
+  trainer_average: number | null;
+  material_average: number | null;
+  learning_value_average: number | null;
+  overall_average: number | null;
+};
+export type LmsReviewChapter = {
+  chapter: LmsInsightChapter;
+  responses: number;
+  ratings: LmsSurveyRatings;
+  trainer_average: number | null;
+  material_average: number | null;
+  overall_average: number | null;
+};
+export type LmsReviewResponse = {
+  id: number;
+  learner: LmsInsightLearner;
+  chapter: LmsInsightChapter;
+  ratings: LmsSurveyRatings;
+  overall_average: number | null;
+  missing_topics: string | null;
+  favorite_material: string | null;
+  disliked_material: string | null;
+  improvement_suggestion: string | null;
+  submitted_at: string;
+};
+export type LmsReviewInsights = {
+  summary: LmsReviewSummary;
+  chapters: LmsReviewChapter[];
+  responses: LmsReviewResponse[];
+};
+
+export type LmsTestSummary = {
+  pre_submissions: number;
+  post_submissions: number;
+  pre_average: number | null;
+  post_average: number | null;
+  average_uplift: number | null;
+  improved_count: number;
+  paired_count: number;
+};
+export type LmsTestChapter = {
+  chapter: LmsInsightChapter;
+  has_pre_test: boolean;
+  has_post_test: boolean;
+  pre_submissions: number;
+  post_submissions: number;
+  pre_average: number | null;
+  post_average: number | null;
+  average_uplift: number | null;
+};
+export type LmsTestResult = {
+  learner: LmsInsightLearner;
+  chapter: LmsInsightChapter;
+  pre_submitted: boolean;
+  pre_score: number | null;
+  pre_submitted_at: string | null;
+  post_submitted: boolean;
+  post_score: number | null;
+  post_submitted_at: string | null;
+  uplift: number | null;
+};
+export type LmsTestInsights = {
+  summary: LmsTestSummary;
+  chapters: LmsTestChapter[];
+  results: LmsTestResult[];
+};
+
+export type LmsQuizSummary = {
+  submissions: number;
+  participants: number;
+  average_score: number | null;
+  average_best_score: number | null;
+  perfect_scores: number;
+};
+export type LmsQuizRow = {
+  id: string;
+  name: string;
+  chapter: LmsInsightChapter;
+  question_count: number;
+  attempts: number;
+  participants: number;
+  average_score: number | null;
+  average_best_score: number | null;
+  highest_score: number | null;
+};
+export type LmsQuizSubmission = {
+  id: number;
+  learner: LmsInsightLearner;
+  quiz_id: string;
+  quiz_name: string;
+  chapter: LmsInsightChapter;
+  attempt_number: number;
+  score: number;
+  started_at: string;
+  submitted_at: string;
+};
+export type LmsQuizInsights = {
+  summary: LmsQuizSummary;
+  distribution: { label: string; min: number; max: number; count: number }[];
+  quizzes: LmsQuizRow[];
+  submissions: LmsQuizSubmission[];
+};
+
+export type LmsInsightsOverview = {
+  learner_count: number;
+  pre_assessment: LmsPaSummary | null;
+  guided_use_cases: LmsGuidedSummary;
+  session_reviews: LmsReviewSummary;
+  chapter_tests: LmsTestSummary;
+  quizzes: LmsQuizSummary;
+};
+
+export async function getLmsInsightsOverview(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsInsightsOverview>> {
+  return callLmsAdmin("insights/overview", filter);
+}
+export async function getLmsPreAssessmentInsights(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsPreAssessmentInsights>> {
+  return callLmsAdmin("insights/pre-assessment", filter);
+}
+export async function getLmsGuidedInsights(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsGuidedInsights>> {
+  return callLmsAdmin("insights/guided-use-cases", filter);
+}
+export async function getLmsReviewInsights(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsReviewInsights>> {
+  return callLmsAdmin("insights/session-reviews", filter);
+}
+export async function getLmsTestInsights(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsTestInsights>> {
+  return callLmsAdmin("insights/chapter-tests", filter);
+}
+export async function getLmsQuizInsights(
+  filter: LmsInsightsFilter,
+): Promise<ApiEnvelope<LmsQuizInsights>> {
+  return callLmsAdmin("insights/quizzes", filter);
+}
