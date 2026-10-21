@@ -4,6 +4,7 @@ import type { ListPipelinesOptions, PipelineData, PipelineStage } from "@/apis/s
 import AppButton from "@/components/buttons/AppButton";
 import LeadKanbanCardOS from "@/components/items/LeadKanbanCardOS";
 import StageLabel from "@/components/labels/StageLabel";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { requireApiData } from "@/lib/api-result";
 import { listPipelines, updatePipeline } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, pipelinePhaseOf } from "@/lib/sales";
@@ -47,12 +48,14 @@ function LeadsKanbanColumn({
   onOpenLead,
   onAddLead,
 }: ColumnProps) {
-  const columnFilters = { ...filters, stage, phase: pipelinePhaseOf(stage) };
+  const catalog = usePipelineStages();
+  const columnFilters = { ...filters, stage, phase: pipelinePhaseOf(stage, catalog.stages) ?? filters.phase };
   const leadsQuery = useInfiniteQuery({
     queryKey: ["sales", "pipelines", "kanban", columnFilters],
     queryFn: async ({ pageParam }) =>
       requireApiData(await listPipelines({ ...columnFilters, page: pageParam, page_size: COLUMN_PAGE_SIZE })),
     initialPageParam: 1,
+    enabled: catalog.isSuccess,
     getNextPageParam: ({ metapaging }) =>
       metapaging.current_page < metapaging.total_page ? metapaging.current_page + 1 : undefined,
   });

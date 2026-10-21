@@ -7,9 +7,9 @@ import EditMeetingFormOS from "@/components/forms/EditMeetingFormOS";
 import CalendarActionModalOS, {
   CalendarActionModalEvent,
 } from "@/components/modals/CalendarActionModalOS";
-import type { ActionPriority } from "@/apis/actions";
+import type { TaskPriority } from "@/apis/tasks";
 import type { MeetingStatus } from "@/apis/meetings";
-import { useActionList } from "@/hooks/useActionList";
+import { useTaskList } from "@/hooks/useTaskList";
 import { useMeetingList } from "@/hooks/useMeetingList";
 import {
   CalendarClock,
@@ -24,7 +24,7 @@ import { useMemo, useState } from "react";
 const DAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 const priorityStyles: Record<
-  ActionPriority,
+  TaskPriority,
   { label: string; dot: string; buttonVariant: AppButtonVariant }
 > = {
   low: {
@@ -162,7 +162,7 @@ export default function CalendarPageOS({
     { start_date: dateKey(visibleStart), end_date: dateKey(visibleEnd) },
     !!sessionToken
   );
-  const actionQuery = useActionList(
+  const actionQuery = useTaskList(
     { due_from: dateKey(visibleStart), due_to: dateKey(visibleEnd) },
     !!sessionToken
   );

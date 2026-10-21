@@ -57,7 +57,7 @@ function ScoreCell({ row }: { row: TrendingKeywordData }) {
 
 export default function TrendingKeywordsPageOS({ sessionToken }: { sessionToken: string }) {
   const queryClient = useQueryClient();
-  const isAdmin = useSession()?.role === "ADMINISTRATOR";
+  const isAdmin = useSession()?.role === "administrator";
 
   const [capturedOn, setCapturedOn] = useState("");
   const [seed, setSeed] = useState("");

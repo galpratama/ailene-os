@@ -6,7 +6,8 @@ import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { USER_ROLE_OPTIONS } from "@/lib/constants";
 import { inviteUser } from "@/lib/actions";
-import { isSuccessStatus } from "@/lib/status_code";
+import { requireApiData } from "@/lib/api-result";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TeamEntry } from "@/apis/teams";
 import type { UserDataScope, UserJobFunction, UserRole } from "@/apis/users";
 import { Loader2 } from "lucide-react";
@@ -16,18 +17,18 @@ import { showErrorToast } from "@/lib/toast";
 
 const jobFunctionOptions: AppSelectOption[] = [
   { value: "", label: "No job function" },
-  { value: "BD", label: "Business Development" },
-  { value: "SALES", label: "Sales" },
-  { value: "OPERATIONS", label: "Operations" },
-  { value: "CURRICULUM", label: "Curriculum" },
-  { value: "FINANCE", label: "Finance" },
-  { value: "IT", label: "IT" },
+  { value: "bd", label: "Business Development" },
+  { value: "sales", label: "Sales" },
+  { value: "operations", label: "Operations" },
+  { value: "curriculum", label: "Curriculum" },
+  { value: "finance", label: "Finance" },
+  { value: "it", label: "IT" },
 ];
 
 const dataScopeOptions: AppSelectOption[] = [
-  { value: "OWN", label: "Own data" },
-  { value: "TEAM", label: "Team data" },
-  { value: "GLOBAL", label: "All data" },
+  { value: "own", label: "Own data" },
+  { value: "team", label: "Team data" },
+  { value: "global", label: "All data" },
 ];
 
 interface InviteUserFormOSProps {
@@ -42,14 +43,14 @@ export default function InviteUserFormOS({
   onClose,
 }: InviteUserFormOSProps) {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole | "">("");
   const [teamId, setTeamId] = useState<number | null>(null);
   const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
-  const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
+  const [dataScope, setDataScope] = useState<UserDataScope>("own");
 
   const roleOptions: AppSelectOption[] = USER_ROLE_OPTIONS.map((option) => ({
     value: option.value,
@@ -66,7 +67,7 @@ export default function InviteUserFormOS({
     setRole("");
     setTeamId(null);
     setJobFunction("");
-    setDataScope("OWN");
+    setDataScope("own");
   }
 
   function handleClose() {
@@ -74,30 +75,30 @@ export default function InviteUserFormOS({
     onClose();
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-
-    if (!fullName.trim()) return showErrorToast("Name is required.");
-    if (!email.trim()) return showErrorToast("Email is required.");
-    if (!role) return showErrorToast("Access role is required.");
-
-    setIsSubmitting(true);
-    const result = await inviteUser({
+  const inviteMutation = useMutation({
+    mutationFn: async () => requireApiData(await inviteUser({
       full_name: fullName.trim(),
       email: email.trim(),
-      role,
+      role: role as UserRole,
       team_id: teamId,
       job_function: jobFunction || null,
       data_scope: dataScope,
-    });
-    setIsSubmitting(false);
+    })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      router.refresh();
+      handleClose();
+    },
+    onError: (error) => showErrorToast(error, "Failed to invite user."),
+  });
+  const isSubmitting = inviteMutation.isPending;
 
-    if (!isSuccessStatus(result.status)) {
-      return showErrorToast(result.message ?? "Failed to invite user.");
-    }
-
-    router.refresh();
-    handleClose();
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim()) return showErrorToast("Name is required.");
+    if (!email.trim()) return showErrorToast("Email is required.");
+    if (!role) return showErrorToast("Access role is required.");
+    inviteMutation.mutate();
   }
 
   return (

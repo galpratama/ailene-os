@@ -9,6 +9,7 @@ import {
   TrainerTier,
 } from "@/lib/pricing-b2b";
 import dayjs from "dayjs";
+import { formatQuotationNumber } from "@/lib/quotation-number";
 
 // The subset of the Quotations API details response the PDF needs.
 export type QuotationForPdf = {
@@ -62,7 +63,7 @@ export function buildQuotationPDFPropsFromQuotation(
 
   return {
     clientName: quotation.company_name,
-    quotationNumber: `QUO/${dayjs(quotation.created_at).format("YYYYMMDD")}/${String(quotation.id).padStart(4, "0")}v${quotation.version}`,
+    quotationNumber: formatQuotationNumber(quotation),
     quotationDate: dayjs().format("D MMMM YYYY"),
     days,
     materi,

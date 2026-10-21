@@ -1,16 +1,16 @@
 "use server";
 
 import {
-  createAction as createActionApi,
-  deleteAction as deleteActionApi,
-  getActionDetails as getActionDetailsApi,
-  getActionSummary as getActionSummaryApi,
-  listActions as listActionsApi,
-  updateAction as updateActionApi,
-  type CreateActionPayload,
-  type ListActionsOptions,
-  type UpdateActionPayload,
-} from "@/apis/actions";
+  createTask as createTaskApi,
+  deleteTask as deleteTaskApi,
+  getTaskDetails as getTaskDetailsApi,
+  getTaskSummary as getTaskSummaryApi,
+  listTasks as listTasksApi,
+  updateTask as updateTaskApi,
+  type CreateTaskPayload,
+  type ListTasksOptions,
+  type UpdateTaskPayload,
+} from "@/apis/tasks";
 import {
   createArticle as createArticleApi,
   createArticleCategory as createArticleCategoryApi,
@@ -54,6 +54,7 @@ import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from 
 import {
   createQuotation as createQuotationApi,
   decideQuotation as decideQuotationApi,
+  deleteQuotation as deleteQuotationApi,
   getQuotationDetails as getQuotationDetailsApi,
   getQuotationSummary as getQuotationSummaryApi,
   listQuotations as listQuotationsApi,
@@ -155,6 +156,11 @@ import {
 } from "@/apis/domain-ranking";
 import {
   createCompany as createCompanyApi,
+  createPipelineStage as createPipelineStageApi,
+  updatePipelineStage as updatePipelineStageApi,
+  reorderPipelineStages as reorderPipelineStagesApi,
+  deletePipelineStage as deletePipelineStageApi,
+  listPipelineStages as listPipelineStagesApi,
   createContact as createContactApi,
   createInboundLead as createInboundLeadApi,
   createPipeline as createPipelineApi,
@@ -171,6 +177,10 @@ import {
   updateContact as updateContactApi,
   updatePipeline as updatePipelineApi,
   type CompanyForm,
+  type CreatePipelineStagePayload,
+  type UpdatePipelineStagePayload,
+  type PipelinePhase,
+  type PipelineStage,
   type ContactForm,
   type CreatePipelinePayload,
   type InboundLeadPayload,
@@ -274,6 +284,30 @@ export async function listCompanies(options: ListCompaniesOptions = {}) {
   return listCompaniesApi(options);
 }
 
+export async function listPipelineStages(options: { phase?: PipelinePhase } = {}) {
+  return listPipelineStagesApi(options);
+}
+
+export async function createPipelineStage(payload: CreatePipelineStagePayload) {
+  return createPipelineStageApi(payload);
+}
+
+export async function updatePipelineStage(payload: UpdatePipelineStagePayload) {
+  return updatePipelineStageApi(payload);
+}
+
+export async function reorderPipelineStages(payload: { phase: PipelinePhase; codes: PipelineStage[] }) {
+  return reorderPipelineStagesApi(payload);
+}
+
+export async function deletePipelineStage(payload: { code: PipelineStage; transfer_to: PipelineStage }) {
+  return deletePipelineStageApi(payload);
+}
+
+export async function deleteQuotation(id: number) {
+  return deleteQuotationApi(id);
+}
+
 export async function getCompanyDetails(id: number) {
   return getCompanyDetailsApi(id);
 }
@@ -337,28 +371,28 @@ export async function deletePipeline(id: number) {
   return deletePipelineApi(id);
 }
 
-export async function listActions(options: ListActionsOptions = {}) {
-  return listActionsApi(options);
+export async function listTasks(options: ListTasksOptions = {}) {
+  return listTasksApi(options);
 }
 
-export async function getActionSummary() {
-  return getActionSummaryApi();
+export async function getTaskSummary() {
+  return getTaskSummaryApi();
 }
 
-export async function getActionDetails(id: number) {
-  return getActionDetailsApi(id);
+export async function getTaskDetails(id: number) {
+  return getTaskDetailsApi(id);
 }
 
-export async function createAction(payload: CreateActionPayload) {
-  return createActionApi(payload);
+export async function createTask(payload: CreateTaskPayload) {
+  return createTaskApi(payload);
 }
 
-export async function updateAction(payload: UpdateActionPayload) {
-  return updateActionApi(payload);
+export async function updateTask(payload: UpdateTaskPayload) {
+  return updateTaskApi(payload);
 }
 
-export async function deleteAction(id: number) {
-  return deleteActionApi(id);
+export async function deleteTask(id: number) {
+  return deleteTaskApi(id);
 }
 
 export async function getTrackingOverview(payload: TrackingPeriodPayload) {

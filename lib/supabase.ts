@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Public bucket holding uploaded media (article covers, ...); objects are served by their public URL.
+// Public bucket holding uploaded media, including article covers and company logos.
 export const SUPABASE_BUCKET = "ailene";
 
 let client: SupabaseClient | null = null;

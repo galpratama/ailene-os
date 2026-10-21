@@ -7,16 +7,16 @@ import UserStatusLabel from "@/components/labels/UserStatusLabel";
 import SheetOS from "@/components/modals/SheetOS";
 import {
   getUserDetails,
-  listUsers,
   reassignOwnership,
   updateUserStatus,
 } from "@/lib/actions";
-import { isSuccessStatus } from "@/lib/status_code";
+import { requireApiData, requireApiSuccess } from "@/lib/api-result";
+import { useUserList } from "@/hooks/useUserList";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userSelectOption } from "@/lib/user-select-option";
-import type { UserEntry, UserOwnership } from "@/apis/users";
 import { Briefcase, ClipboardList, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
 interface OffboardUserDrawerOSProps {
@@ -32,37 +32,18 @@ export default function OffboardUserDrawerOS({
   onClose,
 }: OffboardUserDrawerOSProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [newOwnerId, setNewOwnerId] = useState("");
   const [reason, setReason] = useState("");
-  const [user, setUser] = useState<UserEntry | null>(null);
-  const [ownership, setOwnership] = useState<UserOwnership | null>(null);
-  const [candidates, setCandidates] = useState<UserEntry[]>([]);
-  const [isReassigning, setIsReassigning] = useState(false);
-  const [isDeactivating, setIsDeactivating] = useState(false);
-
-  const loadDetails = useCallback(async (id: string) => {
-    const result = await getUserDetails(id);
-    setUser(result.data ?? null);
-    setOwnership(result.data?.ownership ?? null);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen || !userId) return;
-    let active = true;
-    Promise.all([
-      getUserDetails(userId),
-      listUsers({ page: 1, page_size: 100, status: "ACTIVE" }),
-    ]).then(([detail, list]) => {
-      if (!active) return;
-      setUser(detail.data ?? null);
-      setOwnership(detail.data?.ownership ?? null);
-      setCandidates(list.data?.list ?? []);
-    });
-    return () => {
-      active = false;
-    };
-  }, [isOpen, userId]);
+  const details = useQuery({
+    queryKey: ["users", "details", userId],
+    queryFn: async () => requireApiData(await getUserDetails(userId!)),
+    enabled: isOpen && !!userId,
+  });
+  const user = details.data;
+  const ownership = user?.ownership;
+  const candidates = useUserList(isOpen && !!userId);
 
   const hasActiveWork =
     !!ownership && ownership.pipelines_owned + ownership.actions_assigned > 0;
@@ -74,52 +55,53 @@ export default function OffboardUserDrawerOS({
   function handleClose() {
     setNewOwnerId("");
     setReason("");
-    setUser(null);
-    setOwnership(null);
     onClose();
   }
 
-  async function handleReassign(e: FormEvent) {
+  const reassignMutation = useMutation({
+    mutationFn: async (id: string) => requireApiData(await reassignOwnership({
+      from_user_id: id,
+      to_user_id: newOwnerId,
+      reason: reason.trim(),
+    })),
+    onSuccess: async () => {
+      setNewOwnerId("");
+      setReason("");
+      await Promise.all(["users", "tasks", "sales", "meetings"].map((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] })
+      ));
+      router.refresh();
+    },
+    onError: (error) => showErrorToast(error, "Failed to reassign ownership."),
+  });
+  const deactivateMutation = useMutation({
+    mutationFn: async (id: string) => requireApiSuccess(await updateUserStatus({
+      id,
+      status: "deactivated",
+      reason: reason.trim() || undefined,
+    })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      router.refresh();
+      handleClose();
+    },
+    onError: (error) => showErrorToast(error, "Failed to deactivate user."),
+  });
+  const isReassigning = reassignMutation.isPending;
+  const isDeactivating = deactivateMutation.isPending;
+
+  function handleReassign(e: FormEvent) {
     e.preventDefault();
     if (!user) return;
     if (!newOwnerId) return showErrorToast("Pick a replacement owner.");
     if (!reason.trim()) return showErrorToast("A reason is required.");
 
-    setIsReassigning(true);
-    const result = await reassignOwnership({
-      from_user_id: user.id,
-      to_user_id: newOwnerId,
-      reason: reason.trim(),
-    });
-    setIsReassigning(false);
-
-    if (!isSuccessStatus(result.status)) {
-      return showErrorToast(result.message ?? "Failed to reassign ownership.");
-    }
-
-    setNewOwnerId("");
-    setReason("");
-    await loadDetails(user.id);
-    router.refresh();
+    reassignMutation.mutate(user.id);
   }
 
-  async function handleDeactivate() {
+  function handleDeactivate() {
     if (!user) return;
-
-    setIsDeactivating(true);
-    const result = await updateUserStatus({
-      id: user.id,
-      status: "DEACTIVATED",
-      reason: reason.trim() || undefined,
-    });
-    setIsDeactivating(false);
-
-    if (!isSuccessStatus(result.status)) {
-      return showErrorToast(result.message ?? "Failed to deactivate user.");
-    }
-
-    router.refresh();
-    handleClose();
+    deactivateMutation.mutate(user.id);
   }
 
   const isReady = !!user && !!ownership;
@@ -131,7 +113,9 @@ export default function OffboardUserDrawerOS({
       isOpen={isOpen}
       onClose={handleClose}
     >
-      {!isReady ? (
+      {details.isError ? (
+        <p className="px-6 py-5 text-sm text-merah">{details.error.message}</p>
+      ) : !isReady ? (
         <div className="flex flex-1 items-center justify-center py-20">
           <Loader2 size={20} className="animate-spin text-gray-400 dark:text-zinc-500" />
         </div>
@@ -160,7 +144,7 @@ export default function OffboardUserDrawerOS({
                 <div className="flex flex-col gap-1 rounded-xl border border-line-soft p-3">
                   <div className="flex items-center gap-1.5 text-gray-500 dark:text-zinc-400">
                     <Briefcase size={13} />
-                    <span className="text-xs">Actions assigned</span>
+                    <span className="text-xs">Tasks assigned</span>
                   </div>
                   <span className="text-lg font-bold text-gray-900 dark:text-zinc-100">
                     {ownership.actions_assigned}
@@ -177,7 +161,7 @@ export default function OffboardUserDrawerOS({
                 Reassign ownership
               </p>
               <p className="text-xs text-gray-500 dark:text-zinc-400">
-                Moves every pipeline/action above to a replacement owner and
+                Moves every pipeline/task above to a replacement owner and
                 records the change (see the audit log).
               </p>
               <AppSelect
@@ -231,7 +215,7 @@ export default function OffboardUserDrawerOS({
               type="button"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={isDeactivating || user.status === "DEACTIVATED"}
+              disabled={isDeactivating || user.status === "deactivated"}
               onClick={handleDeactivate}
             >
               {isDeactivating && (

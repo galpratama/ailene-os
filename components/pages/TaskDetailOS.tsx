@@ -6,8 +6,8 @@ import { statusOptions } from "@/components/forms/CreateActionFormOS";
 import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
-import type { ActionData, ActionStatus } from "@/apis/actions";
-import { getActionDetails, updateAction } from "@/lib/actions";
+import type { TaskData, TaskStatus } from "@/apis/tasks";
+import { getTaskDetails, updateTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { showErrorToast } from "@/lib/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -96,16 +96,16 @@ export default function TaskDetailOS({
   const [isEditing, setIsEditing] = useState(false);
 
   const { data: task, isLoading, isError } = useQuery({
-    queryKey: ["actions", "details", taskId],
-    queryFn: async () => requireApiData(await getActionDetails(taskId)),
+    queryKey: ["tasks", "details", taskId],
+    queryFn: async () => requireApiData(await getTaskDetails(taskId)),
     enabled: !!sessionToken,
   });
 
   // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
   const statusMutation = useMutation({
-    mutationFn: async ({ action, status }: { action: ActionData; status: ActionStatus }) =>
+    mutationFn: async ({ action, status }: { action: TaskData; status: TaskStatus }) =>
       requireApiData(
-        await updateAction({
+        await updateTask({
           id: action.id,
           name: action.name,
           summary: action.summary,
@@ -116,7 +116,7 @@ export default function TaskDetailOS({
         })
       ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["actions"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (cause) =>
       showErrorToast(cause instanceof Error ? cause.message : "Failed to update status."),
@@ -185,7 +185,7 @@ export default function TaskDetailOS({
             </p>
             <div className="mt-2 inline-flex flex-wrap gap-1 rounded-lg border border-line p-1">
               {statusOptions.map((option) => {
-                const value = option.value as ActionStatus;
+                const value = option.value as TaskStatus;
                 const isActive = shownStatus === value;
                 return (
                   <button

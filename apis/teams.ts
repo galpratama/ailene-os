@@ -17,7 +17,7 @@ export type ListTeamsOptions = {
 export async function listTeams(
   options: ListTeamsOptions = {}
 ): Promise<ApiEnvelope<ApiList<TeamEntry>>> {
-  return callApi("/api/v1/teams", {
+  return callApi("/api/v2/teams", {
     token: await getSessionToken(),
     body: options,
   });
@@ -27,7 +27,7 @@ export async function listTeams(
 export async function createTeam(
   name: string
 ): Promise<ApiEnvelope<{ team: TeamEntry }>> {
-  return callApi("/api/v1/teams/create", {
+  return callApi("/api/v2/teams/create", {
     token: await getSessionToken(),
     body: { name },
   });

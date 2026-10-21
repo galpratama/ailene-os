@@ -13,7 +13,7 @@ export type LoginResult = {
 export async function loginWithGoogle(
   accessToken: string
 ): Promise<ApiEnvelope<LoginResult>> {
-  const result = await callApi<LoginResult>("/api/v1/auth/login/google", {
+  const result = await callApi<LoginResult>("/api/v2/auth/login/google", {
     token: clientSecret(),
     body: { access_token: accessToken },
   });

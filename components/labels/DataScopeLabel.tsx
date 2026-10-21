@@ -6,9 +6,9 @@ const scopeStyles: Record<
   UserDataScope,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
-  OWN: { variant: "gray", icon: User, label: "Own data" },
-  TEAM: { variant: "biru", icon: Users, label: "Team data" },
-  GLOBAL: { variant: "hijau", icon: Globe2, label: "All data" },
+  own: { variant: "gray", icon: User, label: "Own data" },
+  team: { variant: "biru", icon: Users, label: "Team data" },
+  global: { variant: "hijau", icon: Globe2, label: "All data" },
 };
 
 export default function DataScopeLabel({ scope }: { scope: UserDataScope }) {

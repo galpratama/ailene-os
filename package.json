@@ -7,7 +7,8 @@
     "dev:cert": "mkcert -cert-file certificates/dev.pem -key-file certificates/dev-key.pem example.com \"*.example.com\" localhost 127.0.0.1 ::1",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:api": "node --test tests/api-v2.test.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.4",

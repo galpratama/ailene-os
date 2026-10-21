@@ -6,8 +6,8 @@ const roleStyles: Record<
   UserRole,
   { label: string; variant: LabelVariant; icon: LucideIcon }
 > = {
-  ADMINISTRATOR: { label: "Administrator", variant: "oranye", icon: Shield },
-  MEMBER: { label: "Member", variant: "gray", icon: UserRound },
+  administrator: { label: "Administrator", variant: "oranye", icon: Shield },
+  member: { label: "Member", variant: "gray", icon: UserRound },
 };
 
 export default function AccessRoleLabel({ role }: { role: UserRole }) {

@@ -12,6 +12,9 @@ import OffboardUserDrawerOS from "@/components/modals/OffboardUserDrawerOS";
 import AppPaginationOS from "@/components/navigations/AppPaginationOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { updateUserStatus } from "@/lib/actions";
+import { requireApiSuccess } from "@/lib/api-result";
+import { showErrorToast } from "@/lib/toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UserEntry, UserStatus } from "@/apis/users";
 import type { TeamEntry } from "@/apis/teams";
 import {
@@ -29,20 +32,20 @@ import { useEffect, useState, useTransition } from "react";
 
 const statusOptions: AppSelectOption[] = [
   { value: "all", label: "All statuses" },
-  { value: "INVITED", label: "Invited" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "SUSPENDED", label: "Suspended" },
-  { value: "DEACTIVATED", label: "Deactivated" },
-  { value: "ARCHIVED", label: "Archived" },
+  { value: "invited", label: "Invited" },
+  { value: "active", label: "Active" },
+  { value: "suspended", label: "Suspended" },
+  { value: "deactivated", label: "Deactivated" },
+  { value: "archived", label: "Archived" },
 ];
 
 const jobFunctionLabels: Record<string, string> = {
-  BD: "Business Development",
-  SALES: "Sales",
-  OPERATIONS: "Operations",
-  CURRICULUM: "Curriculum",
-  FINANCE: "Finance",
-  IT: "IT",
+  bd: "Business Development",
+  sales: "Sales",
+  operations: "Operations",
+  curriculum: "Curriculum",
+  finance: "Finance",
+  it: "IT",
 };
 
 export default function UsersAccessPageOS({
@@ -67,6 +70,7 @@ export default function UsersAccessPageOS({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -109,11 +113,18 @@ export default function UsersAccessPageOS({
   const userList = users;
   const currentPage = page;
 
-  function changeStatus(id: string, status: UserStatus) {
-    startTransition(async () => {
-      await updateUserStatus({ id, status });
+  const statusMutation = useMutation({
+    mutationFn: async (payload: { id: string; status: UserStatus }) =>
+      requireApiSuccess(await updateUserStatus(payload)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
       router.refresh();
-    });
+    },
+    onError: (error) => showErrorToast(error, "Failed to update user status."),
+  });
+
+  function changeStatus(id: string, status: UserStatus) {
+    if (!statusMutation.isPending) statusMutation.mutate({ id, status });
   }
 
   return (
@@ -214,7 +225,7 @@ export default function UsersAccessPageOS({
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        {entry.status !== "ARCHIVED" && (
+                        {entry.status !== "archived" && (
                           <AppButton
                             variant="secondary"
                             size="iconSm"
@@ -225,27 +236,27 @@ export default function UsersAccessPageOS({
                           </AppButton>
                         )}
 
-                        {entry.status === "INVITED" && (
+                        {entry.status === "invited" && (
                           <AppButton
                             variant="secondary"
                             size="iconSm"
                             title="Revoke invite"
                             onClick={() =>
-                              changeStatus(entry.id, "DEACTIVATED")
+                              changeStatus(entry.id, "deactivated")
                             }
                           >
                             <X size={13} />
                           </AppButton>
                         )}
 
-                        {entry.status === "ACTIVE" && (
+                        {entry.status === "active" && (
                           <>
                             <AppButton
                               variant="secondary"
                               size="iconSm"
                               title="Suspend"
                               onClick={() =>
-                                changeStatus(entry.id, "SUSPENDED")
+                                changeStatus(entry.id, "suspended")
                               }
                             >
                               <PauseCircle size={13} />
@@ -261,14 +272,14 @@ export default function UsersAccessPageOS({
                           </>
                         )}
 
-                        {entry.status === "SUSPENDED" && (
+                        {entry.status === "suspended" && (
                           <>
                             <AppButton
                               variant="secondary"
                               size="iconSm"
                               title="Reactivate"
                               onClick={() =>
-                                changeStatus(entry.id, "ACTIVE")
+                                changeStatus(entry.id, "active")
                               }
                             >
                               <RotateCcw size={13} />
@@ -284,24 +295,14 @@ export default function UsersAccessPageOS({
                           </>
                         )}
 
-                        {entry.status === "DEACTIVATED" && (
+                        {entry.status === "deactivated" && (
                           <>
-                            <AppButton
-                              variant="secondary"
-                              size="iconSm"
-                              title="Reactivate"
-                              onClick={() =>
-                                changeStatus(entry.id, "ACTIVE")
-                              }
-                            >
-                              <RotateCcw size={13} />
-                            </AppButton>
                             <AppButton
                               variant="secondary"
                               size="iconSm"
                               title="Archive"
                               onClick={() =>
-                                changeStatus(entry.id, "ARCHIVED")
+                                changeStatus(entry.id, "archived")
                               }
                             >
                               <Archive size={13} />

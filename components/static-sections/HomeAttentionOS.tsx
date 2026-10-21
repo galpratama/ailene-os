@@ -3,7 +3,7 @@
 import PriorityLabel from "@/components/labels/PriorityLabel";
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import StageLabel from "@/components/labels/StageLabel";
-import type { ActionData } from "@/apis/actions";
+import type { TaskData } from "@/apis/tasks";
 import type { QuotationListItem } from "@/apis/quotations";
 import type { PipelineStage } from "@/apis/sales";
 import { getRupiahCurrency } from "@/lib/currency";
@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type AttentionAction = Pick<ActionData, "id" | "name" | "due_date" | "priority">;
+type AttentionAction = Pick<TaskData, "id" | "name" | "due_date" | "priority">;
 
 type StaleLead = {
   id: number;

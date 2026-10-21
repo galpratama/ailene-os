@@ -19,7 +19,7 @@ export default async function Page({
   const keyword = params.keyword?.trim() ?? "";
   const team = params.team ?? "";
   // No status in the URL means the default Active view; "all" is the explicit unfiltered choice.
-  const status = params.status ?? "ACTIVE";
+  const status = params.status ?? "active";
   const page = Number(params.page ?? "1") || 1;
 
   const [users, teams] = await Promise.all([

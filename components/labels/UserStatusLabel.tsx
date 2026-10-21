@@ -13,11 +13,11 @@ const statusStyles: Record<
   UserStatus,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
-  INVITED: { variant: "biru", icon: MailQuestion, label: "Invited" },
-  ACTIVE: { variant: "hijau", icon: CheckCircle2, label: "Active" },
-  SUSPENDED: { variant: "kuning", icon: PauseCircle, label: "Suspended" },
-  DEACTIVATED: { variant: "oranye", icon: Ban, label: "Deactivated" },
-  ARCHIVED: { variant: "gray", icon: Archive, label: "Archived" },
+  invited: { variant: "biru", icon: MailQuestion, label: "Invited" },
+  active: { variant: "hijau", icon: CheckCircle2, label: "Active" },
+  suspended: { variant: "kuning", icon: PauseCircle, label: "Suspended" },
+  deactivated: { variant: "oranye", icon: Ban, label: "Deactivated" },
+  archived: { variant: "gray", icon: Archive, label: "Archived" },
 };
 
 export default function UserStatusLabel({

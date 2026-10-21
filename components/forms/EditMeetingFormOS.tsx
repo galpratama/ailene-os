@@ -56,7 +56,7 @@ export default function EditMeetingFormOS({
   const queryClient = useQueryClient();
 
   const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "OWN";
+  const isOwnScoped = sessionUser?.data_scope === "own";
 
   const [scheduledAt, setScheduledAt] = useState("");
   const [status, setStatus] = useState<MeetingStatus>("scheduled");

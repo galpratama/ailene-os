@@ -8,10 +8,10 @@ import { userSelectOption } from "@/lib/user-select-option";
 // The API assigns an empty pick to the caller unless they are global-scoped, so name it accordingly.
 export function useAssigneeOptions(enabled: boolean): AppSelectOption[] {
   const sessionUser = useSession();
-  const userList = useUserList(enabled && sessionUser?.data_scope !== "OWN");
-  const emptyLabel = sessionUser?.data_scope === "GLOBAL" ? "Unassigned" : "Me";
+  const userList = useUserList(enabled && sessionUser?.data_scope !== "own");
+  const emptyLabel = sessionUser?.data_scope === "global" ? "Unassigned" : "Me";
   const emptyOption: AppSelectOption =
-    sessionUser?.data_scope === "GLOBAL"
+    sessionUser?.data_scope === "global"
       ? { value: "", label: emptyLabel }
       : {
           value: "",

@@ -3,6 +3,7 @@
 import type { LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import CompanyLogoUploadOS from "@/components/fields/CompanyLogoUploadOS";
 import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSearchableSelect, { type AppSearchableOption } from "@/components/fields/AppSearchableSelect";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
@@ -10,7 +11,9 @@ import SheetOS from "@/components/modals/SheetOS";
 import { useSession } from "@/contexts/SessionContext";
 import { useIndustryList } from "@/hooks/useIndustryList";
 import { useUserList } from "@/hooks/useUserList";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { requireApiData } from "@/lib/api-result";
+import { COMPANY_NAME_PLACEHOLDER, COMPANY_WEBSITE_PLACEHOLDER, LEAD_FORM_PLACEHOLDERS } from "@/lib/constants";
 import { createPipeline, listCompanies } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource, pipelineStageOptions } from "@/lib/sales";
 import { userSelectOption } from "@/lib/user-select-option";
@@ -61,7 +64,9 @@ export default function CreateLeadFormOS({
 }) {
   const queryClient = useQueryClient();
   const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "OWN";
+  const isOwnScoped = sessionUser?.data_scope === "own";
+  const catalog = usePipelineStages(!!sessionToken && isOpen);
+  const availableStages = pipelineStageOptions(catalog.stages, phase);
   const [useExistingCompany, setUseExistingCompany] = useState(false);
   const [companyOption, setCompanyOption] = useState<CompanySearchOption | null>(null);
   const [companyName, setCompanyName] = useState("");
@@ -69,15 +74,14 @@ export default function CreateLeadFormOS({
   const [legalIdentifier, setLegalIdentifier] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactJobTitle, setContactJobTitle] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [leadSource, setLeadSource] = useState<LeadSource>("outbound");
   const [leadChannel, setLeadChannel] = useState<LeadChannel | "">("");
-  const [stage, setStage] = useState<PipelineStage>(
-    phase === "sdr" ? "lead_identified" : "discovery_done"
-  );
+  const [stage, setStage] = useState<PipelineStage>("");
   const [estimatedValue, setEstimatedValue] = useState("");
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [ownerId, setOwnerId] = useState("");
@@ -91,9 +95,9 @@ export default function CreateLeadFormOS({
     setPreviousOpen(isOpen);
     if (!isOpen) setSeededOpen(false);
   }
-  if (isOpen && !seededOpen) {
+  if (isOpen && !seededOpen && catalog.isSuccess) {
     setSeededOpen(true);
-    setStage(defaultStage ?? (phase === "sdr" ? "lead_identified" : "discovery_done"));
+    setStage(defaultStage ?? availableStages[0]?.value ?? "");
     if (isOwnScoped && sessionUser) setOwnerId(sessionUser.id);
   }
 
@@ -181,12 +185,15 @@ export default function CreateLeadFormOS({
   }
 
   function handleClose() {
+    if (isLogoUploading) return;
     resetForm();
     onClose();
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (isLogoUploading) return showErrorToast("Please wait for the logo upload to finish.");
+    if (!catalog.isSuccess || !stage) return showErrorToast("Pick a pipeline stage before creating the lead.");
     if (useExistingCompany && !companyOption) return showErrorToast("Pick an existing company.");
     if (!useExistingCompany && !companyName.trim()) return showErrorToast("Company name is required.");
     if (!useExistingCompany && !contactName.trim()) return showErrorToast("Primary contact name is required.");
@@ -204,7 +211,7 @@ export default function CreateLeadFormOS({
   }
 
   return (
-    <SheetOS title={`Add ${phase.toUpperCase()} Lead`} description="Create a company-linked sales pipeline in the Java API." isOpen={isOpen} onClose={handleClose}>
+    <SheetOS title={`Add ${phase.toUpperCase()} Lead`} description="Create a sales lead linked to a company." isOpen={isOpen} onClose={handleClose}>
       <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
 
@@ -212,42 +219,40 @@ export default function CreateLeadFormOS({
             <div className="flex items-center justify-between gap-2">
               <div><p className="text-sm font-semibold text-gray-800 dark:text-zinc-200">Company</p><p className="text-xs text-gray-500">Create a company and primary contact, or use an existing company.</p></div>
               <div className="flex rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
-                <button type="button" onClick={() => setUseExistingCompany(false)} className={segmentClass(!useExistingCompany)}>New</button>
-                <button type="button" onClick={() => setUseExistingCompany(true)} className={segmentClass(useExistingCompany)}>Existing</button>
+                <button type="button" disabled={isLogoUploading || mutation.isPending} onClick={() => setUseExistingCompany(false)} className={segmentClass(!useExistingCompany)}>New</button>
+                <button type="button" disabled={isLogoUploading || mutation.isPending} onClick={() => setUseExistingCompany(true)} className={segmentClass(useExistingCompany)}>Existing</button>
               </div>
             </div>
             {useExistingCompany ? (
               <AppSearchableSelect selectId="lead-company" label="Company" required placeholder="Type to search companies..." value={companyOption} onChange={(option) => setCompanyOption(option as CompanySearchOption | null)} loadOptions={loadCompanyOptions} />
             ) : (
               <>
-                <AppInput inputId="lead-company-name" label="Company Name" required value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
+                <CompanyLogoUploadOS inputId="lead-company-logo" value={imageUrl} onChange={setImageUrl} onBusyChange={setIsLogoUploading} disabled={mutation.isPending} />
+                <AppInput inputId="lead-company-name" label="Company Name" required placeholder={COMPANY_NAME_PLACEHOLDER} value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
                 <div className="grid grid-cols-2 gap-3">
                   <AppSelect selectId="lead-source" label="Lead Source" required placeholder="Pick a source" value={leadSource} onChange={(value) => setLeadSource(value as LeadSource)} options={leadSourceOptions} />
                   <AppSelect selectId="lead-channel" label="Lead Channel" placeholder="Pick a channel" value={leadChannel} onChange={(value) => setLeadChannel((value as LeadChannel) || "")} options={leadChannelOptions} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <AppSelect selectId="lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
-                  <AppInput inputId="lead-legal-identifier" label="Legal Identifier" value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
+                  <AppInput inputId="lead-legal-identifier" label="Legal Identifier" placeholder={LEAD_FORM_PLACEHOLDERS.legalIdentifier} value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://" />
-                  <AppInput inputId="lead-company-image-url" label="Logo URL" type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://" />
-                </div>
+                <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder={COMPANY_WEBSITE_PLACEHOLDER} />
                 <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Primary contact</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <AppInput inputId="lead-contact-name" label="Full Name" required value={contactName} onChange={(event) => setContactName(event.target.value)} />
-                  <AppInput inputId="lead-contact-job-title" label="Job Title" value={contactJobTitle} onChange={(event) => setContactJobTitle(event.target.value)} />
+                  <AppInput inputId="lead-contact-name" label="Full Name" placeholder={LEAD_FORM_PLACEHOLDERS.fullName} required value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                  <AppInput inputId="lead-contact-job-title" label="Job Title" placeholder={LEAD_FORM_PLACEHOLDERS.jobTitle} value={contactJobTitle} onChange={(event) => setContactJobTitle(event.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <AppInput inputId="lead-contact-phone" label="Phone" value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
-                  <AppInput inputId="lead-contact-email" label="Email" type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
+                  <AppInput inputId="lead-contact-phone" label="Phone" placeholder={LEAD_FORM_PLACEHOLDERS.phone} value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
+                  <AppInput inputId="lead-contact-email" label="Email" placeholder={LEAD_FORM_PLACEHOLDERS.email} type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
                 </div>
               </>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <AppSelect selectId="lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={pipelineStageOptions(phase)} />
+            <AppSelect selectId="lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={availableStages} />
             <AppNumberInput inputId="lead-estimated-value" label="Estimated Value (Rp)" mode="numeric" value={estimatedValue} onValueChange={setEstimatedValue} placeholder="0" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -257,8 +262,8 @@ export default function CreateLeadFormOS({
         </div>
 
         <div className="sticky bottom-0 flex gap-3 border-t border-line-soft bg-white px-6 py-4 dark:bg-zinc-900">
-          <AppButton type="button" variant="outline" className="flex-1 justify-center" onClick={handleClose}>Cancel</AppButton>
-          <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={mutation.isPending}>{mutation.isPending && <Loader2 size={14} className="animate-spin" />}Create Lead</AppButton>
+          <AppButton type="button" variant="outline" className="flex-1 justify-center" disabled={isLogoUploading} onClick={handleClose}>Cancel</AppButton>
+          <AppButton type="submit" variant="primary" className="flex-1 justify-center" disabled={mutation.isPending || isLogoUploading}>{mutation.isPending && <Loader2 size={14} className="animate-spin" />}Create Lead</AppButton>
         </div>
       </form>
     </SheetOS>

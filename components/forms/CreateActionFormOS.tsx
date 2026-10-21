@@ -5,10 +5,10 @@ import AppInput from "@/components/fields/AppInput";
 import AppSelect, { AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
-import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import type { TaskPriority, TaskStatus } from "@/apis/tasks";
 import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
-import { createAction } from "@/lib/actions";
+import { createTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -32,7 +32,7 @@ export const priorityOptions: AppSelectOption[] = [
 interface CreateActionFormOSProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultStatus?: ActionStatus;
+  defaultStatus?: TaskStatus;
 }
 
 export default function CreateActionFormOS({
@@ -44,12 +44,12 @@ export default function CreateActionFormOS({
   const sessionUser = useSession();
   // Non-global users get "Me" from the empty pick; global users would otherwise default to Unassigned.
   const defaultAssigneeId =
-    sessionUser?.data_scope === "GLOBAL" ? sessionUser.id : "";
+    sessionUser?.data_scope === "global" ? sessionUser.id : "";
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [status, setStatus] = useState<ActionStatus>(defaultStatus);
-  const [priority, setPriority] = useState<ActionPriority>("medium");
+  const [status, setStatus] = useState<TaskStatus>(defaultStatus);
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState(defaultAssigneeId);
 
@@ -79,7 +79,7 @@ export default function CreateActionFormOS({
   const createMutation = useMutation({
     mutationFn: async () =>
       requireApiData(
-        await createAction({
+        await createTask({
           name: name.trim(),
           summary: summary.trim() || null,
           status,
@@ -89,7 +89,7 @@ export default function CreateActionFormOS({
         })
       ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["actions"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       handleClose();
     },
     onError: (cause) =>
@@ -138,7 +138,7 @@ export default function CreateActionFormOS({
               label="Status"
               placeholder="Pick a status"
               value={status}
-              onChange={(v) => setStatus(v as ActionStatus)}
+              onChange={(v) => setStatus(v as TaskStatus)}
               options={statusOptions}
             />
             <AppSelect
@@ -146,7 +146,7 @@ export default function CreateActionFormOS({
               label="Priority"
               placeholder="Pick a priority"
               value={priority}
-              onChange={(v) => setPriority(v as ActionPriority)}
+              onChange={(v) => setPriority(v as TaskPriority)}
               options={priorityOptions}
             />
           </div>

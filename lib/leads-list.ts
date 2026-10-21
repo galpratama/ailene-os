@@ -2,15 +2,16 @@ import type { ApiList } from "@/apis/api";
 import type { ListPipelinesOptions, PipelineData, PipelineWeekData, PipelineWeekOptions } from "@/apis/sales";
 import { requireApiData } from "@/lib/api-result";
 import { listPipelines, listPipelineWeeks } from "@/lib/actions";
-import { LEADS_PAGE_STAGES_BY_PHASE, pipelinePhaseOf } from "@/lib/sales";
+
 
 type PagedLeadsOptions = ListPipelinesOptions & { page: number; page_size: number };
 
 // The API filters one phase per call, so a page borrowing another phase's stage needs one call per source.
 function leadSources<T extends Pick<ListPipelinesOptions, "phase" | "stage">>(filters: T): T[] {
   if (filters.stage) return [filters];
-  const borrowed = LEADS_PAGE_STAGES_BY_PHASE[filters.phase].filter((stage) => pipelinePhaseOf(stage) !== filters.phase);
-  return [...borrowed.map((stage) => ({ ...filters, phase: pipelinePhaseOf(stage), stage })), filters];
+  return filters.phase === "bdr"
+    ? [{ ...filters, phase: "sdr", stage: "meeting_booked" }, filters]
+    : [filters];
 }
 
 // Rows [skip, skip + take) of one source, read through the API's fixed-size pages.

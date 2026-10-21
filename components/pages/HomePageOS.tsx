@@ -7,7 +7,7 @@ import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
 import { useSession } from "@/contexts/SessionContext";
 import {
-  getActionSummary,
+  getTaskSummary,
   getPipelineAnalytics,
   getPipelineHomeSummary,
   getQuotationSummary,
@@ -44,8 +44,8 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   const leads = leadSummary.data;
 
   const actionSummary = useQuery({
-    queryKey: ["actions", "summary"],
-    queryFn: async () => requireApiData(await getActionSummary()),
+    queryKey: ["tasks", "summary"],
+    queryFn: async () => requireApiData(await getTaskSummary()),
     enabled: !!sessionToken,
   });
   const tasks = actionSummary.data;

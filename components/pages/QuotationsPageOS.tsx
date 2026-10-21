@@ -34,7 +34,7 @@ export default function QuotationsPageOS({
   const queryClient = useQueryClient();
 
   const sessionUser = useSession();
-  const canReview = sessionUser?.role === "ADMINISTRATOR";
+  const canReview = sessionUser?.role === "administrator";
   const canViewMargin = canReview;
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);

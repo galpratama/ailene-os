@@ -3,24 +3,24 @@ import "server-only";
 import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
-export type UserRole = "ADMINISTRATOR" | "MEMBER";
+export type UserRole = "administrator" | "member";
 
 export type UserStatus =
-  | "INVITED"
-  | "ACTIVE"
-  | "SUSPENDED"
-  | "DEACTIVATED"
-  | "ARCHIVED";
+  | "invited"
+  | "active"
+  | "suspended"
+  | "deactivated"
+  | "archived";
 
-export type UserDataScope = "OWN" | "TEAM" | "GLOBAL";
+export type UserDataScope = "own" | "team" | "global";
 
 export type UserJobFunction =
-  | "BD"
-  | "SALES"
-  | "OPERATIONS"
-  | "CURRICULUM"
-  | "FINANCE"
-  | "IT";
+  | "bd"
+  | "sales"
+  | "operations"
+  | "curriculum"
+  | "finance"
+  | "it";
 
 export type UserEntry = {
   id: string;
@@ -75,108 +75,38 @@ export type UpdateUserPayload = {
   reason?: string;
 };
 
-// The API speaks the DB spelling (`own`), the app compares against Prisma's enum name (`OWN`) — bridged here, not at the call sites.
-type ApiEnums = {
-  role: string;
-  job_function: string | null;
-  data_scope: string;
-  status: string;
-};
-
-type ApiUserEntry = Omit<UserEntry, keyof ApiEnums> & ApiEnums;
-type ApiUserDetail = Omit<UserDetail, keyof ApiEnums> & ApiEnums;
-type ApiUserMutated = Omit<UserMutated, keyof ApiEnums> & ApiEnums;
-
-function up<T extends string>(value: string): T;
-function up<T extends string>(value: string | null): T | null;
-function up<T extends string>(value: string | null): T | null {
-  return value === null ? null : (value.toUpperCase() as T);
-}
-
-function down(value: string | null | undefined) {
-  return value === null || value === undefined ? value : value.toLowerCase();
-}
-
-function toUserEntry<T extends ApiEnums>(entry: T) {
-  return {
-    ...entry,
-    role: up<UserRole>(entry.role),
-    job_function: up<UserJobFunction>(entry.job_function),
-    data_scope: up<UserDataScope>(entry.data_scope),
-    status: up<UserStatus>(entry.status),
-  };
-}
-
 export async function listUsers(
   options: ListUsersOptions = {}
 ): Promise<ApiEnvelope<ApiList<UserEntry>>> {
-  const result = await callApi<ApiList<ApiUserEntry>>("/api/v1/users", {
+  return callApi("/api/v2/users", {
     token: await getSessionToken(),
-    body: {
-      ...options,
-      roles: options.roles?.map((role) => role.toLowerCase()),
-      status: down(options.status),
-    },
+    body: options,
   });
-
-  if (!result.data) return result as ApiEnvelope<never>;
-
-  return {
-    ...result,
-    data: {
-      list: result.data.list.map(toUserEntry),
-      metapaging: result.data.metapaging,
-    },
-  };
 }
 
-export async function getUserDetails(
-  id: string
-): Promise<ApiEnvelope<UserDetail>> {
-  const result = await callApi<ApiUserDetail>("/api/v1/users/details", {
+export async function getUserDetails(id: string): Promise<ApiEnvelope<UserDetail>> {
+  return callApi("/api/v2/users/details", {
     token: await getSessionToken(),
     body: { id },
   });
-
-  if (!result.data) return result as ApiEnvelope<never>;
-
-  return { ...result, data: toUserEntry(result.data) };
 }
 
 export async function inviteUser(
   payload: InviteUserPayload
 ): Promise<ApiEnvelope<UserMutated>> {
-  const result = await callApi<ApiUserMutated>("/api/v1/users/invite", {
+  return callApi("/api/v2/users/invite", {
     token: await getSessionToken(),
-    body: {
-      ...payload,
-      role: down(payload.role),
-      job_function: down(payload.job_function),
-      data_scope: down(payload.data_scope),
-    },
+    body: payload,
   });
-
-  if (!result.data) return result as ApiEnvelope<never>;
-
-  return { ...result, data: toUserEntry(result.data) };
 }
 
 export async function updateUser(
   payload: UpdateUserPayload
 ): Promise<ApiEnvelope<UserMutated>> {
-  const result = await callApi<ApiUserMutated>("/api/v1/users/update", {
+  return callApi("/api/v2/users/update", {
     token: await getSessionToken(),
-    body: {
-      ...payload,
-      role: down(payload.role),
-      job_function: down(payload.job_function),
-      data_scope: down(payload.data_scope),
-    },
+    body: payload,
   });
-
-  if (!result.data) return result as ApiEnvelope<never>;
-
-  return { ...result, data: toUserEntry(result.data) };
 }
 
 export async function updateUserStatus(payload: {
@@ -184,9 +114,9 @@ export async function updateUserStatus(payload: {
   status: UserStatus;
   reason?: string;
 }): Promise<ApiEnvelope<null>> {
-  return callApi("/api/v1/users/update/status", {
+  return callApi("/api/v2/users/update/status", {
     token: await getSessionToken(),
-    body: { ...payload, status: down(payload.status) },
+    body: payload,
   });
 }
 
@@ -199,7 +129,7 @@ export async function reassignOwnership(payload: {
     reassigned: { pipelines: number; actions: number; meetings: number };
   }>
 > {
-  return callApi("/api/v1/users/update/reassign-ownership", {
+  return callApi("/api/v2/users/update/reassign-ownership", {
     token: await getSessionToken(),
     body: payload,
   });

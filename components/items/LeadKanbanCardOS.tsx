@@ -62,7 +62,7 @@ export default function LeadKanbanCardOS({
       }`}
     >
       <div className="flex items-center gap-2.5 px-3.5 py-3">
-        <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-[10px] font-semibold text-gray-500 dark:bg-zinc-700 dark:text-zinc-300">
+        <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-gray-100 text-[10px] font-semibold text-gray-500 dark:bg-zinc-700 dark:text-zinc-300">
           {lead.company_image_url ? (
             <Image src={lead.company_image_url} alt={lead.company_name} width={28} height={28} className="size-full object-cover" />
           ) : (

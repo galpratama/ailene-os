@@ -1,6 +1,6 @@
 "use client";
 
-import { STAGE_CHART_COLORS } from "@/lib/stage-chart-colors";
+import { stageChartColor } from "@/lib/stage-chart-colors";
 import {
   Bar,
   BarChart,
@@ -88,7 +88,7 @@ export default function StageDistributionChartOS({
               />
               <Bar dataKey="count" maxBarSize={28}>
                 {data.map((entry) => (
-                  <Cell key={entry.stage} fill={STAGE_CHART_COLORS[entry.stage]} />
+                  <Cell key={entry.stage} fill={stageChartColor(entry.stage)} />
                 ))}
               </Bar>
             </BarChart>

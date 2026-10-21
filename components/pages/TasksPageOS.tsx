@@ -10,13 +10,14 @@ import CreateActionFormOS from "@/components/forms/CreateActionFormOS";
 import EditActionFormOS from "@/components/forms/EditActionFormOS";
 import ActionStatusLabel from "@/components/labels/ActionStatusLabel";
 import PriorityLabel from "@/components/labels/PriorityLabel";
-import type { ActionData, ActionStatus } from "@/apis/actions";
+import type { TaskData, TaskStatus } from "@/apis/tasks";
 import { useSession } from "@/contexts/SessionContext";
-import { useActionList } from "@/hooks/useActionList";
+import { useTaskList } from "@/hooks/useTaskList";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
-import { updateAction } from "@/lib/actions";
+import { updateTask } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
+import { showErrorToast } from "@/lib/toast";
 import { userSelectOption } from "@/lib/user-select-option";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,7 +31,7 @@ import {
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-const columns: { value: ActionStatus; label: string; dot: string }[] = [
+const columns: { value: TaskStatus; label: string; dot: string }[] = [
   { value: "to_do", label: "To Do", dot: "bg-lime-bright" },
   { value: "in_progress", label: "In Progress", dot: "bg-lime-bright" },
   { value: "review", label: "Review", dot: "bg-lime-bright" },
@@ -80,7 +81,7 @@ export default function TasksPageOS({
   const queryClient = useQueryClient();
 
   const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "OWN";
+  const isOwnScoped = sessionUser?.data_scope === "own";
 
   const [viewMode, setViewMode] = usePersistedViewMode<ViewModeOS>(
     "tasks_view_mode",
@@ -96,7 +97,7 @@ export default function TasksPageOS({
   const [assigneeFilter, setAssigneeFilter] = useState(
     isOwnScoped ? "" : (sessionUser?.id ?? "")
   );
-  const [createStatus, setCreateStatus] = useState<ActionStatus | null>(null);
+  const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -105,7 +106,7 @@ export default function TasksPageOS({
     return () => clearTimeout(timeout);
   }, [keyword]);
 
-  const { data, isLoading, isError } = useActionList(
+  const { data, isLoading, isError } = useTaskList(
     {
       keyword: debouncedKeyword,
       assignee_id: assigneeFilter || undefined,
@@ -121,7 +122,7 @@ export default function TasksPageOS({
 
   // Optimistic local overrides so a drag feels instant while the mutation is in flight.
   const [movedStatuses, setMovedStatuses] = useState<
-    Partial<Record<number, ActionStatus>>
+    Partial<Record<number, TaskStatus>>
   >({});
 
   const board = useMemo(
@@ -134,19 +135,19 @@ export default function TasksPageOS({
   );
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<ActionStatus | null>(
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(
     null
   );
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   // The update endpoint replaces every editable field, so the unchanged ones are sent back as-is.
-  const moveTo = async (action: ActionData, status: ActionStatus) => {
+  const moveTo = async (action: TaskData, status: TaskStatus) => {
     if (action.status === status) return;
     const prevStatus = action.status;
     setMovedStatuses((prev) => ({ ...prev, [action.id]: status }));
     try {
       requireApiData(
-        await updateAction({
+        await updateTask({
           id: action.id,
           name: action.name,
           summary: action.summary,
@@ -156,14 +157,15 @@ export default function TasksPageOS({
           assignee_id: action.assignee_id,
         })
       );
-      await queryClient.invalidateQueries({ queryKey: ["actions"] });
-    } catch {
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    } catch (error) {
       setMovedStatuses((prev) => ({ ...prev, [action.id]: prevStatus }));
+      showErrorToast(error, "Failed to update task status.");
     }
   };
 
   const handleDrop =
-    (status: ActionStatus) => (e: React.DragEvent<HTMLDivElement>) => {
+    (status: TaskStatus) => (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setDragOverStatus(null);
       const dragged = board.find((b) => b.id === draggedId);

@@ -1,5 +1,5 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { ActionPriority } from "@/apis/actions";
+import type { TaskPriority } from "@/apis/tasks";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 const priorityStyles: Record<
-  ActionPriority,
+  TaskPriority,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
   low: { variant: "gray", icon: ChevronDown, label: "Low" },
@@ -21,7 +21,7 @@ const priorityStyles: Record<
 export default function PriorityLabel({
   priority,
 }: {
-  priority: ActionPriority;
+  priority: TaskPriority;
 }) {
   const { variant, icon: Icon } = priorityStyles[priority];
 

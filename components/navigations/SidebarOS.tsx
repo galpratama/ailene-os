@@ -149,7 +149,7 @@ function UserFooter({ collapsed }: { collapsed: boolean }) {
             {user?.full_name ?? "Not signed in"}
           </p>
           <p className="truncate text-xs text-sb-text">
-            {user?.role === "ADMINISTRATOR" ? "Administrator" : "Member"}
+            {user?.role === "administrator" ? "Administrator" : "Member"}
           </p>
         </div>
       )}

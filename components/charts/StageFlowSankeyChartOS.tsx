@@ -2,29 +2,20 @@
 
 import type { SankeyNodeProps } from "recharts";
 import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
+import { stageChartColor } from "@/lib/stage-chart-colors";
+import type { PipelineStageDefinition } from "@/apis/sales";
 
 type SankeyData = {
   nodes: { name: string }[];
   links: { source: number; target: number; value: number }[];
 };
 
-// Keyed by label string, since the Sankey payload only carries node names, not the raw B2BStageEnum value.
-const STAGE_NODE_COLORS: Record<string, string> = {
-  "Lead Identified": "#9ca3af",
-  Contacted: "var(--biru)",
-  Replied: "var(--biru)",
-  "Show Interest": "var(--toska)",
-  "Meeting Booked": "var(--ungu)",
-  Negotiation: "var(--pink)",
-  "Verbal Commit": "var(--kuning)",
-  "Closed Won": "var(--hijau)",
-  "Closed Lost": "var(--merah)",
-  "On Hold": "var(--oranye)",
-};
-const STAGE_LEGEND_ORDER = Object.keys(STAGE_NODE_COLORS);
+function nodeColor(name: string, catalog: readonly PipelineStageDefinition[]) {
+  return stageChartColor(catalog.find((stage) => stage.name === name)?.code ?? "");
+}
 
-function SankeyNodeShape({ x, y, width, height, payload }: SankeyNodeProps) {
-  const color = STAGE_NODE_COLORS[payload.name] ?? "var(--claude)";
+function SankeyNodeShape({ x, y, width, height, payload, color }: SankeyNodeProps & { color: string }) {
   // Terminal nodes label on the left so the text doesn't spill past the chart edge.
   const labelOnLeft = payload.sourceLinks.length === 0;
 
@@ -54,6 +45,7 @@ export default function StageFlowSankeyChartOS({
   windowDays: number;
   isLoading: boolean;
 }) {
+  const catalog = usePipelineStages();
   // recharts' Sankey crashes (stack overflow) on cyclic/backward links, so only keep forward edges.
   const links = data.links.filter((link) => link.target > link.source);
   const hasData = links.length > 0;
@@ -91,7 +83,7 @@ export default function StageFlowSankeyChartOS({
                 nodeWidth={12}
                 margin={{ top: 8, right: 140, bottom: 8, left: 100 }}
                 link={{ stroke: "var(--claude)", strokeOpacity: 0.25 }}
-                node={SankeyNodeShape}
+                node={(props: SankeyNodeProps) => <SankeyNodeShape {...props} color={nodeColor(props.payload.name, catalog.stages)} />}
               >
                 <Tooltip
                   contentStyle={{
@@ -123,11 +115,11 @@ export default function StageFlowSankeyChartOS({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line-soft pt-3">
-            {STAGE_LEGEND_ORDER.map((label) => (
-              <div key={label} className="flex items-center gap-1.5">
+            {data.nodes.map(({ name: label }, index) => (
+              <div key={`${index}-${label}`} className="flex items-center gap-1.5">
                 <span
                   className="size-2.5 rounded-full"
-                  style={{ backgroundColor: STAGE_NODE_COLORS[label] }}
+                  style={{ backgroundColor: nodeColor(label, catalog.stages) }}
                 />
                 <span className="text-xs text-gray-500 dark:text-zinc-400">
                   {label}

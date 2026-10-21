@@ -7,10 +7,10 @@ import AppTextArea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import SheetOS from "@/components/modals/SheetOS";
 import { priorityOptions, statusOptions } from "@/components/forms/CreateActionFormOS";
-import type { ActionPriority, ActionStatus } from "@/apis/actions";
+import type { TaskPriority, TaskStatus } from "@/apis/tasks";
 import { useSession } from "@/contexts/SessionContext";
 import { useAssigneeOptions } from "@/hooks/useAssigneeOptions";
-import { deleteAction, getActionDetails, updateAction } from "@/lib/actions";
+import { deleteTask, getTaskDetails, updateTask } from "@/lib/actions";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
@@ -38,15 +38,15 @@ export default function EditActionFormOS({
 
   const [name, setName] = useState("");
   const [summary, setSummary] = useState("");
-  const [status, setStatus] = useState<ActionStatus>("to_do");
-  const [priority, setPriority] = useState<ActionPriority>("medium");
+  const [status, setStatus] = useState<TaskStatus>("to_do");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const { data: action, isLoading: isLoadingAction } = useQuery({
-    queryKey: ["actions", "details", actionId],
-    queryFn: async () => requireApiData(await getActionDetails(actionId!)),
+    queryKey: ["tasks", "details", actionId],
+    queryFn: async () => requireApiData(await getTaskDetails(actionId!)),
     enabled: isOpen && actionId != null,
   });
 
@@ -77,7 +77,7 @@ export default function EditActionFormOS({
   const updateMutation = useMutation({
     mutationFn: async (id: number) =>
       requireApiData(
-        await updateAction({
+        await updateTask({
           id,
           name: name.trim(),
           summary: summary.trim() || null,
@@ -88,7 +88,7 @@ export default function EditActionFormOS({
         })
       ),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["actions"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       handleClose();
     },
     onError: (cause) =>
@@ -96,14 +96,14 @@ export default function EditActionFormOS({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => requireApiSuccess(await deleteAction(id)),
+    mutationFn: async (id: number) => requireApiSuccess(await deleteTask(id)),
     onSuccess: (_data, id) => {
       setIsConfirmingDelete(false);
       handleClose();
       onDeleted?.();
       // Drop the deleted action's details first: refetching them 404s and React Query retries with backoff for ~7s.
-      queryClient.removeQueries({ queryKey: ["actions", "details", id], exact: true });
-      void queryClient.invalidateQueries({ queryKey: ["actions"] });
+      queryClient.removeQueries({ queryKey: ["tasks", "details", id], exact: true });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (cause) =>
       showErrorToast(cause instanceof Error ? cause.message : "Failed to delete action."),
@@ -128,7 +128,7 @@ export default function EditActionFormOS({
   const canDelete =
     !!sessionUser &&
     !!action &&
-    (sessionUser.role === "ADMINISTRATOR" || action.assignee_id === sessionUser.id);
+    (sessionUser.role === "administrator" || action.assignee_id === sessionUser.id);
 
   return [
     <SheetOS
@@ -173,7 +173,7 @@ export default function EditActionFormOS({
                 label="Status"
                 placeholder="Pick a status"
                 value={status}
-                onChange={(v) => setStatus(v as ActionStatus)}
+                onChange={(v) => setStatus(v as TaskStatus)}
                 options={statusOptions}
               />
               <AppSelect
@@ -181,7 +181,7 @@ export default function EditActionFormOS({
                 label="Priority"
                 placeholder="Pick a priority"
                 value={priority}
-                onChange={(v) => setPriority(v as ActionPriority)}
+                onChange={(v) => setPriority(v as TaskPriority)}
                 options={priorityOptions}
               />
             </div>

@@ -15,9 +15,10 @@ import LeadsWeeklyPanelOS from "@/components/pages/LeadsWeeklyPanelOS";
 import { useSession } from "@/contexts/SessionContext";
 import { usePersistedViewMode } from "@/hooks/usePersistedViewMode";
 import { useUserList } from "@/hooks/useUserList";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { getRupiahCurrency } from "@/lib/currency";
 import { listLeadsPage } from "@/lib/leads-list";
-import { LEADS_PAGE_STAGES_BY_PHASE, PIPELINE_STAGE_LABELS, pipelinePhaseOf } from "@/lib/sales";
+import { leadsPageStages, pipelineStageName, pipelinePhaseOf } from "@/lib/sales";
 import { userSelectOption } from "@/lib/user-select-option";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
@@ -61,9 +62,11 @@ export default function LeadsPageOS({
   phase: PipelinePhase;
 }) {
   const sessionUser = useSession();
-  const isOwnScoped = sessionUser?.data_scope === "OWN";
+  const stageCatalog = usePipelineStages(!!sessionToken);
+  const catalog = stageCatalog.stages;
+  const isOwnScoped = sessionUser?.data_scope === "own";
   // Set while the create sheet is open; the kanban "+" seeds it with that column's stage.
-  const [createStage, setCreateStage] = useState<PipelineStage | "default" | null>(null);
+  const [createStage, setCreateStage] = useState<{ stage?: PipelineStage } | null>(null);
   const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
   // Kanban and weekly leads are not in `pipelineList`, so they carry their own row.
   const [openedPipeline, setOpenedPipeline] = useState<PipelineData | null>(null);
@@ -92,7 +95,7 @@ export default function LeadsPageOS({
   // Shared by every view; the weekly tally reuses it without the paging keys.
   const stageFilter = (filterValues.stage || undefined) as PipelineStage | undefined;
   const baseFilters = {
-    phase: stageFilter ? pipelinePhaseOf(stageFilter) : phase,
+    phase: (stageFilter ? pipelinePhaseOf(stageFilter, catalog) : undefined) ?? phase,
     keyword: debouncedKeyword,
     stage: stageFilter,
     lead_source: (filterValues.lead_source || undefined) as LeadSource | undefined,
@@ -108,7 +111,7 @@ export default function LeadsPageOS({
   const pipelineQuery = useQuery({
     queryKey: ["sales", "pipelines", filters],
     queryFn: () => listLeadsPage(filters),
-    enabled: !!sessionToken && !isWeeklyView && !isBoardView,
+    enabled: !!sessionToken && stageCatalog.isSuccess && !isWeeklyView && !isBoardView,
   });
 
   const pipelineList = pipelineQuery.data?.list;
@@ -116,15 +119,15 @@ export default function LeadsPageOS({
   const totalPage = pipelineQuery.data?.metapaging.total_page ?? 1;
 
   // Only active people can be picked as an owner to filter by.
-  const userList = useUserList(!isOwnScoped, "ACTIVE");
+  const userList = useUserList(!isOwnScoped, "active");
   const ownerOptions: AppSelectOption[] = [
     { value: "", label: "All Owners" },
     ...userList.map(userSelectOption),
   ];
-  const phaseStages = LEADS_PAGE_STAGES_BY_PHASE[phase];
+  const phaseStages = leadsPageStages(catalog, phase);
   const stageOptions: AppSelectOption[] = [
     { value: "", label: "All Stages" },
-    ...phaseStages.map((value) => ({ value, label: PIPELINE_STAGE_LABELS[value] })),
+    ...phaseStages.map((value) => ({ value, label: pipelineStageName(value, catalog) })),
   ];
   const filterFields: FilterField[] = [
     { kind: "select", key: "stage", label: "Stage", placeholder: "All Stages", options: stageOptions },
@@ -150,7 +153,7 @@ export default function LeadsPageOS({
       <PageHeaderOS
         title={`${phaseLabel} Leads`}
         description={`Track and manage leads in the ${phaseLabel} sales phase.`}
-        action={{ label: "Add Lead", icon: Plus, onClick: () => setCreateStage("default") }}
+        action={{ label: "Add Lead", icon: Plus, onClick: () => setCreateStage({}) }}
       />
 
       <div className="flex flex-col gap-3">
@@ -176,8 +179,10 @@ export default function LeadsPageOS({
 
       {pipelineQuery.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading leads...</p>}
       {pipelineQuery.isError && <p className="py-8 text-center text-sm text-red-500">{pipelineQuery.error.message}</p>}
+      {stageCatalog.isLoading && <p className="py-8 text-center text-sm text-gray-400">Loading pipeline stages...</p>}
+      {stageCatalog.isError && <p className="py-8 text-center text-sm text-merah">{stageCatalog.error.message}</p>}
 
-      {isBoardView && (
+      {isBoardView && stageCatalog.isSuccess && (
         <LeadsKanbanBoardOS
           // A stage filter narrows the board to that one column.
           stages={baseFilters.stage ? [baseFilters.stage] : phaseStages}
@@ -186,7 +191,7 @@ export default function LeadsPageOS({
             setOpenedPipeline(lead);
             setEditingPipelineId(lead.id);
           }}
-          onAddLead={setCreateStage}
+          onAddLead={(stage) => setCreateStage({ stage })}
         />
       )}
 
@@ -239,7 +244,7 @@ export default function LeadsPageOS({
         </div>
       )}
 
-      {isWeeklyView && (
+      {isWeeklyView && stageCatalog.isSuccess && (
         <LeadsWeeklyPanelOS
           filters={baseFilters}
           onOpenLead={(lead) => {
@@ -256,8 +261,8 @@ export default function LeadsPageOS({
       <CreateLeadFormOS
         sessionToken={sessionToken}
         // A "+" on the BDR board's Meeting Booked column creates an SDR lead.
-        phase={createStage && createStage !== "default" ? pipelinePhaseOf(createStage) : phase}
-        defaultStage={createStage === "default" ? undefined : (createStage ?? undefined)}
+        phase={(createStage?.stage ? pipelinePhaseOf(createStage.stage, catalog) : undefined) ?? phase}
+        defaultStage={createStage?.stage}
         isOpen={createStage !== null}
         onClose={() => setCreateStage(null)}
       />

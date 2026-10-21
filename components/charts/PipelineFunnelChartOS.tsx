@@ -1,6 +1,6 @@
 "use client";
 
-import { STAGE_CHART_COLORS } from "@/lib/stage-chart-colors";
+import { stageChartColor } from "@/lib/stage-chart-colors";
 import {
   Cell,
   Funnel,
@@ -62,7 +62,7 @@ function FunnelTrapezoidShape(props: FunnelTrapezoidShapeProps) {
   ].join(" ");
 
   const fill = payload?.stage
-    ? STAGE_CHART_COLORS[payload.stage]
+    ? stageChartColor(payload.stage)
     : "var(--biru)";
 
   return (
@@ -151,7 +151,7 @@ export default function PipelineFunnelChartOS({
                 {data.map((entry) => (
                   <Cell
                     key={entry.stage}
-                    fill={STAGE_CHART_COLORS[entry.stage]}
+                    fill={stageChartColor(entry.stage)}
                   />
                 ))}
               </Funnel>

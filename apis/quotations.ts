@@ -137,14 +137,14 @@ async function token() {
 export async function listQuotations(
   options: ListQuotationsOptions = {}
 ): Promise<ApiEnvelope<ApiList<QuotationListItem>>> {
-  return callApi("/api/v1/quotations", {
+  return callApi("/api/v2/quotations", {
     token: await token(),
     body: options,
   });
 }
 
 export async function getQuotationSummary(): Promise<ApiEnvelope<QuotationSummary>> {
-  return callApi("/api/v1/quotations/summary", {
+  return callApi("/api/v2/quotations/summary", {
     token: await token(),
   });
 }
@@ -152,7 +152,7 @@ export async function getQuotationSummary(): Promise<ApiEnvelope<QuotationSummar
 export async function getQuotationDetails(
   id: number
 ): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/details", {
+  return callApi("/api/v2/quotations/details", {
     token: await token(),
     body: { id },
   });
@@ -161,7 +161,7 @@ export async function getQuotationDetails(
 export async function createQuotation(
   payload: CreateQuotationPayload
 ): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/create", {
+  return callApi("/api/v2/quotations/create", {
     token: await token(),
     body: payload,
   });
@@ -170,7 +170,7 @@ export async function createQuotation(
 export async function updateQuotation(
   payload: UpdateQuotationPayload
 ): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/update", {
+  return callApi("/api/v2/quotations/update", {
     token: await token(),
     body: payload,
   });
@@ -179,7 +179,7 @@ export async function updateQuotation(
 export async function submitQuotation(
   id: number
 ): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/submit", {
+  return callApi("/api/v2/quotations/submit", {
     token: await token(),
     body: { id },
   });
@@ -188,7 +188,7 @@ export async function submitQuotation(
 export async function decideQuotation(
   payload: DecideQuotationPayload
 ): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/decide", {
+  return callApi("/api/v2/quotations/decide", {
     token: await token(),
     body: payload,
   });
@@ -198,8 +198,15 @@ export async function updateQuotationOutcome(payload: {
   id: number;
   status: QuotationOutcomeStatus;
 }): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v1/quotations/update-outcome", {
+  return callApi("/api/v2/quotations/update-outcome", {
     token: await token(),
     body: payload,
+  });
+}
+
+export async function deleteQuotation(id: number): Promise<ApiEnvelope<null>> {
+  return callApi("/api/v2/quotations/delete", {
+    token: await getSessionToken(),
+    body: { id },
   });
 }

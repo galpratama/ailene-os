@@ -126,7 +126,7 @@ export const osMainNav: OSNavItem[] = [
     label: "Articles",
     icon: Newspaper,
     segment: "B2B",
-    minRoles: ["ADMINISTRATOR"],
+    minRoles: ["administrator"],
     group: "Marketing",
   },
   {
@@ -134,7 +134,7 @@ export const osMainNav: OSNavItem[] = [
     label: "Users & access",
     icon: ShieldCheck,
     segment: "B2B",
-    minRoles: ["ADMINISTRATOR"],
+    minRoles: ["administrator"],
     group: "Administrator",
   },
 ];

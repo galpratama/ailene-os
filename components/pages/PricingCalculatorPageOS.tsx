@@ -8,12 +8,12 @@ import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
 import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { useSession } from "@/contexts/SessionContext";
-import { createQuotation, submitQuotation } from "@/lib/actions";
+import { createQuotation, getPipelineDetails, submitQuotation } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { getRupiahCurrency } from "@/lib/currency";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
@@ -48,8 +48,10 @@ function Block({
 
 export default function PricingCalculatorPageOS({
   sessionToken,
+  initialPipelineId = null,
 }: {
   sessionToken: string;
+  initialPipelineId?: number | null;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -57,18 +59,19 @@ export default function PricingCalculatorPageOS({
 
   const sessionUser = useSession();
   const canViewCostDetails =
-    !!sessionUser && sessionUser.role === "ADMINISTRATOR";
+    !!sessionUser && sessionUser.role === "administrator";
 
-  // Optionally pre-linked to a lead via ?pipeline_id=.
-  const searchParams = useSearchParams();
-  const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(
-    () => {
-      const linked = searchParams.get("pipeline_id");
-      return linked ? Number(linked) : null;
-    }
-  );
+  const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(initialPipelineId);
   const [selectedPipelineOption, setSelectedPipelineOption] =
     useState<AppSearchableOption | null>(null);
+  const selectedPipeline = useQuery({
+    queryKey: ["sales", "pipeline", selectedPipelineId],
+    queryFn: async () => requireApiData(await getPipelineDetails(selectedPipelineId!)),
+    enabled: !!sessionToken && selectedPipelineId !== null,
+  });
+  const linkedPipelineOption = selectedPipeline.data
+    ? { value: selectedPipeline.data.id, label: selectedPipeline.data.company_name }
+    : null;
 
   async function loadPipelineOptions(inputValue: string, page: number) {
     const pageSize = 20;
@@ -117,6 +120,10 @@ export default function PricingCalculatorPageOS({
       showErrorToast("Pilih lead untuk menyimpan ini sebagai Quotation.");
       return;
     }
+    if (!selectedPipeline.isSuccess) {
+      showErrorToast("Lead belum berhasil dimuat. Silakan coba lagi.");
+      return;
+    }
     setIsSavingDraft(true);
     try {
       const created = await draftQuotation(selectedPipelineId);
@@ -131,6 +138,10 @@ export default function PricingCalculatorPageOS({
   async function handleSubmit() {
     if (!selectedPipelineId) {
       showErrorToast("Pilih lead untuk menyimpan ini sebagai Quotation.");
+      return;
+    }
+    if (!selectedPipeline.isSuccess) {
+      showErrorToast("Lead belum berhasil dimuat. Silakan coba lagi.");
       return;
     }
     setIsSubmittingQuotation(true);
@@ -183,24 +194,28 @@ export default function PricingCalculatorPageOS({
         description="Susun penawaran program AI per hari. Harga, biaya, dan net margin dihitung langsung."
       />
 
-      {selectedPipelineId === null && (
-        <div className="rounded-xl border border-line bg-card-bg p-4">
-          <AppSearchableSelect
-            selectId="quotation-pipeline-picker"
-            label="Pilih Lead"
-            placeholder="Ketik untuk cari lead supaya tersimpan sebagai Quotation"
-            value={selectedPipelineOption}
-            onChange={handlePipelineChange}
-            loadOptions={loadPipelineOptions}
-          />
+      <div className="rounded-xl border border-line bg-card-bg p-4">
+        <AppSearchableSelect
+          selectId="quotation-pipeline-picker"
+          label="Pilih Lead"
+          placeholder={selectedPipelineId !== null && selectedPipeline.isLoading ? "Memuat lead..." : "Ketik untuk cari lead supaya tersimpan sebagai Quotation"}
+          value={selectedPipelineOption ?? linkedPipelineOption}
+          onChange={handlePipelineChange}
+          loadOptions={loadPipelineOptions}
+          disabled={isSavingDraft || isSubmittingQuotation}
+        />
+        {selectedPipeline.isError && (
+          <p className="mt-2 text-xs text-merah">{selectedPipeline.error.message}</p>
+        )}
+        {selectedPipelineId === null && (
           <p className="mt-2 text-xs text-gray-400 dark:text-zinc-500">
             Kosongkan kalau cuma mau hitung-hitungan cepat — ringkasan tetap
             bisa disalin, tapi hasilnya tidak tersimpan, tidak masuk approval
             Manager, dan PDF-nya baru bisa diunduh setelah tersimpan sebagai
             Quotation (dari halaman Quotations).
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
         <div className="flex min-w-0 flex-col gap-4">{editorBlocks}</div>
@@ -218,7 +233,7 @@ export default function PricingCalculatorPageOS({
               type="button"
               variant="outline"
               className="flex-1 justify-center"
-              disabled={isSavingDraft || isSubmittingQuotation}
+              disabled={isSavingDraft || isSubmittingQuotation || (selectedPipelineId !== null && !selectedPipeline.isSuccess)}
               onClick={handleSaveDraft}
             >
               {isSavingDraft && <Loader2 size={14} className="animate-spin" />}
@@ -228,7 +243,7 @@ export default function PricingCalculatorPageOS({
               type="button"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={isSavingDraft || isSubmittingQuotation}
+              disabled={isSavingDraft || isSubmittingQuotation || (selectedPipelineId !== null && !selectedPipeline.isSuccess)}
               onClick={handleSubmit}
             >
               {isSubmittingQuotation && (

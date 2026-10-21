@@ -1,6 +1,6 @@
 "use client";
 
-import type { PipelineData } from "@/apis/sales";
+import type { PipelineData, PipelinePhase } from "@/apis/sales";
 import { listPipelines } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useQuery } from "@tanstack/react-query";
@@ -11,11 +11,17 @@ export function useSalesPipelineList(enabled: boolean) {
   return useQuery<PipelineData[]>({
     queryKey: ["sales", "pipelines", "all"],
     queryFn: async () => {
-      const [sdr, bdr] = await Promise.all([
-        listPipelines({ phase: "sdr", page: 1, page_size: 200 }),
-        listPipelines({ phase: "bdr", page: 1, page_size: 200 }),
-      ]);
-      return [...requireApiData(sdr).list, ...requireApiData(bdr).list];
+      const phases: PipelinePhase[] = ["sdr", "bdr"];
+      const lists = await Promise.all(phases.map(async (phase) => {
+        const first = requireApiData(await listPipelines({ phase, page: 1, page_size: 100 }));
+        const rest = await Promise.all(
+          Array.from({ length: Math.max(first.metapaging.total_page - 1, 0) }, (_, i) =>
+            listPipelines({ phase, page: i + 2, page_size: 100 }).then(requireApiData)
+          )
+        );
+        return [...first.list, ...rest.flatMap((page) => page.list)];
+      }));
+      return lists.flat();
     },
     enabled,
   });

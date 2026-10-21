@@ -1,9 +1,9 @@
 import Label, { LabelVariant } from "@/components/labels/Label";
-import type { ActionStatus } from "@/apis/actions";
+import type { TaskStatus } from "@/apis/tasks";
 import { CheckCircle2, CircleDot, Eye, ListTodo, LucideIcon } from "lucide-react";
 
 const statusStyles: Record<
-  ActionStatus,
+  TaskStatus,
   { variant: LabelVariant; icon: LucideIcon; label: string }
 > = {
   to_do: { variant: "gray", icon: ListTodo, label: "To Do" },
@@ -15,7 +15,7 @@ const statusStyles: Record<
 export default function ActionStatusLabel({
   status,
 }: {
-  status: ActionStatus;
+  status: TaskStatus;
 }) {
   const { variant, icon: Icon, label } = statusStyles[status];
 

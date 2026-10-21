@@ -2,9 +2,9 @@
 
 These are project-specific conventions. Follow them exactly — don't fall back to generic Next.js/Tailwind habits from training data where they conflict with what's written here.
 
-## Backend: the Java API (`ailene-os-api`)
+## Backend: the Go API (`ailene-os-go`)
 
-- This app has **no database access and no API of its own**. Every read and write goes to the Java API in the sibling repo `Documents/ailene-os-api` (Spring Boot, `/api/v1/*`, every route `POST`). New endpoints are built there, not here; its `AGENTS.md` and `docs/api/*.md` are the contract. The DB schema's source of truth is `ailene-os-api/docs/db/ailene-os.sql`.
+- This app has **no database access and no API of its own**. Every OS read and write goes to the Go API in the sibling repo `Documents/ailene-os-go`. Auth, users/teams, tasks, sales (companies, contacts, pipelines and pipeline stages), and quotations use `/api/v2/*`; other Go modules keep their registered `/api/v1/*` routes. Follow its `AGENTS.md`, `docs/api/*.md`, and registered routes; do not restore retired Java endpoint aliases. `callApi()` uses the required `API_BASE_URL` environment variable for every Go route, with no hardcoded fallback. The separate LMS uses `LMS_BASE_URL`. New endpoints belong in the backend, not here; its schema reference is `ailene-os-go/docs/db/`.
 - The database is a **live shared Neon Postgres instance**. Treat migrations and any destructive query as production actions: confirm with the user first, and never run a destructive command (`DROP`, `TRUNCATE`, `DELETE` without a `WHERE`, a reset) without explicit confirmation.
 - **Never commit and push directly to production branches without explicit user approval**, and don't push migration files without the user's review.
 - The call chain is always three layers, one file per domain:
@@ -12,13 +12,13 @@ These are project-specific conventions. Follow them exactly — don't fall back 
   2. `lib/actions.ts` (`"use server"`) — a thin server-action wrapper per API function, so client components can call it.
   3. Client components — `useQuery` / `useMutation` from `@tanstack/react-query` (the provider is `contexts/QueryProvider.tsx` in the OS layout `app/(os)/os/layout.tsx`, alongside `GoogleOAuthProvider`; a biz page that needs it wraps itself, see `join-trainer/page.tsx`), unwrapping responses with `requireApiData()` / `requireApiSuccess()` from `lib/api-result.ts`, and invalidating by query-key prefix (`["meetings"]`, `["trainers"]`, ...).
 - Enum values are the API's lowercase `snake_case` spellings (`manager_review`, `closed_won`). Don't reintroduce uppercase variants.
-- List endpoints cap `page_size` at 100; when a view needs every row, walk the pages (see `hooks/useActionList.ts`).
+- List endpoints cap `page_size` at 100; when a view needs every row, walk the pages (see `hooks/useTaskList.ts`).
 - Errors from user actions surface through `showErrorToast()` (`lib/toast.ts`); field-level validation stays inline under its field.
 
 ## Auth / session
 
 - Login happens on `os.*` (`/auth/login`, outside the `(protected)` route group so it renders without a session); the session token is set as an **httpOnly cookie** (`SESSION_COOKIE_NAME` from `lib/constants.ts`) on the root domain, shared across `os.*` / `biz.*`. `biz.*` only links across to it.
-- The browser never holds the token. Server actions read the cookie themselves (`getSessionToken()` in `apis/session.ts`) and send it to the Java API as a bearer token, so no client-side token bridging is needed. The protected layout resolves the user once (`getSession()`) and exposes it through `useSession()` from `contexts/SessionContext.tsx`.
+- The browser never holds the token. Server actions read the cookie themselves (`getSessionToken()` in `apis/session.ts`) and send it to the relevant API as a bearer token, so no client-side token bridging is needed. The protected layout resolves the user once (`getSession()`) and exposes it through `useSession()` from `contexts/SessionContext.tsx`.
 - Queries that depend on auth still use `enabled: !!sessionToken`, with `sessionToken` passed down from the server `page.tsx`.
 
 ## Frontend / components

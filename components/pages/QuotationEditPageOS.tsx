@@ -104,9 +104,9 @@ export default function QuotationEditPageOS({
 
   const sessionUser = useSession();
   const canViewCostDetails =
-    !!sessionUser && sessionUser.role === "ADMINISTRATOR";
+    !!sessionUser && sessionUser.role === "administrator";
   const canDecide =
-    sessionUser?.role === "ADMINISTRATOR";
+    sessionUser?.role === "administrator";
 
   const {
     data: quotation,
@@ -258,7 +258,7 @@ export default function QuotationEditPageOS({
     </div>
   );
 
-  const outcomeSentButton = quotation.status === "approved" && (
+  const outcomeSentButton = canDecide && quotation.status === "approved" && (
     <AppButton
       type="button"
       variant="primary"
@@ -269,7 +269,7 @@ export default function QuotationEditPageOS({
     </AppButton>
   );
 
-  const outcomeFinalButtons = quotation.status === "sent" && (
+  const outcomeFinalButtons = canDecide && quotation.status === "sent" && (
     <div className="flex gap-2">
       <AppButton
         type="button"

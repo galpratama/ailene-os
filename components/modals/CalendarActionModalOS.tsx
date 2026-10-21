@@ -2,21 +2,21 @@
 
 import AppButton from "@/components/buttons/AppButton";
 import PriorityLabel from "@/components/labels/PriorityLabel";
-import type { ActionData, ActionPriority, ActionStatus } from "@/apis/actions";
+import type { TaskData, TaskPriority, TaskStatus } from "@/apis/tasks";
 import { CalendarDays, UserRound, Workflow, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 
-export type CalendarActionModalEvent = ActionData;
+export type CalendarActionModalEvent = TaskData;
 
-const statusLabels: Record<ActionStatus, string> = {
+const statusLabels: Record<TaskStatus, string> = {
   to_do: "To Do",
   in_progress: "In Progress",
   review: "Review",
   done: "Done",
 };
 
-const priorityLabels: Record<ActionPriority, string> = {
+const priorityLabels: Record<TaskPriority, string> = {
   low: "Low",
   medium: "Medium",
   high: "High",

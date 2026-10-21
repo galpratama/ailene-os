@@ -6,6 +6,8 @@ import SheetOS from "@/components/modals/SheetOS";
 import { USER_ROLE_OPTIONS } from "@/lib/constants";
 import { getUserDetails, updateUser } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
+import { requireApiData } from "@/lib/api-result";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TeamEntry } from "@/apis/teams";
 import type {
   UserDataScope,
@@ -20,18 +22,18 @@ import { showErrorToast } from "@/lib/toast";
 
 const jobFunctionOptions: AppSelectOption[] = [
   { value: "", label: "No job function" },
-  { value: "BD", label: "Business Development" },
-  { value: "SALES", label: "Sales" },
-  { value: "OPERATIONS", label: "Operations" },
-  { value: "CURRICULUM", label: "Curriculum" },
-  { value: "FINANCE", label: "Finance" },
-  { value: "IT", label: "IT" },
+  { value: "bd", label: "Business Development" },
+  { value: "sales", label: "Sales" },
+  { value: "operations", label: "Operations" },
+  { value: "curriculum", label: "Curriculum" },
+  { value: "finance", label: "Finance" },
+  { value: "it", label: "IT" },
 ];
 
 const dataScopeOptions: AppSelectOption[] = [
-  { value: "OWN", label: "Own data" },
-  { value: "TEAM", label: "Team data" },
-  { value: "GLOBAL", label: "All data" },
+  { value: "own", label: "Own data" },
+  { value: "team", label: "Team data" },
+  { value: "global", label: "All data" },
 ];
 
 interface EditUserFormOSProps {
@@ -52,9 +54,9 @@ export default function EditUserFormOS({
   const [role, setRole] = useState<UserRole | "">("");
   const [teamId, setTeamId] = useState<number | null>(null);
   const [jobFunction, setJobFunction] = useState<UserJobFunction | "">("");
-  const [dataScope, setDataScope] = useState<UserDataScope>("OWN");
+  const [dataScope, setDataScope] = useState<UserDataScope>("own");
   const [user, setUser] = useState<UserEntry | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   // The sheet mounts before a row is picked, so the detail is fetched per opened user rather than up front.
   useEffect(() => {
@@ -98,27 +100,28 @@ export default function EditUserFormOS({
     onClose();
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!user) return;
-    if (!role) return showErrorToast("Access role is required.");
-
-    setIsSubmitting(true);
-    const result = await updateUser({
-      id: user.id,
-      role,
+  const updateMutation = useMutation({
+    mutationFn: async (id: string) => requireApiData(await updateUser({
+      id,
+      role: role as UserRole,
       team_id: teamId,
       job_function: jobFunction || null,
       data_scope: dataScope,
-    });
-    setIsSubmitting(false);
+    })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      router.refresh();
+      handleClose();
+    },
+    onError: (error) => showErrorToast(error, "Failed to update user."),
+  });
+  const isSubmitting = updateMutation.isPending;
 
-    if (!isSuccessStatus(result.status)) {
-      return showErrorToast(result.message ?? "Failed to update user.");
-    }
-
-    router.refresh();
-    handleClose();
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    if (!role) return showErrorToast("Access role is required.");
+    updateMutation.mutate(user.id);
   }
 
   const isReady = !!user;

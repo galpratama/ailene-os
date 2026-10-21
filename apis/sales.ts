@@ -7,19 +7,42 @@ export type LeadSource = "inbound" | "outbound";
 export type LeadChannel = "referral" | "linkedin" | "thread" | "instagram" | "facebook";
 export type PipelinePhase = "sdr" | "bdr";
 
-export type PipelineStage =
-  | "lead_identified"
-  | "triaging"
-  | "attempting"
-  | "engaged"
-  | "qualified"
-  | "scheduling_meeting"
-  | "meeting_booked"
-  | "disqualified"
-  | "discovery_done"
-  | "proposal_negotiation"
-  | "closed_won"
-  | "closed_lost";
+export type PipelineStage = string;
+
+export type PipelineStageDefinition = {
+  code: PipelineStage;
+  phase: PipelinePhase;
+  name: string;
+  sort_order: number;
+  terminal: boolean;
+  system: boolean;
+};
+
+export type PipelineStageEntry = PipelineStageDefinition & { pipeline_count: number };
+export type CreatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "phase" | "name"> & { terminal?: boolean };
+export type UpdatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "name" | "terminal">;
+
+export async function listPipelineStages(
+  options: { phase?: PipelinePhase } = {}
+): Promise<ApiEnvelope<PipelineStageEntry[]>> {
+  return callApi("/api/v2/pipeline-stages", { token: await getSessionToken(), body: options });
+}
+
+export async function createPipelineStage(payload: CreatePipelineStagePayload): Promise<ApiEnvelope<PipelineStageDefinition>> {
+  return callApi("/api/v2/pipeline-stages/create", { token: await getSessionToken(), body: payload });
+}
+
+export async function updatePipelineStage(payload: UpdatePipelineStagePayload): Promise<ApiEnvelope<PipelineStageDefinition>> {
+  return callApi("/api/v2/pipeline-stages/update", { token: await getSessionToken(), body: payload });
+}
+
+export async function reorderPipelineStages(payload: { phase: PipelinePhase; codes: PipelineStage[] }): Promise<ApiEnvelope<PipelineStageDefinition[]>> {
+  return callApi("/api/v2/pipeline-stages/reorder", { token: await getSessionToken(), body: payload });
+}
+
+export async function deletePipelineStage(payload: { code: PipelineStage; transfer_to: PipelineStage }): Promise<ApiEnvelope<{ code: PipelineStage; transfer_to: PipelineStage; transferred: number }>> {
+  return callApi("/api/v2/pipeline-stages/delete", { token: await getSessionToken(), body: payload });
+}
 
 export type CompanyData = {
   id: number;
@@ -83,6 +106,8 @@ export type PipelineStageHistoryData = {
   from_stage: PipelineStage | null;
   to_stage: PipelineStage;
   changed_by: string;
+  changed_by_name: string;
+  changed_by_avatar: string | null;
   note: string | null;
   created_at: string;
 };
@@ -193,7 +218,7 @@ async function token() {
 export async function listCompanies(
   options: ListCompaniesOptions = {}
 ): Promise<ApiEnvelope<ApiList<CompanyData>>> {
-  return callApi("/api/v1/companies", {
+  return callApi("/api/v2/companies", {
     token: await token(),
     body: options,
   });
@@ -207,7 +232,7 @@ export async function getCompanyDetails(
     pipeline: PipelineData | null;
   }>
 > {
-  return callApi("/api/v1/companies/details", {
+  return callApi("/api/v2/companies/details", {
     token: await token(),
     body: { id },
   });
@@ -216,7 +241,7 @@ export async function getCompanyDetails(
 export async function createCompany(
   company: CompanyForm
 ): Promise<ApiEnvelope<CompanyData>> {
-  return callApi("/api/v1/companies/create", {
+  return callApi("/api/v2/companies/create", {
     token: await token(),
     body: { company },
   });
@@ -226,14 +251,14 @@ export async function updateCompany(payload: {
   id: number;
   company: CompanyForm;
 }): Promise<ApiEnvelope<CompanyData>> {
-  return callApi("/api/v1/companies/update", {
+  return callApi("/api/v2/companies/update", {
     token: await token(),
     body: payload,
   });
 }
 
 export async function deleteCompany(id: number): Promise<ApiEnvelope<null>> {
-  return callApi("/api/v1/companies/delete", {
+  return callApi("/api/v2/companies/delete", {
     token: await token(),
     body: { id },
   });
@@ -243,7 +268,7 @@ export async function createContact(payload: {
   company_id: number;
   contact: ContactForm;
 }): Promise<ApiEnvelope<ContactData>> {
-  return callApi("/api/v1/contacts/create", {
+  return callApi("/api/v2/contacts/create", {
     token: await token(),
     body: payload,
   });
@@ -254,7 +279,7 @@ export async function updateContact(payload: {
   company_id: number;
   contact: ContactForm;
 }): Promise<ApiEnvelope<ContactData>> {
-  return callApi("/api/v1/contacts/update", {
+  return callApi("/api/v2/contacts/update", {
     token: await token(),
     body: payload,
   });
@@ -263,7 +288,7 @@ export async function updateContact(payload: {
 export async function listPipelines(
   options: ListPipelinesOptions
 ): Promise<ApiEnvelope<ApiList<PipelineData>>> {
-  return callApi("/api/v1/pipelines", {
+  return callApi("/api/v2/pipelines", {
     token: await token(),
     body: options,
   });
@@ -273,7 +298,7 @@ export async function listPipelines(
 export async function listPipelineWeeks(
   options: PipelineWeekOptions
 ): Promise<ApiEnvelope<ApiList<PipelineWeekData>>> {
-  return callApi("/api/v1/pipelines/weekly", {
+  return callApi("/api/v2/pipelines/weekly", {
     token: await token(),
     body: options,
   });
@@ -323,21 +348,21 @@ export type PipelineAnalytics = {
 };
 
 export async function getPipelineHomeSummary(): Promise<ApiEnvelope<PipelineHomeSummary>> {
-  return callApi("/api/v1/pipelines/home-summary", { token: await token() });
+  return callApi("/api/v2/pipelines/home-summary", { token: await token() });
 }
 
 export async function getPipelineAnalytics(): Promise<ApiEnvelope<PipelineAnalytics>> {
-  return callApi("/api/v1/pipelines/analytics", { token: await token() });
+  return callApi("/api/v2/pipelines/analytics", { token: await token() });
 }
 
 export async function getPipelineDetails(
   id: number
 ): Promise<
-  ApiEnvelope<PipelineData & {
+  ApiEnvelope<Omit<PipelineData, "company_image_url" | "primary_contact"> & {
     stage_history: PipelineStageHistoryData[];
   }>
 > {
-  return callApi("/api/v1/pipelines/details", {
+  return callApi("/api/v2/pipelines/details", {
     token: await token(),
     body: { id },
   });
@@ -346,7 +371,7 @@ export async function getPipelineDetails(
 export async function createPipeline(
   payload: CreatePipelinePayload
 ): Promise<ApiEnvelope<PipelineData>> {
-  return callApi("/api/v1/pipelines/create", {
+  return callApi("/api/v2/pipelines/create", {
     token: await token(),
     body: payload,
   });
@@ -355,7 +380,7 @@ export async function createPipeline(
 export async function updatePipeline(
   payload: UpdatePipelinePayload
 ): Promise<ApiEnvelope<PipelineData>> {
-  return callApi("/api/v1/pipelines/update", {
+  return callApi("/api/v2/pipelines/update", {
     token: await token(),
     body: payload,
   });
@@ -365,14 +390,14 @@ export async function updatePipeline(
 export async function createInboundLead(
   payload: InboundLeadPayload
 ): Promise<ApiEnvelope<InboundLeadData>> {
-  return callApi("/api/v1/pipelines/create-inbound", {
+  return callApi("/api/v2/pipelines/create-inbound", {
     token: clientSecret(),
     body: payload,
   });
 }
 
 export async function deletePipeline(id: number): Promise<ApiEnvelope<null>> {
-  return callApi("/api/v1/pipelines/delete", {
+  return callApi("/api/v2/pipelines/delete", {
     token: await token(),
     body: { id },
   });
