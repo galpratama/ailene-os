@@ -66,31 +66,12 @@ export type UpdateTaskPayload = {
   assignee_id?: string | null;
 };
 
-export type TaskBucket = {
-  total: number;
-  list: TaskData[];
-};
-
-export type TaskSummaryData = {
-  today: string;
-  my_tasks_today: number;
-  approvals: TaskBucket;
-  overdue_tasks: TaskBucket;
-  due_today_tasks: TaskBucket;
-};
-
 export async function listTasks(
   options: ListTasksOptions = {}
 ): Promise<ApiEnvelope<ApiList<TaskData>>> {
   return callApi("/api/v2/tasks", {
     token: await getSessionToken(),
     body: options,
-  });
-}
-
-export async function getTaskSummary(): Promise<ApiEnvelope<TaskSummaryData>> {
-  return callApi("/api/v2/tasks/summary", {
-    token: await getSessionToken(),
   });
 }
 

@@ -6,12 +6,7 @@ import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
 import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
 import { useSession } from "@/contexts/SessionContext";
-import {
-  getTaskSummary,
-  getPipelineAnalytics,
-  getPipelineHomeSummary,
-  getQuotationSummary,
-} from "@/lib/actions";
+import { getHomeStat } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useQuery } from "@tanstack/react-query";
 
@@ -36,32 +31,17 @@ function greeting() {
 export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   const sessionUser = useSession();
 
-  const leadSummary = useQuery({
-    queryKey: ["sales", "home-summary"],
-    queryFn: async () => requireApiData(await getPipelineHomeSummary()),
+  const stat = useQuery({
+    queryKey: ["stat"],
+    queryFn: async () => requireApiData(await getHomeStat()),
     enabled: !!sessionToken,
+    // Refresh on returning home after task, sales, quotation or ownership changes.
+    staleTime: 0,
   });
-  const leads = leadSummary.data;
-
-  const taskSummary = useQuery({
-    queryKey: ["tasks", "summary"],
-    queryFn: async () => requireApiData(await getTaskSummary()),
-    enabled: !!sessionToken,
-  });
-  const tasks = taskSummary.data;
-
-  const quotationSummary = useQuery({
-    queryKey: ["quotations", "summary"],
-    queryFn: async () => requireApiData(await getQuotationSummary()),
-    enabled: !!sessionToken,
-  });
-  const quotations = quotationSummary.data;
-
-  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
-    queryKey: ["sales", "analytics"],
-    queryFn: async () => requireApiData(await getPipelineAnalytics()),
-    enabled: !!sessionToken,
-  });
+  const tasks = stat.data?.tasks;
+  const leads = stat.data?.leads;
+  const quotations = stat.data?.quotations;
+  const analytics = stat.data?.analytics;
 
   const firstName = sessionUser?.full_name.trim().split(/\s+/)[0] ?? "";
 
@@ -91,7 +71,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-8">
-        {(leadSummary.isError || taskSummary.isError || quotationSummary.isError) && (
+        {stat.isError && (
           <div className="rounded-xl border border-merah/40 bg-merah-t px-4 py-3 text-sm text-merah">
             Dashboard data could not be loaded. Please refresh the page.
           </div>
@@ -113,9 +93,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
             quotations_pending: quotations?.list ?? [],
           }}
           staleLeadDays={leads?.stale_lead_days ?? 0}
-          isLoading={
-            leadSummary.isLoading || taskSummary.isLoading || quotationSummary.isLoading
-          }
+          isLoading={stat.isLoading}
         />
 
         {/* This week's trend + leads by stage */}
@@ -127,12 +105,12 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
               weekEnd={analytics?.meta.week_end ?? new Date()}
               trailingStart={analytics?.meta.trailing_start ?? new Date()}
               trailingEnd={analytics?.meta.trailing_end ?? new Date()}
-              isLoading={isAnalyticsLoading}
+              isLoading={stat.isLoading}
             />
           </div>
           <StageDistributionChartOS
             data={analytics?.stage_distribution ?? []}
-            isLoading={isAnalyticsLoading}
+            isLoading={stat.isLoading}
           />
         </div>
 
@@ -140,12 +118,12 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <PipelineFunnelChartOS
             data={analytics?.funnel ?? []}
-            isLoading={isAnalyticsLoading}
+            isLoading={stat.isLoading}
           />
           <StageFlowSankeyChartOS
             data={analytics?.sankey ?? { nodes: [], links: [] }}
             windowDays={analytics?.meta.sankey_window_days ?? 90}
-            isLoading={isAnalyticsLoading}
+            isLoading={stat.isLoading}
           />
         </div>
       </div>

@@ -86,11 +86,6 @@ export type QuotationDetails = Omit<QuotationListItem, "margin_pct"> & {
   approvals: QuotationApproval[];
 };
 
-export type QuotationSummary = {
-  total: number;
-  list: QuotationListItem[];
-};
-
 export type ListQuotationsOptions = {
   pipeline_id?: number;
   status?: QuotationStatus;
@@ -140,12 +135,6 @@ export async function listQuotations(
   return callApi("/api/v2/quotations", {
     token: await token(),
     body: options,
-  });
-}
-
-export async function getQuotationSummary(): Promise<ApiEnvelope<QuotationSummary>> {
-  return callApi("/api/v2/quotations/summary", {
-    token: await token(),
   });
 }
 

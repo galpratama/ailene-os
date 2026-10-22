@@ -1,10 +1,10 @@
 "use server";
 
+import { getHomeStat as getHomeStatApi } from "@/apis/stat";
 import {
   createTask as createTaskApi,
   deleteTask as deleteTaskApi,
   getTaskDetails as getTaskDetailsApi,
-  getTaskSummary as getTaskSummaryApi,
   listTasks as listTasksApi,
   updateTask as updateTaskApi,
   type CreateTaskPayload,
@@ -79,7 +79,6 @@ import {
   decideQuotation as decideQuotationApi,
   deleteQuotation as deleteQuotationApi,
   getQuotationDetails as getQuotationDetailsApi,
-  getQuotationSummary as getQuotationSummaryApi,
   listQuotations as listQuotationsApi,
   submitQuotation as submitQuotationApi,
   updateQuotation as updateQuotationApi,
@@ -177,8 +176,6 @@ import {
   deleteCompany as deleteCompanyApi,
   deletePipeline as deletePipelineApi,
   getCompanyDetails as getCompanyDetailsApi,
-  getPipelineAnalytics as getPipelineAnalyticsApi,
-  getPipelineHomeSummary as getPipelineHomeSummaryApi,
   getPipelineDetails as getPipelineDetailsApi,
   listCompanies as listCompaniesApi,
   listPipelines as listPipelinesApi,
@@ -357,14 +354,6 @@ export async function listPipelineWeeks(options: PipelineWeekOptions) {
   return listPipelineWeeksApi(options);
 }
 
-export async function getPipelineHomeSummary() {
-  return getPipelineHomeSummaryApi();
-}
-
-export async function getPipelineAnalytics() {
-  return getPipelineAnalyticsApi();
-}
-
 export async function getPipelineDetails(id: number) {
   return getPipelineDetailsApi(id);
 }
@@ -383,10 +372,6 @@ export async function deletePipeline(id: number) {
 
 export async function listTasks(options: ListTasksOptions = {}) {
   return listTasksApi(options);
-}
-
-export async function getTaskSummary() {
-  return getTaskSummaryApi();
 }
 
 export async function getTaskDetails(id: number) {
@@ -528,10 +513,6 @@ export async function markAllNotificationsRead() {
 
 export async function listQuotations(options: ListQuotationsOptions = {}) {
   return listQuotationsApi(options);
-}
-
-export async function getQuotationSummary() {
-  return getQuotationSummaryApi();
 }
 
 export async function getQuotationDetails(id: number) {
@@ -683,4 +664,8 @@ export async function createInboundLead(payload: InboundLeadPayload) {
     success: false as const,
     duplicateCompany: result.message === "A company with this name already exists.",
   };
+}
+
+export async function getHomeStat() {
+  return getHomeStatApi();
 }
