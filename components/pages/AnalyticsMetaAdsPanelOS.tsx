@@ -334,13 +334,8 @@ export default function AnalyticsMetaAdsPanelOS({
         <div className="rounded-xl border border-kuning/50 bg-kuning-t p-5 text-sm text-gray-700">
           <p className="font-bold">The Meta ad account is not connected yet.</p>
           <p className="mt-1">
-            Add <code>META_ADS_ACCOUNT_ID</code> (the account number, with or
-            without the <code>act_</code> prefix) and{" "}
-            <code>META_ADS_ACCESS_TOKEN</code> to the ailene-os-api environment,
-            redeploy it, then reload.
-            The token needs the <code>ads_read</code> permission on that account
-            — a system user token from Meta Business Settings is the one that
-            does not expire.
+            Ask your administrator to connect the Meta ad account, then reload
+            this page to view its performance.
           </p>
         </div>
       )}

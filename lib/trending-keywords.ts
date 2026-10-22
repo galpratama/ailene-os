@@ -1,12 +1,11 @@
 import type { AppSelectOption } from "@/components/fields/AppSelect";
 
-// Mirrors the fixed seeds the API queries Google Trends with; see ailene-os-api docs/api/trending-keywords.md.
+// Mirrors Seeds in ailene-os-apis/internal/trending/service/trending_service.go; see docs/api/trending.md there.
 export const TRENDING_SEED_KEYWORDS = [
   "pelatihan AI",
-  "AI training",
-  "corporate training",
-  "pelatihan karyawan",
   "AI untuk bisnis",
+  "pelatihan karyawan",
+  "corporate training",
 ] as const;
 
 export const TRENDING_SEED_OPTIONS: AppSelectOption[] = [

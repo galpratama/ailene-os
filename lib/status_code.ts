@@ -18,7 +18,7 @@ export const STATUS_CONFLICT = "CONFLICT" as const; // 409 Conflict
 
 export const STATUS_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR" as const; // 500 Internal Server Error
 
-// The `status` field every ailene-os-api response carries, success or error.
+// The `status` field every Go API response carries, success or error.
 export type StatusName =
   | typeof STATUS_OK
   | typeof STATUS_CREATED
