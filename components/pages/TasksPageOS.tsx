@@ -22,7 +22,7 @@ import { requireApiData } from "@/lib/api-result";
 import { endDateLabel, taskUpdatePayload } from "@/lib/tasks";
 import type { TaskDateRange } from "@/lib/task-calendar";
 import { showErrorToast } from "@/lib/toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   CalendarClock,
@@ -82,7 +82,7 @@ export default function TasksPageOS({
     undefined
   );
   const filters = useTaskFilters({ includeArchived: viewMode !== "kanban" });
-  const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null);
+  const [createDefaults, setCreateDefaults] = useState<{ status: TaskStatus; date?: string } | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -150,15 +150,19 @@ export default function TasksPageOS({
     }
   };
 
-  async function resizeDates(task: TaskData, range: TaskDateRange) {
-    const current = requireApiData(await getTaskDetails(task.id));
-    if (current.start_date !== task.start_date || current.end_date !== task.end_date) {
+  const dateMutation = useMutation({
+    mutationFn: async ({ task, range }: { task: TaskData; range: TaskDateRange }) => {
+      const current = requireApiData(await getTaskDetails(task.id));
+      if (current.start_date !== task.start_date || current.end_date !== task.end_date) {
+        await queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        throw new Error("Task dates changed while you were updating them. Please try again.");
+      }
+      requireApiData(await updateTask(taskUpdatePayload(current, { start_date: range.start, end_date: range.end })));
+    },
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      throw new Error("Task dates changed while you were resizing. Please try again.");
-    }
-    requireApiData(await updateTask(taskUpdatePayload(current, { start_date: range.start, end_date: range.end })));
-    await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-  }
+    },
+  });
 
   const handleDrop =
     (status: TaskStatus) => (e: React.DragEvent<HTMLDivElement>) => {
@@ -177,7 +181,7 @@ export default function TasksPageOS({
         action={{
           label: "Create New Task",
           icon: Plus,
-          onClick: () => setCreateStatus("to_do"),
+          onClick: () => setCreateDefaults({ status: "to_do" }),
         }}
       />
 
@@ -291,7 +295,7 @@ export default function TasksPageOS({
                   variant="secondary"
                   size="sm"
                   className="shrink-0 w-full justify-start"
-                  onClick={() => setCreateStatus(col.value)}
+                  onClick={() => setCreateDefaults({ status: col.value })}
                 >
                   <Plus size={13} />
                   Add task
@@ -303,7 +307,13 @@ export default function TasksPageOS({
       )}
 
       {!isError && viewMode === "calendar" && (
-        <TaskCalendarOS tasks={board} isLoading={isLoading} onOpen={setEditingTaskId} onResize={resizeDates} />
+        <TaskCalendarOS
+          tasks={board}
+          isLoading={isLoading}
+          onOpen={setEditingTaskId}
+          onCreate={(date) => setCreateDefaults({ status: "to_do", date })}
+          onDateChange={(task, range) => dateMutation.mutateAsync({ task, range })}
+        />
       )}
 
       {!isError && viewMode === "table" && (
@@ -322,9 +332,10 @@ export default function TasksPageOS({
       />
 
       <CreateTaskFormOS
-        isOpen={createStatus !== null}
-        defaultStatus={createStatus ?? "to_do"}
-        onClose={() => setCreateStatus(null)}
+        isOpen={createDefaults !== null}
+        defaultStatus={createDefaults?.status ?? "to_do"}
+        defaultDate={createDefaults?.date}
+        onClose={() => setCreateDefaults(null)}
       />
     </div>
   );

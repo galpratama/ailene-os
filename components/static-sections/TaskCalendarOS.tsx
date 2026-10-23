@@ -5,6 +5,7 @@ import AppButton from "@/components/buttons/AppButton";
 import TaskCalendarCardOS from "@/components/items/TaskCalendarCardOS";
 import {
   addCalendarDays,
+  moveTaskDateRange,
   resizeTaskDateRange,
   shiftCalendarMonth,
   taskCalendarDays,
@@ -15,18 +16,21 @@ import {
 } from "@/lib/task-calendar";
 import { todayDateKey } from "@/lib/tasks";
 import { showErrorToast } from "@/lib/toast";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
-type RangePreview = TaskDateRange & { taskId: number; layoutTasks?: TaskData[] };
-type ResizeGesture = {
+type RangePreview = TaskDateRange & { taskId: number; layoutTasks?: TaskData[]; moving?: boolean };
+type DateGesture = {
   task: TaskData;
   tasks: TaskData[];
-  edge: "start" | "end";
+  mode: "start" | "end" | "move";
+  anchor: string;
+  startX: number;
+  startY: number;
+  active: boolean;
   original: TaskDateRange;
   preview: TaskDateRange;
   pointerId: number;
-  weeks: { start: string; left: number; top: number; bottom: number; width: number }[];
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -35,18 +39,22 @@ export default function TaskCalendarOS({
   tasks,
   isLoading,
   onOpen,
-  onResize,
+  onCreate,
+  onDateChange,
 }: {
   tasks: TaskData[];
   isLoading: boolean;
   onOpen: (id: number) => void;
-  onResize: (task: TaskData, range: TaskDateRange) => Promise<void>;
+  onCreate: (date: string) => void;
+  onDateChange: (task: TaskData, range: TaskDateRange) => Promise<void>;
 }) {
   const [month, setMonth] = useState(() => todayDateKey().slice(0, 7));
   const [preview, setPreview] = useState<RangePreview | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
-  const gestureRef = useRef<ResizeGesture | null>(null);
+  const gestureRef = useRef<DateGesture | null>(null);
+  const suppressClickRef = useRef(false);
   const savingRef = useRef(false);
   const today = todayDateKey();
   const days = taskCalendarDays(month);
@@ -65,7 +73,7 @@ export default function TaskCalendarOS({
     setIsSaving(true);
     setPreview({ taskId: task.id, ...range });
     try {
-      await onResize(task, range);
+      await onDateChange(task, range);
     } catch (error) {
       showErrorToast(error, "Failed to update task dates.");
     } finally {
@@ -75,44 +83,73 @@ export default function TaskCalendarOS({
     }
   }
 
-  function startResize(event: PointerEvent<HTMLButtonElement>, task: TaskData, edge: "start" | "end") {
-    if (event.button !== 0 || savingRef.current || gestureRef.current) return;
+  function dateAtPointer(x: number, y: number, clamp = false) {
+    const rows = Array.from(calendarRef.current?.querySelectorAll<HTMLElement>("[data-calendar-week]") ?? []);
+    const weeks = rows.map((row) => ({ start: row.dataset.calendarWeek!, rect: row.getBoundingClientRect() }));
+    const week = weeks.find(({ rect }) => y >= rect.top && y < rect.bottom)
+      ?? (clamp ? (y < weeks[0]?.rect.top ? weeks[0] : weeks[weeks.length - 1]) : undefined);
+    if (!week || (!clamp && (x < week.rect.left || x >= week.rect.right))) return null;
+    const column = Math.max(0, Math.min(6, Math.floor((x - week.rect.left) / (week.rect.width / 7))));
+    return addCalendarDays(week.start, column);
+  }
+
+  function startGesture(event: PointerEvent<HTMLButtonElement>, task: TaskData, mode: DateGesture["mode"]) {
+    if (event.button !== 0 || !event.isPrimary || savingRef.current || gestureRef.current) return;
     const original = taskDateRange(task);
     const calendar = calendarRef.current;
-    if (!original || !calendar) return;
+    const anchor = dateAtPointer(event.clientX, event.clientY);
+    if (!original || !calendar || !anchor) return;
     event.preventDefault();
     event.stopPropagation();
-    const rects = Array.from(calendar.querySelectorAll<HTMLElement>("[data-calendar-week]")).map((row) => {
-      const rect = row.getBoundingClientRect();
-      return { start: row.dataset.calendarWeek!, left: rect.left, top: rect.top, bottom: rect.bottom, width: rect.width };
-    });
-    gestureRef.current = { task, tasks, edge, original, preview: original, pointerId: event.pointerId, weeks: rects };
-    setPreview({ taskId: task.id, ...original, layoutTasks: tasks });
+    gestureRef.current = {
+      task, tasks, mode, anchor, original, preview: original, pointerId: event.pointerId,
+      startX: event.clientX, startY: event.clientY, active: mode !== "move",
+    };
+    suppressClickRef.current = true;
+    if (mode !== "move") setPreview({ taskId: task.id, ...original, layoutTasks: tasks });
     calendar.focus({ preventScroll: true });
     calendar.setPointerCapture(event.pointerId);
   }
 
-  function moveResize(event: PointerEvent<HTMLDivElement>) {
+  function moveGesture(event: PointerEvent<HTMLDivElement>) {
     const gesture = gestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
-    const week = gesture.weeks.find((row) => event.clientY < row.bottom) ?? gesture.weeks[gesture.weeks.length - 1];
-    if (!week) return;
-    const column = Math.max(0, Math.min(6, Math.floor((event.clientX - week.left) / (week.width / 7))));
-    const range = resizeTaskDateRange(gesture.original, gesture.edge, addCalendarDays(week.start, column));
+    if (!gesture.active) {
+      if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) < 5) return;
+      gesture.active = true;
+    }
+    const date = dateAtPointer(event.clientX, event.clientY, gesture.mode !== "move");
+    if (!date) return;
+    const range = gesture.mode === "move"
+      ? moveTaskDateRange(gesture.original, gesture.anchor, date)
+      : resizeTaskDateRange(gesture.original, gesture.mode, date);
     gesture.preview = range;
-    setPreview({ taskId: gesture.task.id, ...range, layoutTasks: gesture.tasks });
+    setPreview({ taskId: gesture.task.id, ...range, layoutTasks: gesture.tasks, moving: gesture.mode === "move" });
   }
 
-  function endResize(event: PointerEvent<HTMLDivElement>, cancel: boolean) {
+  function endGesture(event: PointerEvent<HTMLDivElement>, cancel: boolean) {
     const gesture = gestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
+    if (!cancel && gesture.active) moveGesture(event);
+    const outside = gesture.mode === "move" && !dateAtPointer(event.clientX, event.clientY);
     gestureRef.current = null;
     if (calendarRef.current?.hasPointerCapture(event.pointerId)) calendarRef.current.releasePointerCapture(event.pointerId);
-    if (!cancel && (gesture.original.start !== gesture.preview.start || gesture.original.end !== gesture.preview.end)) {
+    if (!cancel && !outside && (gesture.original.start !== gesture.preview.start || gesture.original.end !== gesture.preview.end)) {
       void saveRange(gesture.task, gesture.preview);
     } else {
       setPreview(null);
+      if (!cancel && !outside && !gesture.active && gesture.mode === "move") onOpen(gesture.task.id);
     }
+  }
+
+  function moveWithKey(event: KeyboardEvent<HTMLButtonElement>, task: TaskData) {
+    const offsets: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+    if (!event.shiftKey || !offsets[event.key]) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const original = taskDateRange(task);
+    if (!original || savingRef.current || gestureRef.current || event.repeat) return;
+    void saveRange(task, moveTaskDateRange(original, original.start, addCalendarDays(original.start, offsets[event.key])));
   }
 
   function resizeWithKey(event: KeyboardEvent<HTMLButtonElement>, task: TaskData, edge: "start" | "end") {
@@ -120,12 +157,12 @@ export default function TaskCalendarOS({
     event.preventDefault();
     event.stopPropagation();
     const original = taskDateRange(task);
-    if (!original || savingRef.current || event.repeat) return;
+    if (!original || savingRef.current || gestureRef.current || event.repeat) return;
     const range = resizeTaskDateRange(original, edge, addCalendarDays(original[edge], event.key === "ArrowLeft" ? -1 : 1));
     if (range.start !== original.start || range.end !== original.end) void saveRange(task, range);
   }
 
-  function cancelResize() {
+  function cancelGesture() {
     const gesture = gestureRef.current;
     if (!gesture) return;
     gestureRef.current = null;
@@ -144,17 +181,29 @@ export default function TaskCalendarOS({
           <AppButton type="button" variant="outline" size="icon" aria-label="Next month" disabled={!!preview} onClick={() => setMonth(shiftCalendarMonth(month, 1))}><ChevronRight size={15} /></AppButton>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" onScroll={cancelGesture}>
         <div
           ref={calendarRef}
           tabIndex={-1}
-          className={`min-w-280 outline-none ${preview && !isSaving ? "select-none cursor-ew-resize" : ""}`}
-          onPointerMove={moveResize}
-          onPointerUp={(event) => endResize(event, false)}
-          onPointerCancel={(event) => endResize(event, true)}
-          onLostPointerCapture={cancelResize}
-          onKeyDown={(event) => { if (event.key === "Escape") cancelResize(); }}
-          onScrollCapture={cancelResize}
+          className={`min-w-280 outline-none ${preview && !isSaving ? `select-none ${preview.moving ? "cursor-grabbing" : "cursor-ew-resize"}` : ""}`}
+          onPointerDownCapture={() => { suppressClickRef.current = false; }}
+          onClickCapture={(event) => {
+            if (event.detail > 0 && suppressClickRef.current) {
+              event.preventDefault();
+              event.stopPropagation();
+              suppressClickRef.current = false;
+            }
+          }}
+          onPointerMove={(event) => {
+            moveGesture(event);
+            if (!gestureRef.current) setHoveredDate(dateAtPointer(event.clientX, event.clientY));
+          }}
+          onPointerLeave={() => setHoveredDate(null)}
+          onPointerUp={(event) => endGesture(event, false)}
+          onPointerCancel={(event) => endGesture(event, true)}
+          onLostPointerCapture={cancelGesture}
+          onKeyDown={(event) => { if (event.key === "Escape") cancelGesture(); }}
+          onScrollCapture={cancelGesture}
         >
           <div className="grid grid-cols-7 border-b border-line-soft">
             {WEEKDAYS.map((day) => <div key={day} className="py-2 text-center text-xs font-medium text-gray-400 dark:text-zinc-500">{day}</div>)}
@@ -164,7 +213,7 @@ export default function TaskCalendarOS({
               ? taskCalendarPreviewSegments(layoutTasks, week[0], preview)
               : taskCalendarSegments(shownTasks, week[0]);
             const originalSegments = taskCalendarSegments(layoutTasks, week[0]);
-            // Reserve one extra lane so row geometry stays still during a resize.
+            // Reserve one extra lane so row geometry stays still during a date gesture.
             const lanes = Math.max(1, ...originalSegments.map((segment) => segment.lane + 1));
             const height = Math.max(164, 40 + (lanes + 1) * 70);
             return (
@@ -172,7 +221,21 @@ export default function TaskCalendarOS({
                 <div className="absolute inset-0 grid grid-cols-7">
                   {week.map((day, index) => (
                     <div key={day} className={`min-w-0 border-r border-line-soft px-2 py-1.5 last:border-r-0 ${day.slice(0, 7) !== month || index === 0 || index === 6 ? "bg-dashboard-bg/50" : ""}`}>
-                      <time dateTime={day} className={`ml-auto flex size-6 items-center justify-center rounded-full text-xs ${day === today ? "bg-claude font-semibold text-white" : "text-gray-500 dark:text-zinc-400"}`} aria-current={day === today ? "date" : undefined}>{Number(day.slice(-2))}</time>
+                      <div className="relative z-10 flex items-center justify-between">
+                        <AppButton
+                          type="button"
+                          variant="outline"
+                          size="iconSm"
+                          aria-label={`Create task on ${day}`}
+                          title="Create task"
+                          disabled={!!preview}
+                          className={`transition-opacity ${preview ? "invisible" : hoveredDate === day ? "opacity-100" : "opacity-0 focus-visible:opacity-100"}`}
+                          onClick={() => onCreate(day)}
+                        >
+                          <Plus size={14} />
+                        </AppButton>
+                        <time dateTime={day} className={`flex size-6 items-center justify-center rounded-full text-xs ${day === today ? "bg-claude font-semibold text-white" : "text-gray-500 dark:text-zinc-400"}`} aria-current={day === today ? "date" : undefined}>{Number(day.slice(-2))}</time>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -182,8 +245,11 @@ export default function TaskCalendarOS({
                       key={segment.task.id}
                       segment={segment}
                       disabled={isSaving}
+                      isMoving={preview?.taskId === segment.task.id && !!preview.moving}
                       onOpen={() => { if (!gestureRef.current) onOpen(segment.task.id); }}
-                      onResizeStart={(event, edge) => startResize(event, segment.task, edge)}
+                      onMoveStart={(event) => startGesture(event, segment.task, "move")}
+                      onMoveKey={(event) => moveWithKey(event, segment.task)}
+                      onResizeStart={(event, edge) => startGesture(event, segment.task, edge)}
                       onResizeKey={(event, edge) => resizeWithKey(event, segment.task, edge)}
                     />
                   ))}

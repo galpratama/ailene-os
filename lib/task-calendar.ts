@@ -35,6 +35,11 @@ export function resizeTaskDateRange(range: TaskDateRange, edge: "start" | "end",
     : { start: range.start, end: date < range.start ? range.start : date };
 }
 
+export function moveTaskDateRange(range: TaskDateRange, from: string, to: string): TaskDateRange {
+  const days = calendarDayDistance(from, to);
+  return { start: addCalendarDays(range.start, days), end: addCalendarDays(range.end, days) };
+}
+
 export function taskCalendarDays(month: string) {
   const first = `${month}-01`;
   const date = new Date(`${first}T00:00:00Z`);
@@ -76,7 +81,7 @@ export function taskCalendarSegments(tasks: TaskData[], weekStart: string): Task
   });
 }
 
-// Keep every existing lane fixed while a card is resized; repack only after the drop.
+// Keep every existing lane fixed during a date gesture; repack only after the drop.
 export function taskCalendarPreviewSegments(
   tasks: TaskData[],
   weekStart: string,
@@ -85,10 +90,15 @@ export function taskCalendarPreviewSegments(
   const baseline = taskCalendarSegments(tasks, weekStart);
   const task = tasks.find((entry) => entry.id === preview.taskId);
   if (!task) return baseline;
-  const resized = taskCalendarSegments([{ ...task, start_date: preview.start, end_date: preview.end }], weekStart)[0];
+  const moved = taskCalendarSegments([{ ...task, start_date: preview.start, end_date: preview.end }], weekStart)[0];
   const others = baseline.filter((segment) => segment.task.id !== preview.taskId);
-  if (!resized) return others;
-  resized.lane = baseline.find((segment) => segment.task.id === preview.taskId)?.lane
-    ?? Math.max(-1, ...baseline.map((segment) => segment.lane)) + 1;
-  return [...others, resized];
+  if (!moved) return others;
+  const preferredLane = baseline.find((segment) => segment.task.id === preview.taskId)?.lane ?? 0;
+  const overlaps = (segment: TaskCalendarSegment) => segment.column < moved.column + moved.span
+    && moved.column < segment.column + segment.span;
+  // Use the reserved lane if moving across another card would cover it.
+  moved.lane = others.some((segment) => segment.lane === preferredLane && overlaps(segment))
+    ? Math.max(-1, ...baseline.map((segment) => segment.lane)) + 1
+    : preferredLane;
+  return [...others, moved];
 }

@@ -41,12 +41,14 @@ interface CreateTaskFormOSProps {
   isOpen: boolean;
   onClose: () => void;
   defaultStatus?: TaskStatus;
+  defaultDate?: string;
 }
 
 export default function CreateTaskFormOS({
   isOpen,
   onClose,
   defaultStatus = "to_do",
+  defaultDate,
 }: CreateTaskFormOSProps) {
   const queryClient = useQueryClient();
   const sessionUser = useSession();
@@ -64,13 +66,14 @@ export default function CreateTaskFormOS({
 
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  // Each open starts on today, so a sheet left mounted overnight never offers yesterday.
+  // Calendar creation uses the selected day; other entry points use today's date on each open.
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
       setStatus(defaultStatus);
-      setStartDate(todayDateKey());
-      setEndDate(todayDateKey());
+      const date = defaultDate ?? todayDateKey();
+      setStartDate(date);
+      setEndDate(date);
     }
   }
 
