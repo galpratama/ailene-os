@@ -79,6 +79,15 @@ async function callLmsAdmin<T>(path: string, body?: unknown) {
   });
 }
 
+// Modules already ported to the Go LMS API live under `/api/v2/<resource>` and take the same identity token.
+async function callLmsV2<T>(path: string, body?: unknown) {
+  return callApi<T>(`/api/v2/${path}`, {
+    baseUrl: lmsBaseUrl(),
+    token: await getSessionToken(),
+    body,
+  });
+}
+
 export async function listLmsProjects(): Promise<
   ApiEnvelope<LmsProjectEntry[]>
 > {
@@ -117,26 +126,33 @@ export async function listLmsMembers(payload: {
   project_id: string;
   group_id?: number | null;
 }): Promise<ApiEnvelope<LmsMemberEntry[]>> {
-  return callLmsAdmin("users", payload);
+  return callLmsV2("users", payload);
+}
+
+export async function getLmsMember(payload: {
+  project_id: string;
+  access_id: string;
+}): Promise<ApiEnvelope<LmsMemberEntry>> {
+  return callLmsV2("users/details", payload);
 }
 
 export async function inviteLmsMember(
   payload: InviteLmsMemberPayload,
 ): Promise<ApiEnvelope<LmsInviteResult>> {
-  return callLmsAdmin("users/invite", payload);
+  return callLmsV2("users/create", payload);
 }
 
 export async function updateLmsMember(
   payload: UpdateLmsMemberPayload,
 ): Promise<ApiEnvelope<LmsMemberEntry>> {
-  return callLmsAdmin("users/update", payload);
+  return callLmsV2("users/update", payload);
 }
 
 export async function deleteLmsMember(payload: {
   project_id: string;
   access_id: string;
 }): Promise<ApiEnvelope<{ deleted: boolean }>> {
-  return callLmsAdmin("users/delete", payload);
+  return callLmsV2("users/delete", payload);
 }
 
 export type LmsContentKind =

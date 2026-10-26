@@ -60,6 +60,7 @@ import {
   createLmsGroup as createLmsGroupApi,
   deleteLmsGroup as deleteLmsGroupApi,
   deleteLmsMember as deleteLmsMemberApi,
+  getLmsMember as getLmsMemberApi,
   inviteLmsMember as inviteLmsMemberApi,
   updateLmsGroup as updateLmsGroupApi,
   updateLmsMember as updateLmsMemberApi,
@@ -613,6 +614,13 @@ export async function deleteLmsGroup(payload: {
   group_id: number;
 }) {
   return deleteLmsGroupApi(payload);
+}
+
+export async function getLmsMember(payload: {
+  project_id: string;
+  access_id: string;
+}) {
+  return getLmsMemberApi(payload);
 }
 
 export async function inviteLmsMember(payload: InviteLmsMemberPayload) {
