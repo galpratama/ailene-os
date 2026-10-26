@@ -97,14 +97,14 @@ export async function listLmsProjects(): Promise<
 export async function listLmsGroups(
   projectId: string,
 ): Promise<ApiEnvelope<LmsGroupEntry[]>> {
-  return callLmsAdmin("groups", { project_id: projectId });
+  return callLmsV2("groups", { project_id: projectId });
 }
 
 export async function createLmsGroup(payload: {
   project_id: string;
   name: string;
 }): Promise<ApiEnvelope<LmsGroupEntry>> {
-  return callLmsAdmin("groups/create", payload);
+  return callLmsV2("groups/create", payload);
 }
 
 export async function updateLmsGroup(payload: {
@@ -112,14 +112,14 @@ export async function updateLmsGroup(payload: {
   group_id: number;
   name: string;
 }): Promise<ApiEnvelope<LmsGroupEntry>> {
-  return callLmsAdmin("groups/update", payload);
+  return callLmsV2("groups/update", payload);
 }
 
 export async function deleteLmsGroup(payload: {
   project_id: string;
   group_id: number;
 }): Promise<ApiEnvelope<{ deleted: boolean }>> {
-  return callLmsAdmin("groups/delete", payload);
+  return callLmsV2("groups/delete", payload);
 }
 
 export async function listLmsMembers(payload: {
