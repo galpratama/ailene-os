@@ -68,6 +68,12 @@ interface LabelProps {
   className?: string;
 }
 
+// Shared with compact cells that must match label colors without being pills.
+export function labelVariantClassName(variant: LabelVariant) {
+  const { text, border, bg } = variantStyles[variant];
+  return `${text} ${border} ${bg}`;
+}
+
 export default function Label({ variant, children, className }: LabelProps) {
   const { text, border, bg } = variantStyles[variant];
 

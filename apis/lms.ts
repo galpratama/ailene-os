@@ -173,6 +173,36 @@ export async function listLmsMembers(payload: {
   return callLmsV2("users", payload);
 }
 
+export type LmsMemberTestResult = {
+  test_id: number;
+  submitted: boolean;
+  submitted_at: string | null;
+  score: number | null;
+};
+export type LmsSessionMetric = {
+  session_id: number;
+  chapter_id: number;
+  chapter_name: string;
+  session_date: string;
+  pre_test: LmsMemberTestResult | null;
+  post_test: LmsMemberTestResult | null;
+};
+export type LmsMemberMetricsEntry = LmsMemberEntry & {
+  pre_assessment: {
+    status: LmsPaStatus;
+    submitted_at: string | null;
+    scored_at: string | null;
+  };
+  sessions: LmsSessionMetric[];
+};
+
+export async function listLmsMemberMetrics(payload: {
+  project_id: string;
+  group_id?: number | null;
+}): Promise<ApiEnvelope<LmsMemberMetricsEntry[]>> {
+  return callLmsV2("users/metrics", payload);
+}
+
 export async function getLmsMember(payload: {
   project_id: string;
   access_id: string;

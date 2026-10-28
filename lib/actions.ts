@@ -67,6 +67,7 @@ import {
   deleteLmsGroup as deleteLmsGroupApi,
   deleteLmsMember as deleteLmsMemberApi,
   getLmsMember as getLmsMemberApi,
+  listLmsMemberMetrics as listLmsMemberMetricsApi,
   inviteLmsMember as inviteLmsMemberApi,
   updateLmsGroup as updateLmsGroupApi,
   updateLmsMember as updateLmsMemberApi,
@@ -590,6 +591,10 @@ export async function createLmsGroup(payload: {
   name: string;
 }) {
   return createLmsGroupApi(payload);
+}
+
+export async function listLmsMemberMetrics(payload: { project_id: string; group_id?: number | null }) {
+  return listLmsMemberMetricsApi(payload);
 }
 
 export async function listLmsProjects() {
