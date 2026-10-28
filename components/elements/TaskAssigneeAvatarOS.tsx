@@ -2,8 +2,9 @@ import { initialsOf } from "@/lib/tasks";
 import Image from "next/image";
 
 const sizeStyles = {
-  sm: { className: "size-5.5", pixels: 22 },
-  md: { className: "size-6", pixels: 24 },
+  sm: { className: "size-5.5 text-[10px]", pixels: 22 },
+  md: { className: "size-6 text-[10px]", pixels: 24 },
+  lg: { className: "size-10 text-xs", pixels: 40 },
 };
 
 export default function TaskAssigneeAvatarOS({
@@ -19,7 +20,7 @@ export default function TaskAssigneeAvatarOS({
 
   return (
     <div
-      className={`flex ${className} shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-700 text-[10px] font-semibold text-gray-500 dark:text-zinc-300`}
+      className={`flex ${className} shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 font-semibold text-gray-500 dark:bg-zinc-700 dark:text-zinc-300`}
     >
       {avatar ? (
         <Image

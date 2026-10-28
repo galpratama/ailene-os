@@ -38,11 +38,13 @@ export default function LmsCurriculumOS({
   sessionToken,
   groups,
   onDirtyChange,
+  initialChapterId = null,
 }: {
   projectId: string;
   sessionToken: string;
   groups: LmsGroupEntry[];
   onDirtyChange: (dirty: boolean) => void;
+  initialChapterId?: number | null;
 }) {
   const client = useQueryClient();
   const query = useQuery({
@@ -51,7 +53,7 @@ export default function LmsCurriculumOS({
     enabled: !!sessionToken,
     refetchOnWindowFocus: false,
   });
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(initialChapterId);
   const [view, setView] = useState<LmsCurriculumView>("overview");
   const [keyword, setKeyword] = useState("");
   const [chapterSheet, setChapterSheet] = useState<{
@@ -88,7 +90,10 @@ export default function LmsCurriculumOS({
   const selected =
     chapters.find((chapter) => chapter.id === selectedId) ?? chapters[0];
   async function refresh() {
-    await client.invalidateQueries({ queryKey: ["lms-curriculum", projectId] });
+    await Promise.all([
+      client.invalidateQueries({ queryKey: ["lms-curriculum", projectId] }),
+      client.invalidateQueries({ queryKey: ["lms-chapter-sessions", projectId] }),
+    ]);
     setRevision((value) => value + 1);
   }
   const deletion = useMutation({

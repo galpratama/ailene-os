@@ -1,8 +1,7 @@
-import { listLmsGroups, listLmsMembers, listLmsProjects } from "@/apis/lms";
+import { getLmsProject, listLmsGroups, listLmsMembers } from "@/apis/lms";
 import { getSessionToken } from "@/apis/session";
 import LmsAdminProjectDetailOS from "@/components/pages/LmsAdminProjectDetailOS";
-import { isLmsInsightSection } from "@/lib/lms-insights";
-import { isSuccessStatus } from "@/lib/status_code";
+import { isSuccessStatus, STATUS_NOT_FOUND } from "@/lib/status_code";
 import { notFound } from "next/navigation";
 
 export default async function Page({
@@ -10,26 +9,24 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ project_id: string }>;
-  searchParams: Promise<{ tab?: string; group?: string; insight?: string }>;
+  searchParams: Promise<{ view?: string; chapter?: string }>;
 }) {
   const { project_id: projectId } = await params;
-  const { tab, group, insight } = await searchParams;
-  const groupId = Number(group) || null;
+  const { view, chapter } = await searchParams;
+  const chapterId = Number(chapter);
   const sessionToken = (await getSessionToken()) ?? "";
 
-  // There's no single-project endpoint; the list is small and carries the name we need.
-  const [projects, groups, members] = await Promise.all([
-    listLmsProjects(),
+  const [project, groups, members] = await Promise.all([
+    getLmsProject(projectId),
     listLmsGroups(projectId),
-    listLmsMembers({ project_id: projectId, group_id: groupId }),
+    listLmsMembers({ project_id: projectId }),
   ]);
 
-  const project = projects.data?.find((entry) => entry.id === projectId);
-  if (isSuccessStatus(projects.status) && !project) {
+  if (project.status === STATUS_NOT_FOUND) {
     notFound();
   }
 
-  const failed = [projects, groups, members].find(
+  const failed = [project, groups, members].find(
     (result) => !isSuccessStatus(result.status),
   );
 
@@ -37,17 +34,11 @@ export default async function Page({
     <LmsAdminProjectDetailOS
       projectId={projectId}
       sessionToken={sessionToken}
-      projectName={project?.name ?? "LMS project"}
-      companyName={project?.company_name ?? null}
+      project={project.data ?? null}
       groups={groups.data ?? []}
       members={members.data ?? []}
-      initialTab={
-        tab === "groups" || tab === "members" || tab === "content"
-          ? tab
-          : "insights"
-      }
-      initialInsight={isLmsInsightSection(insight) ? insight : "pre_assessment"}
-      initialGroup={groupId}
+      initialView={view === "content" ? "content" : "overview"}
+      initialChapterId={Number.isSafeInteger(chapterId) && chapterId > 0 ? chapterId : null}
       loadError={failed ? (failed.message ?? "Failed to load project.") : null}
     />
   );

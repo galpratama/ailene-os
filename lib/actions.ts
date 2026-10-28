@@ -41,7 +41,13 @@ import {
 } from "@/apis/analytics";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
+  createLmsProject as createLmsProjectApi,
+  deleteLmsProject as deleteLmsProjectApi,
+  getLmsProject as getLmsProjectApi,
+  listLmsProjects as listLmsProjectsApi,
+  updateLmsProject as updateLmsProjectApi,
   getLmsCurriculum as getLmsCurriculumApi,
+  listLmsChapterSessions as listLmsChapterSessionsApi,
   createLmsChapter as createLmsChapterApi,
   updateLmsChapter as updateLmsChapterApi,
   deleteLmsChapter as deleteLmsChapterApi,
@@ -72,6 +78,8 @@ import {
   getLmsTestInsights as getLmsTestInsightsApi,
   getLmsQuizInsights as getLmsQuizInsightsApi,
   type LmsInsightsFilter,
+  type CreateLmsProjectPayload,
+  type UpdateLmsProjectPayload,
   type UpdateLmsMemberPayload,
 } from "@/apis/lms";
 import { listIndustries as listIndustriesApi, type ListIndustriesOptions } from "@/apis/lookup";
@@ -584,7 +592,28 @@ export async function createLmsGroup(payload: {
   return createLmsGroupApi(payload);
 }
 
+export async function listLmsProjects() {
+  return listLmsProjectsApi();
+}
+
+export async function getLmsProject(projectId: string) {
+  return getLmsProjectApi(projectId);
+}
+
+export async function createLmsProject(payload: CreateLmsProjectPayload) {
+  return createLmsProjectApi(payload);
+}
+
+export async function updateLmsProject(payload: UpdateLmsProjectPayload) {
+  return updateLmsProjectApi(payload);
+}
+
+export async function deleteLmsProject(payload: { project_id: string }) {
+  return deleteLmsProjectApi(payload);
+}
+
 export async function getLmsCurriculum(projectId: string) { return getLmsCurriculumApi(projectId); }
+export async function listLmsChapterSessions(projectId: string) { return listLmsChapterSessionsApi(projectId); }
 export async function getLmsInsightsOverview(filter: LmsInsightsFilter) { return getLmsInsightsOverviewApi(filter); }
 export async function getLmsPreAssessmentInsights(filter: LmsInsightsFilter) { return getLmsPreAssessmentInsightsApi(filter); }
 export async function getLmsGuidedInsights(filter: LmsInsightsFilter) { return getLmsGuidedInsightsApi(filter); }

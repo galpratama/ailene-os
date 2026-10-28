@@ -8,9 +8,29 @@ export type LmsMemberRole = "champion" | "student" | "sponsor";
 export type LmsProjectEntry = {
   id: string;
   name: string;
-  company_name: string;
+  attendee_pax: number | null;
+  company_name: string | null;
+  company_image_url: string | null;
+  company_slug: string | null;
   group_count: number;
   member_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateLmsProjectPayload = {
+  name: string;
+  attendee_pax?: number | null;
+  company_name?: string | null;
+  company_image_url?: string | null;
+};
+
+export type UpdateLmsProjectPayload = {
+  project_id: string;
+  name?: string;
+  attendee_pax?: number | null;
+  company_name?: string | null;
+  company_image_url?: string | null;
 };
 
 export type LmsGroupEntry = {
@@ -91,7 +111,31 @@ async function callLmsV2<T>(path: string, body?: unknown) {
 export async function listLmsProjects(): Promise<
   ApiEnvelope<LmsProjectEntry[]>
 > {
-  return callLmsAdmin("projects");
+  return callLmsV2("projects");
+}
+
+export async function getLmsProject(
+  projectId: string,
+): Promise<ApiEnvelope<LmsProjectEntry>> {
+  return callLmsV2("projects/details", { project_id: projectId });
+}
+
+export async function createLmsProject(
+  payload: CreateLmsProjectPayload,
+): Promise<ApiEnvelope<LmsProjectEntry>> {
+  return callLmsV2("projects/create", payload);
+}
+
+export async function updateLmsProject(
+  payload: UpdateLmsProjectPayload,
+): Promise<ApiEnvelope<LmsProjectEntry>> {
+  return callLmsV2("projects/update", payload);
+}
+
+export async function deleteLmsProject(payload: {
+  project_id: string;
+}): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  return callLmsV2("projects/delete", payload);
 }
 
 export async function listLmsGroups(
@@ -207,10 +251,20 @@ export type LmsChapter = {
   sessions: LmsSchedule[];
   contents: LmsContent[];
 };
+export type LmsChapterSessionsEntry = Omit<LmsChapter, "contents"> & {
+  level_name: string;
+  created_at: string;
+  updated_at: string;
+};
 export type LmsCurriculum = {
   levels: { id: number; name: string }[];
   chapters: LmsChapter[];
 };
+export async function listLmsChapterSessions(
+  projectId: string,
+): Promise<ApiEnvelope<LmsChapterSessionsEntry[]>> {
+  return callLmsV2("chapters/sessions", { project_id: projectId });
+}
 export type LmsChapterRef = { project_id: string; chapter_id: number };
 export type LmsChapterPayload = {
   project_id: string;
@@ -249,18 +303,18 @@ export async function deleteLmsChapter(
 }
 export async function createLmsSchedule(
   payload: LmsSchedulePayload,
-): Promise<ApiEnvelope<{ id: number }>> {
-  return callLmsAdmin("curriculum/schedules/create", payload);
+): Promise<ApiEnvelope<LmsSchedule>> {
+  return callLmsV2("chapters/sessions/create", payload);
 }
 export async function updateLmsSchedule(
   payload: LmsSchedulePayload & { session_id: number },
-): Promise<ApiEnvelope<{ id: number }>> {
-  return callLmsAdmin("curriculum/schedules/update", payload);
+): Promise<ApiEnvelope<LmsSchedule>> {
+  return callLmsV2("chapters/sessions/update", payload);
 }
 export async function deleteLmsSchedule(
   payload: LmsScheduleRef,
 ): Promise<ApiEnvelope<{ deleted: boolean }>> {
-  return callLmsAdmin("curriculum/schedules/delete", payload);
+  return callLmsV2("chapters/sessions/delete", payload);
 }
 export async function createLmsContent(
   payload: LmsContentPayload,

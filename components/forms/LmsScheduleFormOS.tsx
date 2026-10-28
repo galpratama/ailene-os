@@ -20,13 +20,15 @@ import { useState } from "react";
 export default function LmsScheduleFormOS({
   projectId,
   chapterId,
+  chapters = [],
   groups,
   schedule,
   onClose,
   onSaved,
 }: {
   projectId: string;
-  chapterId: number;
+  chapterId: number | null;
+  chapters?: { id: number; name: string }[];
   groups: LmsGroupEntry[];
   schedule: LmsSchedule | null;
   onClose: () => void;
@@ -34,7 +36,7 @@ export default function LmsScheduleFormOS({
 }) {
   const [values, setValues] = useState<LmsSchedulePayload>({
     project_id: projectId,
-    chapter_id: chapterId,
+    chapter_id: chapterId ?? 0,
     only_group_id: schedule?.only_group_id ?? null,
     session_date: schedule?.session_date ?? "",
     duration_minutes: schedule?.duration_minutes ?? 90,
@@ -52,6 +54,7 @@ export default function LmsScheduleFormOS({
           .slice(0, 16)
       : "",
   );
+  const [chapterError, setChapterError] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -73,7 +76,7 @@ export default function LmsScheduleFormOS({
   return (
     <SheetOS
       isOpen
-      title={schedule ? "Edit schedule" : "Add schedule"}
+      title={schedule ? "Edit session" : "Add session"}
       description="Set when and which groups attend this session."
       onClose={() => !mutation.isPending && onClose()}
     >
@@ -81,6 +84,10 @@ export default function LmsScheduleFormOS({
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!values.chapter_id) {
+            setChapterError("Choose a chapter.");
+            return;
+          }
           mutation.mutate();
         }}
       >
@@ -88,6 +95,28 @@ export default function LmsScheduleFormOS({
           disabled={mutation.isPending}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
+          {chapterId === null && (
+            <div>
+              <AppSelect
+                selectId="lms-schedule-chapter"
+                label="Chapter"
+                placeholder="Select chapter"
+                required
+                value={values.chapter_id || null}
+                options={chapters.map((chapter) => ({
+                  value: chapter.id,
+                  label: chapter.name,
+                }))}
+                onChange={(value) => {
+                  setChapterError(null);
+                  setValues({ ...values, chapter_id: Number(value) || 0 });
+                }}
+              />
+              {chapterError && (
+                <p className="mt-1.5 text-xs text-merah">{chapterError}</p>
+              )}
+            </div>
+          )}
           <AppSelect
             selectId="lms-schedule-group"
             label="Audience"
@@ -226,7 +255,7 @@ export default function LmsScheduleFormOS({
             {mutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
-            Save schedule
+            Save session
           </AppButton>
         </div>
       </form>
