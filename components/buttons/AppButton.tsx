@@ -31,8 +31,10 @@ export type AppButtonVariant =
   | "lime"
   | "forest"
   | "outlineDark"
-  | "discord";
-export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg";
+  | "discord"
+  | "choiceBiz"
+  | "choiceBizActive";
+export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg" | "choice" | "rating";
 
 interface AppButtonBaseProps {
   children: ReactNode;
@@ -91,6 +93,9 @@ const variantClasses: Record<AppButtonVariant, string> = {
   outlineDark:
     "border border-white/30 text-white hover:border-white hover:bg-white/10",
   discord: "bg-white text-[#5865F2] hover:bg-white/90",
+  // Answer options in a BIZ questionnaire (trilogy survey).
+  choiceBiz: "border border-ink-line bg-white text-ink hover:border-ink/40",
+  choiceBizActive: "border border-biz-forest bg-biz-lime/20 text-ink ring-1 ring-biz-forest",
 };
 
 const sizeClasses: Record<AppButtonSize, string> = {
@@ -112,6 +117,8 @@ const sizeClasses: Record<AppButtonSize, string> = {
   cta: "justify-center px-6 py-3.5 gap-1.5 text-[15px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
   // Hero-only step above cta.
   lg: "h-15 justify-center px-9 gap-2 text-[17px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
+  choice: "min-h-13 w-full justify-start gap-3 rounded-xl px-4 py-3.5 text-left text-[15px] leading-snug font-medium transition-colors",
+  rating: "h-13 w-full justify-center rounded-xl text-base font-semibold tabular-nums transition-colors",
 };
 
 export default function AppButton({

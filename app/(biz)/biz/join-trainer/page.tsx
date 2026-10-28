@@ -26,7 +26,7 @@ export default function Page() {
   return (
     <>
       <JsonLd graph={trainerPageGraph()} />
-      {/* The only biz page using react-query, so it brings its own provider instead of every biz page loading one. */}
+      {/* Few biz pages use react-query, so each brings its own provider instead of every biz page loading one. */}
       <QueryProvider>
         <TrainerApplicationPageBIZ />
       </QueryProvider>

@@ -206,6 +206,10 @@ import {
   type PipelineWeekOptions,
   type UpdatePipelinePayload,
 } from "@/apis/sales";
+import {
+  submitTrilogySurvey as submitTrilogySurveyApi,
+  type TrilogySurveyPayload,
+} from "@/apis/trilogy-survey";
 
 // The session JWT stays in the httpOnly cookie — the client only learns whether to navigate.
 export async function loginWithGoogle(accessToken: string) {
@@ -710,4 +714,8 @@ export async function createInboundLead(payload: InboundLeadPayload) {
 
 export async function getHomeStat() {
   return getHomeStatApi();
+}
+
+export async function submitTrilogySurvey(payload: TrilogySurveyPayload) {
+  return submitTrilogySurveyApi(payload);
 }
