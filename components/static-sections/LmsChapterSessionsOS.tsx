@@ -3,24 +3,30 @@
 import type {
   LmsChapterSessionsEntry,
   LmsGroupEntry,
+  LmsChapterSession,
   LmsSchedule,
 } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
 import LmsScheduleFormOS from "@/components/forms/LmsScheduleFormOS";
+import Label from "@/components/labels/Label";
 import LmsContentStatusLabel from "@/components/labels/LmsContentStatusLabel";
+import LmsSessionMethodLabel from "@/components/labels/LmsSessionMethodLabel";
 import { getLmsCurriculum, listLmsChapterSessions } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   CalendarDays,
-  ChevronRight,
+  Clock3,
+  FileText,
   LockKeyhole,
   MapPin,
   MoreHorizontal,
   Pencil,
   Plus,
+  Star,
+  Users,
   Video,
 } from "lucide-react";
 import Link from "next/link";
@@ -36,6 +42,13 @@ const PLACEHOLDER_COACH = {
   avatar: "/biz/photos/trainer-galih.webp",
 };
 
+type SessionTiming = "completed" | "live" | "upcoming";
+
+function sessionTiming(start: Date, end: Date, now: number): SessionTiming {
+  if (end.getTime() <= now) return "completed";
+  return start.getTime() <= now ? "live" : "upcoming";
+}
+
 function datePart(value: Date, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("en-GB", {
     ...options,
@@ -43,21 +56,19 @@ function datePart(value: Date, options: Intl.DateTimeFormatOptions) {
   }).format(value);
 }
 
-function CoachChip({ className }: { className?: string }) {
+function CoachChip() {
   return (
-    <div className={`items-center gap-2.5 ${className ?? ""}`}>
+    <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs">
       <TaskAssigneeAvatarOS
         name={PLACEHOLDER_COACH.name}
         avatar={PLACEHOLDER_COACH.avatar}
-        size="base"
+        size="sm"
       />
-      <div className="min-w-0 leading-tight">
-        <p className="truncate text-xs font-medium text-gray-800 dark:text-zinc-200">
-          {PLACEHOLDER_COACH.name}
-        </p>
-        <p className="text-[11px] text-gray-500 dark:text-zinc-400">Coach</p>
-      </div>
-    </div>
+      <span className="truncate font-medium text-gray-800 dark:text-zinc-200">
+        {PLACEHOLDER_COACH.name}
+      </span>
+      <span className="shrink-0 text-gray-500 dark:text-zinc-400">· Coach</span>
+    </p>
   );
 }
 
@@ -130,13 +141,67 @@ function SessionMenu({
   );
 }
 
+function SessionDateTile({ start, timing }: { start: Date; timing: SessionTiming }) {
+  return (
+    <div className="flex w-16 shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-card-bg">
+      <div
+        className={`flex flex-col items-center leading-none ${
+          timing === "upcoming" ? "py-2" : "pb-1.5 pt-1.5"
+        }`}
+      >
+        <span className="text-[11px] font-semibold uppercase text-claude dark:text-lime-bright">
+          {datePart(start, { month: "short" })}
+        </span>
+        <span className="font-heading text-xl leading-6 tabular-nums text-gray-900 dark:text-zinc-100">
+          {datePart(start, { day: "numeric" })}
+        </span>
+        <span className="text-[11px] text-gray-500 dark:text-zinc-400">
+          {datePart(start, { weekday: "short" })}
+        </span>
+      </div>
+      {timing === "completed" && (
+        <span className="bg-lime-bright py-0.5 text-center text-[11px] font-semibold uppercase tracking-wide text-forest-deep">
+          Done
+        </span>
+      )}
+      {timing === "live" && (
+        <span className="flex items-center justify-center gap-1 bg-kuning py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-900">
+          <span className="size-1.5 animate-pulse rounded-full bg-current" />
+          Live
+        </span>
+      )}
+    </div>
+  );
+}
+
+function SessionRating({ schedule }: { schedule: LmsChapterSession }) {
+  // The deployed API may predate feedback fields, so treat a missing value like null.
+  const rating = schedule.feedback_average ?? null;
+  if (rating === null) return null;
+
+  return (
+    <p
+      title={`Average of ${schedule.feedback_count} ${schedule.feedback_count === 1 ? "survey" : "surveys"}`}
+      className="flex shrink-0 items-center gap-1 self-start rounded-full border border-line bg-card-bg px-2 py-0.5 text-xs text-gray-500 dark:text-zinc-400"
+    >
+      Rating:
+      <Star size={13} className="fill-oranye text-oranye" />
+      <span className="font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
+        {rating.toFixed(1)}
+      </span>
+    </p>
+  );
+}
+
 function ChapterSchedule({
   schedule,
   groups,
+  now,
   onUpdate,
 }: {
-  schedule: LmsSchedule;
+  schedule: LmsChapterSession;
   groups: LmsGroupEntry[];
+  now: number;
   onUpdate: () => void;
 }) {
   const groupName =
@@ -149,34 +214,45 @@ function ChapterSchedule({
   const time = (value: Date) =>
     datePart(value, { hour: "2-digit", minute: "2-digit" });
   const MethodIcon = schedule.method === "online" ? Video : MapPin;
-  const location = schedule.location_name || "Location not set";
 
   return (
-    <li className="flex items-center gap-4 rounded-xl border border-line bg-gray-50 p-4 dark:bg-zinc-800/50">
-      <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-lg border border-line bg-card-bg leading-none">
-        <span className="text-[10px] font-semibold uppercase text-claude dark:text-lime-bright">
-          {datePart(start, { month: "short" })}
-        </span>
-        <span className="font-heading text-lg leading-5 tabular-nums text-gray-900 dark:text-zinc-100">
-          {datePart(start, { day: "numeric" })}
-        </span>
-        <span className="text-[10px] text-gray-500 dark:text-zinc-400">
-          {datePart(start, { weekday: "short" })}
-        </span>
-      </div>
+    <li className="flex items-start gap-3.5 rounded-xl border border-line bg-gray-50 p-3 dark:bg-zinc-800/50">
+      <SessionDateTile start={start} timing={sessionTiming(start, end, now)} />
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
-          {time(start)} – {time(end)}
-          <span className="ml-1.5 font-normal text-gray-500 dark:text-zinc-400">
-            WIB · {schedule.duration_minutes} min
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[15px] font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
+            {time(start)} – {time(end)}
+            <span className="ml-1.5 text-sm font-normal text-gray-500 dark:text-zinc-400">
+              WIB
+            </span>
+          </p>
+          <Label variant="gray" className="tabular-nums">
+            <Clock3 size={12} /> {schedule.duration_minutes} min
+          </Label>
+          {schedule.is_locked && (
+            <span
+              role="img"
+              aria-label="Locked"
+              title="Locked for participants"
+              className="flex size-5 items-center justify-center rounded-full bg-merah text-white"
+            >
+              <LockKeyhole size={11} strokeWidth={2.5} />
+            </span>
+          )}
+          {schedule.status !== "active" && (
+            <LmsContentStatusLabel status={schedule.status} />
+          )}
+        </div>
+        <CoachChip />
+        <div className="my-2.5 border-t border-dashed border-line" />
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <LmsSessionMethodLabel method={schedule.method} />
+          <span className="flex min-w-0 max-w-48 items-center gap-1.5 text-xs text-gray-600 dark:text-zinc-300">
+            <Users size={13} className="shrink-0" />
+            <span className="truncate">{groupName}</span>
           </span>
-        </p>
-        <p className="mt-0.5 truncate text-sm text-gray-600 dark:text-zinc-300">
-          {groupName}
-        </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 dark:text-zinc-400">
-          <span className="flex min-w-0 items-center gap-1.5">
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-gray-600 dark:text-zinc-300">
             <MethodIcon size={13} className="shrink-0" />
             {schedule.location_url ? (
               <a
@@ -185,25 +261,16 @@ function ChapterSchedule({
                 rel="noopener noreferrer"
                 className="pointer-events-auto truncate hover:text-claude hover:underline"
               >
-                {location}
+                {schedule.location_name || schedule.location_url}
               </a>
             ) : (
-              <span className="truncate">{location}</span>
+              <span className="truncate">{schedule.location_name || "Location not set"}</span>
             )}
           </span>
-          {schedule.is_locked && (
-            <span className="flex items-center gap-1">
-              <LockKeyhole size={12} /> Locked
-            </span>
-          )}
-          {schedule.status !== "active" && (
-            <LmsContentStatusLabel status={schedule.status} />
-          )}
         </div>
-        <CoachChip className="mt-2.5 flex sm:hidden" />
       </div>
 
-      <CoachChip className="hidden w-40 shrink-0 sm:flex" />
+      <SessionRating schedule={schedule} />
       <SessionMenu label={`${groupName} session`} onUpdate={onUpdate} />
     </li>
   );
@@ -214,12 +281,14 @@ function ChapterRow({
   chapter,
   levelNumber,
   groups,
+  now,
   onUpdate,
 }: {
   projectId: string;
   chapter: LmsChapterSessionsEntry;
   levelNumber: number;
   groups: LmsGroupEntry[];
+  now: number;
   onUpdate: (sheet: SessionSheet) => void;
 }) {
   const schedules = [...chapter.sessions].sort(
@@ -229,13 +298,13 @@ function ChapterRow({
 
   return (
     // The whole card links to the chapter; content sits above with pointer events off, except its own controls.
-    <article className="group relative px-5 py-5 transition-colors hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 sm:px-6">
+    <article className="relative px-5 py-5 transition-colors hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 sm:px-6">
       <Link
         href={`/lms/${projectId}/chapters/${chapter.id}`}
         aria-label={`Open chapter ${chapter.name}`}
         className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-claude"
       />
-      <div className="pointer-events-none relative flex items-start justify-between gap-3">
+      <div className="pointer-events-none relative flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs text-gray-500 dark:text-zinc-400">
             Level {levelNumber}
@@ -254,20 +323,24 @@ function ChapterRow({
             </p>
           )}
         </div>
-        <ChevronRight
-          size={18}
-          aria-hidden
-          className="mt-3 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-600 dark:text-zinc-500 dark:group-hover:text-zinc-300"
-        />
+        <AppButton
+          variant="black"
+          size="sm"
+          className="pointer-events-auto shrink-0"
+          href={`/lms/${projectId}/chapters/${chapter.id}`}
+        >
+          <FileText size={13} /> Manage content
+        </AppButton>
       </div>
 
       {schedules.length ? (
-        <ul className="pointer-events-none relative mt-3 flex flex-col gap-2.5">
+        <ul className="pointer-events-none relative mt-4 flex flex-col gap-3">
           {schedules.map((schedule) => (
             <ChapterSchedule
               key={schedule.id}
               schedule={schedule}
               groups={groups}
+              now={now}
               onUpdate={() => onUpdate({ chapterId: chapter.id, schedule })}
             />
           ))}
@@ -364,6 +437,7 @@ export default function LmsChapterSessionsOS({
               chapter={chapter}
               levelNumber={levelNumber(chapter.level_id)}
               groups={groups}
+              now={query.dataUpdatedAt}
               onUpdate={setSheet}
             />
           ))}

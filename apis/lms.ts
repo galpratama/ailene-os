@@ -286,8 +286,13 @@ export type LmsChapterEntry = Omit<LmsChapter, "sessions" | "contents"> & {
   created_at: string;
   updated_at: string;
 };
+// feedback_average averages the session's chapter-survey ratings; null until a survey exists.
+export type LmsChapterSession = LmsSchedule & {
+  feedback_count: number;
+  feedback_average: number | null;
+};
 export type LmsChapterSessionsEntry = LmsChapterEntry & {
-  sessions: LmsSchedule[];
+  sessions: LmsChapterSession[];
 };
 export type LmsCurriculum = {
   levels: { id: number; name: string }[];
