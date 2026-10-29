@@ -281,10 +281,13 @@ export type LmsChapter = {
   sessions: LmsSchedule[];
   contents: LmsContent[];
 };
-export type LmsChapterSessionsEntry = Omit<LmsChapter, "contents"> & {
+export type LmsChapterEntry = Omit<LmsChapter, "sessions" | "contents"> & {
   level_name: string;
   created_at: string;
   updated_at: string;
+};
+export type LmsChapterSessionsEntry = LmsChapterEntry & {
+  sessions: LmsSchedule[];
 };
 export type LmsCurriculum = {
   levels: { id: number; name: string }[];
@@ -296,6 +299,11 @@ export async function listLmsChapterSessions(
   return callLmsV2("chapters/sessions", { project_id: projectId });
 }
 export type LmsChapterRef = { project_id: string; chapter_id: number };
+export async function getLmsChapter(
+  payload: LmsChapterRef,
+): Promise<ApiEnvelope<LmsChapterEntry>> {
+  return callLmsV2("chapters/details", payload);
+}
 export type LmsChapterPayload = {
   project_id: string;
   chapter_id?: number;
@@ -307,8 +315,18 @@ export type LmsChapterPayload = {
 export type LmsContentRef = LmsChapterRef & { kind: LmsContentKind };
 export type LmsContentPayload = LmsContentRef &
   Omit<LmsContent, "id" | "has_progress">;
-export type LmsSchedulePayload = LmsChapterRef &
-  Omit<LmsSchedule, "id"> & { session_id?: number };
+type LmsScheduleFields = Omit<LmsSchedule, "id">;
+export type LmsSchedulePayload = LmsChapterRef & LmsScheduleFields;
+export type LmsNewChapterPayload = Omit<
+  LmsChapterPayload,
+  "project_id" | "chapter_id"
+>;
+export type CreateLmsSchedulePayload = { project_id: string } &
+  LmsScheduleFields &
+  (
+    | { chapter_id: number; new_chapter?: never }
+    | { chapter_id?: never; new_chapter: LmsNewChapterPayload }
+  );
 export type LmsScheduleRef = LmsChapterRef & { session_id: number };
 
 export async function getLmsCurriculum(
@@ -332,7 +350,7 @@ export async function deleteLmsChapter(
   return callLmsAdmin("curriculum/chapters/delete", payload);
 }
 export async function createLmsSchedule(
-  payload: LmsSchedulePayload,
+  payload: CreateLmsSchedulePayload,
 ): Promise<ApiEnvelope<LmsSchedule>> {
   return callLmsV2("chapters/sessions/create", payload);
 }

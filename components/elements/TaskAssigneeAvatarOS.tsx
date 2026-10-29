@@ -4,6 +4,7 @@ import Image from "next/image";
 const sizeStyles = {
   sm: { className: "size-5.5 text-[10px]", pixels: 22 },
   md: { className: "size-6 text-[10px]", pixels: 24 },
+  base: { className: "size-8 text-[11px]", pixels: 32 },
   lg: { className: "size-10 text-xs", pixels: 40 },
 };
 

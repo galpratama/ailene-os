@@ -59,6 +59,7 @@ import {
   deleteLmsContent as deleteLmsContentApi,
   type LmsChapterPayload,
   type LmsChapterRef,
+  type CreateLmsSchedulePayload,
   type LmsSchedulePayload,
   type LmsScheduleRef,
   type LmsContentPayload,
@@ -632,7 +633,7 @@ export async function getLmsQuizInsights(filter: LmsInsightsFilter) { return get
 export async function createLmsChapter(payload: LmsChapterPayload) { return createLmsChapterApi(payload); }
 export async function updateLmsChapter(payload: LmsChapterPayload & { chapter_id: number }) { return updateLmsChapterApi(payload); }
 export async function deleteLmsChapter(payload: LmsChapterRef) { return deleteLmsChapterApi(payload); }
-export async function createLmsSchedule(payload: LmsSchedulePayload) { return createLmsScheduleApi(payload); }
+export async function createLmsSchedule(payload: CreateLmsSchedulePayload) { return createLmsScheduleApi(payload); }
 export async function updateLmsSchedule(payload: LmsSchedulePayload & { session_id: number }) { return updateLmsScheduleApi(payload); }
 export async function deleteLmsSchedule(payload: LmsScheduleRef) { return deleteLmsScheduleApi(payload); }
 export async function createLmsContent(payload: LmsContentPayload) { return createLmsContentApi(payload); }
