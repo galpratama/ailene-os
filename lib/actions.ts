@@ -46,24 +46,25 @@ import {
   getLmsProject as getLmsProjectApi,
   listLmsProjects as listLmsProjectsApi,
   updateLmsProject as updateLmsProjectApi,
-  getLmsCurriculum as getLmsCurriculumApi,
+  listLmsLevels as listLmsLevelsApi,
   listLmsChapterSessions as listLmsChapterSessionsApi,
-  createLmsChapter as createLmsChapterApi,
   updateLmsChapter as updateLmsChapterApi,
   deleteLmsChapter as deleteLmsChapterApi,
   createLmsSchedule as createLmsScheduleApi,
   updateLmsSchedule as updateLmsScheduleApi,
   deleteLmsSchedule as deleteLmsScheduleApi,
-  createLmsContent as createLmsContentApi,
-  updateLmsContent as updateLmsContentApi,
-  deleteLmsContent as deleteLmsContentApi,
+  listLmsChapterContents as listLmsChapterContentsApi,
+  saveLmsChapterContent as saveLmsChapterContentApi,
+  deleteLmsChapterContent as deleteLmsChapterContentApi,
+  getLmsChapterAnalytics as getLmsChapterAnalyticsApi,
+  type LmsContentKind,
+  type LmsContentTarget,
   type LmsChapterPayload,
   type LmsChapterRef,
   type CreateLmsSchedulePayload,
   type LmsSchedulePayload,
   type LmsScheduleRef,
   type LmsContentPayload,
-  type LmsContentRef,
   createLmsGroup as createLmsGroupApi,
   deleteLmsGroup as deleteLmsGroupApi,
   deleteLmsMember as deleteLmsMemberApi,
@@ -622,7 +623,7 @@ export async function deleteLmsProject(payload: { project_id: string }) {
   return deleteLmsProjectApi(payload);
 }
 
-export async function getLmsCurriculum(projectId: string) { return getLmsCurriculumApi(projectId); }
+export async function listLmsLevels() { return listLmsLevelsApi(); }
 export async function listLmsChapterSessions(projectId: string) { return listLmsChapterSessionsApi(projectId); }
 export async function getLmsInsightsOverview(filter: LmsInsightsFilter) { return getLmsInsightsOverviewApi(filter); }
 export async function getLmsPreAssessmentInsights(filter: LmsInsightsFilter) { return getLmsPreAssessmentInsightsApi(filter); }
@@ -630,15 +631,15 @@ export async function getLmsGuidedInsights(filter: LmsInsightsFilter) { return g
 export async function getLmsReviewInsights(filter: LmsInsightsFilter) { return getLmsReviewInsightsApi(filter); }
 export async function getLmsTestInsights(filter: LmsInsightsFilter) { return getLmsTestInsightsApi(filter); }
 export async function getLmsQuizInsights(filter: LmsInsightsFilter) { return getLmsQuizInsightsApi(filter); }
-export async function createLmsChapter(payload: LmsChapterPayload) { return createLmsChapterApi(payload); }
 export async function updateLmsChapter(payload: LmsChapterPayload & { chapter_id: number }) { return updateLmsChapterApi(payload); }
 export async function deleteLmsChapter(payload: LmsChapterRef) { return deleteLmsChapterApi(payload); }
 export async function createLmsSchedule(payload: CreateLmsSchedulePayload) { return createLmsScheduleApi(payload); }
 export async function updateLmsSchedule(payload: LmsSchedulePayload & { session_id: number }) { return updateLmsScheduleApi(payload); }
 export async function deleteLmsSchedule(payload: LmsScheduleRef) { return deleteLmsScheduleApi(payload); }
-export async function createLmsContent(payload: LmsContentPayload) { return createLmsContentApi(payload); }
-export async function updateLmsContent(payload: LmsContentPayload) { return updateLmsContentApi(payload); }
-export async function deleteLmsContent(payload: LmsContentRef) { return deleteLmsContentApi(payload); }
+export async function listLmsChapterContents(chapterId: number) { return listLmsChapterContentsApi(chapterId); }
+export async function saveLmsChapterContent(payload: LmsContentPayload, existing: LmsContentTarget | null) { return saveLmsChapterContentApi(payload, existing); }
+export async function deleteLmsChapterContent(payload: { project_id: string; kind: LmsContentKind; id: string }) { return deleteLmsChapterContentApi(payload); }
+export async function getLmsChapterAnalytics(payload: LmsChapterRef) { return getLmsChapterAnalyticsApi(payload); }
 
 export async function updateLmsGroup(payload: {
   project_id: string;

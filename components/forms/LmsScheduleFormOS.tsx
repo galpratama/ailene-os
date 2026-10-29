@@ -25,7 +25,7 @@ type ChapterOption = { id: number; name: string };
 type LevelOption = { id: number; name: string };
 
 function segmentClass(active: boolean) {
-  return `h-7 rounded-md px-3 text-xs font-semibold transition-colors ${
+  return `h-7 rounded-md px-3 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
     active
       ? "bg-lime-bright text-forest-deep"
       : "text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -53,7 +53,7 @@ export default function LmsScheduleFormOS({
 }) {
   const canChooseChapter = !schedule && chapterId === null;
   const [chapterMode, setChapterMode] = useState<"new" | "existing">(
-    canChooseChapter ? "new" : "existing",
+    canChooseChapter && levels.length ? "new" : "existing",
   );
   const [values, setValues] = useState<LmsSchedulePayload>({
     project_id: projectId,
@@ -169,6 +169,8 @@ export default function LmsScheduleFormOS({
                 <div className="flex shrink-0 rounded-lg border border-line bg-white p-0.5 dark:bg-zinc-900">
                   <button
                     type="button"
+                    disabled={!levels.length}
+                    title={levels.length ? undefined : "Learning levels are not available yet"}
                     onClick={() => {
                       setChapterMode("new");
                       setChapterError(null);

@@ -12,7 +12,7 @@ import LmsScheduleFormOS from "@/components/forms/LmsScheduleFormOS";
 import Label from "@/components/labels/Label";
 import LmsContentStatusLabel from "@/components/labels/LmsContentStatusLabel";
 import LmsSessionMethodLabel from "@/components/labels/LmsSessionMethodLabel";
-import { getLmsCurriculum, listLmsChapterSessions } from "@/lib/actions";
+import { listLmsChapterSessions, listLmsLevels } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -286,7 +286,7 @@ function ChapterRow({
 }: {
   projectId: string;
   chapter: LmsChapterSessionsEntry;
-  levelNumber: number;
+  levelNumber: number | null;
   groups: LmsGroupEntry[];
   now: number;
   onUpdate: (sheet: SessionSheet) => void;
@@ -307,7 +307,7 @@ function ChapterRow({
       <div className="pointer-events-none relative flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs text-gray-500 dark:text-zinc-400">
-            Level {levelNumber}
+            {levelNumber === null ? chapter.level_name : `Level ${levelNumber}`}
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <h3 className="text-[15px] font-semibold leading-snug text-gray-900 dark:text-zinc-100">
@@ -372,26 +372,30 @@ export default function LmsChapterSessionsOS({
       requireApiData(await listLmsChapterSessions(projectId)),
     enabled: !!sessionToken,
   });
-  const curriculumQuery = useQuery({
-    queryKey: ["lms-curriculum", projectId],
-    queryFn: async () => requireApiData(await getLmsCurriculum(projectId)),
+  const levelsQuery = useQuery({
+    queryKey: ["lms-levels"],
+    queryFn: async () => requireApiData(await listLmsLevels()),
     enabled: !!sessionToken,
-    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
   const chapters = query.data ?? [];
-  const fallbackLevels = Array.from(
-    new Map(
-      chapters.map((chapter) => [
-        chapter.level_id,
-        { id: chapter.level_id, name: chapter.level_name },
-      ]),
-    ).values(),
-  );
-  const levels = curriculumQuery.data?.levels.length
-    ? curriculumQuery.data.levels
-    : fallbackLevels;
+  const levelList = levelsQuery.data ?? [];
+  // Until /levels answers, chapters already in the project still offer their levels.
+  const levels = levelList.length
+    ? levelList.map((level) => ({
+        id: level.id,
+        name: `Level ${level.level_number} · ${level.name}`,
+      }))
+    : Array.from(
+        new Map(
+          chapters.map((chapter) => [
+            chapter.level_id,
+            { id: chapter.level_id, name: chapter.level_name },
+          ]),
+        ).values(),
+      );
   const levelNumber = (levelId: number) =>
-    levels.findIndex((level) => level.id === levelId) + 1;
+    levelList.find((level) => level.id === levelId)?.level_number ?? null;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
@@ -406,7 +410,6 @@ export default function LmsChapterSessionsOS({
         </div>
         <AppButton
           size="sm"
-          disabled={!levels.length}
           onClick={() => setSheet({ chapterId: null, schedule: null })}
         >
           <Plus size={13} /> Add session
@@ -467,9 +470,6 @@ export default function LmsChapterSessionsOS({
             await Promise.all([
               client.invalidateQueries({
                 queryKey: ["lms-chapter-sessions", projectId],
-              }),
-              client.invalidateQueries({
-                queryKey: ["lms-curriculum", projectId],
               }),
             ]);
           }}

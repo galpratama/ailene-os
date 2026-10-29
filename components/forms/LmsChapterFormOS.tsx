@@ -1,12 +1,12 @@
 "use client";
 
-import type { LmsChapter, LmsChapterPayload, LmsCurriculum } from "@/apis/lms";
+import type { LmsChapterEntry, LmsChapterPayload, LmsLevel } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import AppSelect from "@/components/fields/AppSelect";
 import AppTextarea from "@/components/fields/AppTextArea";
 import SheetOS from "@/components/modals/SheetOS";
-import { createLmsChapter, updateLmsChapter } from "@/lib/actions";
+import { updateLmsChapter } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { lmsStatusOptions } from "@/lib/lms-curriculum";
 import { showErrorToast } from "@/lib/toast";
@@ -22,24 +22,22 @@ export default function LmsChapterFormOS({
   onSaved,
 }: {
   projectId: string;
-  chapter: LmsChapter | null;
-  levels: LmsCurriculum["levels"];
+  chapter: LmsChapterEntry;
+  levels: LmsLevel[];
   onClose: () => void;
   onSaved: (id: number) => void;
 }) {
   const [values, setValues] = useState<LmsChapterPayload>({
     project_id: projectId,
-    level_id: chapter?.level_id ?? levels[0]?.id ?? 0,
-    name: chapter?.name ?? "",
-    description: chapter?.description ?? "",
-    status: chapter?.status ?? "active",
+    level_id: chapter.level_id ?? levels[0]?.id ?? 0,
+    name: chapter.name ?? "",
+    description: chapter.description ?? "",
+    status: chapter.status ?? "active",
   });
   const mutation = useMutation({
     mutationFn: async () =>
       requireApiData(
-        chapter
-          ? await updateLmsChapter({ ...values, chapter_id: chapter.id })
-          : await createLmsChapter(values),
+        await updateLmsChapter({ ...values, chapter_id: chapter.id }),
       ),
     onSuccess: (data) => onSaved(data.id),
     onError: (error) => showErrorToast(error),
@@ -47,8 +45,8 @@ export default function LmsChapterFormOS({
   return (
     <SheetOS
       isOpen
-      title={chapter ? "Edit session" : "New session"}
-      description="Organize learning content into a session."
+      title="Edit chapter"
+      description="Name the chapter and choose its learning level."
       onClose={() => !mutation.isPending && onClose()}
     >
       <form
@@ -63,8 +61,8 @@ export default function LmsChapterFormOS({
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
           <AppInput
-            inputId="lms-session-name"
-            label="Session name"
+            inputId="lms-chapter-name"
+            label="Chapter name"
             required
             maxLength={255}
             placeholder="e.g. Introduction to AI"
@@ -74,32 +72,32 @@ export default function LmsChapterFormOS({
             }
           />
           <AppSelect
-            selectId="lms-session-level"
+            selectId="lms-chapter-level"
             label="Learning level"
             placeholder="Select a level"
             required
             value={values.level_id}
             options={levels.map((level) => ({
               value: level.id,
-              label: level.name,
+              label: `Level ${level.level_number} · ${level.name}`,
             }))}
             onChange={(value) =>
               setValues({ ...values, level_id: Number(value) })
             }
           />
           <AppTextarea
-            textAreaId="lms-session-description"
+            textAreaId="lms-chapter-description"
             label="Description"
             rows={4}
             characterLength={10000}
-            placeholder="What will participants learn in this session?"
+            placeholder="What will participants learn in this chapter?"
             value={values.description ?? ""}
             onChange={(event) =>
               setValues({ ...values, description: event.target.value })
             }
           />
           <AppSelect
-            selectId="lms-session-status"
+            selectId="lms-chapter-status"
             label="Status"
             placeholder="Select status"
             value={values.status}
@@ -128,7 +126,7 @@ export default function LmsChapterFormOS({
             {mutation.isPending && (
               <Loader2 size={14} className="animate-spin" />
             )}
-            {chapter ? "Save changes" : "Create session"}
+            Save changes
           </AppButton>
         </div>
       </form>

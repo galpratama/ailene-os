@@ -259,6 +259,8 @@ export type LmsContent = {
   questions: LmsQuestion[];
   timestamps: LmsVideoTimestamp[];
   has_progress: boolean;
+  // Only pre/post tests carry a learner lock.
+  is_locked?: boolean;
 };
 export type LmsSchedule = {
   id: number;
@@ -294,10 +296,10 @@ export type LmsChapterSession = LmsSchedule & {
 export type LmsChapterSessionsEntry = LmsChapterEntry & {
   sessions: LmsChapterSession[];
 };
-export type LmsCurriculum = {
-  levels: { id: number; name: string }[];
-  chapters: LmsChapter[];
-};
+export type LmsLevel = { id: number; level_number: number; name: string };
+export async function listLmsLevels(): Promise<ApiEnvelope<LmsLevel[]>> {
+  return callLmsV2("levels");
+}
 export async function listLmsChapterSessions(
   projectId: string,
 ): Promise<ApiEnvelope<LmsChapterSessionsEntry[]>> {
@@ -334,25 +336,15 @@ export type CreateLmsSchedulePayload = { project_id: string } &
   );
 export type LmsScheduleRef = LmsChapterRef & { session_id: number };
 
-export async function getLmsCurriculum(
-  projectId: string,
-): Promise<ApiEnvelope<LmsCurriculum>> {
-  return callLmsAdmin("curriculum", { project_id: projectId });
-}
-export async function createLmsChapter(
-  payload: LmsChapterPayload,
-): Promise<ApiEnvelope<{ id: number }>> {
-  return callLmsAdmin("curriculum/chapters/create", payload);
-}
 export async function updateLmsChapter(
   payload: LmsChapterPayload & { chapter_id: number },
 ): Promise<ApiEnvelope<{ id: number }>> {
-  return callLmsAdmin("curriculum/chapters/update", payload);
+  return callLmsV2("chapters/update", payload);
 }
 export async function deleteLmsChapter(
   payload: LmsChapterRef,
 ): Promise<ApiEnvelope<{ deleted: boolean }>> {
-  return callLmsAdmin("curriculum/chapters/delete", payload);
+  return callLmsV2("chapters/delete", payload);
 }
 export async function createLmsSchedule(
   payload: CreateLmsSchedulePayload,
@@ -369,20 +361,233 @@ export async function deleteLmsSchedule(
 ): Promise<ApiEnvelope<{ deleted: boolean }>> {
   return callLmsV2("chapters/sessions/delete", payload);
 }
-export async function createLmsContent(
-  payload: LmsContentPayload,
-): Promise<ApiEnvelope<{ saved: boolean }>> {
-  return callLmsAdmin("curriculum/contents/create", payload);
+// Chapter content on the Go LMS v2 API: one video, one material, and one test per kind per chapter.
+type LmsV2Video = {
+  id: number;
+  title: string;
+  description: string | null;
+  video_url: string;
+  xp_reward: number;
+  status: LmsContentStatus;
+  timestamps: LmsVideoTimestamp[];
+};
+type LmsV2Material = {
+  id: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  file_url: string | null;
+  image_url: string | null;
+  xp_reward: number;
+  status: LmsContentStatus;
+};
+type LmsV2TestQuestion = {
+  type: "multiple_choice" | "essay";
+  question: string;
+  explanation: string | null;
+  options: { option_code: string; text: string; is_correct: boolean }[];
+};
+type LmsV2Test = {
+  id: number;
+  kind: "pre_test" | "post_test";
+  name: string;
+  description: string | null;
+  status: LmsContentStatus;
+  is_locked: boolean;
+  submission_count: number;
+  questions: (LmsV2TestQuestion & { id: number })[];
+};
+
+const emptyContent = {
+  content: null,
+  file_url: null,
+  image_url: null,
+  video_url: null,
+  xp_reward: 0,
+  questions: [],
+  timestamps: [],
+  has_progress: false,
+};
+
+export async function listLmsChapterContents(
+  chapterId: number,
+): Promise<ApiEnvelope<LmsContent[]>> {
+  const body = { chapter_id: chapterId };
+  const [videos, materials, tests] = await Promise.all([
+    callLmsV2<LmsV2Video[]>("videos", body),
+    callLmsV2<LmsV2Material[]>("materials", body),
+    callLmsV2<LmsV2Test[]>("chapter-tests", body),
+  ]);
+  const failed = [videos, materials, tests].find((result) => !result.success);
+  if (failed) return { ...failed, data: undefined };
+  const contents: LmsContent[] = [
+    ...(tests.data ?? []).map((test) => ({
+      ...emptyContent,
+      id: String(test.id),
+      kind: test.kind,
+      title: test.name,
+      description: test.description,
+      status: test.status,
+      is_locked: test.is_locked,
+      has_progress: test.submission_count > 0,
+      questions: test.questions.map((question) => ({ ...question, xp_reward: 0 })),
+    })),
+    ...(videos.data ?? []).map((video) => ({
+      ...emptyContent,
+      id: String(video.id),
+      kind: "video" as const,
+      title: video.title,
+      description: video.description,
+      status: video.status,
+      video_url: video.video_url,
+      xp_reward: video.xp_reward,
+      timestamps: video.timestamps,
+    })),
+    ...(materials.data ?? []).map((material) => ({
+      ...emptyContent,
+      id: material.id,
+      kind: "material" as const,
+      title: material.title,
+      description: material.description,
+      status: material.status,
+      content: material.content,
+      file_url: material.file_url,
+      image_url: material.image_url,
+      xp_reward: material.xp_reward,
+    })),
+  ];
+  return { ...videos, data: contents };
 }
-export async function updateLmsContent(
+
+export type LmsContentTarget = { id: string; is_locked: boolean; has_progress: boolean };
+
+export async function saveLmsChapterContent(
   payload: LmsContentPayload,
-): Promise<ApiEnvelope<{ saved: boolean }>> {
-  return callLmsAdmin("curriculum/contents/update", payload);
+  existing: LmsContentTarget | null,
+): Promise<ApiEnvelope<unknown>> {
+  const { project_id, chapter_id, kind } = payload;
+  const description = payload.description?.trim() || null;
+  if (kind === "video" || kind === "material") {
+    const common = {
+      project_id,
+      title: payload.title.trim(),
+      description,
+      xp_reward: payload.xp_reward,
+      order_index: 0,
+      status: payload.status,
+      ...(kind === "video"
+        ? { video_url: payload.video_url ?? "", timestamps: payload.timestamps }
+        : {
+            content: payload.content || null,
+            file_url: payload.file_url?.trim() || null,
+            image_url: payload.image_url?.trim() || null,
+          }),
+    };
+    const resource = kind === "video" ? "videos" : "materials";
+    if (!existing) return callLmsV2(`${resource}/create`, { ...common, chapter_id });
+    const idField = kind === "video" ? { video_id: Number(existing.id) } : { material_id: existing.id };
+    return callLmsV2(`${resource}/update`, { ...common, ...idField });
+  }
+  const test = {
+    project_id,
+    name: payload.title.trim(),
+    description,
+    status: payload.status,
+    is_locked: payload.is_locked ?? existing?.is_locked ?? false,
+  };
+  const questions: LmsV2TestQuestion[] = payload.questions.map((question) => ({
+    type: question.type,
+    question: question.question,
+    explanation: question.explanation?.trim() || null,
+    options: question.type === "essay" ? [] : question.options,
+  }));
+  if (!existing) {
+    return callLmsV2("chapter-tests/create", { ...test, chapter_id, kind, questions });
+  }
+  // Submitted tests keep their questions; the API rejects a replacement.
+  return callLmsV2("chapter-tests/update", {
+    ...test,
+    test_id: Number(existing.id),
+    ...(existing.has_progress ? {} : { questions }),
+  });
 }
-export async function deleteLmsContent(
-  payload: LmsContentRef,
-): Promise<ApiEnvelope<{ deleted: boolean }>> {
-  return callLmsAdmin("curriculum/contents/delete", payload);
+
+export async function deleteLmsChapterContent(payload: {
+  project_id: string;
+  kind: LmsContentKind;
+  id: string;
+}): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  const { project_id, kind, id } = payload;
+  if (kind === "video") return callLmsV2("videos/delete", { project_id, video_id: Number(id) });
+  if (kind === "material") return callLmsV2("materials/delete", { project_id, material_id: id });
+  return callLmsV2("chapter-tests/delete", { project_id, test_id: Number(id) });
+}
+
+export type LmsTestStats = {
+  test_id: number | null;
+  submitted: number;
+  average_score: number | null;
+};
+export type LmsSurveyRatingKey =
+  | "trainer_clarity"
+  | "trainer_mastery"
+  | "trainer_responsiveness"
+  | "trainer_engagement"
+  | "material_relevance"
+  | "material_flow"
+  | "material_depth"
+  | "learning_value";
+export type LmsSurveyResponse = Record<LmsSurveyRatingKey, number> & {
+  access_id: string;
+  full_name: string;
+  avatar: string | null;
+  session_id: number;
+  average: number;
+  favorite_material: string | null;
+  missing_topics: string | null;
+  disliked_material: string | null;
+  improvement_suggestion: string | null;
+  submitted_at: string;
+};
+export type LmsChapterAnalyticsMember = {
+  access_id: string;
+  full_name: string;
+  email: string;
+  avatar: string | null;
+  role: LmsMemberRole;
+  group_name: string;
+  pre_test_submitted: boolean;
+  pre_test_score: number | null;
+  post_test_submitted: boolean;
+  post_test_score: number | null;
+  video_completed: boolean;
+  material_completed: boolean;
+  tasks_submitted: number;
+  tasks_approved: number;
+  survey_submitted: boolean;
+  survey_average: number | null;
+};
+export type LmsChapterAnalytics = {
+  chapter_id: number;
+  member_count: number;
+  pre_test: LmsTestStats;
+  post_test: LmsTestStats;
+  video: { exists: boolean; completed: number };
+  material: { exists: boolean; completed: number };
+  tasks: { total: number; submitted: number; approved: number };
+  survey: {
+    count: number;
+    average: number | null;
+    ratings: Record<LmsSurveyRatingKey, number | null>;
+    responses: LmsSurveyResponse[];
+  };
+  members: LmsChapterAnalyticsMember[];
+};
+
+export async function getLmsChapterAnalytics(
+  payload: LmsChapterRef,
+): Promise<ApiEnvelope<LmsChapterAnalytics>> {
+  return callLmsV2("chapters/analytics", payload);
 }
 
 export type LmsInsightsFilter = { project_id: string; group_id: number | null };

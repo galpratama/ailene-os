@@ -7,11 +7,10 @@ import LmsGroupFormOS from "@/components/forms/LmsGroupFormOS";
 import LmsProjectFormOS from "@/components/forms/LmsProjectFormOS";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import LmsChapterSessionsOS from "@/components/static-sections/LmsChapterSessionsOS";
-import LmsCurriculumOS from "@/components/static-sections/LmsCurriculumOS";
 import { deleteLmsGroup } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
 import { showErrorToast } from "@/lib/toast";
-import { ArrowLeft, BookOpen, Building2, CalendarDays, ChevronRight, Layers3, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, ChevronRight, Layers3, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -52,8 +51,6 @@ export default function LmsAdminProjectDetailOS({
   project,
   groups,
   members,
-  initialView,
-  initialChapterId,
   loadError,
 }: {
   projectId: string;
@@ -61,8 +58,6 @@ export default function LmsAdminProjectDetailOS({
   project: LmsProjectEntry | null;
   groups: LmsGroupEntry[];
   members: LmsMemberEntry[];
-  initialView: "overview" | "content";
-  initialChapterId: number | null;
   loadError: string | null;
 }) {
   const router = useRouter();
@@ -71,19 +66,9 @@ export default function LmsAdminProjectDetailOS({
   const [groupSheet, setGroupSheet] = useState<SheetState<LmsGroupEntry>>({ open: false });
   const [deletingGroup, setDeletingGroup] = useState<LmsGroupEntry | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [contentDirty, setContentDirty] = useState(false);
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   function navigate(href: string) {
-    if (contentDirty) {
-      setPendingHref(href);
-      return;
-    }
     startTransition(() => router.push(href));
-  }
-
-  function manageContent(chapterId?: number) {
-    navigate(`/lms/${projectId}?view=content${chapterId ? `&chapter=${chapterId}` : ""}`);
   }
 
   async function confirmDeleteGroup() {
@@ -141,21 +126,6 @@ export default function LmsAdminProjectDetailOS({
         </header>
       )}
 
-      {initialView === "content" ? (
-        <div className="min-w-0">
-          <AppButton variant="secondary" size="sm" className="mb-4" onClick={() => navigate(`/lms/${projectId}`)}>
-            <ArrowLeft size={14} /> Project overview
-          </AppButton>
-          <LmsCurriculumOS
-            key={initialChapterId ?? "all"}
-            projectId={projectId}
-            sessionToken={sessionToken}
-            groups={groups}
-            initialChapterId={initialChapterId}
-            onDirtyChange={setContentDirty}
-          />
-        </div>
-      ) : (
         <div className={`grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_19rem] ${isPending ? "opacity-70" : ""}`}>
           <main className="flex min-w-0 flex-col gap-5">
             <LmsChapterSessionsOS
@@ -228,27 +198,9 @@ export default function LmsAdminProjectDetailOS({
                 <div className="flex items-start justify-between gap-3 py-3"><dt className="text-gray-500 dark:text-zinc-400">Updated</dt><dd className="font-semibold text-gray-800 dark:text-zinc-200">{formatDate(project?.updated_at ?? null)}</dd></div>
               </dl>
             </section>
-
-            <AppButton variant="outline" className="w-full justify-center" onClick={() => manageContent()}>
-              <BookOpen size={14} /> Manage chapter content
-            </AppButton>
           </aside>
         </div>
-      )}
 
-      <AlertConfirmationOS
-        isOpen={pendingHref !== null}
-        onClose={() => setPendingHref(null)}
-        onConfirm={() => {
-          setContentDirty(false);
-          if (pendingHref) startTransition(() => router.push(pendingHref));
-          setPendingHref(null);
-        }}
-        title="Discard unsaved changes?"
-        message="Your content changes have not been saved. Discard them and return to the project overview?"
-        confirmLabel="Discard changes"
-        destructive
-      />
       <LmsProjectFormOS
         project={project}
         isOpen={projectSheetOpen}

@@ -5,10 +5,11 @@ import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import LmsMaterialEditorOS from "@/components/fields/LmsMaterialEditorOS";
 import AppSelect from "@/components/fields/AppSelect";
+import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
 import LmsQuestionsEditorOS from "@/components/forms/LmsQuestionsEditorOS";
 import LmsContentStatusLabel from "@/components/labels/LmsContentStatusLabel";
-import { createLmsContent, updateLmsContent } from "@/lib/actions";
+import { saveLmsChapterContent } from "@/lib/actions";
 import { requireApiSuccess } from "@/lib/api-result";
 import {
   lmsContentKinds,
@@ -56,6 +57,7 @@ export default function LmsContentFormOS({
     xp_reward: content?.xp_reward ?? 0,
     questions: content?.questions ?? [],
     timestamps: content?.timestamps ?? [],
+    is_locked: content?.is_locked ?? false,
   });
   const [showErrors, setShowErrors] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -79,7 +81,16 @@ export default function LmsContentFormOS({
   const mutation = useMutation({
     mutationFn: async () =>
       requireApiSuccess(
-        await (content ? updateLmsContent(values) : createLmsContent(values)),
+        await saveLmsChapterContent(
+          values,
+          content
+            ? {
+                id: content.id,
+                is_locked: content.is_locked ?? false,
+                has_progress: content.has_progress,
+              }
+            : null,
+        ),
       ),
     onSuccess: async () => {
       toast.success(`${meta.label} saved.`);
@@ -96,6 +107,7 @@ export default function LmsContentFormOS({
         setShowErrors(true);
         if (
           assessment &&
+          !protectedAssessment &&
           (!values.questions.length || values.questions.some(lmsQuestionError))
         )
           return;
@@ -130,17 +142,18 @@ export default function LmsContentFormOS({
         <div className="mx-5 mt-5 flex gap-2 rounded-lg border border-line bg-gray-50 p-3 text-xs text-gray-600 dark:bg-zinc-800 dark:text-zinc-300 sm:mx-7">
           <LockKeyhole size={16} className="shrink-0" />
           <p>
-            Participants have already attempted this assessment. Questions and
-            answers are read-only to preserve their results.
+            Participants have already taken this test, so its questions and
+            answers are read-only. You can still change the status and lock.
           </p>
         </div>
       )}
       <fieldset
-        disabled={mutation.isPending || protectedAssessment}
+        disabled={mutation.isPending}
         className="flex min-w-0 flex-col gap-5 px-5 py-6 sm:px-7"
       >
         <AppInput
           inputId="lms-content-title"
+          disabled={protectedAssessment}
           label="Title"
           required
           maxLength={255}
@@ -175,6 +188,16 @@ export default function LmsContentFormOS({
             />
           )}
         </div>
+        {assessment && (
+          <AppSwitch
+            inputId="lms-content-lock"
+            label="Locked for participants"
+            hint="Participants can see the test but cannot take it until you unlock it."
+            checked={values.is_locked ?? false}
+            disabled={mutation.isPending}
+            onChange={(checked) => update({ is_locked: checked })}
+          />
+        )}
         <AppTextarea
           textAreaId="lms-content-description"
           label="Description (optional)"
@@ -320,12 +343,14 @@ export default function LmsContentFormOS({
           </>
         )}
         {assessment && (
-          <LmsQuestionsEditorOS
-            value={values.questions}
-            onChange={(questions) => update({ questions })}
-            quiz={kind === "quiz"}
-            showErrors={showErrors}
-          />
+          <fieldset disabled={protectedAssessment} className="min-w-0">
+            <LmsQuestionsEditorOS
+              value={values.questions}
+              onChange={(questions) => update({ questions })}
+              quiz={kind === "quiz"}
+              showErrors={showErrors}
+            />
+          </fieldset>
         )}
       </fieldset>
       <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-line-soft bg-card-bg px-5 py-4 sm:px-7">
@@ -349,33 +374,31 @@ export default function LmsContentFormOS({
             One {meta.label.toLowerCase()} per session
           </span>
         )}
-        {!protectedAssessment && (
-          <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-gray-500 dark:text-zinc-400 sm:inline">
-              {dirty ? (
-                "Unsaved changes"
-              ) : content ? (
-                <span className="flex items-center gap-1">
-                  <Check size={12} />
-                  Saved
-                </span>
-              ) : (
-                "Not created yet"
-              )}
-            </span>
-            <AppButton
-              type="submit"
-              disabled={mutation.isPending || (!!content && !dirty)}
-            >
-              {mutation.isPending ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Save size={14} />
-              )}
-              {content ? "Save changes" : `Create ${meta.label.toLowerCase()}`}
-            </AppButton>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <span className="hidden text-xs text-gray-500 dark:text-zinc-400 sm:inline">
+            {dirty ? (
+              "Unsaved changes"
+            ) : content ? (
+              <span className="flex items-center gap-1">
+                <Check size={12} />
+                Saved
+              </span>
+            ) : (
+              "Not created yet"
+            )}
+          </span>
+          <AppButton
+            type="submit"
+            disabled={mutation.isPending || (!!content && !dirty)}
+          >
+            {mutation.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Save size={14} />
+            )}
+            {content ? "Save changes" : `Create ${meta.label.toLowerCase()}`}
+          </AppButton>
+        </div>
       </div>
     </form>
   );

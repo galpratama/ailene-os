@@ -6,14 +6,10 @@ import { notFound } from "next/navigation";
 
 export default async function Page({
   params,
-  searchParams,
 }: {
   params: Promise<{ project_id: string }>;
-  searchParams: Promise<{ view?: string; chapter?: string }>;
 }) {
   const { project_id: projectId } = await params;
-  const { view, chapter } = await searchParams;
-  const chapterId = Number(chapter);
   const sessionToken = (await getSessionToken()) ?? "";
 
   const [project, groups, members] = await Promise.all([
@@ -37,8 +33,6 @@ export default async function Page({
       project={project.data ?? null}
       groups={groups.data ?? []}
       members={members.data ?? []}
-      initialView={view === "content" ? "content" : "overview"}
-      initialChapterId={Number.isSafeInteger(chapterId) && chapterId > 0 ? chapterId : null}
       loadError={failed ? (failed.message ?? "Failed to load project.") : null}
     />
   );
