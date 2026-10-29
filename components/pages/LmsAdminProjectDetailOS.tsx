@@ -2,6 +2,7 @@
 
 import type { LmsGroupEntry, LmsMemberEntry, LmsProjectEntry } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
+import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
 import LmsGroupFormOS from "@/components/forms/LmsGroupFormOS";
 import LmsProjectFormOS from "@/components/forms/LmsProjectFormOS";
@@ -137,19 +138,35 @@ export default function LmsAdminProjectDetailOS({
 
           <aside className="flex min-w-0 flex-col gap-5">
             <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
-              <AppButton variant="row" size="rowWide" className="justify-between" href={`/lms/${projectId}/members`}>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-gray-900 dark:text-zinc-100">Members</span>
-                  <span className="text-xs text-gray-500 dark:text-zinc-400">{members.length} in this project</span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-gray-400 dark:text-zinc-500" />
-              </AppButton>
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                  Members
+                  <InfoTooltipOS
+                    label="Members"
+                    explanation={`${members.length} ${members.length === 1 ? "member belongs" : "members belong"} to this project.`}
+                  />
+                </h2>
+                <AppButton
+                  variant="secondary"
+                  size="iconSm"
+                  href={`/lms/${projectId}/members`}
+                  title="View all members"
+                  aria-label="View all members"
+                >
+                  <ChevronRight size={16} />
+                </AppButton>
+              </div>
               {members.length > 0 && (
                 <div className="flex items-center border-t border-line-soft px-5 py-3.5">
                   <div className="flex -space-x-2">
                     {members.slice(0, 6).map((member) => (
                       <span key={member.access_id} className="rounded-full ring-2 ring-card-bg">
-                        <TaskAssigneeAvatarOS name={member.user.full_name} avatar={member.user.avatar} size="base" />
+                        <TaskAssigneeAvatarOS
+                          name={member.user.full_name}
+                          avatar={member.user.avatar}
+                          size="base"
+                          colorKey={member.user.email ?? member.user.full_name}
+                        />
                       </span>
                     ))}
                   </div>
@@ -161,11 +178,14 @@ export default function LmsAdminProjectDetailOS({
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
-              <div className="flex items-center justify-between gap-2 border-b border-line-soft px-5 py-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Groups</h2>
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">{groups.length} in this project</p>
-                </div>
+              <div className="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
+                <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                  Groups
+                  <InfoTooltipOS
+                    label="Groups"
+                    explanation={`${groups.length} ${groups.length === 1 ? "group is" : "groups are"} available in this project.`}
+                  />
+                </h2>
                 <AppButton variant="outline" size="icon" title="New group" aria-label="New group" onClick={() => setGroupSheet({ open: true, entry: null })}><Plus size={15} /></AppButton>
               </div>
               {groups.length ? (
@@ -188,8 +208,14 @@ export default function LmsAdminProjectDetailOS({
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
-              <div className="border-b border-line-soft px-5 py-4">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">Project information</h2>
+              <div className="border-b border-line-soft px-4 py-3">
+                <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                  Project information
+                  <InfoTooltipOS
+                    label="Project information"
+                    explanation="Company, attendee capacity, and project activity dates."
+                  />
+                </h2>
               </div>
               <dl className="divide-y divide-line-soft px-5 text-xs">
                 <div className="flex items-start justify-between gap-3 py-3"><dt className="text-gray-500 dark:text-zinc-400">Company</dt><dd className="max-w-40 text-right font-semibold text-gray-800 dark:text-zinc-200">{project?.company_name ?? "—"}</dd></div>

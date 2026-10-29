@@ -8,6 +8,7 @@ export default function AppSwitch({
   hint,
   checked,
   disabled,
+  compact = false,
   onChange,
 }: {
   inputId: string;
@@ -15,17 +16,18 @@ export default function AppSwitch({
   hint?: ReactNode;
   checked: boolean;
   disabled?: boolean;
+  compact?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
     <label
       htmlFor={inputId}
-      className={`flex items-center justify-between gap-4 rounded-xl border border-line bg-white px-3.5 py-3 dark:bg-zinc-900 ${
+      className={`flex items-center justify-between border border-line bg-white dark:bg-zinc-900 ${compact ? "gap-2 rounded-lg px-2.5 py-1.5" : "gap-4 rounded-xl px-3.5 py-3"} ${
         disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
       }`}
     >
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-gray-800 dark:text-zinc-200">
+        <span className={`block font-semibold text-gray-800 dark:text-zinc-200 ${compact ? "text-xs" : "text-sm"}`}>
           {label}
         </span>
         {hint && (

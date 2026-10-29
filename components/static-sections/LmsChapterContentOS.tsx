@@ -22,13 +22,6 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-function stripHtml(value: string | null) {
-  return (value ?? "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function VideoPlayer({ url, title }: { url: string; title: string }) {
   const embed = videoEmbed(url);
   if (embed?.kind === "iframe") {
@@ -87,12 +80,10 @@ function MaterialFileRow({ material }: { material: LmsContent }) {
 }
 
 function SectionHeader({
-  icon: Icon,
   title,
   status,
   action,
 }: {
-  icon: typeof FileText;
   title: string;
   status?: LmsContent["status"];
   action: ReactNode;
@@ -100,9 +91,6 @@ function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300">
-          <Icon size={16} />
-        </span>
         <h2 className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">
           {title}
         </h2>
@@ -135,7 +123,7 @@ function TestGateway({
       variant="bare"
       size="bare"
       href={href}
-      className="group flex-col items-stretch rounded-2xl border border-line bg-card-bg p-5 text-left transition-colors hover:border-claude"
+      className="group flex-col items-stretch rounded-2xl border border-line bg-card-bg p-4 text-left transition-colors hover:border-claude sm:p-5"
     >
       <span className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2.5">
@@ -234,14 +222,14 @@ export default function LmsChapterContentOS({
 
   if (isPending) {
     return (
-      <p className="rounded-2xl border border-line bg-card-bg px-6 py-12 text-center text-xs text-gray-500 dark:text-zinc-400">
+      <p className="rounded-2xl border border-line bg-card-bg px-4 py-12 text-center text-xs text-gray-500 dark:text-zinc-400 sm:px-5">
         Loading content...
       </p>
     );
   }
   if (error) {
     return (
-      <div className="rounded-2xl border border-line bg-card-bg px-6 py-10 text-center">
+      <div className="rounded-2xl border border-line bg-card-bg px-4 py-10 text-center sm:px-5">
         <p className="text-xs text-merah">{error.message}</p>
         <AppButton
           variant="outline"
@@ -258,10 +246,9 @@ export default function LmsChapterContentOS({
   return (
     <>
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-5">
+        <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
           <SectionHeader
-            icon={PlayCircle}
-            title={video?.title ?? "Video"}
+            title="Video"
             status={video?.status}
             action={
               <AppButton
@@ -307,78 +294,73 @@ export default function LmsChapterContentOS({
           )}
         </section>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-5">
-          <SectionHeader
-            icon={FileText}
-            title="Material"
-            status={material?.status}
-            action={
-              <AppButton
-                variant="outline"
-                size="sm"
-                onClick={() => setSheet("material")}
-              >
-                {material ? <Pencil size={13} /> : <Plus size={13} />}
-                {material ? "Edit" : "Add material"}
-              </AppButton>
-            }
-          />
-          {material ? (
-            <div className="flex flex-col gap-3">
-              {material.file_url ? (
+        <div className="flex min-w-0 flex-col gap-5">
+          <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
+            <SectionHeader
+              title="Material"
+              status={material?.status}
+              action={
                 <AppButton
-                  variant="bare"
-                  size="bare"
-                  href={material.file_url}
-                  className="w-full gap-3 rounded-xl bg-gray-50 p-2 pr-4 text-left transition-colors hover:bg-gray-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSheet("material")}
                 >
-                  <MaterialFileRow material={material} />
-                  <ExternalLink size={15} className="shrink-0 text-gray-400" />
+                  {material ? <Pencil size={13} /> : <Plus size={13} />}
+                  {material ? "Edit" : "Add material"}
                 </AppButton>
-              ) : (
-                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-2 pr-4 dark:bg-zinc-800/50">
-                  <MaterialFileRow material={material} />
-                </div>
-              )}
-              <p className="line-clamp-3 text-xs text-gray-500 dark:text-zinc-400">
-                {material.description ||
-                  stripHtml(material.content) ||
-                  "No reading content yet."}
-              </p>
-            </div>
-          ) : (
-            <AppButton
-              variant="bare"
-              size="bare"
-              onClick={() => setSheet("material")}
-              className="w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line py-10 text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
-            >
-              <FileText size={24} className="text-gray-400" />
-              Write the chapter reading
-            </AppButton>
-          )}
-        </section>
-      </div>
+              }
+            />
+            {material ? (
+              <div className="flex flex-col gap-3">
+                {material.file_url ? (
+                  <AppButton
+                    variant="bare"
+                    size="bare"
+                    href={material.file_url}
+                    className="w-full gap-3 rounded-xl bg-gray-50 p-2 pr-4 text-left transition-colors hover:bg-gray-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800"
+                  >
+                    <MaterialFileRow material={material} />
+                    <ExternalLink size={15} className="shrink-0 text-gray-400" />
+                  </AppButton>
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-2 pr-4 dark:bg-zinc-800/50">
+                    <MaterialFileRow material={material} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <AppButton
+                variant="bare"
+                size="bare"
+                onClick={() => setSheet("material")}
+                className="w-full justify-start rounded-xl border border-dashed border-line px-4 py-8 text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
+              >
+                Write the chapter reading
+              </AppButton>
+            )}
+          </section>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <TestGateway
-          href={`${testsHref}/pre-test`}
-          label="Pre-test"
-          icon={ClipboardList}
-          test={find("pre_test")}
-          submitted={analytics?.pre_test.submitted ?? 0}
-          averageScore={analytics?.pre_test.average_score ?? null}
-          members={members}
-        />
-        <TestGateway
-          href={`${testsHref}/post-test`}
-          label="Post-test"
-          icon={ClipboardCheck}
-          test={find("post_test")}
-          submitted={analytics?.post_test.submitted ?? 0}
-          averageScore={analytics?.post_test.average_score ?? null}
-          members={members}
-        />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+            <TestGateway
+              href={`${testsHref}/pre-test`}
+              label="Pre-test"
+              icon={ClipboardList}
+              test={find("pre_test")}
+              submitted={analytics?.pre_test.submitted ?? 0}
+              averageScore={analytics?.pre_test.average_score ?? null}
+              members={members}
+            />
+            <TestGateway
+              href={`${testsHref}/post-test`}
+              label="Post-test"
+              icon={ClipboardCheck}
+              test={find("post_test")}
+              submitted={analytics?.post_test.submitted ?? 0}
+              averageScore={analytics?.post_test.average_score ?? null}
+              members={members}
+            />
+          </div>
+        </div>
       </div>
 
       {sheet === "video" && (

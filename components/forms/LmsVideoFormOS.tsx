@@ -156,7 +156,7 @@ export default function LmsVideoFormOS({
               setValues({ ...values, xp_reward: Number(event.target.value) })
             }
           />
-          <section className="flex flex-col gap-3">
+          <section className="flex flex-col gap-3 rounded-xl border border-line bg-gray-50 p-4 dark:bg-zinc-800/50">
             <div>
               <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
                 Chapter markers
@@ -264,7 +264,7 @@ export default function LmsVideoFormOS({
           {video ? (
             <AppButton
               type="button"
-              variant="dangerGhost"
+              variant="destructive"
               disabled={busy}
               onClick={() => setConfirmDelete(true)}
             >

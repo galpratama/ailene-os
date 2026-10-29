@@ -188,7 +188,12 @@ export default function LmsProjectMembersOS({
                 <tr key={member.access_id} className="border-b border-line-soft last:border-0 hover:bg-gray-50/70 dark:hover:bg-zinc-800/40">
                   <td className="px-5 py-3 sm:px-6">
                     <div className="flex min-w-0 items-center gap-3">
-                      <TaskAssigneeAvatarOS name={member.user.full_name} avatar={member.user.avatar} size="lg" />
+                      <TaskAssigneeAvatarOS
+                        name={member.user.full_name}
+                        avatar={member.user.avatar}
+                        size="lg"
+                        colorKey={member.user.email ?? member.user.full_name}
+                      />
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">{member.user.full_name}</p>
                         <p className="truncate text-xs text-gray-500 dark:text-zinc-400">{member.user.email}</p>

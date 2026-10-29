@@ -42,7 +42,7 @@ export default function FileTypeIconOS({ type }: { type: string }) {
         aria-hidden="true"
         width={56}
         height={56}
-        className="size-14 shrink-0 object-contain"
+        className="size-14 shrink-0 object-contain p-1.5"
       />
     );
   }

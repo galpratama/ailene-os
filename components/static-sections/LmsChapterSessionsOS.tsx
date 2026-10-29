@@ -7,6 +7,7 @@ import type {
   LmsSchedule,
 } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
+import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
 import LmsScheduleFormOS from "@/components/forms/LmsScheduleFormOS";
 import Label from "@/components/labels/Label";
@@ -407,14 +408,15 @@ export default function LmsChapterSessionsOS({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3 sm:px-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-100">
+          <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
             Chapter sessions
+            <InfoTooltipOS
+              label="Chapter sessions"
+              explanation="Chapters and their schedules across all groups."
+            />
           </h2>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-            Chapters and their schedules across all groups.
-          </p>
         </div>
         <AppButton
           size="sm"

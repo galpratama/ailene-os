@@ -16,10 +16,11 @@ import {
   listLmsChapterContents,
   listLmsChapterSessions,
   listLmsLevels,
+  updateLmsSchedule,
 } from "@/lib/actions";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import { showErrorToast } from "@/lib/toast";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CalendarDays, Clock3, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -96,6 +97,49 @@ export default function LmsChapterDetailOS({
   );
   const firstSession = sessions[0];
   const analytics = analyticsQuery.data;
+  const feedbackLockState =
+    sessions.length === 0
+      ? "open"
+      : sessions.every((session) => session.is_survey_locked)
+        ? "locked"
+        : sessions.some((session) => session.is_survey_locked)
+          ? "mixed"
+          : "open";
+  const feedbackLock = useMutation({
+    mutationFn: async (locked: boolean) => {
+      await Promise.all(
+        sessions
+          .filter((session) => session.is_survey_locked !== locked)
+          .map((session) =>
+            updateLmsSchedule({
+              project_id: projectId,
+              chapter_id: chapterId,
+              session_id: session.id,
+              only_group_id: session.only_group_id,
+              session_date: session.session_date,
+              duration_minutes: session.duration_minutes,
+              location_name: session.location_name,
+              location_url: session.location_url,
+              method: session.method,
+              trainer_id: session.trainer_id,
+              status: session.status,
+              is_locked: session.is_locked,
+              is_survey_locked: locked,
+            }).then(requireApiData),
+          ),
+      );
+    },
+    onSuccess: async (_, locked) => {
+      toast.success(locked ? "Feedback locked." : "Feedback opened.");
+    },
+    onSettled: async () => {
+      await client.invalidateQueries({
+        queryKey: ["lms-chapter-sessions", projectId],
+      });
+    },
+    onError: (error) =>
+      showErrorToast(error, "Failed to update the feedback lock."),
+  });
 
   async function refresh() {
     await Promise.all([
@@ -256,7 +300,7 @@ export default function LmsChapterDetailOS({
           </header>
 
           {analyticsQuery.isError ? (
-            <div className="rounded-2xl border border-line bg-card-bg px-6 py-10 text-center">
+            <div className="rounded-2xl border border-line bg-card-bg px-4 py-10 text-center sm:px-5">
               <p className="text-xs text-merah">
                 {analyticsQuery.error.message}
               </p>
@@ -288,6 +332,10 @@ export default function LmsChapterDetailOS({
             <>
               <LmsChapterFeedbackOS
                 responses={analyticsQuery.data.survey.responses}
+                lockState={feedbackLockState}
+                canUpdateLock={sessions.length > 0}
+                isUpdatingLock={feedbackLock.isPending}
+                onLockChange={(locked) => feedbackLock.mutate(locked)}
               />
               <LmsChapterMembersOS analytics={analyticsQuery.data} />
             </>

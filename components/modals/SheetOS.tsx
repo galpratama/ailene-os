@@ -11,7 +11,7 @@ interface SheetOSProps {
   onClose: () => void;
   // Renders an "open full page" icon next to the close button.
   fullPageHref?: string;
-  // Wide sheets fit long-form editors such as LMS material.
+  // Wide sheets fit long-form editors while staying within one third of a desktop viewport.
   wide?: boolean;
   children: ReactNode;
 }
@@ -42,7 +42,7 @@ export default function SheetOS({
       onClick={onClose}
     >
       <div
-        className={`relative flex h-full w-full ${wide ? "max-w-3xl" : "max-w-md"} flex-col bg-white border-l border-line shadow-xl dark:bg-zinc-900`}
+        className={`relative flex h-full w-full ${wide ? "max-w-md lg:max-w-[33.333vw]" : "max-w-md"} flex-col bg-white border-l border-line shadow-xl dark:bg-zinc-900`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-line-soft px-6 py-4">

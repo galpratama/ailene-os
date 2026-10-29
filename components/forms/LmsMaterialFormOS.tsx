@@ -3,6 +3,7 @@
 import type { LmsContent, LmsContentPayload } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import AppPdfUpload from "@/components/fields/AppPdfUpload";
 import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
 import LmsMaterialEditorOS from "@/components/fields/LmsMaterialEditorOS";
@@ -45,6 +46,7 @@ export default function LmsMaterialFormOS({
     timestamps: [],
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDocumentBusy, setIsDocumentBusy] = useState(false);
   const save = useMutation({
     mutationFn: async () =>
       requireApiSuccess(
@@ -82,7 +84,7 @@ export default function LmsMaterialFormOS({
     },
     onError: (error) => showErrorToast(error, "Failed to delete material."),
   });
-  const busy = save.isPending || remove.isPending;
+  const busy = save.isPending || remove.isPending || isDocumentBusy;
 
   return (
     <SheetOS
@@ -129,16 +131,18 @@ export default function LmsMaterialFormOS({
             value={values.content ?? ""}
             onChange={(html) => setValues({ ...values, content: html })}
           />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AppInput
+          <div className="flex flex-col gap-4">
+            <AppPdfUpload
               inputId="lms-material-file"
-              label="Document URL (optional)"
-              type="url"
-              maxLength={2000}
-              placeholder="https://.../lesson.pdf"
+              label="PDF document (optional)"
               value={values.file_url ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, file_url: event.target.value })
+              folderPath={`lms/materials/${projectId}/${chapterId}`}
+              maxBytes={25 * 1024 * 1024}
+              maxSizeLabel="25 MB"
+              disabled={busy}
+              onBusyChange={setIsDocumentBusy}
+              onChange={(fileUrl) =>
+                setValues((current) => ({ ...current, file_url: fileUrl }))
               }
             />
             <AppInput
@@ -180,7 +184,7 @@ export default function LmsMaterialFormOS({
           {material ? (
             <AppButton
               type="button"
-              variant="dangerGhost"
+              variant="destructive"
               disabled={busy}
               onClick={() => setConfirmDelete(true)}
             >

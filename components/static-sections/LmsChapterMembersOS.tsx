@@ -1,8 +1,7 @@
 import type { LmsChapterAnalytics } from "@/apis/lms";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
-import LmsMemberRoleLabel from "@/components/labels/LmsMemberRoleLabel";
-import { Check, Minus, Star } from "lucide-react";
+import { Check, Crown, Minus, Star } from "lucide-react";
 
 function Score({
   submitted,
@@ -24,7 +23,8 @@ function Done({ done, label }: { done: boolean; label: string }) {
   return done ? (
     <Check
       size={15}
-      className="mx-auto text-hijau"
+      className="mx-auto"
+      style={{ color: "var(--label-hijau)" }}
       aria-label={`${label} done`}
     />
   ) : (
@@ -45,7 +45,7 @@ export default function LmsChapterMembersOS({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
-      <div className="border-b border-line-soft px-5 py-4 sm:px-6">
+      <div className="border-b border-line-soft px-4 py-3 sm:px-5">
         <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
           Participant progress
           <InfoTooltipOS
@@ -55,7 +55,7 @@ export default function LmsChapterMembersOS({
         </h2>
       </div>
       {members.length === 0 ? (
-        <p className="px-6 py-10 text-center text-xs text-gray-500 dark:text-zinc-400">
+        <p className="px-4 py-10 text-center text-xs text-gray-500 dark:text-zinc-400 sm:px-5">
           Nobody is scheduled yet. Add a session for a group to bring its
           members in.
         </p>
@@ -64,7 +64,7 @@ export default function LmsChapterMembersOS({
           <table className="w-full min-w-200 text-left text-xs">
             <thead>
               <tr className="border-b border-line-soft text-xs font-medium text-gray-400 dark:text-zinc-500">
-                <th className="px-5 py-3 sm:px-6">Participant</th>
+                <th className="px-4 py-3 sm:px-5">Participant</th>
                 <th className="px-3 py-3">Group</th>
                 <th className="px-3 py-3 text-center">Pre-test</th>
                 <th className="px-3 py-3 text-center">Post-test</th>
@@ -78,7 +78,7 @@ export default function LmsChapterMembersOS({
                 {analytics.tasks.total > 0 && (
                   <th className="px-3 py-3 text-center">Tasks</th>
                 )}
-                <th className="px-5 py-3 text-center sm:px-6">Feedback</th>
+                <th className="px-4 py-3 text-center sm:px-5">Feedback</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line-soft">
@@ -93,19 +93,28 @@ export default function LmsChapterMembersOS({
                     key={member.access_id}
                     className="hover:bg-gray-50/70 dark:hover:bg-zinc-800/40"
                   >
-                    <td className="px-5 py-3 sm:px-6">
+                    <td className="px-4 py-3 sm:px-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <TaskAssigneeAvatarOS
-                          name={member.full_name}
-                          avatar={member.avatar}
-                          size="base"
-                        />
+                        <span className="relative shrink-0">
+                          <TaskAssigneeAvatarOS
+                            name={member.full_name}
+                            avatar={member.avatar}
+                            size="base"
+                            colorKey={member.email ?? member.full_name}
+                          />
+                          {member.role === "champion" && (
+                            <span
+                              title="Champion"
+                              aria-label="Champion"
+                              className="absolute -bottom-1 -right-1 flex size-4.5 items-center justify-center rounded-full border-2 border-card-bg bg-kuning text-white"
+                            >
+                              <Crown size={10} strokeWidth={2.5} />
+                            </span>
+                          )}
+                        </span>
                         <div className="min-w-0">
-                          <p className="flex items-center gap-2 truncate font-semibold text-gray-900 dark:text-zinc-100">
+                          <p className="truncate font-semibold text-gray-900 dark:text-zinc-100">
                             {member.full_name}
-                            {member.role === "champion" && (
-                              <LmsMemberRoleLabel role={member.role} />
-                            )}
                           </p>
                           <p className="truncate text-xs text-gray-500 dark:text-zinc-400">
                             {member.email}
@@ -135,7 +144,12 @@ export default function LmsChapterMembersOS({
                         </span>
                       ) : (
                         <span
-                          className={`font-semibold ${uplift >= 0 ? "text-hijau" : "text-merah"}`}
+                          className={`font-semibold ${uplift >= 0 ? "" : "text-merah"}`}
+                          style={
+                            uplift >= 0
+                              ? { color: "var(--label-hijau)" }
+                              : undefined
+                          }
                         >
                           {uplift >= 0 ? "+" : ""}
                           {uplift}
@@ -160,7 +174,7 @@ export default function LmsChapterMembersOS({
                         {member.tasks_approved}/{analytics.tasks.total}
                       </td>
                     )}
-                    <td className="px-5 py-3 text-center sm:px-6">
+                    <td className="px-4 py-3 text-center sm:px-5">
                       {member.survey_average === null ? (
                         <span className="text-gray-400 dark:text-zinc-500">
                           —

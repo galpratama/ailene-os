@@ -67,6 +67,7 @@ export default function LmsScheduleFormOS({
     trainer_id: schedule?.trainer_id ?? null,
     status: schedule?.status ?? "active",
     is_locked: schedule?.is_locked ?? true,
+    is_survey_locked: schedule?.is_survey_locked ?? false,
   });
   const [newChapter, setNewChapter] = useState<LmsNewChapterPayload>({
     level_id: levels[0]?.id ?? 0,

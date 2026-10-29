@@ -273,6 +273,7 @@ export type LmsSchedule = {
   trainer_id: string | null;
   status: LmsContentStatus;
   is_locked: boolean;
+  is_survey_locked: boolean;
 };
 export type LmsChapter = {
   id: number;

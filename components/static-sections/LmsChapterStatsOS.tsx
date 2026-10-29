@@ -36,7 +36,7 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col rounded-2xl border border-line bg-card-bg p-6">
+    <section className="flex flex-col rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
       <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
         {title}
         <InfoTooltipOS label={title} explanation={caption} />
