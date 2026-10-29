@@ -212,6 +212,7 @@
   --font-mono: var(--font-geist-mono);
 
   --color-kuning: var(--kuning);
+  --color-rating: var(--label-kuning);
   --color-kuning-t: var(--kuning-t);
   --color-merah: var(--merah);
   --color-merah-t: var(--merah-t);

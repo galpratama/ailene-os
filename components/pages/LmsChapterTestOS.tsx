@@ -108,7 +108,7 @@ export default function LmsChapterTestOS({
       {loadError && (
         <p
           role="alert"
-          className="rounded-xl border border-merah/30 bg-merah-t px-4 py-3 text-sm text-merah"
+          className="rounded-xl border border-merah/30 bg-merah-t px-4 py-3 text-xs text-merah"
         >
           {loadError}
         </p>
@@ -121,10 +121,10 @@ export default function LmsChapterTestOS({
               <span className="rounded-full bg-lime-bright px-2.5 py-0.5 text-xs font-semibold text-forest-deep">
                 {label}
               </span>
-              <h1 className="mt-4 text-3xl leading-tight">
+              <h1 className="mt-4 text-2xl leading-tight">
                 {test?.title ?? `New ${label.toLowerCase()}`}
               </h1>
-              <p className="mt-2 text-sm text-white/60">{chapter.name}</p>
+              <p className="mt-2 text-xs text-white/60">{chapter.name}</p>
             </div>
             <dl className="flex gap-8 sm:gap-10">
               {[
@@ -142,7 +142,7 @@ export default function LmsChapterTestOS({
                 },
               ].map((stat) => (
                 <div key={stat.label}>
-                  <dd className="font-heading text-4xl tabular-nums">
+                  <dd className="font-heading text-3xl tabular-nums">
                     {stat.value}
                   </dd>
                   <dt className="mt-1 text-xs text-white/55">{stat.label}</dt>
@@ -153,12 +153,12 @@ export default function LmsChapterTestOS({
 
           <section className="overflow-hidden rounded-2xl border border-line bg-card-bg">
             {contentsQuery.isPending ? (
-              <p className="px-6 py-12 text-center text-sm text-gray-500 dark:text-zinc-400">
+              <p className="px-6 py-12 text-center text-xs text-gray-500 dark:text-zinc-400">
                 Loading {label.toLowerCase()}...
               </p>
             ) : contentsQuery.isError ? (
               <div className="px-6 py-10 text-center">
-                <p className="text-sm text-merah">
+                <p className="text-xs text-merah">
                   {contentsQuery.error.message}
                 </p>
                 <AppButton

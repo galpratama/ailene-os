@@ -2,6 +2,9 @@
 
 import type { LmsChapterAnalytics, LmsContent } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
+import FileTypeIconOS, {
+  fileTypeFromUrl,
+} from "@/components/elements/FileTypeIconOS";
 import LmsMaterialFormOS from "@/components/forms/LmsMaterialFormOS";
 import LmsVideoFormOS from "@/components/forms/LmsVideoFormOS";
 import LmsContentStatusLabel from "@/components/labels/LmsContentStatusLabel";
@@ -13,7 +16,6 @@ import {
   ExternalLink,
   FileText,
   LockKeyhole,
-  Paperclip,
   Pencil,
   PlayCircle,
   Plus,
@@ -53,13 +55,34 @@ function VideoPlayer({ url, title }: { url: string; title: string }) {
   return (
     <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl bg-gray-100 text-center dark:bg-zinc-800">
       <PlayCircle size={28} className="text-gray-400" />
-      <p className="text-sm text-gray-500 dark:text-zinc-400">
+      <p className="text-xs text-gray-500 dark:text-zinc-400">
         This link cannot be previewed here.
       </p>
       <AppButton variant="outline" size="sm" href={url}>
         <ExternalLink size={13} /> Open video
       </AppButton>
     </div>
+  );
+}
+
+function MaterialFileRow({ material }: { material: LmsContent }) {
+  const type = fileTypeFromUrl(material.file_url);
+  return (
+    <>
+      <FileTypeIconOS type={type} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">
+          {material.title}
+        </span>
+        <span className="text-xs text-gray-500 dark:text-zinc-400">
+          {type === "TEXT"
+            ? "Reading only"
+            : type === "LINK"
+              ? "Linked document"
+              : `${type} document`}
+        </span>
+      </span>
+    </>
   );
 }
 
@@ -80,7 +103,7 @@ function SectionHeader({
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300">
           <Icon size={16} />
         </span>
-        <h2 className="truncate text-base font-semibold text-gray-900 dark:text-zinc-100">
+        <h2 className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">
           {title}
         </h2>
         {status === "inactive" && <LmsContentStatusLabel status={status} />}
@@ -119,7 +142,7 @@ function TestGateway({
           <span className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300">
             <Icon size={16} />
           </span>
-          <span className="text-base font-semibold text-gray-900 dark:text-zinc-100">
+          <span className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
             {label}
           </span>
         </span>
@@ -131,7 +154,7 @@ function TestGateway({
       {test ? (
         <>
           <span className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="truncate text-sm text-gray-700 dark:text-zinc-300">
+            <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
               {test.title}
             </span>
             {test.status === "inactive" && (
@@ -145,7 +168,7 @@ function TestGateway({
           </span>
           <span className="mt-4 grid grid-cols-3 gap-3 border-t border-line-soft pt-4">
             <span>
-              <span className="block font-heading text-2xl tabular-nums text-gray-900 dark:text-zinc-100">
+              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
                 {test.questions.length}
               </span>
               <span className="text-xs text-gray-500 dark:text-zinc-400">
@@ -153,9 +176,9 @@ function TestGateway({
               </span>
             </span>
             <span>
-              <span className="block font-heading text-2xl tabular-nums text-gray-900 dark:text-zinc-100">
+              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
                 {submitted}
-                <span className="text-sm text-gray-400 dark:text-zinc-500">
+                <span className="text-xs text-gray-400 dark:text-zinc-500">
                   /{members}
                 </span>
               </span>
@@ -164,7 +187,7 @@ function TestGateway({
               </span>
             </span>
             <span>
-              <span className="block font-heading text-2xl tabular-nums text-gray-900 dark:text-zinc-100">
+              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
                 {averageScore?.toFixed(1) ?? "—"}
               </span>
               <span className="text-xs text-gray-500 dark:text-zinc-400">
@@ -174,7 +197,7 @@ function TestGateway({
           </span>
         </>
       ) : (
-        <span className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-line px-4 py-6 text-sm text-gray-500 dark:text-zinc-400">
+        <span className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-line px-4 py-6 text-xs text-gray-500 dark:text-zinc-400">
           <Plus size={14} /> Create the {label.toLowerCase()}
         </span>
       )}
@@ -211,7 +234,7 @@ export default function LmsChapterContentOS({
 
   if (isPending) {
     return (
-      <p className="rounded-2xl border border-line bg-card-bg px-6 py-12 text-center text-sm text-gray-500 dark:text-zinc-400">
+      <p className="rounded-2xl border border-line bg-card-bg px-6 py-12 text-center text-xs text-gray-500 dark:text-zinc-400">
         Loading content...
       </p>
     );
@@ -219,7 +242,7 @@ export default function LmsChapterContentOS({
   if (error) {
     return (
       <div className="rounded-2xl border border-line bg-card-bg px-6 py-10 text-center">
-        <p className="text-sm text-merah">{error.message}</p>
+        <p className="text-xs text-merah">{error.message}</p>
         <AppButton
           variant="outline"
           size="sm"
@@ -276,7 +299,7 @@ export default function LmsChapterContentOS({
               variant="bare"
               size="bare"
               onClick={() => setSheet("video")}
-              className="aspect-video w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line text-sm text-gray-500 hover:border-claude dark:text-zinc-400"
+              className="aspect-video w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
             >
               <PlayCircle size={28} className="text-gray-400" />
               Add the lesson video
@@ -302,39 +325,33 @@ export default function LmsChapterContentOS({
           />
           {material ? (
             <div className="flex flex-col gap-3">
-              {material.image_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={material.image_url}
-                  alt=""
-                  className="aspect-video w-full rounded-xl object-cover"
-                />
+              {material.file_url ? (
+                <AppButton
+                  variant="bare"
+                  size="bare"
+                  href={material.file_url}
+                  className="w-full gap-3 rounded-xl bg-gray-50 p-2 pr-4 text-left transition-colors hover:bg-gray-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800"
+                >
+                  <MaterialFileRow material={material} />
+                  <ExternalLink size={15} className="shrink-0 text-gray-400" />
+                </AppButton>
+              ) : (
+                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-2 pr-4 dark:bg-zinc-800/50">
+                  <MaterialFileRow material={material} />
+                </div>
               )}
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
-                {material.title}
-              </h3>
-              <p className="line-clamp-4 text-sm text-gray-500 dark:text-zinc-400">
+              <p className="line-clamp-3 text-xs text-gray-500 dark:text-zinc-400">
                 {material.description ||
                   stripHtml(material.content) ||
                   "No reading content yet."}
               </p>
-              {material.file_url && (
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  href={material.file_url}
-                  className="w-fit"
-                >
-                  <Paperclip size={13} /> Open document
-                </AppButton>
-              )}
             </div>
           ) : (
             <AppButton
               variant="bare"
               size="bare"
               onClick={() => setSheet("material")}
-              className="w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line py-10 text-sm text-gray-500 hover:border-claude dark:text-zinc-400"
+              className="w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line py-10 text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
             >
               <FileText size={24} className="text-gray-400" />
               Write the chapter reading

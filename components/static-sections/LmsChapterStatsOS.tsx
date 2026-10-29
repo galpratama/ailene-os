@@ -1,4 +1,5 @@
 import type { LmsChapterAnalytics, LmsSurveyRatingKey } from "@/apis/lms";
+import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import type { ReactNode } from "react";
 import { ArrowRight, Star } from "lucide-react";
 
@@ -35,13 +36,11 @@ function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col rounded-2xl border border-line bg-card-bg p-5">
-      <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-100">
+    <section className="flex flex-col rounded-2xl border border-line bg-card-bg p-6">
+      <h2 className="flex items-center gap-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
         {title}
+        <InfoTooltipOS label={title} explanation={caption} />
       </h2>
-      <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-        {caption}
-      </p>
       {children}
     </section>
   );
@@ -60,17 +59,23 @@ function Meter({
   display: string;
 }) {
   const width = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const fill =
+    width < 50
+      ? "bg-merah"
+      : width < 80
+        ? "bg-kuning"
+        : "bg-claude dark:bg-lime-bright";
   return (
     <div title={`${label}: ${display}`}>
-      <div className="flex items-baseline justify-between gap-3 text-sm">
+      <div className="flex items-baseline justify-between gap-3 text-xs">
         <span className="text-gray-700 dark:text-zinc-300">{label}</span>
         <span className="text-xs font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
           {display}
         </span>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
+      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
         <div
-          className="h-full rounded-full bg-claude dark:bg-lime-bright"
+          className={`h-full rounded-full ${fill}`}
           style={{ width: `${width}%` }}
         />
       </div>
@@ -119,7 +124,7 @@ export default function LmsChapterStatsOS({
         <div className="mt-6 flex items-end gap-4">
           <div>
             <p className="text-xs text-gray-500 dark:text-zinc-400">Pre-test</p>
-            <p className="font-heading text-4xl tabular-nums text-gray-400 dark:text-zinc-500">
+            <p className="font-heading text-3xl tabular-nums text-gray-400 dark:text-zinc-500">
               {pre.average_score?.toFixed(1) ?? "—"}
             </p>
           </div>
@@ -131,7 +136,7 @@ export default function LmsChapterStatsOS({
             <p className="text-xs text-gray-500 dark:text-zinc-400">
               Post-test
             </p>
-            <p className="font-heading text-4xl tabular-nums text-gray-900 dark:text-zinc-100">
+            <p className="font-heading text-3xl tabular-nums text-gray-900 dark:text-zinc-100">
               {post.average_score?.toFixed(1) ?? "—"}
             </p>
           </div>
@@ -164,7 +169,7 @@ export default function LmsChapterStatsOS({
         caption={`Share of the ${members} scheduled participants who finished each step.`}
       >
         {steps.length ? (
-          <div className="mt-5 flex flex-col gap-4">
+          <div className="mt-6 flex flex-col gap-6">
             {steps.map((step) => (
               <Meter
                 key={step.label}
@@ -176,7 +181,7 @@ export default function LmsChapterStatsOS({
             ))}
           </div>
         ) : (
-          <p className="mt-5 text-sm text-gray-500 dark:text-zinc-400">
+          <p className="mt-5 text-xs text-gray-500 dark:text-zinc-400">
             Add content to start tracking completion.
           </p>
         )}
@@ -184,17 +189,22 @@ export default function LmsChapterStatsOS({
 
       <Card
         title="Feedback"
-        caption={`${survey.count} responses · ${percent(survey.count, members)}% response rate`}
+        caption="Average of the chapter survey ratings on a 1–5 scale. Trainer and Material each average their own questions."
       >
         <p className="mt-5 flex items-center gap-2">
-          <Star size={26} className="fill-oranye text-oranye" />
-          <span className="font-heading text-4xl tabular-nums text-gray-900 dark:text-zinc-100">
+          <Star size={26} className="fill-rating text-rating" />
+          <span className="font-heading text-3xl tabular-nums text-gray-900 dark:text-zinc-100">
             {survey.average?.toFixed(1) ?? "—"}
           </span>
-          <span className="text-sm text-gray-400 dark:text-zinc-500">/ 5</span>
+          <span className="text-xs text-gray-400 dark:text-zinc-500">/ 5</span>
+          <span className="ml-auto text-right text-xs text-gray-500 dark:text-zinc-400">
+            {survey.count} responses
+            <br />
+            {percent(survey.count, members)}% response rate
+          </span>
         </p>
         {survey.count > 0 ? (
-          <div className="mt-5 flex flex-col gap-4">
+          <div className="mt-6 flex flex-col gap-6">
             <Meter
               label="Trainer"
               value={trainer ?? 0}
@@ -215,7 +225,7 @@ export default function LmsChapterStatsOS({
             />
           </div>
         ) : (
-          <p className="mt-5 text-sm text-gray-500 dark:text-zinc-400">
+          <p className="mt-5 text-xs text-gray-500 dark:text-zinc-400">
             No survey responses yet.
           </p>
         )}

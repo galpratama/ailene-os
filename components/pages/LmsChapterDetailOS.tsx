@@ -2,6 +2,7 @@
 
 import type { LmsChapterEntry, LmsProjectEntry } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
+import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import LmsChapterFormOS from "@/components/forms/LmsChapterFormOS";
 import LmsSessionMethodLabel from "@/components/labels/LmsSessionMethodLabel";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
@@ -141,7 +142,7 @@ export default function LmsChapterDetailOS({
       {loadError && (
         <p
           role="alert"
-          className="rounded-xl border border-merah/30 bg-merah-t px-4 py-3 text-sm text-merah"
+          className="rounded-xl border border-merah/30 bg-merah-t px-4 py-3 text-xs text-merah"
         >
           {loadError}
         </p>
@@ -187,16 +188,20 @@ export default function LmsChapterDetailOS({
 
             <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
               <div className="min-w-0">
-                <h1 className="text-3xl leading-tight sm:text-4xl">
-                  {chapter.name}
-                </h1>
-                {chapter.description && (
-                  <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/60">
-                    {chapter.description}
-                  </p>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-2xl leading-tight sm:text-3xl">
+                    {chapter.name}
+                  </h1>
+                  {chapter.description && (
+                    <InfoTooltipOS
+                      label={chapter.name}
+                      explanation={chapter.description}
+                      tone="onDark"
+                    />
+                  )}
+                </div>
                 {firstSession && (
-                  <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/70">
+                  <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-white/70">
                     <span className="flex items-center gap-1.5">
                       <CalendarDays size={14} />
                       {sessionDate(firstSession.session_date, {
@@ -240,7 +245,7 @@ export default function LmsChapterDetailOS({
                   },
                 ].map((stat) => (
                   <div key={stat.label}>
-                    <dd className="font-heading text-4xl tabular-nums">
+                    <dd className="font-heading text-3xl tabular-nums">
                       {stat.value}
                     </dd>
                     <dt className="mt-1 text-xs text-white/55">{stat.label}</dt>
@@ -252,7 +257,7 @@ export default function LmsChapterDetailOS({
 
           {analyticsQuery.isError ? (
             <div className="rounded-2xl border border-line bg-card-bg px-6 py-10 text-center">
-              <p className="text-sm text-merah">
+              <p className="text-xs text-merah">
                 {analyticsQuery.error.message}
               </p>
               <AppButton

@@ -141,7 +141,13 @@ function SessionMenu({
   );
 }
 
-function SessionDateTile({ start, timing }: { start: Date; timing: SessionTiming }) {
+function SessionDateTile({
+  start,
+  timing,
+}: {
+  start: Date;
+  timing: SessionTiming;
+}) {
   return (
     <div className="flex w-16 shrink-0 flex-col overflow-hidden rounded-lg border border-line bg-card-bg">
       <div
@@ -185,7 +191,7 @@ function SessionRating({ schedule }: { schedule: LmsChapterSession }) {
       className="flex shrink-0 items-center gap-1 self-start rounded-full border border-line bg-card-bg px-2 py-0.5 text-xs text-gray-500 dark:text-zinc-400"
     >
       Rating:
-      <Star size={13} className="fill-oranye text-oranye" />
+      <Star size={13} className="fill-rating text-rating" />
       <span className="font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
         {rating.toFixed(1)}
       </span>
@@ -264,7 +270,9 @@ function ChapterSchedule({
                 {schedule.location_name || schedule.location_url}
               </a>
             ) : (
-              <span className="truncate">{schedule.location_name || "Location not set"}</span>
+              <span className="truncate">
+                {schedule.location_name || "Location not set"}
+              </span>
             )}
           </span>
         </div>
