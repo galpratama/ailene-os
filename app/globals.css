@@ -103,6 +103,35 @@
   --sb-item-active-text: #171717;
   --sb-tab-track-bg: #e4e4e4;
   --sb-tab-active-bg: #ffffff;
+
+  /* OS labels: strong semantic colors adapted from Sevenpreneur's AppBasedLabel. */
+  --label-gray: #41474e;
+  --label-gray-border: #a0a3a7;
+  --label-gray-bg: #f3f5f9;
+  --label-biru: #164ea6;
+  --label-biru-border: #8ba7d3;
+  --label-biru-bg: #e2f0ff;
+  --label-kuning: #d99e00;
+  --label-kuning-border: #eccf80;
+  --label-kuning-bg: #fef2d0;
+  --label-hijau: #067647;
+  --label-hijau-border: #83bba3;
+  --label-hijau-bg: #ecfdf3;
+  --label-merah: #e62314;
+  --label-merah-border: #f3918a;
+  --label-merah-bg: #fee6e4;
+  --label-oranye: #fb7a36;
+  --label-oranye-border: #fdbd9b;
+  --label-oranye-bg: #feefe6;
+  --label-pink: #e74d79;
+  --label-pink-border: #f3a6bc;
+  --label-pink-bg: #fde7ee;
+  --label-ungu: #42359b;
+  --label-ungu-border: #a19acd;
+  --label-ungu-bg: #efedf9;
+  --label-toska: #0f766e;
+  --label-toska-border: #80cbc4;
+  --label-toska-bg: #e6fffb;
 }
 
 .dark {
@@ -127,6 +156,34 @@
   --sb-item-active-text: #f5f5f5;
   --sb-tab-track-bg: #242424;
   --sb-tab-active-bg: #3a3a3a;
+
+  --label-gray: #bbbbbb;
+  --label-gray-border: #5e5e5e;
+  --label-gray-bg: #2a2a2a;
+  --label-biru: #6f96d4;
+  --label-biru-border: #384b6a;
+  --label-biru-bg: rgb(1 101 252 / 0.15);
+  --label-kuning: #e5b52f;
+  --label-kuning-border: #6d4f00;
+  --label-kuning-bg: #3e3d13;
+  --label-hijau: #5fc39d;
+  --label-hijau-border: #254f4b;
+  --label-hijau-bg: rgb(73 158 149 / 0.15);
+  --label-merah: #f0628a;
+  --label-merah-border: #7a2438;
+  --label-merah-bg: rgb(230 35 20 / 0.15);
+  --label-oranye: #fb8f55;
+  --label-oranye-border: #7e3d1b;
+  --label-oranye-bg: rgb(251 122 54 / 0.15);
+  --label-pink: #e18aaa;
+  --label-pink-border: #6a4853;
+  --label-pink-bg: rgb(231 77 121 / 0.15);
+  --label-ungu: #a69ee1;
+  --label-ungu-border: #484462;
+  --label-ungu-bg: rgb(52 23 227 / 0.15);
+  --label-toska: #5eead4;
+  --label-toska-border: #285e58;
+  --label-toska-bg: rgb(20 184 166 / 0.15);
 
   /* Same ramp lifted off the dark page background. */
   --chart-1: #1d7a55;
@@ -246,6 +303,7 @@
   --color-sb-item-active-text: var(--sb-item-active-text);
   --color-sb-tab-track-bg: var(--sb-tab-track-bg);
   --color-sb-tab-active-bg: var(--sb-tab-active-bg);
+
 }
 
 body {

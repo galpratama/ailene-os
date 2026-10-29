@@ -1,5 +1,5 @@
 import type { LmsMemberTestResult } from "@/apis/lms";
-import { labelVariantClassName } from "@/components/labels/Label";
+import { labelVariantStyle } from "@/components/labels/Label";
 import { formatScore, scoreVariant } from "@/lib/lms-insights";
 import { Check } from "lucide-react";
 
@@ -18,7 +18,11 @@ function TestSquare({ test, label }: { test: LmsMemberTestResult | null; label: 
     return <span className={`${base} border-dashed border-line text-gray-400 dark:text-zinc-500`} aria-label={label} />;
   }
   return (
-    <span className={`${base} ${labelVariantClassName(test.score === null ? "hijau" : scoreVariant(test.score))}`} aria-label={label}>
+    <span
+      className={base}
+      style={labelVariantStyle(test.score === null ? "hijau" : scoreVariant(test.score))}
+      aria-label={label}
+    >
       {test.score === null ? <Check size={13} /> : formatScore(test.score)}
     </span>
   );
