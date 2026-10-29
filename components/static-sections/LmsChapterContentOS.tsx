@@ -7,7 +7,12 @@ import FileTypeIconOS, {
 } from "@/components/elements/FileTypeIconOS";
 import LmsMaterialFormOS from "@/components/forms/LmsMaterialFormOS";
 import LmsVideoFormOS from "@/components/forms/LmsVideoFormOS";
+import {
+  labelVariantStyle,
+  type LabelVariant,
+} from "@/components/labels/Label";
 import LmsContentStatusLabel from "@/components/labels/LmsContentStatusLabel";
+import LmsChapterTasksOS from "@/components/static-sections/LmsChapterTasksOS";
 import { videoEmbed } from "@/lib/video-embed";
 import {
   ArrowUpRight,
@@ -104,6 +109,7 @@ function SectionHeader({
 function TestGateway({
   href,
   label,
+  tone,
   icon: Icon,
   test,
   submitted,
@@ -112,81 +118,86 @@ function TestGateway({
 }: {
   href: string;
   label: string;
+  tone: LabelVariant;
   icon: typeof FileText;
   test: LmsContent | undefined;
   submitted: number;
   averageScore: number | null;
   members: number;
 }) {
+  const colors = labelVariantStyle(tone);
   return (
     <AppButton
       variant="bare"
       size="bare"
       href={href}
-      className="group flex-col items-stretch rounded-2xl border border-line bg-card-bg p-4 text-left transition-colors hover:border-claude sm:p-5"
+      style={{
+        borderColor: colors.borderColor,
+        backgroundColor: colors.backgroundColor,
+      }}
+      className="group flex-col items-stretch rounded-2xl border p-4 text-left transition-[filter,transform] hover:-translate-y-0.5 hover:brightness-[0.98]"
     >
-      <span className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-gray-50 text-gray-600 dark:bg-zinc-800 dark:text-zinc-300">
-            <Icon size={16} />
-          </span>
-          <span className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
-            {label}
-          </span>
+      <span className="flex items-start gap-3">
+        <span
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-card-bg"
+          style={{ borderColor: colors.borderColor, color: colors.color }}
+        >
+          <Icon size={18} />
         </span>
-        <ArrowUpRight
-          size={18}
-          className="text-gray-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-gray-700 dark:group-hover:text-zinc-200"
-        />
-      </span>
-      {test ? (
-        <>
-          <span className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="truncate text-xs text-gray-700 dark:text-zinc-300">
-              {test.title}
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-semibold text-gray-900 dark:text-zinc-100">
+              {label}
             </span>
-            {test.status === "inactive" && (
+            {test?.status === "inactive" && (
               <LmsContentStatusLabel status={test.status} />
             )}
-            {test.is_locked && (
-              <span className="flex items-center gap-1 text-xs text-merah">
+            {test?.is_locked && (
+              <span className="inline-flex items-center gap-1 text-xs text-merah">
                 <LockKeyhole size={12} /> Locked
               </span>
             )}
           </span>
-          <span className="mt-4 grid grid-cols-3 gap-3 border-t border-line-soft pt-4">
-            <span>
-              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
-                {test.questions.length}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                Questions
-              </span>
+          <span className="mt-0.5 block truncate text-xs text-gray-600 dark:text-zinc-300">
+            {test?.title ?? `Create the ${label.toLowerCase()}`}
+          </span>
+        </span>
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card-bg/80 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          style={{ color: colors.color }}
+        >
+          {test ? <ArrowUpRight size={16} /> : <Plus size={16} />}
+        </span>
+      </span>
+      {test && (
+        <span className="mt-3 grid grid-cols-3 gap-2 rounded-xl border border-line-soft bg-card-bg/75 px-3 py-2.5">
+          <span>
+            <span className="block text-sm font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
+              {test.questions.length}
             </span>
-            <span>
-              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
-                {submitted}
-                <span className="text-xs text-gray-400 dark:text-zinc-500">
-                  /{members}
-                </span>
-              </span>
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                Submitted
-              </span>
-            </span>
-            <span>
-              <span className="block font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
-                {averageScore?.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                Avg. score
-              </span>
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400">
+              Questions
             </span>
           </span>
-        </>
-      ) : (
-        <span className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-line px-4 py-6 text-xs text-gray-500 dark:text-zinc-400">
-          <Plus size={14} /> Create the {label.toLowerCase()}
+          <span>
+            <span className="block text-sm font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
+              {submitted}
+              <span className="text-[11px] font-normal text-gray-400 dark:text-zinc-500">
+                /{members}
+              </span>
+            </span>
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400">
+              Submitted
+            </span>
+          </span>
+          <span>
+            <span className="block text-sm font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
+              {averageScore?.toFixed(1) ?? "—"}
+            </span>
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400">
+              Avg. score
+            </span>
+          </span>
         </span>
       )}
     </AppButton>
@@ -196,6 +207,7 @@ function TestGateway({
 export default function LmsChapterContentOS({
   projectId,
   chapterId,
+  sessionToken,
   contents,
   analytics,
   isPending,
@@ -205,6 +217,7 @@ export default function LmsChapterContentOS({
 }: {
   projectId: string;
   chapterId: number;
+  sessionToken: string;
   contents: LmsContent[];
   analytics: LmsChapterAnalytics | undefined;
   isPending: boolean;
@@ -246,53 +259,43 @@ export default function LmsChapterContentOS({
   return (
     <>
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
-          <SectionHeader
-            title="Video"
-            status={video?.status}
-            action={
-              <AppButton
-                variant="outline"
-                size="sm"
-                onClick={() => setSheet("video")}
-              >
-                {video ? <Pencil size={13} /> : <Plus size={13} />}
-                {video ? "Edit" : "Add video"}
-              </AppButton>
-            }
-          />
-          {video?.video_url ? (
-            <>
+        <div className="flex min-w-0 flex-col gap-5">
+          <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
+            <SectionHeader
+              title="Video"
+              status={video?.status}
+              action={
+                <AppButton
+                  size="sm"
+                  onClick={() => setSheet("video")}
+                >
+                  {video ? <Pencil size={13} /> : <Plus size={13} />}
+                  {video ? "Edit" : "Add video"}
+                </AppButton>
+              }
+            />
+            {video?.video_url ? (
               <VideoPlayer url={video.video_url} title={video.title} />
-              {video.timestamps.length > 0 && (
-                <ul className="flex flex-wrap gap-1.5">
-                  {video.timestamps.map((marker) => (
-                    <li
-                      key={marker.start_seconds}
-                      className="rounded-full border border-line px-2.5 py-1 text-xs text-gray-600 dark:text-zinc-300"
-                    >
-                      <span className="tabular-nums text-gray-400 dark:text-zinc-500">
-                        {Math.floor(marker.start_seconds / 60)}:
-                        {String(marker.start_seconds % 60).padStart(2, "0")}
-                      </span>{" "}
-                      {marker.title}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : (
-            <AppButton
-              variant="bare"
-              size="bare"
-              onClick={() => setSheet("video")}
-              className="aspect-video w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
-            >
-              <PlayCircle size={28} className="text-gray-400" />
-              Add the lesson video
-            </AppButton>
-          )}
-        </section>
+            ) : (
+              <AppButton
+                variant="bare"
+                size="bare"
+                onClick={() => setSheet("video")}
+                className="aspect-video w-full flex-col justify-center gap-2 rounded-xl border border-dashed border-line text-xs text-gray-500 hover:border-claude dark:text-zinc-400"
+              >
+                <PlayCircle size={28} className="text-gray-400" />
+                Add the lesson video
+              </AppButton>
+            )}
+          </section>
+          <LmsChapterTasksOS
+            projectId={projectId}
+            chapterId={chapterId}
+            sessionToken={sessionToken}
+            memberCount={members}
+            onChanged={onChanged}
+          />
+        </div>
 
         <div className="flex min-w-0 flex-col gap-5">
           <section className="flex flex-col gap-4 rounded-2xl border border-line bg-card-bg p-4 sm:p-5">
@@ -301,7 +304,6 @@ export default function LmsChapterContentOS({
               status={material?.status}
               action={
                 <AppButton
-                  variant="outline"
                   size="sm"
                   onClick={() => setSheet("material")}
                 >
@@ -344,6 +346,7 @@ export default function LmsChapterContentOS({
             <TestGateway
               href={`${testsHref}/pre-test`}
               label="Pre-test"
+              tone="biru"
               icon={ClipboardList}
               test={find("pre_test")}
               submitted={analytics?.pre_test.submitted ?? 0}
@@ -353,6 +356,7 @@ export default function LmsChapterContentOS({
             <TestGateway
               href={`${testsHref}/post-test`}
               label="Post-test"
+              tone="hijau"
               icon={ClipboardCheck}
               test={find("post_test")}
               submitted={analytics?.post_test.submitted ?? 0}

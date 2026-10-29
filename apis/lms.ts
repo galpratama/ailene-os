@@ -1,6 +1,6 @@
 import "server-only";
 
-import { callApi, type ApiEnvelope } from "./api";
+import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
 export type LmsMemberRole = "champion" | "student" | "sponsor";
@@ -522,6 +522,117 @@ export async function deleteLmsChapterContent(payload: {
   if (kind === "video") return callLmsV2("videos/delete", { project_id, video_id: Number(id) });
   if (kind === "material") return callLmsV2("materials/delete", { project_id, material_id: id });
   return callLmsV2("chapter-tests/delete", { project_id, test_id: Number(id) });
+}
+
+export type LmsTool = {
+  id: number;
+  name: string;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LmsChapterTaskStep = {
+  step_number: number;
+  instruction: string;
+  image_url: string | null;
+};
+
+export type LmsChapterTask = {
+  id: number;
+  chapter: { id: number; name: string };
+  tool: Pick<LmsTool, "id" | "name" | "image_url">;
+  name: string;
+  description: string | null;
+  order_index: number;
+  status: LmsContentStatus;
+  step_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LmsChapterTaskDetail = LmsChapterTask & {
+  steps: LmsChapterTaskStep[];
+};
+
+export type LmsChapterTaskPayload = {
+  project_id: string;
+  tool_id: number;
+  name: string;
+  description: string | null;
+  order_index: number;
+  status: LmsContentStatus;
+  steps: { instruction: string; image_url: string | null }[];
+};
+
+export async function listLmsTools(): Promise<ApiEnvelope<LmsTool[]>> {
+  return callLmsV2("tools");
+}
+
+export async function listLmsChapterTasks(
+  chapterId: number,
+): Promise<ApiEnvelope<LmsChapterTask[]>> {
+  return callLmsV2("chapter-tasks", { chapter_id: chapterId });
+}
+
+export async function getLmsChapterTask(
+  taskId: number,
+): Promise<ApiEnvelope<LmsChapterTaskDetail>> {
+  return callLmsV2("chapter-tasks/details", { task_id: taskId });
+}
+
+export async function createLmsChapterTask(
+  payload: LmsChapterTaskPayload & { chapter_id: number },
+): Promise<ApiEnvelope<LmsChapterTaskDetail>> {
+  return callLmsV2("chapter-tasks/create", payload);
+}
+
+export async function updateLmsChapterTask(
+  payload: LmsChapterTaskPayload & { task_id: number },
+): Promise<ApiEnvelope<LmsChapterTaskDetail>> {
+  return callLmsV2("chapter-tasks/update", payload);
+}
+
+export async function deleteLmsChapterTask(payload: {
+  project_id: string;
+  task_id: number;
+}): Promise<ApiEnvelope<{ deleted: boolean }>> {
+  return callLmsV2("chapter-tasks/delete", payload);
+}
+
+export type LmsChapterTaskSubmission = {
+  id: number;
+  status: "on_review" | "approved" | "rejected";
+  student: { access_id: string };
+  task: { id: number; chapter: { id: number } };
+};
+
+export async function listAllLmsChapterTaskSubmissions(payload: {
+  project_id: string;
+  chapter_id: number;
+}): Promise<ApiEnvelope<LmsChapterTaskSubmission[]>> {
+  const submissions: LmsChapterTaskSubmission[] = [];
+  let page = 1;
+
+  while (true) {
+    const result = await callLmsV2<ApiList<LmsChapterTaskSubmission>>(
+      "chapter-task-submissions",
+      { ...payload, page, page_size: 100 },
+    );
+    if (!result.success || !result.data) {
+      return {
+        success: result.success,
+        code: result.code,
+        status: result.status,
+        message: result.message,
+      };
+    }
+    submissions.push(...result.data.list);
+    if (page >= result.data.metapaging.total_page) {
+      return { ...result, data: submissions };
+    }
+    page += 1;
+  }
 }
 
 export type LmsTestStats = {

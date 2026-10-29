@@ -149,7 +149,7 @@ export default function LmsChapterStatsOS({
           ) : (
             <p className="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
                   uplift >= 0
                     ? "bg-lime-bright text-forest-deep"
                     : "bg-merah-t text-merah"

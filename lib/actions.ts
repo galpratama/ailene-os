@@ -57,6 +57,13 @@ import {
   saveLmsChapterContent as saveLmsChapterContentApi,
   deleteLmsChapterContent as deleteLmsChapterContentApi,
   getLmsChapterAnalytics as getLmsChapterAnalyticsApi,
+  listLmsTools as listLmsToolsApi,
+  listLmsChapterTasks as listLmsChapterTasksApi,
+  getLmsChapterTask as getLmsChapterTaskApi,
+  createLmsChapterTask as createLmsChapterTaskApi,
+  updateLmsChapterTask as updateLmsChapterTaskApi,
+  deleteLmsChapterTask as deleteLmsChapterTaskApi,
+  listAllLmsChapterTaskSubmissions as listAllLmsChapterTaskSubmissionsApi,
   type LmsContentKind,
   type LmsContentTarget,
   type LmsChapterPayload,
@@ -65,6 +72,7 @@ import {
   type LmsSchedulePayload,
   type LmsScheduleRef,
   type LmsContentPayload,
+  type LmsChapterTaskPayload,
   createLmsGroup as createLmsGroupApi,
   deleteLmsGroup as deleteLmsGroupApi,
   deleteLmsMember as deleteLmsMemberApi,
@@ -640,6 +648,13 @@ export async function listLmsChapterContents(chapterId: number) { return listLms
 export async function saveLmsChapterContent(payload: LmsContentPayload, existing: LmsContentTarget | null) { return saveLmsChapterContentApi(payload, existing); }
 export async function deleteLmsChapterContent(payload: { project_id: string; kind: LmsContentKind; id: string }) { return deleteLmsChapterContentApi(payload); }
 export async function getLmsChapterAnalytics(payload: LmsChapterRef) { return getLmsChapterAnalyticsApi(payload); }
+export async function listLmsTools() { return listLmsToolsApi(); }
+export async function listLmsChapterTasks(chapterId: number) { return listLmsChapterTasksApi(chapterId); }
+export async function getLmsChapterTask(taskId: number) { return getLmsChapterTaskApi(taskId); }
+export async function createLmsChapterTask(payload: LmsChapterTaskPayload & { chapter_id: number }) { return createLmsChapterTaskApi(payload); }
+export async function updateLmsChapterTask(payload: LmsChapterTaskPayload & { task_id: number }) { return updateLmsChapterTaskApi(payload); }
+export async function deleteLmsChapterTask(payload: { project_id: string; task_id: number }) { return deleteLmsChapterTaskApi(payload); }
+export async function listAllLmsChapterTaskSubmissions(payload: { project_id: string; chapter_id: number }) { return listAllLmsChapterTaskSubmissionsApi(payload); }
 
 export async function updateLmsGroup(payload: {
   project_id: string;

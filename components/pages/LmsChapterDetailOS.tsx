@@ -320,6 +320,7 @@ export default function LmsChapterDetailOS({
           <LmsChapterContentOS
             projectId={projectId}
             chapterId={chapter.id}
+            sessionToken={sessionToken}
             contents={contentsQuery.data ?? []}
             analytics={analytics}
             isPending={contentsQuery.isPending}
