@@ -199,6 +199,7 @@ import {
   getPipelineDetails as getPipelineDetailsApi,
   listCompanies as listCompaniesApi,
   listPipelines as listPipelinesApi,
+  getPipelineBoard as getPipelineBoardApi,
   listPipelineWeeks as listPipelineWeeksApi,
   updateCompany as updateCompanyApi,
   updateContact as updateContactApi,
@@ -213,6 +214,7 @@ import {
   type InboundLeadPayload,
   type ListCompaniesOptions,
   type ListPipelinesOptions,
+  type PipelineBoardOptions,
   type PipelineWeekOptions,
   type UpdatePipelinePayload,
 } from "@/apis/sales";
@@ -372,6 +374,10 @@ export async function updateContact(payload: {
 
 export async function listPipelines(options: ListPipelinesOptions) {
   return listPipelinesApi(options);
+}
+
+export async function getPipelineBoard(options: PipelineBoardOptions) {
+  return getPipelineBoardApi(options);
 }
 
 export async function listPipelineWeeks(options: PipelineWeekOptions) {

@@ -107,7 +107,7 @@ export default function LeadsPageOS({
 
   const filters = { ...baseFilters, page, page_size: pageSize };
 
-  // The kanban pages each column itself, so this paged list only feeds cards and table.
+  // The kanban loads through the board endpoint, so this paged list only feeds cards and table.
   const pipelineQuery = useQuery({
     queryKey: ["sales", "pipelines", filters],
     queryFn: () => listLeadsPage(filters),

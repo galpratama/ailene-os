@@ -6,9 +6,8 @@ import AppSearchableSelect, {
 import AppButton from "@/components/buttons/AppButton";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
-import { useSalesPipelineList } from "@/hooks/useSalesPipelineList";
 import { useSession } from "@/contexts/SessionContext";
-import { createQuotation, getPipelineDetails, submitQuotation } from "@/lib/actions";
+import { createQuotation, getPipelineDetails, listPipelines, submitQuotation } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { getRupiahCurrency } from "@/lib/currency";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +15,10 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
+import type { PipelinePhase } from "@/apis/sales";
+
+const PICKER_PHASES: PipelinePhase[] = ["sdr", "bdr"];
+const PICKER_PAGE_SIZE = 10;
 
 function Block({
   step,
@@ -55,7 +58,6 @@ export default function PricingCalculatorPageOS({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: pipelineData } = useSalesPipelineList(!!sessionToken);
 
   const sessionUser = useSession();
   const canViewCostDetails =
@@ -73,19 +75,19 @@ export default function PricingCalculatorPageOS({
     ? { value: selectedPipeline.data.id, label: selectedPipeline.data.company_name }
     : null;
 
+  // The API filters one phase per call, so each page asks both phases for the typed keyword.
   async function loadPipelineOptions(inputValue: string, page: number) {
-    const pageSize = 20;
-    const normalizedKeyword = inputValue.trim().toLocaleLowerCase();
-    const matchingPipelines = (pipelineData ?? []).filter((pipeline) =>
-      pipeline.company_name.toLocaleLowerCase().includes(normalizedKeyword)
+    const keyword = inputValue.trim() || undefined;
+    const results = await Promise.all(
+      PICKER_PHASES.map(async (phase) =>
+        requireApiData(await listPipelines({ phase, keyword, page, page_size: PICKER_PAGE_SIZE }))
+      )
     );
-    const offset = (page - 1) * pageSize;
     return {
-      options: matchingPipelines.slice(offset, offset + pageSize).map((pipeline) => ({
-        value: pipeline.id,
-        label: pipeline.company_name,
-      })),
-      hasMore: offset + pageSize < matchingPipelines.length,
+      options: results.flatMap((result) =>
+        result.list.map((pipeline) => ({ value: pipeline.id, label: pipeline.company_name }))
+      ),
+      hasMore: results.some((result) => result.metapaging.current_page < result.metapaging.total_page),
     };
   }
 
@@ -202,6 +204,7 @@ export default function PricingCalculatorPageOS({
           value={selectedPipelineOption ?? linkedPipelineOption}
           onChange={handlePipelineChange}
           loadOptions={loadPipelineOptions}
+          debounceMs={300}
           disabled={isSavingDraft || isSubmittingQuotation}
         />
         {selectedPipeline.isError && (

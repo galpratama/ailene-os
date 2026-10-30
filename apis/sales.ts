@@ -152,6 +152,24 @@ export type ListPipelinesOptions = {
   page_size?: number;
 };
 
+// The last card a board column shows; its next chunk starts right after it.
+export type PipelineBoardCursor = { updated_at: string; id: number };
+
+export type PipelineBoardFilters = Omit<ListPipelinesOptions, "phase" | "stage" | "page" | "page_size">;
+
+export type PipelineBoardOptions = PipelineBoardFilters & {
+  stages: PipelineStage[];
+  per_stage?: number;
+  after?: PipelineBoardCursor;
+};
+
+export type PipelineBoardColumn = {
+  stage: PipelineStage;
+  total: number;
+  has_more: boolean;
+  list: PipelineData[];
+};
+
 export type PipelineWeekOptions = Omit<ListPipelinesOptions, "page" | "page_size"> & {
   weeks?: number;
 };
@@ -289,6 +307,16 @@ export async function listPipelines(
   options: ListPipelinesOptions
 ): Promise<ApiEnvelope<ApiList<PipelineData>>> {
   return callApi("/api/v2/pipelines", {
+    token: await token(),
+    body: options,
+  });
+}
+
+// Every column of a kanban board in one call; with `after`, the next chunk of the one column.
+export async function getPipelineBoard(
+  options: PipelineBoardOptions
+): Promise<ApiEnvelope<{ stages: PipelineBoardColumn[] }>> {
+  return callApi("/api/v2/pipelines/board", {
     token: await token(),
     body: options,
   });

@@ -13,7 +13,8 @@ These are project-specific conventions. Follow them exactly — don't fall back 
   3. Client components — `useQuery` / `useMutation` from `@tanstack/react-query` (the provider is `contexts/QueryProvider.tsx` in the OS layout `app/(os)/os/layout.tsx`, alongside `GoogleOAuthProvider`; a biz page that needs it wraps itself, see `join-trainer/page.tsx`), unwrapping responses with `requireApiData()` / `requireApiSuccess()` from `lib/api-result.ts`, and invalidating by query-key prefix (`["tasks"]`, `["trainers"]`, ...).
 - The OS home loads tasks, stale leads, pending quotations, and pipeline analytics together through `apis/stat.ts` -> `getHomeStat()` -> `POST /api/v2/stat`; contract: `ailene-os-apis/docs/api/stat.md`. Home statistics are served only at `/api/v2/stat`; the former task/quotation summary and pipeline home-summary/analytics routes are removed. Keep one query under `["stat"]`, stale on mount so returning home refreshes after changes in other modules.
 - Enum values are the API's lowercase `snake_case` spellings (`manager_review`, `closed_won`). Don't reintroduce uppercase variants.
-- List endpoints cap `page_size` at 100; when a view needs every row, walk the pages (see `hooks/useTaskList.ts`).
+- List endpoints cap `page_size` at 100; when a view needs every row, walk the pages (see `hooks/useTaskList.ts`). Pickers search the API by keyword instead of loading every row.
+- The leads kanban opens with one `POST /api/v2/pipelines/board` call that seeds every column's first chunk; a column scrolled to its end asks the same endpoint for its next chunk with an `after` cursor, and a card move refetches only the two touched columns (`components/pages/LeadsKanbanBoardOS.tsx`). Don't go back to one `/pipelines` call per column.
 - Errors from user actions surface through `showErrorToast()` (`lib/toast.ts`); field-level validation stays inline under its field.
 
 ## Auth / session
