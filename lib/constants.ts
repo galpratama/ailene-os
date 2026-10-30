@@ -1,5 +1,8 @@
 export const SESSION_COOKIE_NAME = "session_token_ailene";
 
+// Neon Realtime database name of the ailene-os-apis database.
+export const NEON_REALTIME_DB = "neondb";
+
 export const COMPANY_NAME_PLACEHOLDER = "Enter company name";
 export const COMPANY_WEBSITE_PLACEHOLDER = "https://example.com";
 

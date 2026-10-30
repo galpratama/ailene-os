@@ -2,8 +2,8 @@
 
 import type { NotificationEntityType } from "@/apis/notifications";
 import AppButton from "@/components/buttons/AppButton";
+import { useUnreadNotificationCount } from "@/contexts/NotificationCountContext";
 import {
-  getUnreadNotificationCount,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -33,12 +33,8 @@ export default function NotificationBellOS({
   const containerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  const { data: countData } = useQuery({
-    queryKey: ["notifications", "unread-count"],
-    queryFn: async () => requireApiData(await getUnreadNotificationCount()),
-    enabled: !!sessionToken,
-    refetchInterval: 30000,
-  });
+  // Pushed by Neon Realtime through the layout's provider, so the bell never polls.
+  const unreadCount = useUnreadNotificationCount();
   const { data: listData } = useQuery({
     queryKey: ["notifications", "list"],
     queryFn: async () =>
@@ -73,7 +69,6 @@ export default function NotificationBellOS({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const unreadCount = countData?.count ?? 0;
   const notifications = listData?.list ?? [];
 
   return (
