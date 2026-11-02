@@ -1,4 +1,5 @@
 import AppToaster from "@/components/elements/AppToaster";
+import AttributionCaptureBIZ from "@/components/analytics/AttributionCaptureBIZ";
 import GoogleTagBIZ from "@/components/analytics/GoogleTagBIZ";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
@@ -64,6 +65,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
       <PostHogBIZ />
+      <AttributionCaptureBIZ />
       <div className={`${stackSansText.className} ${stackSansText.variable} ${crayonize.variable}`}>
         {children}
       </div>

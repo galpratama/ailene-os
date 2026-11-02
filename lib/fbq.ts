@@ -4,10 +4,10 @@ declare global {
   }
 }
 
-// No-op until BD/Marketing supplies NEXT_PUBLIC_META_PIXEL_ID.
-export function sendLeadEvent() {
+// No-op until BD/Marketing supplies NEXT_PUBLIC_META_PIXEL_ID; content_category splits form from WhatsApp leads.
+export function sendLeadEvent(method: "form" | "whatsapp") {
   if (typeof window === "undefined" || !window.fbq) return;
-  window.fbq("track", "Lead");
+  window.fbq("track", "Lead", { content_category: method });
 }
 
 // Meta's standard event list has no view/click equivalent, so the feature schema rides on custom events.

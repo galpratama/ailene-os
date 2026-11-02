@@ -12,6 +12,7 @@ import { listCompanies } from "@/lib/actions";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { buildLeadChannelOptions, leadChannelLabel } from "@/lib/lead-channels";
 
 const leadSourceOptions: AppSelectOption[] = [
   { value: "", label: "All Sources" },
@@ -19,14 +20,7 @@ const leadSourceOptions: AppSelectOption[] = [
   { value: "outbound", label: "Outbound" },
 ];
 
-const leadChannelOptions: AppSelectOption[] = [
-  { value: "", label: "All Channels" },
-  { value: "referral", label: "Referral" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "thread", label: "Thread" },
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-];
+const leadChannelOptions = buildLeadChannelOptions("All Channels", true);
 
 export default function OrganizationsPageOS({ sessionToken }: { sessionToken: string }) {
   const [page, setPage] = useState(1);
@@ -103,7 +97,7 @@ export default function OrganizationsPageOS({ sessionToken }: { sessionToken: st
                   <tr key={company.id} onClick={() => setOpenOrganizationId(company.id)} className="cursor-pointer border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
                     <td className="px-5 py-3.5"><div className="flex items-center gap-2.5"><div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line-soft bg-gray-50 dark:bg-zinc-800"><Building2 size={14} className="text-gray-400" /></div><p className="truncate font-semibold text-gray-900 dark:text-zinc-100">{company.name}</p></div></td>
                     <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{company.lead_source ?? "—"}</td>
-                    <td className="px-5 py-3.5 capitalize text-gray-600 dark:text-zinc-300">{company.lead_channel ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{leadChannelLabel(company.lead_channel)}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.industry_id ? industries.get(company.industry_id) ?? `#${company.industry_id}` : "—"}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.legal_identifier ?? "—"}</td>
                     <td className="px-5 py-3.5 text-gray-600 dark:text-zinc-300">{company.website_url ?? "—"}</td>

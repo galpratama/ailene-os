@@ -1,4 +1,5 @@
 import type { InboundLeadPayload } from "@/apis/sales";
+import { readAttribution } from "@/lib/attribution";
 import { leadNeeds } from "@/lib/biz-content";
 
 const fieldClass =
@@ -22,6 +23,8 @@ export function toInboundLeadPayload(
       job_title: text("position") || null,
     },
     note: text("need") || null,
+    // No lead_channel: the API derives it from the visitor's first touch.
+    attribution: readAttribution(),
   };
 }
 

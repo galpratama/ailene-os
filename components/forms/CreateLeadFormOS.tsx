@@ -21,20 +21,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
+import { buildLeadChannelOptions } from "@/lib/lead-channels";
 
 
 const leadSourceOptions: AppSelectOption[] = [
   { value: "inbound", label: "Inbound" },
   { value: "outbound", label: "Outbound" },
 ];
-const leadChannelOptions: AppSelectOption[] = [
-  { value: "", label: "No channel" },
-  { value: "referral", label: "Referral" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "thread", label: "Thread" },
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-];
+const leadChannelOptions = buildLeadChannelOptions("No channel", false);
 
 type CompanySearchOption = AppSearchableOption & {
   leadSource: LeadSource | null;

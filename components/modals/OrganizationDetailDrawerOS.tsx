@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Mail, Phone, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { showErrorToast } from "@/lib/toast";
+import { leadChannelLabel } from "@/lib/lead-channels";
 
 export default function OrganizationDetailDrawerOS({
   sessionToken,
@@ -58,7 +59,7 @@ export default function OrganizationDetailDrawerOS({
             <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><p className="text-xs text-gray-400">Lead source</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_source ?? "—"}</p></div>
-                <div><p className="text-xs text-gray-400">Lead channel</p><p className="capitalize text-gray-700 dark:text-zinc-300">{company.lead_channel ?? "—"}</p></div>
+                <div><p className="text-xs text-gray-400">Lead channel</p><p className="text-gray-700 dark:text-zinc-300">{leadChannelLabel(company.lead_channel)}</p></div>
                 <div><p className="text-xs text-gray-400">Industry ID</p><p className="text-gray-700 dark:text-zinc-300">{company.industry_id ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Legal identifier</p><p className="text-gray-700 dark:text-zinc-300">{company.legal_identifier ?? "—"}</p></div>
                 <div><p className="text-xs text-gray-400">Website</p><p className="break-all text-gray-700 dark:text-zinc-300">{company.website_url ?? "—"}</p></div>

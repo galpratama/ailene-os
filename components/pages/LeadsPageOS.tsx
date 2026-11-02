@@ -23,6 +23,7 @@ import { userSelectOption } from "@/lib/user-select-option";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, CalendarRange, Kanban, LayoutGrid, Plus, Search, Table2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { buildLeadChannelOptions } from "@/lib/lead-channels";
 
 const viewModeOptions = [
   { value: "kanban" as const, label: "Kanban", icon: Kanban },
@@ -45,14 +46,7 @@ const leadSourceOptions: AppSelectOption[] = [
   ...(Object.keys(leadSourceLabels) as LeadSource[]).map((value) => ({ value, label: leadSourceLabels[value] })),
 ];
 
-const leadChannelOptions: AppSelectOption[] = [
-  { value: "", label: "All Channels" },
-  { value: "referral", label: "Referral" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "thread", label: "Thread" },
-  { value: "instagram", label: "Instagram" },
-  { value: "facebook", label: "Facebook" },
-];
+const leadChannelOptions = buildLeadChannelOptions("All Channels", true);
 
 export default function LeadsPageOS({
   sessionToken,

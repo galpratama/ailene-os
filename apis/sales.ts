@@ -4,7 +4,15 @@ import { callApi, clientSecret, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
 export type LeadSource = "inbound" | "outbound";
-export type LeadChannel = "referral" | "linkedin" | "thread" | "instagram" | "facebook";
+// Operating-layer channel taxonomy; the first five values are legacy and kept for existing rows.
+export type LeadChannel =
+  | "referral" | "linkedin" | "thread" | "instagram" | "facebook"
+  | "google_ads" | "meta_ads"
+  | "seo" | "direct" | "organic_social" | "ai_assistant" | "web_referral" | "b2c_bridge"
+  | "ref_raymond_chin" | "ref_network" | "ref_client"
+  | "out_raymond_db" | "out_linkedin" | "out_threads" | "out_existing_bu"
+  | "public_workshop" | "webinar" | "exhibition"
+  | "expansion";
 export type PipelinePhase = "sdr" | "bdr";
 
 export type PipelineStage = string;
@@ -203,7 +211,24 @@ export type InboundLeadPayload = {
     job_title?: string | null;
   };
   lead_channel?: LeadChannel | null;
+  // Without lead_channel, the API derives the channel from this first touch.
+  attribution?: LeadAttribution | null;
   note?: string | null;
+};
+
+export type LeadAttribution = {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
+  fbclid?: string;
+  landing_page?: string;
+  referrer?: string;
+  first_seen_at?: string;
 };
 
 // The response withholds owner fields on purpose, so the landing page never sees internal staff.
