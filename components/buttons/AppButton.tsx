@@ -157,6 +157,15 @@ export default function AppButton({
     onClick?.(event);
   };
 
+  // next/link re-appends a same-page fragment the URL already has (#contact#contact) and never scrolls; a native anchor does.
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={finalClasses} onClick={handleClick} {...anchorProps}>
+        {children}
+      </a>
+    );
+  }
+
   if (href.startsWith("http")) {
     return (
       <a

@@ -5,7 +5,7 @@ import PageMargin from "@/components/layouts/PageMargin";
 import { LogoAilene } from "@/components/svg/LogoAilene";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const navLinks = [
@@ -13,6 +13,11 @@ const navLinks = [
   { label: "Programs", fragment: "#programs" },
   { label: "FAQ", fragment: "#faq" },
 ];
+
+// next/link re-appends a same-page fragment the URL already has and never scrolls; on-page fragments use a native anchor.
+function NavLink({ href, ...props }: ComponentProps<"a"> & { href: string }) {
+  return href.startsWith("#") ? <a href={href} {...props} /> : <Link href={href} {...props} />;
+}
 
 export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -47,13 +52,13 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
 
         <nav aria-label="Navigasi utama" className="ml-auto hidden items-center gap-6.5 lg:flex">
           {navLinks.map((link) => (
-            <Link
+            <NavLink
               key={link.label}
               href={hrefFor(link.fragment)}
               className="text-[15px] font-medium opacity-75 transition-opacity hover:opacity-100"
             >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 
@@ -85,14 +90,14 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
           className="mx-4 grid gap-1 rounded-xl border border-biz-forest/10 bg-biz-paper p-2.5 text-biz-ink shadow-2xl lg:hidden"
         >
           {navLinks.map((link) => (
-            <Link
+            <NavLink
               key={link.label}
               href={hrefFor(link.fragment)}
               onClick={closeMenu}
               className="rounded-lg px-3.5 py-3 text-base font-medium hover:bg-biz-forest/6"
             >
               {link.label}
-            </Link>
+            </NavLink>
           ))}
           <AppButton
             href={hrefFor("#contact")}
