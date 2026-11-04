@@ -13,6 +13,12 @@ export type ReportPeriod = {
 
 export type AnalyticsPeriodPayload = { start_date: string; end_date: string };
 
+export type WarehouseAnalyticsPayload = AnalyticsPeriodPayload & {
+  host?: string;
+  channel?: string;
+  campaign_id?: string;
+};
+
 // --- Product sites (GA4 "Tracking") ---
 
 export type TrackingWebsiteId =
@@ -326,4 +332,120 @@ export async function getMetaAdsCreatives(payload: AnalyticsPeriodPayload) {
 
 export async function getMetaAdsAudience(payload: AnalyticsPeriodPayload) {
   return post<MetaAdsAudience>("meta-ads/audience", payload);
+}
+
+export type WarehouseMetricSet = {
+  spend_idr: number;
+  total_leads: number;
+  cpl_idr: number | null;
+  sessions: number;
+  engaged_rate: number | null;
+  conversion_rate: number | null;
+};
+
+export type WarehouseAnalytics = {
+  period: ReportPeriod;
+  timezone: string;
+  currency: string;
+  generated_at: string;
+  filters: {
+    hosts: string[];
+    channels: string[];
+    campaigns: { id: string; name: string }[];
+  };
+  freshness: { source: string; last_date: string | null; loaded_at: string | null }[];
+  summary: {
+    current: WarehouseMetricSet;
+    previous: WarehouseMetricSet;
+    changes: { [K in keyof WarehouseMetricSet]: number | null };
+  };
+  daily: { date: string; spend_idr: number; total_leads: number; sessions: number }[];
+  funnel: { key: string; label: string; value: number; from_previous_rate: number | null }[];
+  channels: { channel: string; spend_idr: number; sessions: number; total_leads: number; conversion_rate: number | null }[];
+  landing_pages: {
+    landing_page: string;
+    sessions: number;
+    users: number;
+    engaged_rate: number | null;
+    average_engagement_seconds: number | null;
+    key_events: number;
+    conversion_rate: number | null;
+    paid_share: number | null;
+    seo_clicks: number;
+    seo_average_position: number | null;
+  }[];
+  ads: {
+    id: string;
+    name: string;
+    campaign_id: string;
+    campaign: string;
+    adset: string;
+    thumbnail_url: string | null;
+    headline: string | null;
+    call_to_action: string | null;
+    destination_url: string | null;
+    spend_idr: number;
+    impressions: number;
+    link_clicks: number;
+    landing_page_views: number;
+    total_leads: number;
+    cpm_idr: number | null;
+    link_ctr: number | null;
+    hook_rate: number | null;
+    hold_rate: number | null;
+    landing_rate: number | null;
+    web_engaged_rate: number | null;
+    cpl_idr: number | null;
+    low_n_clicks: boolean;
+    low_n_leads: boolean;
+    quality_ranking: string | null;
+    engagement_ranking: string | null;
+    conversion_ranking: string | null;
+  }[];
+  meta_audience: {
+    breakdown: string;
+    segment_1: string;
+    segment_2: string | null;
+    spend_idr: number;
+    impressions: number;
+    link_clicks: number;
+    leads: number;
+    cpl_idr: number | null;
+  }[];
+  seo_daily: { date: string; clicks: number; impressions: number; ctr: number | null; average_position: number | null }[];
+  seo_queries: { query: string; clicks: number; impressions: number; ctr: number | null; average_position: number | null; branded: boolean }[];
+  seo_pages: { page: string; clicks: number; impressions: number; ctr: number | null; average_position: number | null }[];
+  traffic_sources: {
+    channel: string;
+    source: string;
+    medium: string;
+    campaign: string;
+    sessions: number;
+    users: number;
+    engaged_rate: number | null;
+    leads: number;
+  }[];
+  web_audience: {
+    device: string;
+    region: string;
+    new_vs_returning: string;
+    sessions: number;
+    engaged_rate: number | null;
+    key_events: number;
+  }[];
+  utm_issues: { issue: string; sessions: number }[];
+  pipeline_runs: {
+    run_id: string;
+    source: string;
+    status: string;
+    rows_upserted: number;
+    error: string | null;
+    started_at: string;
+    finished_at: string | null;
+  }[];
+  data_gaps: { code: string; message: string }[];
+};
+
+export async function getWarehouseAnalytics(payload: WarehouseAnalyticsPayload) {
+  return post<WarehouseAnalytics>("warehouse/dashboard", payload);
 }

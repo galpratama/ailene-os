@@ -36,8 +36,10 @@ import {
   getTrackingFunnel as getTrackingFunnelApi,
   getTrackingOverview as getTrackingOverviewApi,
   getTrackingSources as getTrackingSourcesApi,
+  getWarehouseAnalytics as getWarehouseAnalyticsApi,
   type AnalyticsPeriodPayload,
   type TrackingPeriodPayload,
+  type WarehouseAnalyticsPayload,
 } from "@/apis/analytics";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
@@ -462,6 +464,10 @@ export async function getMetaAdsCreatives(payload: AnalyticsPeriodPayload) {
 
 export async function getMetaAdsAudience(payload: AnalyticsPeriodPayload) {
   return getMetaAdsAudienceApi(payload);
+}
+
+export async function getWarehouseAnalytics(payload: WarehouseAnalyticsPayload) {
+  return getWarehouseAnalyticsApi(payload);
 }
 
 export async function listTrainers(options: ListTrainersOptions = {}) {

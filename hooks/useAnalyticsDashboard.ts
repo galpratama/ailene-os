@@ -15,6 +15,8 @@ import type {
   TrackingOverview,
   TrackingPeriodPayload,
   TrackingSources,
+  WarehouseAnalytics,
+  WarehouseAnalyticsPayload,
 } from "@/apis/analytics";
 import type { ApiEnvelope } from "@/apis/api";
 import {
@@ -29,6 +31,7 @@ import {
   getTrackingFunnel,
   getTrackingOverview,
   getTrackingSources,
+  getWarehouseAnalytics,
 } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
@@ -165,4 +168,13 @@ export function useMetaAdsDashboard(payload: AnalyticsPeriodPayload, enabled: bo
       };
     }
   );
+}
+
+export function useWarehouseAnalytics(payload: WarehouseAnalyticsPayload, enabled: boolean) {
+  return useQuery<WarehouseAnalytics>({
+    queryKey: ["analytics", "warehouse", payload],
+    queryFn: async () => requireApiData(await getWarehouseAnalytics(payload)),
+    enabled,
+    staleTime: STALE_TIME,
+  });
 }
