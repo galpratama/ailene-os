@@ -43,6 +43,15 @@
   --chart-5: #a8d24a;
   --chart-6: #d6ee30;
 
+  /* Analytics categorical slots: order validated for colorblind separation (dataviz validator), assign in order. */
+  --viz-1: #1a7a52;
+  --viz-2: #6250d6;
+  --viz-3: #eb6834;
+  --viz-4: #2a78d6;
+  --viz-5: #eda100;
+  --viz-6: #d55181;
+  --viz-other: #9ca3af;
+
   /* B2B training palette stays separate from the existing marketing tokens. */
   --coral: #ff8556;
   --coral-t: #ffdcd7;
@@ -192,6 +201,14 @@
   --chart-4: #7fc766;
   --chart-5: #afd854;
   --chart-6: #d6ee30;
+
+  --viz-1: #2f9e6e;
+  --viz-2: #9085e9;
+  --viz-3: #d95926;
+  --viz-4: #3987e5;
+  --viz-5: #c98500;
+  --viz-6: #d55181;
+  --viz-other: #6b7280;
 }
 
 /* Any bare `border` / `divide` without a color class gets the structural line, not Tailwind v4's currentColor. */
@@ -244,6 +261,13 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --color-chart-6: var(--chart-6);
+  --color-viz-1: var(--viz-1);
+  --color-viz-2: var(--viz-2);
+  --color-viz-3: var(--viz-3);
+  --color-viz-4: var(--viz-4);
+  --color-viz-5: var(--viz-5);
+  --color-viz-6: var(--viz-6);
+  --color-viz-other: var(--viz-other);
 
   --color-coral: var(--coral);
   --color-coral-t: var(--coral-t);

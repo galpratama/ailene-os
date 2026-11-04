@@ -25,19 +25,11 @@ import {
   type UpdateArticlePayload,
 } from "@/apis/articles";
 import {
-  getMarketingChannels as getMarketingChannelsApi,
-  getMarketingEngagement as getMarketingEngagementApi,
-  getMarketingOverview as getMarketingOverviewApi,
-  getMetaAdsAudience as getMetaAdsAudienceApi,
-  getMetaAdsCampaigns as getMetaAdsCampaignsApi,
-  getMetaAdsCreatives as getMetaAdsCreativesApi,
-  getMetaAdsOverview as getMetaAdsOverviewApi,
   getTrackingAileneReferrals as getTrackingAileneReferralsApi,
   getTrackingFunnel as getTrackingFunnelApi,
   getTrackingOverview as getTrackingOverviewApi,
   getTrackingSources as getTrackingSourcesApi,
   getWarehouseAnalytics as getWarehouseAnalyticsApi,
-  type AnalyticsPeriodPayload,
   type TrackingPeriodPayload,
   type WarehouseAnalyticsPayload,
 } from "@/apis/analytics";
@@ -436,34 +428,6 @@ export async function getTrackingSources(payload: TrackingPeriodPayload) {
 
 export async function getTrackingAileneReferrals(payload: TrackingPeriodPayload) {
   return getTrackingAileneReferralsApi(payload);
-}
-
-export async function getMarketingOverview(payload: AnalyticsPeriodPayload) {
-  return getMarketingOverviewApi(payload);
-}
-
-export async function getMarketingEngagement(payload: AnalyticsPeriodPayload) {
-  return getMarketingEngagementApi(payload);
-}
-
-export async function getMarketingChannels(payload: AnalyticsPeriodPayload) {
-  return getMarketingChannelsApi(payload);
-}
-
-export async function getMetaAdsOverview(payload: AnalyticsPeriodPayload) {
-  return getMetaAdsOverviewApi(payload);
-}
-
-export async function getMetaAdsCampaigns(payload: AnalyticsPeriodPayload) {
-  return getMetaAdsCampaignsApi(payload);
-}
-
-export async function getMetaAdsCreatives(payload: AnalyticsPeriodPayload) {
-  return getMetaAdsCreativesApi(payload);
-}
-
-export async function getMetaAdsAudience(payload: AnalyticsPeriodPayload) {
-  return getMetaAdsAudienceApi(payload);
 }
 
 export async function getWarehouseAnalytics(payload: WarehouseAnalyticsPayload) {

@@ -83,7 +83,7 @@ export default function InfoTooltipOS({
           <div
             id={tooltipId}
             role="tooltip"
-            className={`${osTypeClassName} pointer-events-none fixed z-50 w-max max-w-72 rounded-lg bg-ink px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg`}
+            className={`${osTypeClassName} pointer-events-none fixed z-50 w-max max-w-72 rounded-lg bg-ink px-3 py-2 ring-1 ring-white/10 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg`}
             style={{
               left: position.left,
               top: position.top,

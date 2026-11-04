@@ -1,15 +1,6 @@
 "use client";
 
 import type {
-  AnalyticsPeriodPayload,
-  MarketingChannels,
-  MarketingEngagement,
-  MarketingOverview,
-  MetaAdsAudience,
-  MetaAdsCampaigns,
-  MetaAdsCreatives,
-  MetaAdsOverview,
-  ReportPeriod,
   TrackingAileneReferrals,
   TrackingFunnel,
   TrackingOverview,
@@ -20,13 +11,6 @@ import type {
 } from "@/apis/analytics";
 import type { ApiEnvelope } from "@/apis/api";
 import {
-  getMarketingChannels,
-  getMarketingEngagement,
-  getMarketingOverview,
-  getMetaAdsAudience,
-  getMetaAdsCampaigns,
-  getMetaAdsCreatives,
-  getMetaAdsOverview,
   getTrackingAileneReferrals,
   getTrackingFunnel,
   getTrackingOverview,
@@ -34,22 +18,11 @@ import {
   getWarehouseAnalytics,
 } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
-import { useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { keepPreviousData, useQueries, useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 const STALE_TIME = 5 * 60 * 1000;
 
-type Connected<T> = Extract<T, { configured: true }>;
-
 export type TrackingDashboard = TrackingOverview & TrackingFunnel & TrackingSources;
-export type MarketingDashboard = MarketingOverview & MarketingEngagement & MarketingChannels;
-export type MetaAdsDashboard =
-  | { configured: false; period: ReportPeriod }
-  | (Omit<Connected<MetaAdsOverview>, "metadata"> &
-      Connected<MetaAdsCampaigns> &
-      Omit<Connected<MetaAdsCreatives>, "min_ranking_impressions"> &
-      Connected<MetaAdsAudience> & {
-        metadata: Connected<MetaAdsOverview>["metadata"] & { min_ranking_impressions: number };
-      });
 
 function sectionKey(name: string, section: string, payload: object) {
   return ["analytics", name, section, payload];
@@ -121,60 +94,12 @@ export function useAileneReferrals(payload: TrackingPeriodPayload, enabled: bool
   return { referrals, totalSessions: overview.data?.summary.current.sessions ?? null };
 }
 
-export function useMarketingDashboard(payload: AnalyticsPeriodPayload, enabled: boolean) {
-  return useDashboard<MarketingDashboard>(
-    "marketing",
-    payload,
-    enabled,
-    {
-      overview: () => getMarketingOverview(payload),
-      engagement: () => getMarketingEngagement(payload),
-      channels: () => getMarketingChannels(payload),
-    },
-    ([overview, engagement, channels]) => ({
-      ...(engagement as MarketingEngagement),
-      ...(channels as MarketingChannels),
-      ...(overview as MarketingOverview),
-    })
-  );
-}
-
-export function useMetaAdsDashboard(payload: AnalyticsPeriodPayload, enabled: boolean) {
-  return useDashboard<MetaAdsDashboard>(
-    "meta-ads",
-    payload,
-    enabled,
-    {
-      overview: () => getMetaAdsOverview(payload),
-      campaigns: () => getMetaAdsCampaigns(payload),
-      creatives: () => getMetaAdsCreatives(payload),
-      audience: () => getMetaAdsAudience(payload),
-    },
-    ([overviewPart, campaignsPart, creativesPart, audiencePart]) => {
-      const overview = overviewPart as MetaAdsOverview;
-      const campaigns = campaignsPart as MetaAdsCampaigns;
-      const creatives = creativesPart as MetaAdsCreatives;
-      const audience = audiencePart as MetaAdsAudience;
-      if (!overview.configured || !campaigns.configured || !creatives.configured || !audience.configured) {
-        return { configured: false, period: overview.period };
-      }
-      const { min_ranking_impressions, ...creativeRest } = creatives;
-      return {
-        ...campaigns,
-        ...creativeRest,
-        ...audience,
-        ...overview,
-        metadata: { ...overview.metadata, min_ranking_impressions },
-      };
-    }
-  );
-}
-
 export function useWarehouseAnalytics(payload: WarehouseAnalyticsPayload, enabled: boolean) {
   return useQuery<WarehouseAnalytics>({
     queryKey: ["analytics", "warehouse", payload],
     queryFn: async () => requireApiData(await getWarehouseAnalytics(payload)),
     enabled,
     staleTime: STALE_TIME,
+    placeholderData: keepPreviousData,
   });
 }
