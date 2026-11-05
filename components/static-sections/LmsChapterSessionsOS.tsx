@@ -327,11 +327,6 @@ function ChapterRow({
               <LmsContentStatusLabel status={chapter.status} />
             )}
           </div>
-          {chapter.description && (
-            <p className="mt-1 max-w-2xl truncate text-sm text-gray-500 dark:text-zinc-400">
-              {chapter.description}
-            </p>
-          )}
           <LmsChapterChecklistOS checklist={chapter.checklist} />
         </div>
         <AppButton
