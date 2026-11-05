@@ -141,17 +141,19 @@ export default function LmsChapterDetailOS({
       showErrorToast(error, "Failed to update the feedback lock."),
   });
 
-  async function refresh() {
+  async function refresh(targetChapterId?: number) {
+    const affectedChapters = [...new Set([chapterId, targetChapterId].filter((id): id is number => id !== undefined))];
     await Promise.all([
-      client.invalidateQueries({
-        queryKey: ["lms-chapter-contents", chapterId],
-      }),
-      client.invalidateQueries({
-        queryKey: ["lms-chapter-analytics", projectId, chapterId],
-      }),
       client.invalidateQueries({
         queryKey: ["lms-chapter-sessions", projectId],
       }),
+      client.invalidateQueries({ queryKey: ["lms-project-content", projectId] }),
+      ...affectedChapters.flatMap((id) => [
+        client.invalidateQueries({ queryKey: ["lms-chapter-contents", id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-tasks", id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-task-submissions", projectId, id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-analytics", projectId, id] }),
+      ]),
     ]);
   }
 
@@ -320,6 +322,7 @@ export default function LmsChapterDetailOS({
           <LmsChapterContentOS
             projectId={projectId}
             chapterId={chapter.id}
+            chapters={chapters}
             sessionToken={sessionToken}
             contents={contentsQuery.data ?? []}
             analytics={analytics}

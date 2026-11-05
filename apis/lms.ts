@@ -296,8 +296,18 @@ export type LmsChapterSession = LmsSchedule & {
   feedback_count: number;
   feedback_average: number | null;
 };
+export type LmsChapterChecklist = {
+  chapter_id: number;
+  material: boolean;
+  video_recording: boolean;
+  video_short: boolean;
+  pre_test: boolean;
+  post_test: boolean;
+  task: boolean;
+};
 export type LmsChapterSessionsEntry = LmsChapterEntry & {
   sessions: LmsChapterSession[];
+  checklist: LmsChapterChecklist;
 };
 export type LmsLevel = { id: number; level_number: number; name: string };
 export async function listLmsLevels(): Promise<ApiEnvelope<LmsLevel[]>> {
@@ -538,7 +548,7 @@ export async function saveLmsChapterContent(
     const resource = kind === "video" ? "videos" : "materials";
     if (!existing) return callLmsV2(`${resource}/create`, { ...common, chapter_id });
     const idField = kind === "video" ? { video_id: Number(existing.id) } : { material_id: existing.id };
-    return callLmsV2(`${resource}/update`, { ...common, ...idField });
+    return callLmsV2(`${resource}/update`, { ...common, ...idField, chapter_id });
   }
   const test = {
     project_id,
@@ -645,7 +655,7 @@ export async function createLmsChapterTask(
 }
 
 export async function updateLmsChapterTask(
-  payload: LmsChapterTaskPayload & { task_id: number },
+  payload: LmsChapterTaskPayload & { task_id: number; chapter_id: number },
 ): Promise<ApiEnvelope<LmsChapterTaskDetail>> {
   return callLmsV2("chapter-tasks/update", payload);
 }

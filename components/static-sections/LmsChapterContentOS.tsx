@@ -1,6 +1,6 @@
 "use client";
 
-import type { LmsChapterAnalytics, LmsContent } from "@/apis/lms";
+import type { LmsChapterAnalytics, LmsChapterSessionsEntry, LmsContent } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import FileTypeIconOS, {
   fileTypeFromUrl,
@@ -207,6 +207,7 @@ function TestGateway({
 export default function LmsChapterContentOS({
   projectId,
   chapterId,
+  chapters,
   sessionToken,
   contents,
   analytics,
@@ -217,13 +218,14 @@ export default function LmsChapterContentOS({
 }: {
   projectId: string;
   chapterId: number;
+  chapters: LmsChapterSessionsEntry[];
   sessionToken: string;
   contents: LmsContent[];
   analytics: LmsChapterAnalytics | undefined;
   isPending: boolean;
   error: Error | null;
   onRetry: () => void;
-  onChanged: () => Promise<void>;
+  onChanged: (chapterId?: number) => Promise<void>;
 }) {
   const [sheet, setSheet] = useState<"video" | "material" | null>(null);
   const find = (kind: LmsContent["kind"]) =>
@@ -291,6 +293,7 @@ export default function LmsChapterContentOS({
           <LmsChapterTasksOS
             projectId={projectId}
             chapterId={chapterId}
+            chapters={chapters}
             sessionToken={sessionToken}
             memberCount={members}
             onChanged={onChanged}
@@ -371,6 +374,7 @@ export default function LmsChapterContentOS({
         <LmsVideoFormOS
           projectId={projectId}
           chapterId={chapterId}
+          chapters={chapters}
           video={video ?? null}
           onClose={() => setSheet(null)}
           onSaved={onChanged}
@@ -380,6 +384,7 @@ export default function LmsChapterContentOS({
         <LmsMaterialFormOS
           projectId={projectId}
           chapterId={chapterId}
+          chapters={chapters}
           material={material ?? null}
           onClose={() => setSheet(null)}
           onSaved={onChanged}

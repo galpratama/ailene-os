@@ -118,13 +118,17 @@ export default function LmsProjectContentOS({ projectId, sessionToken, kind }: {
   const isLoading = chapters.isPending || contents.isPending;
   const error = chapters.error ?? contents.error ?? (kind === "task" ? tools.error : null);
 
-  async function saved(chapterId: number) {
+  async function saved(chapterId: number, previousChapterId?: number) {
+    const affectedChapters = [...new Set([chapterId, previousChapterId].filter((id): id is number => id !== undefined))];
     await Promise.all([
       client.invalidateQueries({ queryKey: ["lms-project-content", projectId] }),
-      client.invalidateQueries({ queryKey: ["lms-chapter-contents", chapterId] }),
-      client.invalidateQueries({ queryKey: ["lms-chapter-tasks", chapterId] }),
-      client.invalidateQueries({ queryKey: ["lms-chapter-analytics", projectId, chapterId] }),
       client.invalidateQueries({ queryKey: ["lms-chapter-sessions", projectId] }),
+      ...affectedChapters.flatMap((id) => [
+        client.invalidateQueries({ queryKey: ["lms-chapter-contents", id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-tasks", id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-task-submissions", projectId, id] }),
+        client.invalidateQueries({ queryKey: ["lms-chapter-analytics", projectId, id] }),
+      ]),
     ]);
   }
   function startCreate() {

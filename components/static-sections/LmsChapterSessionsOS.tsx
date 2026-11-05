@@ -8,6 +8,7 @@ import type {
 } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
+import LmsChapterChecklistOS from "@/components/elements/LmsChapterChecklistOS";
 import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
 import LmsScheduleFormOS from "@/components/forms/LmsScheduleFormOS";
 import Label from "@/components/labels/Label";
@@ -331,6 +332,7 @@ function ChapterRow({
               {chapter.description}
             </p>
           )}
+          <LmsChapterChecklistOS checklist={chapter.checklist} />
         </div>
         <AppButton
           variant="black"

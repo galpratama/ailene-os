@@ -633,7 +633,7 @@ export async function listLmsChapterTasks(chapterId: number) { return listLmsCha
 export async function listLmsProjectTasks(projectId: string) { return listLmsProjectTasksApi(projectId); }
 export async function getLmsChapterTask(taskId: number) { return getLmsChapterTaskApi(taskId); }
 export async function createLmsChapterTask(payload: LmsChapterTaskPayload & { chapter_id: number }) { return createLmsChapterTaskApi(payload); }
-export async function updateLmsChapterTask(payload: LmsChapterTaskPayload & { task_id: number }) { return updateLmsChapterTaskApi(payload); }
+export async function updateLmsChapterTask(payload: LmsChapterTaskPayload & { task_id: number; chapter_id: number }) { return updateLmsChapterTaskApi(payload); }
 export async function deleteLmsChapterTask(payload: { project_id: string; task_id: number }) { return deleteLmsChapterTaskApi(payload); }
 export async function listAllLmsChapterTaskSubmissions(payload: { project_id: string; chapter_id: number }) { return listAllLmsChapterTaskSubmissionsApi(payload); }
 

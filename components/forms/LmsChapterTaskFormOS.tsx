@@ -58,7 +58,7 @@ export default function LmsChapterTaskFormOS({
   task: LmsChapterTaskDetail | null;
   tools: LmsTool[];
   onClose: () => void;
-  onSaved: (chapterId: number) => Promise<void>;
+  onSaved: (chapterId: number, previousChapterId?: number) => Promise<void>;
 }) {
   const stepCounter = useRef(task?.steps.length ?? 1);
   const [toolId, setToolId] = useState(task?.tool.id ?? tools[0]?.id ?? 0);
@@ -89,12 +89,12 @@ export default function LmsChapterTaskFormOS({
     mutationFn: async () =>
       requireApiSuccess(
         task
-          ? await updateLmsChapterTask({ ...payload(), task_id: task.id })
+          ? await updateLmsChapterTask({ ...payload(), task_id: task.id, chapter_id: selectedChapterId! })
           : await createLmsChapterTask({ ...payload(), chapter_id: selectedChapterId! }),
       ),
     onSuccess: async () => {
       toast.success(task ? "Chapter task updated." : "Chapter task created.");
-      await onSaved(selectedChapterId!);
+      await onSaved(selectedChapterId!, chapterId ?? undefined);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to save chapter task."),
@@ -108,7 +108,7 @@ export default function LmsChapterTaskFormOS({
     },
     onSuccess: async () => {
       toast.success("Chapter task deleted.");
-      await onSaved(selectedChapterId!);
+      await onSaved(chapterId ?? selectedChapterId!);
       onClose();
     },
     onError: (error) =>
@@ -167,7 +167,7 @@ export default function LmsChapterTaskFormOS({
           disabled={save.isPending || remove.isPending}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
-          {!task && chapterId === null && (
+          {chapters.length > 0 && (
             <LmsChapterPickerOS
               selectId="lms-chapter-task-chapter"
               chapters={chapters}
@@ -309,7 +309,7 @@ export default function LmsChapterTaskFormOS({
                     onChange={(imageUrl) =>
                       updateStep(step.key, { image_url: imageUrl })
                     }
-                    folderPath={`chapter-tasks/steps/${projectId}/${chapterId}`}
+                    folderPath={`chapter-tasks/steps/${projectId}/${selectedChapterId ?? chapterId}`}
                     maxBytes={10 * 1024 * 1024}
                     maxSizeLabel="10 MB"
                     aspectRatio="16/9"

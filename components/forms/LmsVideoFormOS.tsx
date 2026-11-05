@@ -29,7 +29,7 @@ export default function LmsVideoFormOS({
   chapters?: LmsChapterOption[];
   video: LmsContent | null;
   onClose: () => void;
-  onSaved: (chapterId: number) => Promise<void>;
+  onSaved: (chapterId: number, previousChapterId?: number) => Promise<void>;
 }) {
   const [values, setValues] = useState<LmsContentPayload>({
     project_id: projectId,
@@ -65,7 +65,7 @@ export default function LmsVideoFormOS({
       ),
     onSuccess: async () => {
       toast.success("Video saved.");
-      await onSaved(values.chapter_id);
+      await onSaved(values.chapter_id, chapterId ?? undefined);
       onClose();
     },
     onError: (error) => showErrorToast(error),
@@ -81,7 +81,7 @@ export default function LmsVideoFormOS({
       ),
     onSuccess: async () => {
       toast.success("Video deleted.");
-      await onSaved(values.chapter_id);
+      await onSaved(chapterId ?? values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to delete video."),
@@ -119,7 +119,7 @@ export default function LmsVideoFormOS({
           disabled={busy}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
-          {!video && chapterId === null && (
+          {chapters.length > 0 && (
             <LmsChapterPickerOS
               selectId="lms-video-chapter"
               chapters={chapters}

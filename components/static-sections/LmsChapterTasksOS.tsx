@@ -1,6 +1,6 @@
 "use client";
 
-import type { LmsChapterTaskDetail } from "@/apis/lms";
+import type { LmsChapterSessionsEntry, LmsChapterTaskDetail } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import LmsChapterTaskFormOS from "@/components/forms/LmsChapterTaskFormOS";
@@ -22,15 +22,17 @@ import { useState } from "react";
 export default function LmsChapterTasksOS({
   projectId,
   chapterId,
+  chapters,
   sessionToken,
   memberCount,
   onChanged,
 }: {
   projectId: string;
   chapterId: number;
+  chapters: LmsChapterSessionsEntry[];
   sessionToken: string;
   memberCount: number;
-  onChanged: () => Promise<void>;
+  onChanged: (chapterId?: number) => Promise<void>;
 }) {
   const client = useQueryClient();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -70,14 +72,15 @@ export default function LmsChapterTasksOS({
       showErrorToast(error, "Failed to load the chapter task."),
   });
 
-  async function saved() {
+  async function saved(targetChapterId: number) {
     await Promise.all([
       client.invalidateQueries({ queryKey: ["lms-chapter-tasks", chapterId] }),
+      ...(targetChapterId !== chapterId ? [client.invalidateQueries({ queryKey: ["lms-chapter-tasks", targetChapterId] })] : []),
       client.invalidateQueries({
         queryKey: ["lms-chapter-task-submissions", projectId, chapterId],
       }),
       client.invalidateQueries({ queryKey: ["lms-curriculum", projectId] }),
-      onChanged(),
+      onChanged(targetChapterId),
     ]);
   }
 
@@ -228,6 +231,7 @@ export default function LmsChapterTasksOS({
         <LmsChapterTaskFormOS
           projectId={projectId}
           chapterId={chapterId}
+          chapters={chapters}
           task={editingTask}
           tools={toolEntries}
           onClose={() => setSheetOpen(false)}

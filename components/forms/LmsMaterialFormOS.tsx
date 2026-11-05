@@ -31,7 +31,7 @@ export default function LmsMaterialFormOS({
   chapters?: LmsChapterOption[];
   material: LmsContent | null;
   onClose: () => void;
-  onSaved: (chapterId: number) => Promise<void>;
+  onSaved: (chapterId: number, previousChapterId?: number) => Promise<void>;
 }) {
   const [values, setValues] = useState<LmsContentPayload>({
     project_id: projectId,
@@ -67,7 +67,7 @@ export default function LmsMaterialFormOS({
       ),
     onSuccess: async () => {
       toast.success("Material saved.");
-      await onSaved(values.chapter_id);
+      await onSaved(values.chapter_id, chapterId ?? undefined);
       onClose();
     },
     onError: (error) => showErrorToast(error),
@@ -83,7 +83,7 @@ export default function LmsMaterialFormOS({
       ),
     onSuccess: async () => {
       toast.success("Material deleted.");
-      await onSaved(values.chapter_id);
+      await onSaved(chapterId ?? values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to delete material."),
@@ -113,7 +113,7 @@ export default function LmsMaterialFormOS({
           disabled={busy}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
-          {!material && chapterId === null && (
+          {chapters.length > 0 && (
             <LmsChapterPickerOS
               selectId="lms-material-chapter"
               chapters={chapters}
