@@ -29,6 +29,7 @@ export default function LmsChapterFormOS({
 }) {
   const [values, setValues] = useState<LmsChapterPayload>({
     project_id: projectId,
+    sort_order: chapter.sort_order,
     level_id: chapter.level_id ?? levels[0]?.id ?? 0,
     name: chapter.name ?? "",
     description: chapter.description ?? "",
@@ -60,6 +61,16 @@ export default function LmsChapterFormOS({
           disabled={mutation.isPending}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
+          <AppInput
+            inputId="lms-chapter-sort-order"
+            label="Chapter number"
+            type="number"
+            required
+            min={1}
+            max={2147483647}
+            value={values.sort_order}
+            onChange={(event) => setValues({ ...values, sort_order: Number(event.target.value) })}
+          />
           <AppInput
             inputId="lms-chapter-name"
             label="Chapter name"

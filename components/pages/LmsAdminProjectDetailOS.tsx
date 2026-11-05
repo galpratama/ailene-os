@@ -8,6 +8,7 @@ import LmsGroupFormOS from "@/components/forms/LmsGroupFormOS";
 import LmsProjectFormOS from "@/components/forms/LmsProjectFormOS";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import LmsChapterSessionsOS from "@/components/static-sections/LmsChapterSessionsOS";
+import LmsProjectContentOS from "@/components/static-sections/LmsProjectContentOS";
 import { deleteLmsGroup } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
 import { showErrorToast } from "@/lib/toast";
@@ -17,6 +18,14 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 type SheetState<T> = { open: false } | { open: true; entry: T | null };
+type ProjectTab = "session" | "materials" | "video" | "test" | "task";
+const projectTabs: { id: ProjectTab; label: string }[] = [
+  { id: "session", label: "Session" },
+  { id: "materials", label: "Materials" },
+  { id: "video", label: "Video" },
+  { id: "test", label: "Test" },
+  { id: "task", label: "Task" },
+];
 
 function formatDate(value: string | null) {
   return value
@@ -53,6 +62,7 @@ export default function LmsAdminProjectDetailOS({
   groups,
   members,
   loadError,
+  initialTab = "session",
 }: {
   projectId: string;
   sessionToken: string;
@@ -60,6 +70,7 @@ export default function LmsAdminProjectDetailOS({
   groups: LmsGroupEntry[];
   members: LmsMemberEntry[];
   loadError: string | null;
+  initialTab?: ProjectTab;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -67,6 +78,7 @@ export default function LmsAdminProjectDetailOS({
   const [groupSheet, setGroupSheet] = useState<SheetState<LmsGroupEntry>>({ open: false });
   const [deletingGroup, setDeletingGroup] = useState<LmsGroupEntry | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProjectTab>(initialTab);
 
   function navigate(href: string) {
     startTransition(() => router.push(href));
@@ -127,7 +139,33 @@ export default function LmsAdminProjectDetailOS({
         </header>
       )}
 
-        <div className={`grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_19rem] ${isPending ? "opacity-70" : ""}`}>
+      <nav aria-label="Project content" className="flex gap-1 overflow-x-auto border-b border-line">
+        {projectTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            aria-current={activeTab === tab.id ? "page" : undefined}
+            onClick={() => setActiveTab(tab.id)}
+            className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              activeTab === tab.id
+                ? "border-claude text-claude dark:text-lime-bright"
+                : "border-transparent text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {activeTab !== "session" && (
+        <LmsProjectContentOS
+          projectId={projectId}
+          sessionToken={sessionToken}
+          kind={activeTab === "materials" ? "material" : activeTab}
+        />
+      )}
+
+      {activeTab === "session" && <div className={`grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_19rem] ${isPending ? "opacity-70" : ""}`}>
           <main className="flex min-w-0 flex-col gap-5">
             <LmsChapterSessionsOS
               projectId={projectId}
@@ -225,7 +263,7 @@ export default function LmsAdminProjectDetailOS({
               </dl>
             </section>
           </aside>
-        </div>
+        </div>}
 
       <LmsProjectFormOS
         project={project}

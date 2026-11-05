@@ -255,6 +255,7 @@ export type LmsContent = {
   file_url: string | null;
   image_url: string | null;
   video_url: string | null;
+  video_type?: "short" | "recording";
   xp_reward: number;
   questions: LmsQuestion[];
   timestamps: LmsVideoTimestamp[];
@@ -277,6 +278,7 @@ export type LmsSchedule = {
 };
 export type LmsChapter = {
   id: number;
+  sort_order: number;
   level_id: number;
   name: string;
   description: string | null;
@@ -315,6 +317,7 @@ export async function getLmsChapter(
 export type LmsChapterPayload = {
   project_id: string;
   chapter_id?: number;
+  sort_order: number;
   level_id: number;
   name: string;
   description: string | null;
@@ -362,9 +365,10 @@ export async function deleteLmsSchedule(
 ): Promise<ApiEnvelope<{ deleted: boolean }>> {
   return callLmsV2("chapters/sessions/delete", payload);
 }
-// Chapter content on the Go LMS v2 API: one video, one material, and one test per kind per chapter.
+// Chapter content on the Go LMS v2 API: many videos, one material, and one test per kind per chapter.
 type LmsV2Video = {
   id: number;
+  type: "short" | "recording";
   title: string;
   description: string | null;
   video_url: string;
@@ -441,6 +445,7 @@ export async function listLmsChapterContents(
       description: video.description,
       status: video.status,
       video_url: video.video_url,
+      video_type: video.type,
       xp_reward: video.xp_reward,
       timestamps: video.timestamps,
     })),
@@ -458,6 +463,52 @@ export async function listLmsChapterContents(
     })),
   ];
   return { ...videos, data: contents };
+}
+
+export type LmsProjectContentKind = "material" | "video" | "test";
+export type LmsProjectContentEntry = {
+  chapter: { id: number; sort_order: number; name: string };
+  content: LmsContent;
+};
+
+export async function listLmsProjectContents(
+  projectId: string,
+  kind: LmsProjectContentKind,
+): Promise<ApiEnvelope<LmsProjectContentEntry[]>> {
+  const chapters = await listLmsChapterSessions(projectId);
+  if (!chapters.success) return { ...chapters, data: undefined };
+  const entries = chapters.data ?? [];
+  const resource = kind === "material" ? "materials" : kind === "video" ? "videos" : "chapter-tests";
+  const results = await Promise.all(entries.map((chapter) =>
+    callLmsV2<LmsV2Material[] | LmsV2Video[] | LmsV2Test[]>(resource, { chapter_id: chapter.id }),
+  ));
+  const failed = results.find((result) => !result.success);
+  if (failed) return { ...failed, data: undefined };
+  const data = entries.flatMap((chapter, index): LmsProjectContentEntry[] => {
+    const items = results[index].data ?? [];
+    return items.map((item) => {
+      let content: LmsContent;
+      if (kind === "material") {
+        const material = item as LmsV2Material;
+        content = { ...emptyContent, id: material.id, kind, title: material.title,
+          description: material.description, status: material.status, content: material.content,
+          file_url: material.file_url, image_url: material.image_url, xp_reward: material.xp_reward };
+      } else if (kind === "video") {
+        const video = item as LmsV2Video;
+        content = { ...emptyContent, id: String(video.id), kind, title: video.title,
+          description: video.description, status: video.status, video_url: video.video_url,
+          xp_reward: video.xp_reward, timestamps: video.timestamps, video_type: video.type };
+      } else {
+        const test = item as LmsV2Test;
+        content = { ...emptyContent, id: String(test.id), kind: test.kind, title: test.name,
+          description: test.description, status: test.status, is_locked: test.is_locked,
+          has_progress: test.submission_count > 0,
+          questions: test.questions.map((question) => ({ ...question, xp_reward: 0 })) };
+      }
+      return { chapter: { id: chapter.id, sort_order: chapter.sort_order, name: chapter.name }, content };
+    });
+  });
+  return { ...chapters, data };
 }
 
 export type LmsContentTarget = { id: string; is_locked: boolean; has_progress: boolean };
@@ -573,6 +624,12 @@ export async function listLmsChapterTasks(
   chapterId: number,
 ): Promise<ApiEnvelope<LmsChapterTask[]>> {
   return callLmsV2("chapter-tasks", { chapter_id: chapterId });
+}
+
+export async function listLmsProjectTasks(
+  projectId: string,
+): Promise<ApiEnvelope<LmsChapterTask[]>> {
+  return callLmsV2("chapter-tasks", { project_id: projectId });
 }
 
 export async function getLmsChapterTask(

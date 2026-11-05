@@ -3,6 +3,7 @@
 import type { LmsContent, LmsContentPayload } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import LmsChapterPickerOS, { type LmsChapterOption } from "@/components/fields/LmsChapterPickerOS";
 import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
@@ -18,19 +19,21 @@ import { toast } from "sonner";
 export default function LmsVideoFormOS({
   projectId,
   chapterId,
+  chapters = [],
   video,
   onClose,
   onSaved,
 }: {
   projectId: string;
-  chapterId: number;
+  chapterId: number | null;
+  chapters?: LmsChapterOption[];
   video: LmsContent | null;
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (chapterId: number) => Promise<void>;
 }) {
   const [values, setValues] = useState<LmsContentPayload>({
     project_id: projectId,
-    chapter_id: chapterId,
+    chapter_id: chapterId ?? 0,
     kind: "video",
     title: video?.title ?? "",
     description: video?.description ?? "",
@@ -45,6 +48,7 @@ export default function LmsVideoFormOS({
   });
   const [markerError, setMarkerError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [chapterError, setChapterError] = useState("");
   const save = useMutation({
     mutationFn: async () =>
       requireApiSuccess(
@@ -61,7 +65,7 @@ export default function LmsVideoFormOS({
       ),
     onSuccess: async () => {
       toast.success("Video saved.");
-      await onSaved();
+      await onSaved(values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error),
@@ -77,7 +81,7 @@ export default function LmsVideoFormOS({
       ),
     onSuccess: async () => {
       toast.success("Video deleted.");
-      await onSaved();
+      await onSaved(values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to delete video."),
@@ -96,6 +100,10 @@ export default function LmsVideoFormOS({
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!values.chapter_id) {
+            setChapterError("Choose a chapter first.");
+            return;
+          }
           if (
             new Set(markers.map((marker) => marker.start_seconds)).size !==
             markers.length
@@ -111,6 +119,18 @@ export default function LmsVideoFormOS({
           disabled={busy}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
+          {!video && chapterId === null && (
+            <LmsChapterPickerOS
+              selectId="lms-video-chapter"
+              chapters={chapters}
+              value={values.chapter_id || null}
+              error={chapterError}
+              onChange={(next) => {
+                setValues({ ...values, chapter_id: next ?? 0 });
+                setChapterError("");
+              }}
+            />
+          )}
           <AppInput
             inputId="lms-video-title"
             label="Title"

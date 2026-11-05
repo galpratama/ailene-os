@@ -6,10 +6,13 @@ import { notFound } from "next/navigation";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ project_id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { project_id: projectId } = await params;
+  const { tab } = await searchParams;
   const sessionToken = (await getSessionToken()) ?? "";
 
   const [project, groups, members] = await Promise.all([
@@ -34,6 +37,7 @@ export default async function Page({
       groups={groups.data ?? []}
       members={members.data ?? []}
       loadError={failed ? (failed.message ?? "Failed to load project.") : null}
+      initialTab={tab === "materials" || tab === "video" || tab === "test" || tab === "task" ? tab : "session"}
     />
   );
 }

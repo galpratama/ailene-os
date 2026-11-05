@@ -3,6 +3,7 @@
 import type { LmsContent, LmsContentPayload } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import LmsChapterPickerOS, { type LmsChapterOption } from "@/components/fields/LmsChapterPickerOS";
 import AppPdfUpload from "@/components/fields/AppPdfUpload";
 import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
@@ -20,19 +21,21 @@ import { toast } from "sonner";
 export default function LmsMaterialFormOS({
   projectId,
   chapterId,
+  chapters = [],
   material,
   onClose,
   onSaved,
 }: {
   projectId: string;
-  chapterId: number;
+  chapterId: number | null;
+  chapters?: LmsChapterOption[];
   material: LmsContent | null;
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (chapterId: number) => Promise<void>;
 }) {
   const [values, setValues] = useState<LmsContentPayload>({
     project_id: projectId,
-    chapter_id: chapterId,
+    chapter_id: chapterId ?? 0,
     kind: "material",
     title: material?.title ?? "",
     description: material?.description ?? "",
@@ -46,6 +49,7 @@ export default function LmsMaterialFormOS({
     timestamps: [],
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [chapterError, setChapterError] = useState("");
   const [isDocumentBusy, setIsDocumentBusy] = useState(false);
   const save = useMutation({
     mutationFn: async () =>
@@ -63,7 +67,7 @@ export default function LmsMaterialFormOS({
       ),
     onSuccess: async () => {
       toast.success("Material saved.");
-      await onSaved();
+      await onSaved(values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error),
@@ -79,7 +83,7 @@ export default function LmsMaterialFormOS({
       ),
     onSuccess: async () => {
       toast.success("Material deleted.");
-      await onSaved();
+      await onSaved(values.chapter_id);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to delete material."),
@@ -98,6 +102,10 @@ export default function LmsMaterialFormOS({
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!values.chapter_id) {
+            setChapterError("Choose a chapter first.");
+            return;
+          }
           save.mutate();
         }}
       >
@@ -105,6 +113,18 @@ export default function LmsMaterialFormOS({
           disabled={busy}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
         >
+          {!material && chapterId === null && (
+            <LmsChapterPickerOS
+              selectId="lms-material-chapter"
+              chapters={chapters}
+              value={values.chapter_id || null}
+              error={chapterError}
+              onChange={(next) => {
+                setValues({ ...values, chapter_id: next ?? 0 });
+                setChapterError("");
+              }}
+            />
+          )}
           <AppInput
             inputId="lms-material-title"
             label="Title"
@@ -136,10 +156,10 @@ export default function LmsMaterialFormOS({
               inputId="lms-material-file"
               label="PDF document (optional)"
               value={values.file_url ?? ""}
-              folderPath={`lms/materials/${projectId}/${chapterId}`}
+              folderPath={`lms/materials/${projectId}/${values.chapter_id}`}
               maxBytes={25 * 1024 * 1024}
               maxSizeLabel="25 MB"
-              disabled={busy}
+              disabled={busy || !values.chapter_id}
               onBusyChange={setIsDocumentBusy}
               onChange={(fileUrl) =>
                 setValues((current) => ({ ...current, file_url: fileUrl }))

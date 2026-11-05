@@ -9,6 +9,7 @@ import type {
 } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import { lmsChapterLabel } from "@/components/fields/LmsChapterPickerOS";
 import AppSelect from "@/components/fields/AppSelect";
 import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
@@ -21,7 +22,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
-type ChapterOption = { id: number; name: string };
+type ChapterOption = { id: number; name: string; sort_order?: number };
 type LevelOption = { id: number; name: string };
 
 function segmentClass(active: boolean) {
@@ -70,6 +71,7 @@ export default function LmsScheduleFormOS({
     is_survey_locked: schedule?.is_survey_locked ?? false,
   });
   const [newChapter, setNewChapter] = useState<LmsNewChapterPayload>({
+    sort_order: Math.max(0, ...chapters.map((chapter) => chapter.sort_order ?? 0)) + 1,
     level_id: levels[0]?.id ?? 0,
     name: "",
     description: null,
@@ -204,7 +206,7 @@ export default function LmsScheduleFormOS({
                     value={values.chapter_id || null}
                     options={chapters.map((chapter) => ({
                       value: chapter.id,
-                      label: chapter.name,
+                      label: lmsChapterLabel(chapter),
                     }))}
                     onChange={(value) => {
                       setChapterError(null);
@@ -217,6 +219,16 @@ export default function LmsScheduleFormOS({
                 </div>
               ) : (
                 <>
+                  <AppInput
+                    inputId="lms-schedule-new-chapter-sort-order"
+                    label="Chapter number"
+                    type="number"
+                    required
+                    min={1}
+                    max={2147483647}
+                    value={newChapter.sort_order}
+                    onChange={(event) => setNewChapter({ ...newChapter, sort_order: Number(event.target.value) })}
+                  />
                   <AppInput
                     inputId="lms-schedule-new-chapter-name"
                     label="Chapter name"

@@ -48,17 +48,20 @@ import {
   updateLmsSchedule as updateLmsScheduleApi,
   deleteLmsSchedule as deleteLmsScheduleApi,
   listLmsChapterContents as listLmsChapterContentsApi,
+  listLmsProjectContents as listLmsProjectContentsApi,
   saveLmsChapterContent as saveLmsChapterContentApi,
   deleteLmsChapterContent as deleteLmsChapterContentApi,
   getLmsChapterAnalytics as getLmsChapterAnalyticsApi,
   listLmsTools as listLmsToolsApi,
   listLmsChapterTasks as listLmsChapterTasksApi,
+  listLmsProjectTasks as listLmsProjectTasksApi,
   getLmsChapterTask as getLmsChapterTaskApi,
   createLmsChapterTask as createLmsChapterTaskApi,
   updateLmsChapterTask as updateLmsChapterTaskApi,
   deleteLmsChapterTask as deleteLmsChapterTaskApi,
   listAllLmsChapterTaskSubmissions as listAllLmsChapterTaskSubmissionsApi,
   type LmsContentKind,
+  type LmsProjectContentKind,
   type LmsContentTarget,
   type LmsChapterPayload,
   type LmsChapterRef,
@@ -621,11 +624,13 @@ export async function createLmsSchedule(payload: CreateLmsSchedulePayload) { ret
 export async function updateLmsSchedule(payload: LmsSchedulePayload & { session_id: number }) { return updateLmsScheduleApi(payload); }
 export async function deleteLmsSchedule(payload: LmsScheduleRef) { return deleteLmsScheduleApi(payload); }
 export async function listLmsChapterContents(chapterId: number) { return listLmsChapterContentsApi(chapterId); }
+export async function listLmsProjectContents(projectId: string, kind: LmsProjectContentKind) { return listLmsProjectContentsApi(projectId, kind); }
 export async function saveLmsChapterContent(payload: LmsContentPayload, existing: LmsContentTarget | null) { return saveLmsChapterContentApi(payload, existing); }
 export async function deleteLmsChapterContent(payload: { project_id: string; kind: LmsContentKind; id: string }) { return deleteLmsChapterContentApi(payload); }
 export async function getLmsChapterAnalytics(payload: LmsChapterRef) { return getLmsChapterAnalyticsApi(payload); }
 export async function listLmsTools() { return listLmsToolsApi(); }
 export async function listLmsChapterTasks(chapterId: number) { return listLmsChapterTasksApi(chapterId); }
+export async function listLmsProjectTasks(projectId: string) { return listLmsProjectTasksApi(projectId); }
 export async function getLmsChapterTask(taskId: number) { return getLmsChapterTaskApi(taskId); }
 export async function createLmsChapterTask(payload: LmsChapterTaskPayload & { chapter_id: number }) { return createLmsChapterTaskApi(payload); }
 export async function updateLmsChapterTask(payload: LmsChapterTaskPayload & { task_id: number }) { return updateLmsChapterTaskApi(payload); }

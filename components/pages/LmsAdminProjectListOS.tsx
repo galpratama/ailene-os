@@ -1,19 +1,17 @@
 "use client";
 
 import type { LmsProjectEntry } from "@/apis/lms";
-import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import LmsProjectFormOS from "@/components/forms/LmsProjectFormOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { requireApiData } from "@/lib/api-result";
 import { listLmsProjects } from "@/lib/actions";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import {
-  ArrowRight,
   Building2,
   CalendarDays,
   Layers3,
-  Pencil,
   Plus,
   Search,
   Users,
@@ -36,7 +34,7 @@ function formatDate(value: string) {
 function ProjectLogo({ project }: { project: LmsProjectEntry }) {
   const company = project.company_name ?? project.name;
   return (
-    <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-gray-50 text-base font-bold text-gray-500 dark:bg-zinc-800 dark:text-zinc-300">
+    <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-gray-50 text-sm font-semibold text-gray-500 dark:bg-zinc-800 dark:text-zinc-300">
       {project.company_image_url ? (
         <div
           role="img"
@@ -51,112 +49,46 @@ function ProjectLogo({ project }: { project: LmsProjectEntry }) {
   );
 }
 
-function ProjectCard({
-  project,
-  onEdit,
-}: {
-  project: LmsProjectEntry;
-  onEdit: () => void;
-}) {
-  const hasCapacity = project.attendee_pax !== null && project.attendee_pax > 0;
-  const fill = hasCapacity
-    ? Math.min((project.member_count / project.attendee_pax!) * 100, 100)
-    : 0;
-  const utilization = Math.round(fill);
-
+function ProjectCard({ project }: { project: LmsProjectEntry }) {
   return (
-    <article className="flex min-h-60 flex-col overflow-hidden rounded-2xl border border-line bg-card-bg transition-colors hover:border-claude/60">
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <div className="flex items-start gap-4">
-          <ProjectLogo project={project} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-zinc-500">
-              <Building2 size={12} className="shrink-0" />
-              <span className="truncate">
+    <Link
+      href={`/lms/${project.id}`}
+      aria-label={`Open ${project.name}`}
+      className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-claude dark:focus-visible:ring-lime-bright"
+    >
+      <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-card-bg transition-colors group-hover:border-claude/50">
+        <div className="flex flex-1 flex-col p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <ProjectLogo project={project} />
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-zinc-100">
+                {project.name}
+              </h3>
+              <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-zinc-500">
                 {project.company_name ?? "No company linked"}
-              </span>
-            </div>
-            <h3 className="mt-1 line-clamp-2 text-lg font-bold leading-snug text-gray-900 dark:text-zinc-100">
-              {project.name}
-            </h3>
-          </div>
-          <AppButton
-            type="button"
-            variant="secondary"
-            size="icon"
-            title="Edit project"
-            onClick={onEdit}
-            className="shrink-0"
-          >
-            <Pencil size={14} />
-          </AppButton>
-        </div>
-
-        <div className="mt-7">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-400 dark:text-zinc-500">
-                Seat utilization
-              </p>
-              <p className="mt-1 text-sm font-semibold text-gray-700 dark:text-zinc-200">
-                <span className="font-heading text-xl tabular-nums text-gray-900 dark:text-zinc-100">
-                  {project.member_count}
-                </span>{" "}
-                {hasCapacity ? `of ${project.attendee_pax} seats filled` : "members enrolled"}
               </p>
             </div>
-            <p className="font-heading text-lg font-semibold tabular-nums text-gray-500 dark:text-zinc-300">
-              {hasCapacity ? `${utilization}%` : "—"}
-            </p>
-          </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
-            <div
-              className="h-full rounded-full bg-claude transition-[width]"
-              style={{ width: hasCapacity ? `${fill}%` : "0%" }}
-            />
           </div>
         </div>
-      </div>
 
-      <div className="flex items-stretch border-t border-line-soft bg-gray-50/60 dark:bg-zinc-800/30">
-        <div className="grid min-w-0 flex-1 grid-cols-3 divide-x divide-line-soft">
-          <div className="px-4 py-3.5 sm:px-5">
-            <p className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-zinc-500">
-              <Users size={12} /> Members
-            </p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-gray-700 dark:text-zinc-200">
-              {project.member_count}
-            </p>
-          </div>
-          <div className="px-4 py-3.5 sm:px-5">
-            <p className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-zinc-500">
-              <Layers3 size={12} /> Groups
-            </p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-gray-700 dark:text-zinc-200">
-              {project.group_count}
-            </p>
-          </div>
-          <div className="px-4 py-3.5 sm:px-5">
-            <p className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-zinc-500">
-              <CalendarDays size={12} /> Updated
-            </p>
-            <p className="mt-0.5 truncate text-sm font-semibold text-gray-700 dark:text-zinc-200">
-              {formatDate(project.updated_at)}
-            </p>
+        <div className="flex items-center gap-3 border-t border-line-soft px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-zinc-400">
+            <span className="inline-flex items-center gap-1.5">
+              <Users size={12} />
+              {project.member_count} members
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Layers3 size={12} />
+              {project.group_count} groups
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays size={12} />
+              Updated {formatDate(project.updated_at)}
+            </span>
           </div>
         </div>
-        <div className="flex items-center border-l border-line-soft px-3 sm:px-4">
-          <AppButton
-            href={`/lms/${project.id}`}
-            variant="black"
-            size="sm"
-            aria-label={`Open ${project.name}`}
-          >
-            Open <ArrowRight size={13} />
-          </AppButton>
-        </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 
@@ -170,10 +102,7 @@ export default function LmsAdminProjectListOS({
   loadError: string | null;
 }) {
   const [keyword, setKeyword] = useState("");
-  const [projectSheet, setProjectSheet] = useState<{
-    open: boolean;
-    project: LmsProjectEntry | null;
-  }>({ open: false, project: null });
+  const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
 
   const projectsQuery = useQuery({
     queryKey: ["lms-projects"],
@@ -204,7 +133,7 @@ export default function LmsAdminProjectListOS({
         action={{
           label: "New project",
           icon: Plus,
-          onClick: () => setProjectSheet({ open: true, project: null }),
+          onClick: () => setIsProjectFormOpen(true),
         }}
       />
 
@@ -229,11 +158,7 @@ export default function LmsAdminProjectListOS({
       {!projectsQuery.isLoading && visibleProjects.length > 0 && (
         <div className="grid gap-5 xl:grid-cols-2">
           {visibleProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onEdit={() => setProjectSheet({ open: true, project })}
-            />
+            <ProjectCard key={project.id} project={project} />
           ))}
         </div>
       )}
@@ -257,9 +182,9 @@ export default function LmsAdminProjectListOS({
       )}
 
       <LmsProjectFormOS
-        project={projectSheet.project}
-        isOpen={projectSheet.open}
-        onClose={() => setProjectSheet({ open: false, project: null })}
+        project={null}
+        isOpen={isProjectFormOpen}
+        onClose={() => setIsProjectFormOpen(false)}
       />
     </div>
   );

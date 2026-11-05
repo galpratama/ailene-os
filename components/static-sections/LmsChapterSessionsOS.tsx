@@ -320,7 +320,7 @@ function ChapterRow({
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <h3 className="text-[15px] font-semibold leading-snug text-gray-900 dark:text-zinc-100">
-              {chapter.name}
+              {chapter.sort_order ? `Chapter ${chapter.sort_order} · ${chapter.name}` : chapter.name}
             </h3>
             {chapter.status !== "active" && (
               <LmsContentStatusLabel status={chapter.status} />

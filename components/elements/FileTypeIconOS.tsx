@@ -32,7 +32,7 @@ const PDF_ICON_URL =
   "https://tskubmriuclmbcfmaiur.supabase.co/storage/v1/object/public/sevenpreneur/pdf-icon.webp";
 
 // A folded-corner document with its type tag, in the label colors of that file type.
-export default function FileTypeIconOS({ type }: { type: string }) {
+export default function FileTypeIconOS({ type, compact = false }: { type: string; compact?: boolean }) {
   const style = labelVariantStyle(typeVariants[type] ?? "gray");
   if (type === "PDF") {
     return (
@@ -42,14 +42,14 @@ export default function FileTypeIconOS({ type }: { type: string }) {
         aria-hidden="true"
         width={56}
         height={56}
-        className="size-14 shrink-0 object-contain p-1.5"
+        className={`${compact ? "size-11 p-1" : "size-14 p-1.5"} shrink-0 object-contain`}
       />
     );
   }
 
   return (
     <span
-      className="relative flex h-14 w-11 shrink-0 items-end justify-center"
+      className={`relative flex shrink-0 items-end justify-center ${compact ? "h-11 w-9" : "h-14 w-11"}`}
       aria-hidden="true"
     >
       <svg viewBox="0 0 44 56" className="absolute inset-0 size-full">

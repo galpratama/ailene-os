@@ -8,14 +8,17 @@ const kinds = { "pre-test": "pre_test", "post-test": "post_test" } as const;
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ project_id: string; chapter_id: string; kind: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const {
     project_id: projectId,
     chapter_id: chapterParam,
     kind,
   } = await params;
+  const { from } = await searchParams;
   const chapterId = Number(chapterParam);
   if (!Number.isSafeInteger(chapterId) || chapterId <= 0 || !(kind in kinds)) {
     notFound();
@@ -45,6 +48,7 @@ export default async function Page({
       chapter={chapter.data ?? null}
       kind={kinds[kind as keyof typeof kinds]}
       loadError={failed ? (failed.message ?? "Failed to load chapter.") : null}
+      returnToProject={from === "project"}
     />
   );
 }

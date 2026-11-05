@@ -3,6 +3,7 @@
 import type { LmsContent, LmsContentKind, LmsContentPayload } from "@/apis/lms";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import LmsChapterPickerOS, { type LmsChapterOption } from "@/components/fields/LmsChapterPickerOS";
 import LmsMaterialEditorOS from "@/components/fields/LmsMaterialEditorOS";
 import AppSelect from "@/components/fields/AppSelect";
 import AppSwitch from "@/components/fields/AppSwitch";
@@ -25,6 +26,7 @@ import { toast } from "sonner";
 export default function LmsContentFormOS({
   projectId,
   chapterId,
+  chapters = [],
   kind,
   content,
   onSaved,
@@ -32,10 +34,11 @@ export default function LmsContentFormOS({
   onDirtyChange,
 }: {
   projectId: string;
-  chapterId: number;
+  chapterId: number | null;
+  chapters?: LmsChapterOption[];
   kind: LmsContentKind;
   content?: LmsContent;
-  onSaved: () => Promise<void>;
+  onSaved: (chapterId: number) => Promise<void>;
   onDelete: () => void;
   onDirtyChange: (dirty: boolean) => void;
 }) {
@@ -45,7 +48,7 @@ export default function LmsContentFormOS({
   const protectedAssessment = assessment && !!content?.has_progress;
   const [values, setValues] = useState<LmsContentPayload>({
     project_id: projectId,
-    chapter_id: chapterId,
+    chapter_id: chapterId ?? 0,
     kind,
     title: content?.title ?? "",
     description: content?.description ?? "",
@@ -60,6 +63,7 @@ export default function LmsContentFormOS({
     is_locked: content?.is_locked ?? false,
   });
   const [showErrors, setShowErrors] = useState(false);
+  const [chapterError, setChapterError] = useState("");
   const [dirty, setDirty] = useState(false);
   useEffect(() => {
     onDirtyChange(dirty);
@@ -95,7 +99,7 @@ export default function LmsContentFormOS({
     onSuccess: async () => {
       toast.success(`${meta.label} saved.`);
       setDirty(false);
-      await onSaved();
+      await onSaved(values.chapter_id);
     },
     onError: (error) => showErrorToast(error),
   });
@@ -105,6 +109,10 @@ export default function LmsContentFormOS({
       onSubmit={(event) => {
         event.preventDefault();
         setShowErrors(true);
+        if (!values.chapter_id) {
+          setChapterError("Choose a chapter first.");
+          return;
+        }
         if (
           assessment &&
           !protectedAssessment &&
@@ -151,6 +159,18 @@ export default function LmsContentFormOS({
         disabled={mutation.isPending}
         className="flex min-w-0 flex-col gap-5 px-5 py-6 sm:px-7"
       >
+        {!content && chapterId === null && (
+          <LmsChapterPickerOS
+            selectId="lms-content-chapter"
+            chapters={chapters}
+            value={values.chapter_id || null}
+            error={chapterError}
+            onChange={(next) => {
+              update({ chapter_id: next ?? 0 });
+              setChapterError("");
+            }}
+          />
+        )}
         <AppInput
           inputId="lms-content-title"
           disabled={protectedAssessment}

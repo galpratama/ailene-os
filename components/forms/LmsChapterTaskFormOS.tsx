@@ -8,6 +8,7 @@ import type {
 import AppButton from "@/components/buttons/AppButton";
 import AppImageUpload from "@/components/fields/AppImageUpload";
 import AppInput from "@/components/fields/AppInput";
+import LmsChapterPickerOS, { type LmsChapterOption } from "@/components/fields/LmsChapterPickerOS";
 import AppSelect from "@/components/fields/AppSelect";
 import AppSwitch from "@/components/fields/AppSwitch";
 import AppTextarea from "@/components/fields/AppTextArea";
@@ -45,17 +46,19 @@ function initialSteps(task: LmsChapterTaskDetail | null): DraftStep[] {
 export default function LmsChapterTaskFormOS({
   projectId,
   chapterId,
+  chapters = [],
   task,
   tools,
   onClose,
   onSaved,
 }: {
   projectId: string;
-  chapterId: number;
+  chapterId: number | null;
+  chapters?: LmsChapterOption[];
   task: LmsChapterTaskDetail | null;
   tools: LmsTool[];
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (chapterId: number) => Promise<void>;
 }) {
   const stepCounter = useRef(task?.steps.length ?? 1);
   const [toolId, setToolId] = useState(task?.tool.id ?? tools[0]?.id ?? 0);
@@ -67,6 +70,7 @@ export default function LmsChapterTaskFormOS({
   const [uploadingSteps, setUploadingSteps] = useState<Set<string>>(new Set());
   const [formError, setFormError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [selectedChapterId, setSelectedChapterId] = useState(chapterId);
 
   const payload = (): LmsChapterTaskPayload => ({
     project_id: projectId,
@@ -86,11 +90,11 @@ export default function LmsChapterTaskFormOS({
       requireApiSuccess(
         task
           ? await updateLmsChapterTask({ ...payload(), task_id: task.id })
-          : await createLmsChapterTask({ ...payload(), chapter_id: chapterId }),
+          : await createLmsChapterTask({ ...payload(), chapter_id: selectedChapterId! }),
       ),
     onSuccess: async () => {
       toast.success(task ? "Chapter task updated." : "Chapter task created.");
-      await onSaved();
+      await onSaved(selectedChapterId!);
       onClose();
     },
     onError: (error) => showErrorToast(error, "Failed to save chapter task."),
@@ -104,7 +108,7 @@ export default function LmsChapterTaskFormOS({
     },
     onSuccess: async () => {
       toast.success("Chapter task deleted.");
-      await onSaved();
+      await onSaved(selectedChapterId!);
       onClose();
     },
     onError: (error) =>
@@ -140,6 +144,7 @@ export default function LmsChapterTaskFormOS({
   function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
+    if (!selectedChapterId) return setFormError("Choose a chapter first.");
     if (!toolId) return setFormError("Choose a tool for this task.");
     if (!name.trim()) return setFormError("Task name is required.");
     if (!steps.length || steps.some((step) => !step.instruction.trim())) {
@@ -162,6 +167,15 @@ export default function LmsChapterTaskFormOS({
           disabled={save.isPending || remove.isPending}
           className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5"
         >
+          {!task && chapterId === null && (
+            <LmsChapterPickerOS
+              selectId="lms-chapter-task-chapter"
+              chapters={chapters}
+              value={selectedChapterId}
+              error={formError.startsWith("Choose a chapter") ? formError : null}
+              onChange={(next) => { setSelectedChapterId(next); setFormError(""); }}
+            />
+          )}
           <AppSelect
             selectId="lms-chapter-task-tool"
             label="Tool"

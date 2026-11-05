@@ -26,12 +26,14 @@ export default function LmsChapterTestOS({
   chapter,
   kind,
   loadError,
+  returnToProject = false,
 }: {
   projectId: string;
   sessionToken: string;
   chapter: LmsChapterEntry | null;
   kind: "pre_test" | "post_test";
   loadError: string | null;
+  returnToProject?: boolean;
 }) {
   const client = useQueryClient();
   const router = useRouter();
@@ -41,6 +43,7 @@ export default function LmsChapterTestOS({
   const enabled = !!sessionToken && !!chapter;
   const label = kind === "pre_test" ? "Pre-test" : "Post-test";
   const chapterHref = `/lms/${projectId}/chapters/${chapterId}`;
+  const backHref = returnToProject ? `/lms/${projectId}?tab=test` : chapterHref;
   const contentsQuery = useQuery({
     queryKey: ["lms-chapter-contents", chapterId],
     queryFn: async () =>
@@ -90,7 +93,7 @@ export default function LmsChapterTestOS({
       );
       toast.success(`${label} deleted.`);
       await refresh();
-      router.replace(chapterHref);
+      router.replace(backHref);
     } catch (error) {
       showErrorToast(error, `Failed to delete the ${label.toLowerCase()}.`);
       setIsDeleting(false);
@@ -100,8 +103,8 @@ export default function LmsChapterTestOS({
   return (
     <div className="flex flex-col gap-5 px-4 py-6 sm:px-8">
       <div>
-        <AppButton variant="secondary" size="sm" href={chapterHref}>
-          <ArrowLeft size={14} /> {chapter?.name ?? "Chapter"}
+        <AppButton variant="secondary" size="sm" href={backHref}>
+          <ArrowLeft size={14} /> {returnToProject ? "All tests" : (chapter?.name ?? "Chapter")}
         </AppButton>
       </div>
 
