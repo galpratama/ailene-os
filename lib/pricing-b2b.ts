@@ -70,7 +70,7 @@ export const TRN: Record<TrainerTier, string> = {
 };
 export const PREM: Record<TrainerTier, number> = {
   certified: 0,
-  specialist: 0,
+  specialist: (TR.specialist - TR.certified) / 2,
   lead: 2.5e6,
 };
 
