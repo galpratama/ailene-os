@@ -1,6 +1,7 @@
 import AppToaster from "@/components/elements/AppToaster";
 import AttributionCaptureBIZ from "@/components/analytics/AttributionCaptureBIZ";
 import GoogleTagBIZ from "@/components/analytics/GoogleTagBIZ";
+import GoogleTagManager from "@/components/analytics/GoogleTagManager";
 import MetaPixelBIZ from "@/components/analytics/MetaPixelBIZ";
 import MicrosoftClarityBIZ from "@/components/analytics/MicrosoftClarityBIZ";
 import PostHogBIZ from "@/components/analytics/PostHogBIZ";
@@ -53,6 +54,8 @@ const crayonize = localFont({
   preload: false,
 });
 
+const GOOGLE_ADS_GTM_ID = "GTM-WV36KMFQ";
+
 // Keep the marketing site on the light brand palette; dark mode belongs to the OS app.
 export default function BizLayout({ children }: { children: ReactNode }) {
   return (
@@ -62,6 +65,7 @@ export default function BizLayout({ children }: { children: ReactNode }) {
       <link rel="dns-prefetch" href="https://cdn.simpleicons.org" />
       {/* Every tag below loads after the page is idle, keeping them off the first paint and hydration. */}
       <GoogleTagBIZ />
+      <GoogleTagManager gtmId={GOOGLE_ADS_GTM_ID} initialize={false} />
       <MetaPixelBIZ />
       <MicrosoftClarityBIZ />
       <PostHogBIZ />

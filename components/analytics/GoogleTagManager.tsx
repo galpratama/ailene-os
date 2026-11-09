@@ -1,14 +1,22 @@
 import Script from "next/script";
 
-// The dataLayer and gtm.js start event are queued right away; the container itself loads once the page is idle.
-export default function GoogleTagManager({ gtmId }: { gtmId: string }) {
+// The existing container uses the legacy gtm.js start event; newer containers can share the page's gtag queue.
+export default function GoogleTagManager({
+  gtmId,
+  initialize = true,
+}: {
+  gtmId: string;
+  initialize?: boolean;
+}) {
   return (
     <>
-      <Script id="gtm-init" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];window.dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});`}
-      </Script>
+      {initialize && (
+        <Script id={`gtm-init-${gtmId}`} strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];window.dataLayer.push({"gtm.start":new Date().getTime(),event:"gtm.js"});`}
+        </Script>
+      )}
       <Script
-        id="gtm-src"
+        id={`gtm-src-${gtmId}`}
         src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
         strategy="lazyOnload"
       />

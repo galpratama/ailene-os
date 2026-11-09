@@ -1,12 +1,14 @@
 import Script from "next/script";
 
 // Hardcoded for now; move back to an env var once it's set on the deploy.
-const GOOGLE_ADS_ID = "AW-18418654652";
+const GOOGLE_ADS_ID = "AW-18407593812";
+// Keep the existing lead conversion destination configured until its replacement label is available.
+const LEAD_CONVERSION_ADS_ID = "AW-18418654652";
 
 // One gtag.js serves both Google Ads and GA4. gtag() queues into the dataLayer right away, so conversions fired before the library arrives still send.
 export default function GoogleTagBIZ() {
   const googleAnalyticsId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
-  const configs = [GOOGLE_ADS_ID, googleAnalyticsId]
+  const configs = [GOOGLE_ADS_ID, LEAD_CONVERSION_ADS_ID, googleAnalyticsId]
     .filter(Boolean)
     .map((id) => `gtag("config","${id}");`)
     .join("");
