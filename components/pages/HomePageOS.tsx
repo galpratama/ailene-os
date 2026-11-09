@@ -1,9 +1,6 @@
 "use client";
 
-import PipelineFunnelChartOS from "@/components/charts/PipelineFunnelChartOS";
-import StageDistributionChartOS from "@/components/charts/StageDistributionChartOS";
-import StageFlowSankeyChartOS from "@/components/charts/StageFlowSankeyChartOS";
-import WeeklyConversionChartOS from "@/components/charts/WeeklyConversionChartOS";
+import RevenueEngineOS from "@/components/pages/RevenueEngineOS";
 import HomeAttentionOS from "@/components/static-sections/HomeAttentionOS";
 import { useSession } from "@/contexts/SessionContext";
 import { getHomeStat } from "@/lib/actions";
@@ -41,7 +38,6 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
   const tasks = stat.data?.tasks;
   const leads = stat.data?.leads;
   const quotations = stat.data?.quotations;
-  const analytics = stat.data?.analytics;
 
   const firstName = sessionUser?.full_name.trim().split(/\s+/)[0] ?? "";
 
@@ -96,36 +92,7 @@ export default function HomePageOS({ sessionToken }: { sessionToken: string }) {
           isLoading={stat.isLoading}
         />
 
-        {/* This week's trend + leads by stage */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-2">
-            <WeeklyConversionChartOS
-              data={analytics?.weekly_conversion ?? []}
-              weekStart={analytics?.meta.week_start ?? new Date()}
-              weekEnd={analytics?.meta.week_end ?? new Date()}
-              trailingStart={analytics?.meta.trailing_start ?? new Date()}
-              trailingEnd={analytics?.meta.trailing_end ?? new Date()}
-              isLoading={stat.isLoading}
-            />
-          </div>
-          <StageDistributionChartOS
-            data={analytics?.stage_distribution ?? []}
-            isLoading={stat.isLoading}
-          />
-        </div>
-
-        {/* Funnel + stage flow */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <PipelineFunnelChartOS
-            data={analytics?.funnel ?? []}
-            isLoading={stat.isLoading}
-          />
-          <StageFlowSankeyChartOS
-            data={analytics?.sankey ?? { nodes: [], links: [] }}
-            windowDays={analytics?.meta.sankey_window_days ?? 90}
-            isLoading={stat.isLoading}
-          />
-        </div>
+        <RevenueEngineOS sessionToken={sessionToken} />
       </div>
     </div>
   );

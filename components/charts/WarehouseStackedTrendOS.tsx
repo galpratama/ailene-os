@@ -7,7 +7,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 export type StackSeries = { key: string; color: string };
 
 // Stacked daily columns: total height is the day's volume, and each band keeps its channel color through every filter.
-export default function WarehouseStackedTrendOS({ data, series, height = 240 }: { data: ({ date: string } & Record<string, number | string>)[]; series: StackSeries[]; height?: number }) {
+export default function WarehouseStackedTrendOS({ data, series, height = 240, unit = "sessions" }: { data: ({ date: string } & Record<string, number | string>)[]; series: StackSeries[]; height?: number; unit?: string }) {
   return (
     <div>
       <div style={{ height }} className="w-full">
@@ -22,7 +22,7 @@ export default function WarehouseStackedTrendOS({ data, series, height = 240 }: 
                 if (!active || !payload?.length) return null;
                 const rows = [...payload].filter((entry) => Number(entry.value) > 0).reverse().map((entry) => ({ label: String(entry.name), value: integer(Number(entry.value)), color: String(entry.color) }));
                 const total = rows.reduce((sum, row) => sum + Number(row.value.replaceAll(",", "")), 0);
-                return <ChartTooltipCard title={dateLongLabel(String(label))} rows={rows.length ? rows : [{ label: "sessions", value: "0" }]} note={`${integer(total)} sessions in total`} />;
+                return <ChartTooltipCard title={dateLongLabel(String(label))} rows={rows.length ? rows : [{ label: unit, value: "0" }]} note={`${integer(total)} ${unit} in total`} />;
               }}
             />
             {series.map((entry, index) => (

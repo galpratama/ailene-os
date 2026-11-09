@@ -2,6 +2,22 @@
 
 import { getHomeStat as getHomeStatApi } from "@/apis/stat";
 import {
+  getRevenueAds as getRevenueAdsApi,
+  getRevenueBDR as getRevenueBDRApi,
+  getRevenueCampaigns as getRevenueCampaignsApi,
+  getRevenueDataHealth as getRevenueDataHealthApi,
+  getRevenueFunnel as getRevenueFunnelApi,
+  getRevenueLeadFlow as getRevenueLeadFlowApi,
+  getRevenueOpenPipeline as getRevenueOpenPipelineApi,
+  getRevenueOverview as getRevenueOverviewApi,
+  getRevenueSDR as getRevenueSDRApi,
+  getRevenueSources as getRevenueSourcesApi,
+  getRevenueTeamTasks as getRevenueTeamTasksApi,
+  getRevenueWeeklySources as getRevenueWeeklySourcesApi,
+  type RevenueOpenPipelinePayload,
+  type RevenuePeriodPayload,
+} from "@/apis/revenue";
+import {
   createTask as createTaskApi,
   deleteTask as deleteTaskApi,
   getTaskDetails as getTaskDetailsApi,
@@ -712,6 +728,54 @@ export async function createInboundLead(payload: InboundLeadPayload) {
 
 export async function getHomeStat() {
   return getHomeStatApi();
+}
+
+export async function getRevenueOverview(payload: RevenuePeriodPayload & { trend_months?: number }) {
+  return getRevenueOverviewApi(payload);
+}
+
+export async function getRevenueFunnel(payload: RevenuePeriodPayload) {
+  return getRevenueFunnelApi(payload);
+}
+
+export async function getRevenueSources(payload: RevenuePeriodPayload) {
+  return getRevenueSourcesApi(payload);
+}
+
+export async function getRevenueWeeklySources(weeks: number) {
+  return getRevenueWeeklySourcesApi(weeks);
+}
+
+export async function getRevenueLeadFlow(payload: RevenuePeriodPayload) {
+  return getRevenueLeadFlowApi(payload);
+}
+
+export async function getRevenueCampaigns(payload: RevenuePeriodPayload & { page?: number; page_size?: number }) {
+  return getRevenueCampaignsApi(payload);
+}
+
+export async function getRevenueAds(payload: RevenuePeriodPayload) {
+  return getRevenueAdsApi(payload);
+}
+
+export async function getRevenueSDR(payload: RevenuePeriodPayload) {
+  return getRevenueSDRApi(payload);
+}
+
+export async function getRevenueBDR(payload: RevenuePeriodPayload & { weeks?: number }) {
+  return getRevenueBDRApi(payload);
+}
+
+export async function getRevenueOpenPipeline(payload: RevenueOpenPipelinePayload) {
+  return getRevenueOpenPipelineApi(payload);
+}
+
+export async function getRevenueTeamTasks(payload: { team_id?: number; page?: number; page_size?: number }) {
+  return getRevenueTeamTasksApi(payload);
+}
+
+export async function getRevenueDataHealth(payload: RevenuePeriodPayload) {
+  return getRevenueDataHealthApi(payload);
 }
 
 export async function submitTrilogySurvey(payload: TrilogySurveyPayload) {
