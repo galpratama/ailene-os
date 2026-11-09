@@ -87,7 +87,7 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
       <RevenueCardOS
         title={`SQLs by campaign, ${periodLabel}`}
         description="Every lead tied to the Meta campaign, UTM campaign, or channel that brought it. “No campaign” is the tracking gap to close."
-        source="Ailene OS attribution · Meta Ads spend"
+        source="both"
         partialNote="UTM and referral campaigns have no spend matched yet."
         isLoading={campaigns.isLoading}
         error={campaigns.error}

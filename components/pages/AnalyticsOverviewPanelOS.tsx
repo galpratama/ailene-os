@@ -83,7 +83,7 @@ export default function AnalyticsOverviewPanelOS() {
 
         <AnalyticsSectionOS
           className="xl:col-span-3"
-          title="From impression to lead"
+          title="Acquisition funnel"
           question="Where people drop out"
           info="Read each column top to bottom. '% continue' is the share that reached the next step, and the lowest one in a column is your biggest leak. The columns count different groups, so never compare a number across columns."
           datasets={["meta_ads", "ga4_traffic"]}

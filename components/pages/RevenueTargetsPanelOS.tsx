@@ -52,7 +52,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
         <RevenueCardOS
           title="Revenue vs target"
           description="Closed revenue by month within the selected dates; partial months are shown lighter."
-          source="Ailene OS pipelines and quotations"
+          source="os"
           partialNote="The dashed monthly target needs revenue targets."
           isLoading={overview.isLoading}
         >
@@ -69,7 +69,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
       <RevenueCardOS
         title="Monthly plan vs actual"
         description="Actuals by month within the selected dates. Attainment is revenue closed ÷ revenue target."
-        source="Ailene OS pipelines and quotations"
+        source="os"
         partialNote="Lead, SQL, closing, and revenue targets are not stored yet."
         isLoading={overview.isLoading}
       >

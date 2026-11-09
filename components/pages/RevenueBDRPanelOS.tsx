@@ -74,7 +74,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         <RevenueCardOS
           title="Meeting-to-close funnel"
           description={`Thick bar ${periodLabel}, thin bar ${previous}. Percent is conversion from the step above; the biggest drop is red.`}
-          source="Ailene OS stage history · stages from the pipeline catalog"
+          source="os"
           isLoading={bdr.isLoading}
           isEmpty={!data?.funnel.length}
         >
@@ -86,7 +86,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         <RevenueCardOS
           title="Meetings per week"
           description="Meetings booked by Jakarta week in the selected range; partial boundary weeks include only selected dates."
-          source="Ailene OS pipelines"
+          source="os"
           partialNote="Splitting each week into held, no-show, and upcoming needs meeting outcomes."
           isLoading={bdr.isLoading}
         >
@@ -101,7 +101,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
       <RevenueCardOS
         title="Open BDR pipeline"
         description={pipeline.data ? `Current snapshot, independent of the selected dates: ${count(pipeline.data.totals.count)} open deals worth ${money(pipeline.data.totals.value)}. Value is the current quotation, else the estimate.` : "Current open deals in BDR stages, independent of the selected dates."}
-        source="Ailene OS pipelines and quotations"
+        source="os"
         partialNote="Probability, weighted value, and next step need new pipeline fields."
         isLoading={pipeline.isLoading}
         error={pipeline.error}

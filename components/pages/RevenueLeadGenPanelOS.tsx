@@ -80,9 +80,9 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       </div>
 
       <RevenueCardOS
-        title="Lead flow: source → qualification → meeting → outcome"
-        description="Leads created this period, followed to where they are today. Band width is the number of leads; color follows the source all the way through."
-        source="Ailene OS pipelines"
+        title="Lead journey"
+        description="Each band follows leads created in the selected dates from their source to their current qualification, meeting, and outcome. Wider bands mean more leads. Colors identify the original source; historical periods can change as those leads progress."
+        source="os"
         isLoading={flow.isLoading}
         error={flow.error}
         onRetry={() => flow.refetch()}
@@ -93,21 +93,21 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       </RevenueCardOS>
 
       <RevenueCardOS
-        title="From ad impression to lead"
-        description="Where people drop off before they reach Ailene OS. Each lane counts a different population."
-        source="Meta Ads, GA4 · marketing warehouse"
-        partialNote="WhatsApp chats are not tracked yet."
-        isLoading={warehouse.isLoading}
-        isEmpty={!warehouse.data?.funnel.length}
-        emptyMessage={warehouse.isError ? "The marketing warehouse could not be reached." : "No ad or website activity in this period."}
+        title="Acquisition funnel"
+        description="Read each column from top to bottom. Ad delivery uses Meta impressions and clicks; website activity uses GA4 sessions and form events from every channel; the final column counts form leads accepted by Ailene OS. Percentages compare steps within a column only. These columns do not track the same people end to end."
+        source="both"
+        isLoading={warehouse.isLoading || sources.isLoading}
+        isEmpty={!warehouse.data?.funnel.length && !sources.data?.intake.website_form && !sources.data?.intake.meta_form && !sources.data?.intake.unclassified}
+        emptyMessage="No ad, website, or confirmed form activity in this period."
       >
-        {warehouse.data && <WarehouseFunnelChartOS steps={warehouse.data.funnel} />}
+        {sources.data && <WarehouseFunnelChartOS steps={warehouse.data?.funnel ?? []} confirmed={sources.data.intake} />}
+        {warehouse.isError && <p className="mt-3 text-xs text-gray-500 dark:text-zinc-400">Meta ad and GA4 activity could not be loaded; OS form leads are still shown.</p>}
       </RevenueCardOS>
 
       <RevenueCardOS
-        title="Every ad, judged by SQLs, not form fills"
-        description={`Hook: share of impressions that watched 3 seconds. Hold: share of those that kept watching. Verdict compares cost per SQL with the average${ads.data?.benchmark_cost_per_sql_idr ? ` (${money(ads.data.benchmark_cost_per_sql_idr)})` : ""} once an ad has 5+ leads.`}
-        source="Meta Ads spend · Ailene OS leads by ad ID"
+        title="Meta ad performance"
+        description={`Each card is one Meta ad. Leads and SQLs count pipelines in Ailene OS linked to that ad ID; spend, impressions, and clicks come from Meta. Hook is the share of impressions that watched 3 seconds. Hold is the share of those viewers who kept watching. Once an ad has at least 5 OS leads, its verdict compares cost per SQL with the average${ads.data?.benchmark_cost_per_sql_idr ? ` (${money(ads.data.benchmark_cost_per_sql_idr)})` : ""}.`}
+        source="both"
         isLoading={ads.isLoading}
         error={ads.error}
         onRetry={() => ads.refetch()}
@@ -148,9 +148,9 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
-          title="Leads per week by source"
+          title="Weekly leads by source"
           description="New leads by Jakarta week in the selected range; partial boundary weeks include only selected dates."
-          source="Ailene OS pipelines"
+          source="os"
           isLoading={weekly.isLoading}
           error={weekly.error}
           onRetry={() => weekly.refetch()}
@@ -165,9 +165,9 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
           />
         </RevenueCardOS>
         <RevenueCardOS
-          title="SQL rate by channel"
-          description={`Share of ${periodLabel}'s leads per channel that became SQLs.`}
-          source="Ailene OS pipelines"
+          title="SQL conversion by channel"
+          description={`For each channel, SQL rate divides pipelines qualified during ${periodLabel} by pipelines created during those dates. These are events in the same dates, so they are not necessarily the same leads.`}
+          source="os"
           isLoading={sources.isLoading}
           isEmpty={rated.length === 0}
         >
@@ -190,9 +190,9 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       </div>
 
       <RevenueCardOS
-        title={`Channel scorecard, ${periodLabel}`}
-        description="Every count is an event in this period. Cost per SQL counts Meta ad spend only."
-        source="Ailene OS pipelines · Meta Ads spend"
+        title={`Channel performance, ${periodLabel}`}
+        description="Each row is a lead channel. Leads, SQLs, meetings, wins, and revenue count events inside the selected dates; a SQL may come from a lead created earlier. Ad spend and cost per SQL are available for Meta Ads only."
+        source="both"
         partialNote="Google Ads spend and outbound team time are not priced yet."
         isLoading={sources.isLoading}
         isEmpty={channels.length === 0}

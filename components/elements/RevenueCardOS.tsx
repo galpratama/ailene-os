@@ -1,8 +1,13 @@
 import AppButton from "@/components/buttons/AppButton";
+import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import RevenuePendingOS, { type PendingShape } from "@/components/elements/RevenuePendingOS";
 import PendingLabelOS from "@/components/labels/PendingLabelOS";
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
+
+export type RevenueSource = "os" | "warehouse" | "both";
+
+const sourceLabels: Record<RevenueSource, string> = { os: "OS DB", warehouse: "Warehouse DB", both: "Warehouse DB + OS DB" };
 
 // One frame for every revenue widget: title, how to read it, the content, and where the numbers came from.
 export default function RevenueCardOS({
@@ -24,7 +29,7 @@ export default function RevenueCardOS({
 }: {
   title: string;
   description?: string;
-  source?: string;
+  source?: RevenueSource;
   pending?: string;
   pendingShape?: PendingShape;
   pendingColumns?: string[];
@@ -45,8 +50,8 @@ export default function RevenueCardOS({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{title}</h3>
             {pending && <PendingLabelOS />}
+            {description && <InfoTooltipOS label={title} explanation={description} />}
           </div>
-          {description && <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{description}</p>}
         </div>
         {actions}
       </header>
@@ -77,7 +82,7 @@ export default function RevenueCardOS({
           </p>
         )}
       </div>
-      {source && <footer className="border-t border-line-soft px-5 py-2 text-xs text-gray-500 dark:text-zinc-400">{source}</footer>}
+      {source && <footer className="border-t border-line-soft px-5 py-2 text-xs text-gray-500 dark:text-zinc-400">Source: {sourceLabels[source]}</footer>}
     </section>
   );
 }

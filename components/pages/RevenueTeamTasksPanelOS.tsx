@@ -50,7 +50,7 @@ export default function RevenueTeamTasksPanelOS({ enabled }: RevenueTabProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <RevenueCardOS title="Open tasks by person" description="Most overdue first." source="Ailene OS tasks" isLoading={tasks.isLoading} isEmpty={!data?.by_person.length} emptyMessage="No open tasks.">
+        <RevenueCardOS title="Open tasks by person" description="Most overdue first." source="os" isLoading={tasks.isLoading} isEmpty={!data?.by_person.length} emptyMessage="No open tasks.">
           <AnalyticsDataTableOS columns={personColumns} rows={data?.by_person ?? []} rowKey={(row) => row.assignee?.id ?? "unassigned"} />
         </RevenueCardOS>
         <RevenueCardOS
@@ -65,7 +65,7 @@ export default function RevenueTeamTasksPanelOS({ enabled }: RevenueTabProps) {
       <RevenueCardOS
         title="All open tasks"
         description={data && data.open > data.list.length ? `Showing the first ${data.list.length} of ${data.open}, overdue first.` : "Overdue first, then by due date."}
-        source="Ailene OS tasks"
+        source="os"
         isLoading={tasks.isLoading}
         isEmpty={!data?.list.length}
         emptyMessage="No open tasks."

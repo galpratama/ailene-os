@@ -65,10 +65,10 @@ export default function RevenueDataHealthPanelOS({ period, periodLabel, enabled 
       </div>
 
       <div className="grid grid-cols-1 gap-4 2xl:grid-cols-5">
-        <RevenueCardOS title="Source freshness" description="Lagging means the newest data is more than 2 days old." className="2xl:col-span-3" isLoading={health.isLoading}>
+        <RevenueCardOS title="Source freshness" description="Lagging means the newest data is more than 2 days old." source="both" className="2xl:col-span-3" isLoading={health.isLoading}>
           <AnalyticsDataTableOS columns={sourceColumns} rows={data?.sources ?? []} rowKey={(row) => row.source} />
         </RevenueCardOS>
-        <RevenueCardOS title={`Where ${periodLabel}'s leads lose their source`} description="Share of the period's leads missing each piece." source="Ailene OS pipelines and attribution" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
+        <RevenueCardOS title={`Where ${periodLabel}'s leads lose their source`} description="Share of the period's leads missing each piece." source="os" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
           {data && (
             <WarehouseRankedBarsOS
               maxValue={1}

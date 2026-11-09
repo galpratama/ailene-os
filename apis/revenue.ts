@@ -60,10 +60,16 @@ export type RevenueSourceChannel = Omit<RevenueSourceGroup, "group"> & {
   cost_per_sql_idr: number | null;
 };
 
+// Mirrors pipelines.intake_method_enum; null in the database is reported as unclassified.
+export type IntakeMethod = "website_form" | "meta_form" | "manual";
+
+export type RevenueIntake = Record<IntakeMethod | "unclassified", number>;
+
 export type RevenueSources = {
   period: ReportPeriod;
   groups: RevenueSourceGroup[];
   channels: RevenueSourceChannel[];
+  intake: RevenueIntake;
   data_gaps: RevenueGap[];
 };
 

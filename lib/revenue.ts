@@ -1,4 +1,4 @@
-import type { LeadGroup } from "@/apis/revenue";
+import type { IntakeMethod, LeadGroup } from "@/apis/revenue";
 import { getShortRupiahCurrency } from "@/lib/currency";
 
 export const PENDING_LABEL = "(Backend belum siap)";
@@ -11,6 +11,12 @@ export const leadGroupLabels: Record<LeadGroup, string> = {
   inbound_unknown: "Inbound, source unknown",
   outbound_referral: "Outbound, referral",
   outbound_outreach: "Outbound, outreach",
+};
+
+export const intakeMethodLabels: Record<IntakeMethod, string> = {
+  website_form: "Website form leads in OS",
+  meta_form: "Meta form leads in OS",
+  manual: "Staff-created leads in OS",
 };
 
 export const leadGroupShortLabels: Record<LeadGroup, string> = {
