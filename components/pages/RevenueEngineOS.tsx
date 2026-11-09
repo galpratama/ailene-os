@@ -19,18 +19,16 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 export type RevenueTabProps = { period: RevenuePeriodPayload; monthLabel: string; enabled: boolean };
 
-const tabs: { key: string; label: string; icon: LucideIcon; group: "ceo" | "team" | "gtm" }[] = [
-  { key: "overview", label: "Overview", icon: LayoutDashboard, group: "ceo" },
-  { key: "leads", label: "Lead generation", icon: Megaphone, group: "team" },
-  { key: "sdr", label: "SDR", icon: PhoneCall, group: "team" },
-  { key: "bdr", label: "BDR", icon: Handshake, group: "team" },
-  { key: "targets", label: "Targets & cash", icon: Banknote, group: "team" },
-  { key: "after", label: "After the sale", icon: Sparkles, group: "team" },
-  { key: "tasks", label: "Team tasks", icon: ListChecks, group: "team" },
-  { key: "health", label: "Data health", icon: Database, group: "gtm" },
+const tabs: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: "overview", label: "Overview", icon: LayoutDashboard },
+  { key: "leads", label: "Lead generation", icon: Megaphone },
+  { key: "sdr", label: "SDR", icon: PhoneCall },
+  { key: "bdr", label: "BDR", icon: Handshake },
+  { key: "targets", label: "Targets & cash", icon: Banknote },
+  { key: "after", label: "After the sale", icon: Sparkles },
+  { key: "tasks", label: "Team tasks", icon: ListChecks },
+  { key: "health", label: "Data health", icon: Database },
 ];
-
-const groupLabels = { ceo: "CEO", team: "Team", gtm: "GTM engineer" };
 
 // The revenue engine: one month at a time, compared with the equally long period before it, split into the dashboard's views.
 export default function RevenueEngineOS({ sessionToken }: { sessionToken: string }) {
@@ -108,14 +106,8 @@ export default function RevenueEngineOS({ sessionToken }: { sessionToken: string
           {tabs.map((entry, index) => {
             const Icon = entry.icon;
             const active = tab === entry.key;
-            const newGroup = index === 0 || tabs[index - 1].group !== entry.group;
             return (
               <div key={entry.key} className="flex shrink-0 items-center">
-                {newGroup && (
-                  <span aria-hidden="true" className={`px-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-zinc-500 ${index > 0 ? "ml-1 border-l border-line-soft pl-3" : ""}`}>
-                    {groupLabels[entry.group]}
-                  </span>
-                )}
                 <button
                   ref={(node) => {
                     tabRefs.current[entry.key] = node;
