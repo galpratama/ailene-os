@@ -1,6 +1,5 @@
 "use server";
 
-import { getHomeStat as getHomeStatApi } from "@/apis/stat";
 import {
   getRevenueAds as getRevenueAdsApi,
   getRevenueBDR as getRevenueBDRApi,
@@ -724,10 +723,6 @@ export async function createInboundLead(payload: InboundLeadPayload) {
     success: false as const,
     duplicateCompany: result.message === "A company with this name already exists.",
   };
-}
-
-export async function getHomeStat() {
-  return getHomeStatApi();
 }
 
 export async function getRevenueOverview(payload: RevenuePeriodPayload & { trend_months?: number }) {
