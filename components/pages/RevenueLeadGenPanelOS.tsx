@@ -31,12 +31,12 @@ const scorecardColumns: AnalyticsColumn<RevenueSourceChannel>[] = [
   { key: "cps", label: "Cost per SQL", value: (row) => row.cost_per_sql_idr, render: (row) => money(row.cost_per_sql_idr), align: "right" },
 ];
 
-export default function RevenueLeadGenPanelOS({ period, monthLabel, enabled }: RevenueTabProps) {
+export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
   const sources = useRevenue<RevenueSources>("sources", period, () => getRevenueSources(period), enabled);
   const flow = useRevenue<RevenueLeadFlow>("lead-flow", period, () => getRevenueLeadFlow(period), enabled);
   const ads = useRevenue<RevenueAds>("ads", period, () => getRevenueAds(period), enabled);
-  const weekly = useRevenue<RevenueWeeklySources>("sources/weekly", 8, () => getRevenueWeeklySources(8), enabled);
-  const warehouse = useWarehouseAnalytics(period, enabled);
+  const weekly = useRevenue<RevenueWeeklySources>("sources/weekly", period, () => getRevenueWeeklySources(period), enabled);
+  const warehouse = useWarehouseAnalytics(period, enabled, false);
 
   const groups = sources.data?.groups ?? [];
   const totalLeads = groups.reduce((sum, group) => sum + group.leads, 0);
@@ -49,7 +49,7 @@ export default function RevenueLeadGenPanelOS({ period, monthLabel, enabled }: R
     <>
       <p className="flex flex-wrap items-center gap-2 text-base text-gray-800 dark:text-zinc-200">
         <span>
-          Where {monthLabel}&apos;s <strong className="font-semibold">{count(totalLeads)}</strong> {totalLeads === 1 ? "lead" : "leads"} came from, and how far each source got.
+          Where the <strong className="font-semibold">{count(totalLeads)}</strong> {totalLeads === 1 ? "lead" : "leads"} from {periodLabel} came from, and how far each source got.
         </span>
         <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400">Lead target: <PendingLabelOS /></span>
       </p>
@@ -149,7 +149,7 @@ export default function RevenueLeadGenPanelOS({ period, monthLabel, enabled }: R
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Leads per week by source"
-          description="New leads in the last 8 weeks, Monday to Sunday in Jakarta time; this week is still running."
+          description="New leads by Jakarta week in the selected range; partial boundary weeks include only selected dates."
           source="Ailene OS pipelines"
           isLoading={weekly.isLoading}
           error={weekly.error}
@@ -166,7 +166,7 @@ export default function RevenueLeadGenPanelOS({ period, monthLabel, enabled }: R
         </RevenueCardOS>
         <RevenueCardOS
           title="SQL rate by channel"
-          description={`Share of ${monthLabel}'s leads per channel that became SQLs.`}
+          description={`Share of ${periodLabel}'s leads per channel that became SQLs.`}
           source="Ailene OS pipelines"
           isLoading={sources.isLoading}
           isEmpty={rated.length === 0}
@@ -190,7 +190,7 @@ export default function RevenueLeadGenPanelOS({ period, monthLabel, enabled }: R
       </div>
 
       <RevenueCardOS
-        title={`Channel scorecard, ${monthLabel}`}
+        title={`Channel scorecard, ${periodLabel}`}
         description="Every count is an event in this period. Cost per SQL counts Meta ad spend only."
         source="Ailene OS pipelines · Meta Ads spend"
         partialNote="Google Ads spend and outbound team time are not priced yet."

@@ -725,7 +725,7 @@ export async function createInboundLead(payload: InboundLeadPayload) {
   };
 }
 
-export async function getRevenueOverview(payload: RevenuePeriodPayload & { trend_months?: number }) {
+export async function getRevenueOverview(payload: RevenuePeriodPayload) {
   return getRevenueOverviewApi(payload);
 }
 
@@ -737,8 +737,8 @@ export async function getRevenueSources(payload: RevenuePeriodPayload) {
   return getRevenueSourcesApi(payload);
 }
 
-export async function getRevenueWeeklySources(weeks: number) {
-  return getRevenueWeeklySourcesApi(weeks);
+export async function getRevenueWeeklySources(payload: RevenuePeriodPayload) {
+  return getRevenueWeeklySourcesApi(payload);
 }
 
 export async function getRevenueLeadFlow(payload: RevenuePeriodPayload) {
@@ -757,7 +757,7 @@ export async function getRevenueSDR(payload: RevenuePeriodPayload) {
   return getRevenueSDRApi(payload);
 }
 
-export async function getRevenueBDR(payload: RevenuePeriodPayload & { weeks?: number }) {
+export async function getRevenueBDR(payload: RevenuePeriodPayload) {
   return getRevenueBDRApi(payload);
 }
 

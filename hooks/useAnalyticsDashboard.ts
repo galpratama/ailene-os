@@ -94,12 +94,12 @@ export function useAileneReferrals(payload: TrackingPeriodPayload, enabled: bool
   return { referrals, totalSessions: overview.data?.summary.current.sessions ?? null };
 }
 
-export function useWarehouseAnalytics(payload: WarehouseAnalyticsPayload, enabled: boolean) {
+export function useWarehouseAnalytics(payload: WarehouseAnalyticsPayload, enabled: boolean, keepPrevious = true) {
   return useQuery<WarehouseAnalytics>({
     queryKey: ["analytics", "warehouse", payload],
     queryFn: async () => requireApiData(await getWarehouseAnalytics(payload)),
     enabled,
     staleTime: STALE_TIME,
-    placeholderData: keepPreviousData,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
 }

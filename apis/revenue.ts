@@ -144,7 +144,6 @@ export type RevenueMeetingWeek = { week_start: string; partial: boolean; booked:
 
 export type RevenueBDR = {
   period: ReportPeriod;
-  this_week: RevenueMeetingWeek;
   meetings: CountChange;
   funnel: { stage_code: string; name: string; phase: string; count: number; previous: number; from_previous_rate: number | null }[];
   meeting_to_quotation_rate: number | null;
@@ -223,7 +222,7 @@ async function post<T>(path: string, body: unknown): Promise<ApiEnvelope<T>> {
   return callApi(`/api/v1/analytics/${path}`, { token: await getSessionToken(), body });
 }
 
-export async function getRevenueOverview(payload: RevenuePeriodPayload & { trend_months?: number }) {
+export async function getRevenueOverview(payload: RevenuePeriodPayload) {
   return post<RevenueOverview>("overview", payload);
 }
 
@@ -235,8 +234,8 @@ export async function getRevenueSources(payload: RevenuePeriodPayload) {
   return post<RevenueSources>("sources", payload);
 }
 
-export async function getRevenueWeeklySources(weeks: number) {
-  return post<RevenueWeeklySources>("sources/weekly", { weeks });
+export async function getRevenueWeeklySources(payload: RevenuePeriodPayload) {
+  return post<RevenueWeeklySources>("sources/weekly", payload);
 }
 
 export async function getRevenueLeadFlow(payload: RevenuePeriodPayload) {
@@ -255,7 +254,7 @@ export async function getRevenueSDR(payload: RevenuePeriodPayload) {
   return post<RevenueSDR>("sdr", payload);
 }
 
-export async function getRevenueBDR(payload: RevenuePeriodPayload & { weeks?: number }) {
+export async function getRevenueBDR(payload: RevenuePeriodPayload) {
   return post<RevenueBDR>("bdr", payload);
 }
 

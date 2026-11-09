@@ -33,7 +33,7 @@ const sourceColumns: AnalyticsColumn<RevenueSourceHealth>[] = [
   { key: "status", label: "Status", value: (row) => row.status, render: (row) => <SourceHealthLabelOS status={row.status} /> },
 ];
 
-export default function RevenueDataHealthPanelOS({ period, monthLabel, enabled }: RevenueTabProps) {
+export default function RevenueDataHealthPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
   const health = useRevenue<RevenueDataHealth>("data-health", period, () => getRevenueDataHealth(period), enabled);
   const data = health.data;
   const connected = data?.sources.filter((source) => source.status !== "not_connected").length ?? 0;
@@ -50,14 +50,14 @@ export default function RevenueDataHealthPanelOS({ period, monthLabel, enabled }
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <RevenueKpiOS
           label="Sources connected"
-          value={`${count(connected)} of ${count(data?.sources.length)}`}
+          value={warehouseDown ? count(connected) : `${count(connected)} of ${count(data?.sources.length)}`}
           lines={[warehouseDown ? "the marketing warehouse could not be reached" : "with data in the warehouse or OS"]}
           isLoading={health.isLoading}
         />
         <RevenueKpiOS
           label="Leads traceable to a source"
           value={percent(data?.traceable_lead_rate)}
-          lines={[`${count(data?.untraceable_leads)} of ${count(data?.leads)} ${monthLabel} leads have no channel and no attribution`]}
+          lines={[`${count(data?.untraceable_leads)} of ${count(data?.leads)} ${periodLabel} leads have no channel and no attribution`]}
           info="A lead is traceable when it has a channel other than Direct, or a first-touch attribution record."
           isLoading={health.isLoading}
         />
@@ -68,7 +68,7 @@ export default function RevenueDataHealthPanelOS({ period, monthLabel, enabled }
         <RevenueCardOS title="Source freshness" description="Lagging means the newest data is more than 2 days old." className="2xl:col-span-3" isLoading={health.isLoading}>
           <AnalyticsDataTableOS columns={sourceColumns} rows={data?.sources ?? []} rowKey={(row) => row.source} />
         </RevenueCardOS>
-        <RevenueCardOS title={`Where ${monthLabel}'s leads lose their source`} description="Share of the period's leads missing each piece." source="Ailene OS pipelines and attribution" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
+        <RevenueCardOS title={`Where ${periodLabel}'s leads lose their source`} description="Share of the period's leads missing each piece." source="Ailene OS pipelines and attribution" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
           {data && (
             <WarehouseRankedBarsOS
               maxValue={1}

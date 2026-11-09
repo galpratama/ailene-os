@@ -20,7 +20,7 @@ const planColumns: AnalyticsColumn<Month>[] = [
     key: "month",
     label: "Month",
     value: (row) => row.month,
-    render: (row) => `${new Date(`${row.month}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" })}${row.partial ? " (to date)" : ""}`,
+    render: (row) => `${new Date(`${row.month}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" })}${row.partial ? " (partial range)" : ""}`,
   },
   { key: "leads", label: "Leads", value: (row) => row.leads, render: (row) => count(row.leads), align: "right" },
   { key: "sqls", label: "SQL", value: (row) => row.sqls, render: (row) => count(row.sqls), align: "right" },
@@ -31,7 +31,7 @@ const planColumns: AnalyticsColumn<Month>[] = [
 ];
 
 export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabProps) {
-  const overview = useRevenue<RevenueOverview>("overview", period, () => getRevenueOverview({ ...period, trend_months: 6 }), enabled);
+  const overview = useRevenue<RevenueOverview>("overview", period, () => getRevenueOverview(period), enabled);
   const months = overview.data?.monthly ?? [];
 
   if (overview.isError && !overview.data) return <RevenueErrorOS error={overview.error} onRetry={() => overview.refetch()} />;
@@ -51,7 +51,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Revenue vs target"
-          description="Closed revenue per month; the current month is lighter until it ends."
+          description="Closed revenue by month within the selected dates; partial months are shown lighter."
           source="Ailene OS pipelines and quotations"
           partialNote="The dashed monthly target needs revenue targets."
           isLoading={overview.isLoading}
@@ -68,7 +68,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
 
       <RevenueCardOS
         title="Monthly plan vs actual"
-        description="Actuals for the last six months. Attainment is revenue closed ÷ revenue target."
+        description="Actuals by month within the selected dates. Attainment is revenue closed ÷ revenue target."
         source="Ailene OS pipelines and quotations"
         partialNote="Lead, SQL, closing, and revenue targets are not stored yet."
         isLoading={overview.isLoading}

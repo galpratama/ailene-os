@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 
 export type MonthBar = { month: string; partial: boolean; revenue: number; closings: number };
 
-// Closed revenue per month; a month still in progress is drawn lighter so it is not read as a fall.
+// Closed revenue per month; months only partly covered by the selected range are drawn lighter.
 export default function RevenueMonthBarsOS({ data, height = 240 }: { data: MonthBar[]; height?: number }) {
   return (
     <div style={{ height }} className="w-full">
@@ -22,7 +22,7 @@ export default function RevenueMonthBarsOS({ data, height = 240 }: { data: Month
               const row = payload[0].payload as MonthBar;
               return (
                 <ChartTooltipCard
-                  title={`${monthName(row.month)} ${row.month.slice(0, 4)}${row.partial ? " (to date)" : ""}`}
+                  title={`${monthName(row.month)} ${row.month.slice(0, 4)}${row.partial ? " (partial range)" : ""}`}
                   rows={[
                     { label: "revenue closed", value: money(row.revenue), color: "var(--viz-4)" },
                     { label: "closings", value: count(row.closings) },

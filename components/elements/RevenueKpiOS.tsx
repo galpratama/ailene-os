@@ -70,7 +70,7 @@ export default function RevenueKpiOS({
             </p>
           )}
           {trend && trend.length > 1 && (
-            <div className="mt-auto pt-2" title="Last six months">
+            <div className="mt-auto pt-2" title="Monthly values in the selected period">
               <WarehouseSparklineOS values={trend} color="var(--viz-4)" />
             </div>
           )}

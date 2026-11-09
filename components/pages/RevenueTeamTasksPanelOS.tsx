@@ -40,7 +40,7 @@ export default function RevenueTeamTasksPanelOS({ enabled }: RevenueTabProps) {
 
   return (
     <>
-      <p className="text-base text-gray-800 dark:text-zinc-200">Everyone&apos;s open work from Ailene OS tasks, and the handoffs between sales and delivery.</p>
+      <p className="text-base text-gray-800 dark:text-zinc-200">Current company-wide open work from Ailene OS tasks, independent of the selected dates, and the handoffs between sales and delivery.</p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <RevenueKpiOS label="Open tasks" value={count(data?.open)} lines={[`${count(data?.in_review)} in review`]} info="To do, backlog, in progress, and review tasks you can see." isLoading={tasks.isLoading} />

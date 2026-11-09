@@ -23,7 +23,7 @@ const campaignColumns: AnalyticsColumn<RevenueCampaignRow>[] = [
   { key: "cps", label: "Cost per SQL", value: (row) => row.cost_per_sql_idr, render: (row) => money(row.cost_per_sql_idr), align: "right" },
 ];
 
-export default function RevenueSDRPanelOS({ period, monthLabel, enabled }: RevenueTabProps) {
+export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
   const sdr = useRevenue<RevenueSDR>("sdr", period, () => getRevenueSDR(period), enabled);
   const campaigns = useRevenue<RevenueCampaigns>("campaigns", period, () => getRevenueCampaigns({ ...period, page_size: 100 }), enabled);
   const data = sdr.data;
@@ -37,7 +37,7 @@ export default function RevenueSDRPanelOS({ period, monthLabel, enabled }: Reven
         The SDR&apos;s job: turn leads into qualified meetings, fast.{" "}
         {data && (
           <>
-            {monthLabel}: <strong className="font-semibold">{count(data.sqls.current)}</strong> SQLs from{" "}
+            {periodLabel}: <strong className="font-semibold">{count(data.sqls.current)}</strong> SQLs from{" "}
             <strong className="font-semibold">{count(data.leads.current)}</strong> leads.
           </>
         )}
@@ -85,7 +85,7 @@ export default function RevenueSDRPanelOS({ period, monthLabel, enabled }: Reven
       </div>
 
       <RevenueCardOS
-        title={`SQLs by campaign, ${monthLabel}`}
+        title={`SQLs by campaign, ${periodLabel}`}
         description="Every lead tied to the Meta campaign, UTM campaign, or channel that brought it. “No campaign” is the tracking gap to close."
         source="Ailene OS attribution · Meta Ads spend"
         partialNote="UTM and referral campaigns have no spend matched yet."

@@ -2,7 +2,7 @@
 
 import type { RevenuePeriodPayload } from "@/apis/revenue";
 import AppButton from "@/components/buttons/AppButton";
-import AppSelect from "@/components/fields/AppSelect";
+import RevenueDateRangeOS from "@/components/fields/RevenueDateRangeOS";
 import RevenueAfterSalePanelOS from "@/components/pages/RevenueAfterSalePanelOS";
 import RevenueBDRPanelOS from "@/components/pages/RevenueBDRPanelOS";
 import RevenueDataHealthPanelOS from "@/components/pages/RevenueDataHealthPanelOS";
@@ -11,13 +11,13 @@ import RevenueOverviewPanelOS from "@/components/pages/RevenueOverviewPanelOS";
 import RevenueSDRPanelOS from "@/components/pages/RevenueSDRPanelOS";
 import RevenueTargetsPanelOS from "@/components/pages/RevenueTargetsPanelOS";
 import RevenueTeamTasksPanelOS from "@/components/pages/RevenueTeamTasksPanelOS";
-import { revenueMonths } from "@/lib/revenue";
+import { revenuePeriodLabel, revenuePresetRange, revenueRangeError } from "@/lib/revenue";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
-import { Banknote, CalendarRange, Database, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, type LucideIcon } from "lucide-react";
+import { Banknote, Database, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, type LucideIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
-export type RevenueTabProps = { period: RevenuePeriodPayload; monthLabel: string; enabled: boolean };
+export type RevenueTabProps = { period: RevenuePeriodPayload; periodLabel: string; enabled: boolean };
 
 const tabs: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
@@ -30,13 +30,13 @@ const tabs: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "health", label: "Data health", icon: Database },
 ];
 
-// The revenue engine: one month at a time, compared with the equally long period before it, split into the dashboard's views.
-export default function RevenueEngineOS({ sessionToken }: { sessionToken: string }) {
+// The revenue engine compares an inclusive Jakarta date range with the equally long period before it.
+export default function RevenueEngineOS({ sessionToken, today }: { sessionToken: string; today: string }) {
   const params = useSearchParams();
-  const months = useMemo(() => revenueMonths(12), []);
-  const [monthKey, setMonthKey] = useState(() => {
-    const value = params.get("month");
-    return months.some((entry) => entry.key === value) ? (value as string) : months[0].key;
+  const [period, setPeriod] = useState<RevenuePeriodPayload>(() => {
+    const start_date = params.get("start_date") ?? "";
+    const end_date = params.get("end_date") ?? "";
+    return revenueRangeError(start_date, end_date) ? revenuePresetRange("30d", today) : { start_date, end_date };
   });
   const [tab, setTab] = useState(() => {
     const value = params.get("view");
@@ -44,20 +44,20 @@ export default function RevenueEngineOS({ sessionToken }: { sessionToken: string
   });
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const queryClient = useQueryClient();
-  const isFetching = useIsFetching({ queryKey: ["revenue"] }) > 0;
-  const month = months.find((entry) => entry.key === monthKey) ?? months[0];
-  const props: RevenueTabProps = { period: { start_date: month.start, end_date: month.end }, monthLabel: month.label.replace(" (to date)", ""), enabled: !!sessionToken };
+  const isFetching = useIsFetching({ queryKey: ["revenue"] }) + useIsFetching({ queryKey: ["analytics", "warehouse"] }) > 0;
+  const props: RevenueTabProps = { period, periodLabel: revenuePeriodLabel(period.start_date, period.end_date), enabled: !!sessionToken };
 
   useEffect(() => {
-    // Keep the open view and month in the URL so a link reopens the same figures.
+    // Keep the open view and exact dates in the URL so a link reopens the same figures.
     const next = new URLSearchParams(window.location.search);
     if (tab === "overview") next.delete("view");
     else next.set("view", tab);
-    if (monthKey === months[0].key) next.delete("month");
-    else next.set("month", monthKey);
+    next.delete("month");
+    next.set("start_date", period.start_date);
+    next.set("end_date", period.end_date);
     const query = next.toString();
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
-  }, [tab, monthKey, months]);
+  }, [tab, period.start_date, period.end_date]);
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const moves: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 };
@@ -74,19 +74,11 @@ export default function RevenueEngineOS({ sessionToken }: { sessionToken: string
         <div className="min-w-0">
           <h2 id="revenue-engine-title" className="text-lg font-bold text-gray-900 dark:text-zinc-100">Revenue engine</h2>
           <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">
-            Leads to cash from Ailene OS and the marketing warehouse. Figures follow your data scope; money in rupiah.
+            Leads to cash from Ailene OS and the marketing warehouse. Company-wide figures; money in rupiah.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <AppSelect
-            selectId="revenue-month"
-            className="w-56"
-            icon={<CalendarRange size={14} aria-hidden="true" />}
-            placeholder="Month"
-            value={monthKey}
-            onChange={(value) => setMonthKey(String(value ?? months[0].key))}
-            options={months.map((entry) => ({ value: entry.key, label: entry.label }))}
-          />
+        <div className="flex w-full flex-wrap items-end gap-2 xl:w-auto">
+          <RevenueDateRangeOS key={`${period.start_date}:${period.end_date}`} period={period} today={today} onChange={setPeriod} />
           <AppButton
             type="button"
             variant="outline"
@@ -94,7 +86,10 @@ export default function RevenueEngineOS({ sessionToken }: { sessionToken: string
             aria-label="Refresh revenue figures"
             title="Refresh"
             disabled={isFetching}
-            onClick={() => queryClient.refetchQueries({ queryKey: ["revenue"], type: "active" })}
+            onClick={() => {
+              void queryClient.refetchQueries({ queryKey: ["revenue"], type: "active" });
+              void queryClient.refetchQueries({ queryKey: ["analytics", "warehouse"], type: "active" });
+            }}
           >
             <RefreshCw size={14} aria-hidden="true" className={isFetching ? "animate-spin motion-reduce:animate-none" : ""} />
           </AppButton>

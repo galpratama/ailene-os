@@ -1,10 +1,11 @@
 import HomePageOS from "@/components/pages/HomePageOS";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { jakartaToday } from "@/lib/revenue";
 import { cookies } from "next/headers";
 
 export default async function Page() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? "";
 
-  return <HomePageOS sessionToken={sessionToken} />;
+  return <HomePageOS sessionToken={sessionToken} today={jakartaToday()} />;
 }

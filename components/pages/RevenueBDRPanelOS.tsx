@@ -25,8 +25,8 @@ const pipelineColumns: AnalyticsColumn<RevenueOpenPipelineRow>[] = [
   { key: "days", label: "Days in stage", value: (row) => row.days_in_stage, align: "right" },
 ];
 
-export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: RevenueTabProps) {
-  const bdr = useRevenue<RevenueBDR>("bdr", period, () => getRevenueBDR({ ...period, weeks: 8 }), enabled);
+export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
+  const bdr = useRevenue<RevenueBDR>("bdr", period, () => getRevenueBDR(period), enabled);
   const pipeline = useRevenue<RevenueOpenPipeline>("open-pipeline", "bdr", () => getRevenueOpenPipeline({ phase: "bdr", page_size: 100 }), enabled);
   const data = bdr.data;
   const previous = data ? periodCaption(data.period.previous_start_date, data.period.previous_end_date) : "previous period";
@@ -39,7 +39,7 @@ export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: Reven
         The BDR&apos;s job: turn meetings into signed quotations.{" "}
         {data && (
           <>
-            This week (from {shortDate(data.this_week.week_start)}): <strong className="font-semibold">{count(data.this_week.booked)}</strong> meetings booked.
+            During {periodLabel}: <strong className="font-semibold">{count(data.meetings.current)}</strong> meetings booked.
           </>
         )}
       </p>
@@ -57,14 +57,14 @@ export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: Reven
         <RevenueKpiOS
           label="Meeting → quotation"
           value={percent(data?.meeting_to_quotation_rate)}
-          lines={[`of ${monthLabel}'s meetings, so far`]}
+          lines={[`of ${periodLabel}'s meetings, so far`]}
           info="Of the pipelines whose meeting was booked in the period, the share that has sent a quotation since."
           isLoading={bdr.isLoading}
         />
         <RevenueKpiOS
           label="Meeting → won"
           value={percent(data?.meeting_to_won_rate)}
-          lines={[`of ${monthLabel}'s meetings, so far`]}
+          lines={[`of ${periodLabel}'s meetings, so far`]}
           info="Of the pipelines whose meeting was booked in the period, the share closed won since."
           isLoading={bdr.isLoading}
         />
@@ -73,7 +73,7 @@ export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: Reven
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Meeting-to-close funnel"
-          description={`Thick bar ${monthLabel}, thin bar ${previous}. Percent is conversion from the step above; the biggest drop is red.`}
+          description={`Thick bar ${periodLabel}, thin bar ${previous}. Percent is conversion from the step above; the biggest drop is red.`}
           source="Ailene OS stage history · stages from the pipeline catalog"
           isLoading={bdr.isLoading}
           isEmpty={!data?.funnel.length}
@@ -85,7 +85,7 @@ export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: Reven
         </RevenueCardOS>
         <RevenueCardOS
           title="Meetings per week"
-          description="Meetings booked in the last 8 weeks; this week is still running."
+          description="Meetings booked by Jakarta week in the selected range; partial boundary weeks include only selected dates."
           source="Ailene OS pipelines"
           partialNote="Splitting each week into held, no-show, and upcoming needs meeting outcomes."
           isLoading={bdr.isLoading}
@@ -100,7 +100,7 @@ export default function RevenueBDRPanelOS({ period, monthLabel, enabled }: Reven
 
       <RevenueCardOS
         title="Open BDR pipeline"
-        description={pipeline.data ? `${count(pipeline.data.totals.count)} open deals worth ${money(pipeline.data.totals.value)}. Value is the current quotation, else the estimate.` : "Open deals in BDR stages."}
+        description={pipeline.data ? `Current snapshot, independent of the selected dates: ${count(pipeline.data.totals.count)} open deals worth ${money(pipeline.data.totals.value)}. Value is the current quotation, else the estimate.` : "Current open deals in BDR stages, independent of the selected dates."}
         source="Ailene OS pipelines and quotations"
         partialNote="Probability, weighted value, and next step need new pipeline fields."
         isLoading={pipeline.isLoading}

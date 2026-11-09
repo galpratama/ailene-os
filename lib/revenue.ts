@@ -74,27 +74,50 @@ export function count(value: number | null | undefined) {
   return value === null || value === undefined ? "—" : new Intl.NumberFormat("en-US").format(value);
 }
 
-export type RevenueMonth = { key: string; label: string; start: string; end: string; partial: boolean };
-
-function jakartaToday() {
+export function jakartaToday() {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-// The current month runs to today in Asia/Jakarta; earlier months are whole.
-export function revenueMonths(count = 12): RevenueMonth[] {
-  const today = jakartaToday();
-  const [year, month] = today.split("-").map(Number);
-  return Array.from({ length: count }, (_, index) => {
-    const first = new Date(Date.UTC(year, month - 1 - index, 1));
-    const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0));
-    const start = first.toISOString().slice(0, 10);
-    const lastDay = last.toISOString().slice(0, 10);
-    const end = index === 0 ? today : lastDay;
-    const label = first.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
-    return { key: start.slice(0, 7), label: index === 0 ? `${label} (to date)` : label, start, end, partial: end !== lastDay };
-  });
+export type RevenueRangePreset = "7d" | "14d" | "30d" | "3m" | "6m";
+
+function shiftDate(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftMonths(value: string, months: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const first = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  first.setUTCDate(Math.min(day, lastDay));
+  return first.toISOString().slice(0, 10);
+}
+
+export function revenuePresetRange(preset: RevenueRangePreset, today: string) {
+  const start = preset === "3m" || preset === "6m"
+    ? shiftDate(shiftMonths(today, preset === "3m" ? -3 : -6), 1)
+    : shiftDate(today, 1 - Number.parseInt(preset, 10));
+  return { start_date: start, end_date: today };
+}
+
+export function revenueRangeError(start: string, end: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return "Choose both dates.";
+  if ([start, end].some((value) => {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value;
+  })) return "Choose valid calendar dates.";
+  if (end < start) return "End date must be on or after start date.";
+  const days = Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1;
+  if (!Number.isFinite(days) || days > 366) return "Choose a range of up to 366 days.";
+  return "";
+}
+
+export function revenuePeriodLabel(start: string, end: string) {
+  const format = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `${format(start)} – ${format(end)}`;
 }
 
 export function monthName(value: string) {
@@ -107,5 +130,5 @@ export function shortDate(value: string | null | undefined) {
 }
 
 export function periodCaption(start: string, end: string) {
-  return `${shortDate(start)} – ${shortDate(end)}`;
+  return revenuePeriodLabel(start, end);
 }

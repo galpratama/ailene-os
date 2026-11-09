@@ -44,8 +44,8 @@ function insightText(code: string, value: number) {
   }
 }
 
-export default function RevenueOverviewPanelOS({ period, monthLabel, enabled }: RevenueTabProps) {
-  const overview = useRevenue<RevenueOverview>("overview", period, () => getRevenueOverview({ ...period, trend_months: 6 }), enabled);
+export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
+  const overview = useRevenue<RevenueOverview>("overview", period, () => getRevenueOverview(period), enabled);
   const funnel = useRevenue<RevenueFunnel>("funnel", period, () => getRevenueFunnel(period), enabled);
   const data = overview.data;
   const loading = overview.isLoading;
@@ -77,7 +77,7 @@ export default function RevenueOverviewPanelOS({ period, monthLabel, enabled }: 
     <>
       {data && (
         <p className="text-base text-gray-800 dark:text-zinc-200">
-          {monthLabel} closed <strong className="font-semibold">{money(data.revenue_closed.current)}</strong> from{" "}
+          {periodLabel} closed <strong className="font-semibold">{money(data.revenue_closed.current)}</strong> from{" "}
           <strong className="font-semibold">{count(data.closings.current)}</strong> closing{data.closings.current === 1 ? "" : "s"}, with{" "}
           <strong className="font-semibold">{count(data.sqls.current)}</strong> {data.sqls.current === 1 ? "SQL" : "SQLs"} from <strong className="font-semibold">{count(data.leads.current)}</strong> new {data.leads.current === 1 ? "lead" : "leads"}.
         </p>
@@ -130,7 +130,7 @@ export default function RevenueOverviewPanelOS({ period, monthLabel, enabled }: 
 
       <RevenueCardOS
         title="The whole customer lifecycle, as a bowtie"
-        description="Left: this period from lead to won, with the conversion from the step before underneath. Right: every client after the sale. Hover a block for its definition."
+        description="Left: event counts in the selected period, with each step divided by the prior step's event count. These are not one lead cohort. Right: after-sale steps. Hover a block for its definition."
         source="Ailene OS pipelines and quotations"
         isLoading={funnel.isLoading}
         error={funnel.error}
@@ -155,7 +155,7 @@ export default function RevenueOverviewPanelOS({ period, monthLabel, enabled }: 
         </RevenueCardOS>
         <RevenueCardOS
           title="Revenue by month"
-          description="Closed revenue in the last six months; the current month is lighter until it ends."
+          description="Closed revenue by month within the selected dates; partial months are shown lighter."
           partialNote="The monthly target line needs revenue targets."
           source="Ailene OS pipelines and quotations"
           isLoading={loading}
