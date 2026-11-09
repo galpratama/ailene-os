@@ -73,7 +73,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Meeting-to-close funnel"
-          description={`Thick bar ${periodLabel}, thin bar ${previous}. Percent is conversion from the step above; the biggest drop is red.`}
+          description={`Menemukan stage BDR tempat deal paling banyak berhenti antara meeting dan closed won selama ${periodLabel}, dibandingkan dengan ${previous}.`}
           source="os"
           isLoading={bdr.isLoading}
           isEmpty={!data?.funnel.length}
@@ -85,7 +85,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         </RevenueCardOS>
         <RevenueCardOS
           title="Meetings per week"
-          description="Meetings booked by Jakarta week in the selected range; partial boundary weeks include only selected dates."
+          description="Memantau apakah jumlah meeting per minggu cukup dan stabil untuk mengejar target closing."
           source="os"
           partialNote="Splitting each week into held, no-show, and upcoming needs meeting outcomes."
           isLoading={bdr.isLoading}
@@ -100,7 +100,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
 
       <RevenueCardOS
         title="Open BDR pipeline"
-        description={pipeline.data ? `Current snapshot, independent of the selected dates: ${count(pipeline.data.totals.count)} open deals worth ${money(pipeline.data.totals.value)}. Value is the current quotation, else the estimate.` : "Current open deals in BDR stages, independent of the selected dates."}
+        description={pipeline.data ? `Memprioritaskan follow-up deal yang sedang berjalan dan memperkirakan revenue yang akan datang: saat ini ${count(pipeline.data.totals.count)} deal terbuka senilai ${money(pipeline.data.totals.value)}.` : "Memprioritaskan follow-up deal yang sedang berjalan dan memperkirakan revenue yang akan datang."}
         source="os"
         partialNote="Probability, weighted value, and next step need new pipeline fields."
         isLoading={pipeline.isLoading}
@@ -112,7 +112,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         <AnalyticsDataTableOS columns={pipelineColumns} rows={pipeline.data?.list ?? []} rowKey={(row) => String(row.pipeline_id)} />
       </RevenueCardOS>
 
-      <RevenueCardOS title="Why deals were lost after a meeting" description="Number of deals per loss reason." pending="Needs a reason code when a deal is lost." />
+      <RevenueCardOS title="Why deals were lost after a meeting" description="Mengetahui alasan utama deal kalah setelah meeting, supaya pitch, harga, atau penawaran bisa diperbaiki." pending="Needs a reason code when a deal is lost." />
     </>
   );
 }

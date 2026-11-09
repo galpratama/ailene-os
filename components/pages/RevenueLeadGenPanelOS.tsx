@@ -9,7 +9,6 @@ import AnalyticsDataTableOS, { type AnalyticsColumn } from "@/components/element
 import RevenueCardOS from "@/components/elements/RevenueCardOS";
 import RevenueErrorOS from "@/components/elements/RevenueErrorOS";
 import AdVerdictLabelOS from "@/components/labels/AdVerdictLabelOS";
-import PendingLabelOS from "@/components/labels/PendingLabelOS";
 import type { RevenueTabProps } from "@/components/pages/RevenueEngineOS";
 import { useWarehouseAnalytics } from "@/hooks/useAnalyticsDashboard";
 import { useRevenue } from "@/hooks/useRevenue";
@@ -51,7 +50,6 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
         <span>
           Where the <strong className="font-semibold">{count(totalLeads)}</strong> {totalLeads === 1 ? "lead" : "leads"} from {periodLabel} came from, and how far each source got.
         </span>
-        <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-zinc-400">Lead target: <PendingLabelOS /></span>
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -81,7 +79,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
 
       <RevenueCardOS
         title="Lead journey"
-        description="Each band follows leads created in the selected dates from their source to their current qualification, meeting, and outcome. Wider bands mean more leads. Colors identify the original source; historical periods can change as those leads progress."
+        description="Melihat sumber lead mana yang paling banyak lanjut menjadi SQL, meeting, dan deal, bukan hanya yang paling banyak menghasilkan lead."
         source="os"
         isLoading={flow.isLoading}
         error={flow.error}
@@ -94,7 +92,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
 
       <RevenueCardOS
         title="Acquisition funnel"
-        description="Read each column from top to bottom. Ad delivery uses Meta impressions and clicks; website activity uses GA4 sessions and form events from every channel; the final column counts form leads accepted by Ailene OS. Percentages compare steps within a column only. These columns do not track the same people end to end."
+        description="Menemukan di tahap mana calon lead paling banyak hilang: saat melihat iklan, saat berkunjung ke website, atau sebelum benar-benar masuk sebagai lead di OS."
         source="both"
         isLoading={warehouse.isLoading || sources.isLoading}
         isEmpty={!warehouse.data?.funnel.length && !sources.data?.intake.website_form && !sources.data?.intake.meta_form && !sources.data?.intake.unclassified}
@@ -106,14 +104,13 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
 
       <RevenueCardOS
         title="Meta ad performance"
-        description={`Each card is one Meta ad. Leads and SQLs count pipelines in Ailene OS linked to that ad ID; spend, impressions, and clicks come from Meta. Hook is the share of impressions that watched 3 seconds. Hold is the share of those viewers who kept watching. Once an ad has at least 5 OS leads, its verdict compares cost per SQL with the average${ads.data?.benchmark_cost_per_sql_idr ? ` (${money(ads.data.benchmark_cost_per_sql_idr)})` : ""}.`}
+        description="Menentukan iklan (ad) Meta mana yang layak ditambah budget, dipertahankan, atau dimatikan, berdasarkan biaya per SQL di OS, bukan sekadar jumlah form yang terisi."
         source="both"
         isLoading={ads.isLoading}
         error={ads.error}
         onRetry={() => ads.refetch()}
         isEmpty={!ads.data?.ads.length}
         emptyMessage="No ads ran in this period."
-        partialNote={ads.data?.data_gaps.some((gap) => gap.code === "landing_page_ad_attribution") ? "Landing-page ads count SQLs only once the website stores the ad ID." : undefined}
       >
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4">
           {(ads.data?.ads ?? []).map((ad) => (
@@ -149,7 +146,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Weekly leads by source"
-          description="New leads by Jakarta week in the selected range; partial boundary weeks include only selected dates."
+          description="Memantau tren volume lead mingguan per sumber, supaya penurunan dari satu sumber cepat ketahuan."
           source="os"
           isLoading={weekly.isLoading}
           error={weekly.error}
@@ -166,7 +163,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
         </RevenueCardOS>
         <RevenueCardOS
           title="SQL conversion by channel"
-          description={`For each channel, SQL rate divides pipelines qualified during ${periodLabel} by pipelines created during those dates. These are events in the same dates, so they are not necessarily the same leads.`}
+          description={`Membandingkan kualitas lead antar channel selama ${periodLabel}: channel mana yang leadnya paling banyak menjadi SQL.`}
           source="os"
           isLoading={sources.isLoading}
           isEmpty={rated.length === 0}
@@ -190,14 +187,14 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       </div>
 
       <RevenueCardOS
-        title={`Channel performance, ${periodLabel}`}
-        description="Each row is a lead channel. Leads, SQLs, meetings, wins, and revenue count events inside the selected dates; a SQL may come from a lead created earlier. Ad spend and cost per SQL are available for Meta Ads only."
+        title="Channel performance"
+        description="Membandingkan kontribusi dan efisiensi tiap channel dari lead sampai revenue, untuk menentukan ke mana budget dan tenaga tim sebaiknya dialokasikan."
         source="both"
-        partialNote="Google Ads spend and outbound team time are not priced yet."
         isLoading={sources.isLoading}
         isEmpty={channels.length === 0}
       >
         <AnalyticsDataTableOS columns={scorecardColumns} rows={channels} rowKey={(row) => `${row.group}-${row.lead_channel}`} />
+        <p className="mt-3 text-xs text-gray-500 dark:text-zinc-400">Google Ads spend and outbound team time are not priced yet.</p>
       </RevenueCardOS>
     </>
   );

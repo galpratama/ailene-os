@@ -130,7 +130,7 @@ export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }:
 
       <RevenueCardOS
         title="The whole customer lifecycle, as a bowtie"
-        description="Left: event counts in the selected period, with each step divided by the prior step's event count. These are not one lead cohort. Right: after-sale steps. Hover a block for its definition."
+        description="Melihat seluruh perjalanan klien dalam satu gambar, dari lead sampai referral, untuk menemukan tahap terlemah yang paling perlu diperbaiki."
         source="os"
         isLoading={funnel.isLoading}
         error={funnel.error}
@@ -140,7 +140,7 @@ export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }:
       </RevenueCardOS>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <RevenueCardOS title="What the data says" description="Worked out from this period's numbers." source="os" isLoading={loading} isEmpty={insights.length === 0} emptyMessage="Nothing stands out this period.">
+        <RevenueCardOS title="What the data says" description="Menyoroti perubahan penting periode ini secara otomatis, supaya masalah terlihat tanpa harus membaca semua grafik." source="os" isLoading={loading} isEmpty={insights.length === 0} emptyMessage="Nothing stands out this period.">
           <ul className="flex flex-col gap-3">
             {insights.map((insight) => (
               <li key={insight.key} className="flex gap-2.5">
@@ -155,7 +155,7 @@ export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }:
         </RevenueCardOS>
         <RevenueCardOS
           title="Revenue by month"
-          description="Closed revenue by month within the selected dates; partial months are shown lighter."
+          description="Memantau tren revenue yang sudah closed dari bulan ke bulan."
           partialNote="The monthly target line needs revenue targets."
           source="os"
           isLoading={loading}

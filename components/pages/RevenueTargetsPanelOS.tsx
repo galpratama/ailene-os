@@ -51,7 +51,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Revenue vs target"
-          description="Closed revenue by month within the selected dates; partial months are shown lighter."
+          description="Memantau apakah revenue bulanan on track terhadap target."
           source="os"
           partialNote="The dashed monthly target needs revenue targets."
           isLoading={overview.isLoading}
@@ -60,7 +60,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
         </RevenueCardOS>
         <RevenueCardOS
           title="Invoiced vs collected"
-          description="By the month the invoice was raised."
+          description="Memastikan revenue yang sudah ditagih benar-benar diterima sebagai uang, dan memantau piutang yang belum tertagih."
           pending="Needs invoices and payments in Ailene OS."
           pendingShape="columns"
         />
@@ -68,7 +68,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
 
       <RevenueCardOS
         title="Monthly plan vs actual"
-        description="Actuals by month within the selected dates. Attainment is revenue closed ÷ revenue target."
+        description="Membandingkan realisasi lead, SQL, closing, dan revenue dengan target tiap bulan, untuk melihat di mana target meleset."
         source="os"
         partialNote="Lead, SQL, closing, and revenue targets are not stored yet."
         isLoading={overview.isLoading}
@@ -78,7 +78,7 @@ export default function RevenueTargetsPanelOS({ period, enabled }: RevenueTabPro
 
       <RevenueCardOS
         title="Open invoices"
-        description="Every invoice not yet paid, oldest first."
+        description="Menentukan invoice mana yang perlu ditagih lebih dulu supaya arus kas tetap lancar."
         pending="Needs invoices in Ailene OS."
         pendingShape="table"
         pendingColumns={["Invoice", "Client", "Amount", "Invoiced", "Days open"]}

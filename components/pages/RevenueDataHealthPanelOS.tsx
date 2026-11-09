@@ -65,10 +65,10 @@ export default function RevenueDataHealthPanelOS({ period, periodLabel, enabled 
       </div>
 
       <div className="grid grid-cols-1 gap-4 2xl:grid-cols-5">
-        <RevenueCardOS title="Source freshness" description="Lagging means the newest data is more than 2 days old." source="both" className="2xl:col-span-3" isLoading={health.isLoading}>
+        <RevenueCardOS title="Source freshness" description="Memastikan setiap sumber data terbaru dan tersinkron, supaya keputusan tidak diambil dari angka yang tertinggal." source="both" className="2xl:col-span-3" isLoading={health.isLoading}>
           <AnalyticsDataTableOS columns={sourceColumns} rows={data?.sources ?? []} rowKey={(row) => row.source} />
         </RevenueCardOS>
-        <RevenueCardOS title={`Where ${periodLabel}'s leads lose their source`} description="Share of the period's leads missing each piece." source="os" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
+        <RevenueCardOS title={`Where ${periodLabel}'s leads lose their source`} description="Mengukur berapa banyak lead yang asalnya tidak bisa dilacak, supaya celah tracking bisa ditutup dan setiap lead terhitung ke campaign yang benar." source="os" className="2xl:col-span-2" isLoading={health.isLoading} isEmpty={!data?.leads}>
           {data && (
             <WarehouseRankedBarsOS
               maxValue={1}
@@ -85,7 +85,7 @@ export default function RevenueDataHealthPanelOS({ period, periodLabel, enabled 
 
       <RevenueCardOS
         title="GTM plumbing, in build order"
-        description="From ad click to cash, with one ID following the lead all the way."
+        description="Memantau progres pembangunan tracking dari klik iklan sampai uang masuk, supaya setiap lead bisa dilacak dari awal sampai akhir."
         pending="Needs the build checklist stored with an owner and status."
         pendingShape="table"
         pendingColumns={["Step", "Build", "Owner", "Status", "What it unlocks"]}

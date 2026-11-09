@@ -19,19 +19,19 @@ export default function RevenueAfterSalePanelOS() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Clients at each step after the sale"
-          description="Onboarded, delivered, impact measured, expanded, and referred."
+          description="Memantau apakah klien yang sudah deal benar-benar di-onboard, menyelesaikan training, merasakan dampaknya, lalu membeli lagi atau memberi referral."
           pending="Needs delivery records per won deal."
         />
         <RevenueCardOS
           title="Trainer load, next 30 days"
-          description="Booked days ÷ available days per trainer; hire the next trainer at 80%."
+          description="Memastikan jadwal training 30 hari ke depan tidak melebihi kapasitas trainer, dan menentukan kapan perlu merekrut trainer baru."
           pending="Needs scheduled deliveries and trainer availability."
         />
       </div>
 
       <RevenueCardOS
         title="Delivered sessions and impact"
-        description="Each session with its trainer, participants, and Kirkpatrick scores."
+        description="Menilai kualitas setiap sesi training yang sudah berjalan, dan trainer mana yang memberi dampak terbaik bagi klien."
         pending="Needs delivery records."
         pendingShape="table"
         pendingColumns={["Client", "Session", "Trainer", "Participants", "L1", "L2 pre → post", "L3"]}

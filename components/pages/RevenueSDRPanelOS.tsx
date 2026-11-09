@@ -74,19 +74,19 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Speed to lead: SQL rate by first-reply time"
-          description="Inbound leads by how fast they got a first reply; each bar is the share that became an SQL."
+          description="Membuktikan seberapa besar kecepatan balasan pertama memengaruhi peluang lead menjadi SQL, sebagai dasar target waktu respons SDR."
           pending="Needs the first response time on each lead (under 5 min, 5–60 min, 1–24 h, over 24 h)."
         />
         <RevenueCardOS
           title="Why leads were disqualified"
-          description="Number of leads per disqualification reason."
+          description="Mengetahui jenis lead yang paling sering tidak lolos kualifikasi, supaya targeting dan penyaringan awal bisa diperbaiki."
           pending="Needs a reason code when a lead is disqualified."
         />
       </div>
 
       <RevenueCardOS
         title={`SQLs by campaign, ${periodLabel}`}
-        description="Every lead tied to the Meta campaign, UTM campaign, or channel that brought it. “No campaign” is the tracking gap to close."
+        description="Melihat campaign mana yang menghasilkan SQL dan meeting paling banyak dengan biaya paling efisien, serta lead mana yang belum terlacak campaign-nya."
         source="both"
         partialNote="UTM and referral campaigns have no spend matched yet."
         isLoading={campaigns.isLoading}

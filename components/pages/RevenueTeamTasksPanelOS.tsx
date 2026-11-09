@@ -50,12 +50,12 @@ export default function RevenueTeamTasksPanelOS({ enabled }: RevenueTabProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <RevenueCardOS title="Open tasks by person" description="Most overdue first." source="os" isLoading={tasks.isLoading} isEmpty={!data?.by_person.length} emptyMessage="No open tasks.">
+        <RevenueCardOS title="Open tasks by person" description="Melihat beban kerja tiap orang dan siapa yang paling banyak tertinggal, supaya pekerjaan bisa dibagi ulang." source="os" isLoading={tasks.isLoading} isEmpty={!data?.by_person.length} emptyMessage="No open tasks.">
           <AnalyticsDataTableOS columns={personColumns} rows={data?.by_person ?? []} rowKey={(row) => row.assignee?.id ?? "unassigned"} />
         </RevenueCardOS>
         <RevenueCardOS
           title="Handoff gates"
-          description="Items waiting at each gate and the oldest one's age, against its SLA."
+          description="Memastikan serah terima antar tim tidak tertahan melewati SLA, dan menemukan titik yang menghambat."
           pending="Needs handoff gate definitions with an SLA."
           pendingShape="table"
           pendingColumns={["Gate", "Handoff", "Waiting", "Oldest", "SLA", "Status"]}
@@ -64,7 +64,7 @@ export default function RevenueTeamTasksPanelOS({ enabled }: RevenueTabProps) {
 
       <RevenueCardOS
         title="All open tasks"
-        description={data && data.open > data.list.length ? `Showing the first ${data.list.length} of ${data.open}, overdue first.` : "Overdue first, then by due date."}
+        description={data && data.open > data.list.length ? `Memastikan tidak ada task yang terlewat, mulai dari yang sudah overdue. Menampilkan ${data.list.length} dari ${data.open} task terbuka.` : "Memastikan tidak ada task yang terlewat, mulai dari yang sudah overdue."}
         source="os"
         isLoading={tasks.isLoading}
         isEmpty={!data?.list.length}
