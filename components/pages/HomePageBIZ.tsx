@@ -8,6 +8,7 @@ import ProgramsHomeBIZ from "../static-sections/ProgramsHomeBIZ";
 import TrainersHomeBIZ from "../static-sections/TrainersHomeBIZ";
 import ProgramOverviewHomeBIZ from "../static-sections/ProgramOverviewHomeBIZ";
 import ProcessHomeBIZ from "../static-sections/ProcessHomeBIZ";
+import FrameworksHomeBIZ from "../static-sections/FrameworksHomeBIZ";
 import FAQHomeBIZ from "../static-sections/FAQHomeBIZ";
 import LeadFormHomeBIZ from "../static-sections/LeadFormHomeBIZ";
 import CTAHomeBIZ from "../static-sections/CTAHomeBIZ";
@@ -36,6 +37,9 @@ export default function HomePageBIZ({
         </RevealOnScroll>
         <RevealOnScroll>
           <ProcessHomeBIZ />
+        </RevealOnScroll>
+        <RevealOnScroll>
+          <FrameworksHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll viewBlock="outcomes">
           <OutcomesHomeBIZ />

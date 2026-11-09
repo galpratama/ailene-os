@@ -8,5 +8,6 @@ export function GET() {
     { path: "/", lastModified: CONTENT_UPDATED_AT },
     { path: "/articles", lastModified: CONTENT_UPDATED_AT },
     { path: "/join-trainer", lastModified: CONTENT_UPDATED_AT },
+    { path: "/framework", lastModified: new Date("2026-11-06") },
   ]);
 }

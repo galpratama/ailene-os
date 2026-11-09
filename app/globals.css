@@ -497,6 +497,108 @@ body {
   }
 }
 
+/* Framework diagrams: compositor-only motion, with every visual still readable when paused. */
+@keyframes biz-proof-float {
+  0%, 100% { opacity: 0.92; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-5px); }
+}
+
+@keyframes biz-proof-glow {
+  0%, 100% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+
+@keyframes biz-proof-rise {
+  0%, 100% { opacity: 0.88; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-5px) scale(1.01); }
+}
+
+@keyframes biz-proof-grow {
+  0%, 12% { transform: scaleY(0.45); }
+  50%, 75% { transform: scaleY(1); }
+  100% { transform: scaleY(0.45); }
+}
+
+/* Sampled points from the three mind-map Bezier branches; transform is the only moving property. */
+@keyframes biz-proof-route-top {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 1; transform: translate(27.1px, -5.1px); }
+  20% { transform: translate(49.1px, -19px); }
+  30% { transform: translate(67.5px, -39.5px); }
+  40% { transform: translate(83.4px, -64.4px); }
+  50% { transform: translate(98.1px, -91.5px); }
+  60% { transform: translate(113px, -118.6px); }
+  70% { transform: translate(129.4px, -143.5px); }
+  80% { transform: translate(148.5px, -164px); }
+  90% { opacity: 1; transform: translate(171.6px, -177.9px); }
+  100% { opacity: 0; transform: translate(200px, -183px); }
+}
+
+@keyframes biz-proof-route-middle {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 1; transform: translateX(27.1px); }
+  20% { transform: translateX(49.1px); }
+  30% { transform: translateX(67.5px); }
+  40% { transform: translateX(83.4px); }
+  50% { transform: translateX(98.1px); }
+  60% { transform: translateX(113px); }
+  70% { transform: translateX(129.4px); }
+  80% { transform: translateX(148.5px); }
+  90% { opacity: 1; transform: translateX(171.6px); }
+  100% { opacity: 0; transform: translateX(200px); }
+}
+
+@keyframes biz-proof-route-bottom {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 1; transform: translate(27.1px, 5.1px); }
+  20% { transform: translate(49.1px, 19px); }
+  30% { transform: translate(67.5px, 39.5px); }
+  40% { transform: translate(83.4px, 64.4px); }
+  50% { transform: translate(98.1px, 91.5px); }
+  60% { transform: translate(113px, 118.6px); }
+  70% { transform: translate(129.4px, 143.5px); }
+  80% { transform: translate(148.5px, 164px); }
+  90% { opacity: 1; transform: translate(171.6px, 177.9px); }
+  100% { opacity: 0; transform: translate(200px, 183px); }
+}
+
+@keyframes biz-proof-route-vertical {
+  0% { opacity: 0; transform: translateY(0); }
+  10%, 90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(100%); }
+}
+
+.biz-proof-map {
+  background-image: radial-gradient(var(--biz-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.biz-proof-path {
+  fill: none;
+  stroke: var(--biz-forest-light);
+  stroke-opacity: 0.42;
+  stroke-width: 2;
+  stroke-dasharray: 5 7;
+}
+
+.biz-proof-mini-tile { animation: biz-proof-float 5s ease-in-out infinite; }
+.biz-proof-node {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: biz-proof-glow 3s ease-in-out infinite;
+}
+.biz-proof-route-dot { opacity: 0; }
+.biz-proof-route-top { animation: biz-proof-route-top 4.8s linear infinite; }
+.biz-proof-route-middle { animation: biz-proof-route-middle 4.8s linear 0.9s infinite; }
+.biz-proof-route-bottom { animation: biz-proof-route-bottom 4.8s linear 1.8s infinite; }
+.biz-proof-mobile-traveler { animation: biz-proof-route-vertical 5s linear infinite; }
+.biz-proof-pyramid-layer {
+  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+  animation: biz-proof-rise 5.5s ease-in-out infinite;
+}
+.biz-proof-proof-row { animation: biz-proof-float 5.5s ease-in-out infinite; }
+.biz-proof-mini-bar { animation: biz-proof-grow 4s ease-in-out infinite; }
+
 /* Section reveal, toggled by RevealOnScroll once the block scrolls into view. */
 .biz-reveal {
   opacity: 0;
@@ -521,6 +623,18 @@ body {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .biz-proof-node,
+  .biz-proof-route-dot,
+  .biz-proof-mobile-traveler,
+  .biz-proof-pyramid-layer,
+  .biz-proof-proof-row,
+  .biz-proof-mini-bar,
+  .biz-proof-mini-tile {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }
 

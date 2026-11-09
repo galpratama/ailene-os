@@ -11,6 +11,7 @@ const columns = [
     links: [
       ["Program formats", "#programs"],
       ["How We Work", "#how-we-work"],
+      ["Framework", "/framework"],
       ["FAQ", "#faq"],
     ],
   },
@@ -31,7 +32,8 @@ const columns = [
   },
 ];
 
-export default function FooterHomeBIZ() {
+export default function FooterHomeBIZ({ isHome = true }: { isHome?: boolean }) {
+  const hrefFor = (href: string) => (!isHome && href.startsWith("#") ? `/${href}` : href);
   return (
     <footer className="bg-black pt-13.5 pb-6 text-white">
       <PageMargin className="grid gap-10 lg:grid-cols-[1fr_1.5fr] lg:gap-16">
@@ -43,7 +45,7 @@ export default function FooterHomeBIZ() {
           </p>
           <p className="mt-4">
             <a
-              href="#contact"
+              href={hrefFor("#contact")}
               onClick={() => trackCTAClick({ placement: "footer" })}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-biz-lime hover:text-white"
             >
@@ -61,7 +63,7 @@ export default function FooterHomeBIZ() {
               {column.links.map(([label, href]) => (
                 <a
                   key={label}
-                  href={href}
+                  href={hrefFor(href)}
                   onClick={
                     href === "#contact"
                       ? () => trackCTAClick({ placement: "footer_nav" })

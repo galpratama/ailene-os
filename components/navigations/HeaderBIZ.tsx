@@ -10,6 +10,7 @@ import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const navLinks = [
   { label: "How We Work", fragment: "#how-we-work" },
+  { label: "Framework", fragment: "/framework" },
   { label: "Programs", fragment: "#programs" },
   { label: "FAQ", fragment: "#faq" },
 ];
@@ -30,7 +31,8 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
     return () => window.removeEventListener("scroll", updateHeader);
   }, []);
 
-  const hrefFor = (fragment: string) => (isHome ? fragment : `/${fragment}`);
+  const hrefFor = (fragment: string) =>
+    fragment.startsWith("#") ? (isHome ? fragment : `/${fragment}`) : fragment;
   const closeMenu = () => setMenuOpen(false);
 
   return (
