@@ -10,6 +10,7 @@ import {
 } from "@/lib/pricing-b2b";
 import dayjs from "dayjs";
 import { formatQuotationNumber } from "@/lib/quotation-number";
+import { quotationValidUntil } from "@/lib/quotations";
 
 // The subset of the Quotations API details response the PDF needs.
 export type QuotationForPdf = {
@@ -33,7 +34,8 @@ export type QuotationForPdf = {
     peserta: number;
     trainer: string;
   }[];
-  created_at: string | Date;
+  created_at: string;
+  created_by_name?: string;
 };
 
 // Shared by the Pricing Calculator and the Quotations list so both produce identical PDFs.
@@ -64,7 +66,10 @@ export function buildQuotationPDFPropsFromQuotation(
   return {
     clientName: quotation.company_name,
     quotationNumber: formatQuotationNumber(quotation),
-    quotationDate: dayjs().format("D MMMM YYYY"),
+    // Dated by the version itself, so a re-download never moves the date or the validity window.
+    quotationDate: dayjs(quotation.created_at).format("D MMMM YYYY"),
+    validUntil: quotationValidUntil(quotation).format("D MMMM YYYY"),
+    preparedBy: quotation.created_by_name ?? null,
     days,
     materi,
     addons,
@@ -73,7 +78,7 @@ export function buildQuotationPDFPropsFromQuotation(
   };
 }
 
-export function quotationPdfFilename(quotation: { id: number; company_name: string }) {
-  const slug = quotation.company_name.trim().replace(/[^a-z0-9]+/gi, "-") || "quotation";
-  return `${slug}-Q${quotation.id}.pdf`;
+export function quotationPdfFilename(quotation: { id: number; version: number; created_at: string; company_name: string }) {
+  const slug = quotation.company_name.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client";
+  return `${formatQuotationNumber(quotation).replaceAll("/", "-")}-${slug}.pdf`;
 }

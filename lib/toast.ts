@@ -10,3 +10,7 @@ export function showErrorToast(cause: unknown, fallback = "Something went wrong.
         : fallback;
   toast.error(message);
 }
+
+export function showSuccessToast(message: string) {
+  toast.success(message);
+}

@@ -3,22 +3,14 @@ import "server-only";
 import { callApi, type ApiEnvelope, type ApiList } from "./api";
 import { getSessionToken } from "./session";
 
-export type QuotationStatus =
-  | "draft"
-  | "manager_review"
-  | "needs_revision"
-  | "approved"
-  | "sent"
-  | "accepted"
-  | "rejected"
-  | "expired";
+// "approved" is final: an approved quotation goes to the client right away.
+export type QuotationStatus = "draft" | "manager_review" | "needs_revision" | "approved";
 export type QuotationSourceType = "package" | "custom";
 export type QuotationPackage = "foundation" | "intensive" | "sprint";
 export type QuotationMateriLevel = "std" | "ringan" | "dalam";
 export type QuotationSessionFormat = "offline" | "online";
 export type QuotationTrainerTier = "certified" | "specialist" | "lead";
-export type QuotationApprovalDecision = "approved" | "rejected" | "needs_revision";
-export type QuotationOutcomeStatus = "sent" | "accepted" | "rejected" | "expired";
+export type QuotationApprovalDecision = "approved" | "needs_revision";
 
 // margin_pct and the other cost figures are null for anyone but an administrator.
 export type QuotationListItem = {
@@ -26,6 +18,7 @@ export type QuotationListItem = {
   pipeline_id: number;
   company_id: number;
   company_name: string;
+  company_image_url: string | null;
   version: number;
   is_current: boolean;
   status: QuotationStatus;
@@ -37,6 +30,7 @@ export type QuotationListItem = {
   requires_review: boolean;
   created_by_id: string;
   created_by_name: string;
+  created_by_avatar: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -178,16 +172,6 @@ export async function decideQuotation(
   payload: DecideQuotationPayload
 ): Promise<ApiEnvelope<QuotationDetails>> {
   return callApi("/api/v2/quotations/decide", {
-    token: await token(),
-    body: payload,
-  });
-}
-
-export async function updateQuotationOutcome(payload: {
-  id: number;
-  status: QuotationOutcomeStatus;
-}): Promise<ApiEnvelope<QuotationDetails>> {
-  return callApi("/api/v2/quotations/update-outcome", {
     token: await token(),
     body: payload,
   });

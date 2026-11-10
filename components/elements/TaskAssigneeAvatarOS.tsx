@@ -23,7 +23,8 @@ const avatarVariants: LabelVariant[] = [
   "kuning",
 ];
 
-function avatarVariant(value: string) {
+// Stable color per name, shared with company monograms.
+export function avatarVariant(value: string) {
   const hash = Array.from(value).reduce(
     (total, character) => total + character.codePointAt(0)!,
     0,

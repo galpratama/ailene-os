@@ -114,11 +114,9 @@ import {
   listQuotations as listQuotationsApi,
   submitQuotation as submitQuotationApi,
   updateQuotation as updateQuotationApi,
-  updateQuotationOutcome as updateQuotationOutcomeApi,
   type CreateQuotationPayload,
   type DecideQuotationPayload,
   type ListQuotationsOptions,
-  type QuotationOutcomeStatus,
   type UpdateQuotationPayload,
 } from "@/apis/quotations";
 import {
@@ -551,13 +549,6 @@ export async function submitQuotation(id: number) {
 
 export async function decideQuotation(payload: DecideQuotationPayload) {
   return decideQuotationApi(payload);
-}
-
-export async function updateQuotationOutcome(payload: {
-  id: number;
-  status: QuotationOutcomeStatus;
-}) {
-  return updateQuotationOutcomeApi(payload);
 }
 
 export async function listArticleCategories() {

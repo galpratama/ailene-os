@@ -1,329 +1,165 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
-import { downloadQuotationPDF, getQuotationPDFBlobUrl } from "@/components/pdf/QuotationPDF";
-import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
+import RevenueKpiOS from "@/components/elements/RevenueKpiOS";
+import AppInput from "@/components/fields/AppInput";
+import AppSwitch from "@/components/fields/AppSwitch";
 import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
-import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
-import type { QuotationApprovalDecision } from "@/apis/quotations";
+import QuotationManagerFlowOS from "@/components/static-sections/QuotationManagerFlowOS";
+import QuotationTableOS from "@/components/static-sections/QuotationTableOS";
 import { useSession } from "@/contexts/SessionContext";
 import { useQuotationList } from "@/hooks/useQuotationList";
-import { decideQuotation, getQuotationDetails } from "@/lib/actions";
-import { requireApiData } from "@/lib/api-result";
-import { getRupiahCurrency } from "@/lib/currency";
-import {
-  buildQuotationPDFPropsFromQuotation,
-  quotationPdfFilename,
-} from "@/lib/quotation-pdf";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, Eye, Loader2, Pencil, RotateCcw, X } from "lucide-react";
-import Link from "next/link";
+import { useQuotationPdf } from "@/hooks/useQuotationPdf";
+import { getRupiahCurrency, getShortRupiahCurrency } from "@/lib/currency";
+import { formatQuotationNumber } from "@/lib/quotation-number";
+import { inQuotationTab, quotationStats, quotationTabs, type QuotationTab } from "@/lib/quotations";
+import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { showErrorToast } from "@/lib/toast";
 
-type PendingDecision = {
-  id: number;
-  decision: "needs_revision" | "rejected";
-};
-
-export default function QuotationsPageOS({
-  sessionToken,
-}: {
-  sessionToken: string;
-}) {
-  const queryClient = useQueryClient();
-
+export default function QuotationsPageOS({ sessionToken }: { sessionToken: string }) {
   const sessionUser = useSession();
-  const canReview = sessionUser?.role === "administrator";
-  const canViewMargin = canReview;
-
-  const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [viewingId, setViewingId] = useState<number | null>(null);
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewTitle, setPreviewTitle] = useState("");
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
-  const [pendingDecision, setPendingDecision] =
-    useState<PendingDecision | null>(null);
+  const isManager = sessionUser?.role === "administrator";
 
   const { data, isLoading, isError } = useQuotationList({}, !!sessionToken);
   const quotations = data ?? [];
+  const pdf = useQuotationPdf();
 
-  const decideMutation = useMutation({
-    mutationFn: async (payload: {
-      id: number;
-      decision: QuotationApprovalDecision;
-      reason?: string;
-    }) => requireApiData(await decideQuotation(payload)),
-    onSuccess: async () => {
-      setPendingDecision(null);
-      await queryClient.invalidateQueries({ queryKey: ["quotations"] });
-    },
-    onError: (err) => showErrorToast(err.message),
-  });
+  const [tab, setTab] = useState<QuotationTab>("all");
+  const [search, setSearch] = useState("");
+  const [showOld, setShowOld] = useState(false);
 
-  function decide(id: number, decision: QuotationApprovalDecision, reason?: string) {
-    decideMutation.mutate({ id, decision, reason });
-  }
-
-  async function loadPdfProps(id: number) {
-    const quotation = requireApiData(await getQuotationDetails(id));
-    return buildQuotationPDFPropsFromQuotation(quotation);
-  }
-
-  async function handleDownload(id: number, companyName: string) {
-    setDownloadingId(id);
-    try {
-      const props = await loadPdfProps(id);
-      await downloadQuotationPDF(
-        props,
-        quotationPdfFilename({ id, company_name: companyName })
-      );
-    } catch (err) {
-      showErrorToast(err instanceof Error ? err.message : "Gagal membuat PDF.");
-    } finally {
-      setDownloadingId(null);
-    }
-  }
-
-  async function handleView(id: number, companyName: string) {
-    setViewingId(id);
-    try {
-      const props = await loadPdfProps(id);
-      const url = await getQuotationPDFBlobUrl(props);
-      setPreviewUrl(url);
-      setPreviewTitle(`Quotation #${id} · ${companyName}`);
-      setIsPreviewOpen(true);
-    } catch (err) {
-      showErrorToast(err instanceof Error ? err.message : "Gagal membuka PDF.");
-    } finally {
-      setViewingId(null);
-    }
-  }
-
-  function closePreview() {
-    setIsPreviewOpen(false);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-  }
+  const keyword = search.trim().toLowerCase();
+  const oldCount = quotations.filter((row) => !row.is_current).length;
+  const base = quotations.filter(
+    (row) =>
+      (showOld || row.is_current) &&
+      (!keyword || [formatQuotationNumber(row), row.company_name, row.created_by_name].some((text) => text.toLowerCase().includes(keyword)))
+  );
+  const rows = base.filter((row) => inQuotationTab(row.status, tab));
+  const stats = quotationStats(quotations);
 
   return (
-    <div className="px-4 py-6 flex flex-col gap-5 h-full sm:px-8">
+    <div className="flex h-full min-w-0 flex-col gap-5 px-4 py-6 sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-            Quotations
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-            Package and custom training quotations, across every lead
-          </p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Quotations</h2>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-zinc-400">Penawaran package dan custom training untuk semua lead.</p>
         </div>
-        {/* Drafting/editing lives on the pipeline-aware Pricing Calculator, not here. */}
-        <AppButton href="/pricing" size="sm">New Quotation</AppButton>
+        <AppButton href="/pricing" size="sm">
+          <Plus size={14} />
+          Quotation baru
+        </AppButton>
       </div>
 
-
-      {isError && (
-        <p className="text-sm text-red-500 py-8 text-center">
-          Failed to load quotations. You may not have access to this data.
+      {isError ? (
+        <p role="alert" className="py-8 text-center text-sm text-merah">
+          Quotation gagal dimuat. Kamu mungkin tidak punya akses ke data ini.
         </p>
-      )}
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <RevenueKpiOS
+              label="Approved"
+              value={getShortRupiahCurrency(stats.approved.value)}
+              lines={[`${stats.approved.count} quotation sudah dikirim ke klien`]}
+              info="Total nilai program dari quotation yang sudah disetujui manager. Quotation yang disetujui langsung dikirim ke klien."
+              isLoading={isLoading}
+            />
+            <RevenueKpiOS
+              label="Manager review"
+              value={String(stats.review.count)}
+              lines={[`senilai ${getShortRupiahCurrency(stats.review.value)}`]}
+              info="Quotation yang sudah diajukan dan menunggu keputusan manager."
+              isLoading={isLoading}
+            />
+            <RevenueKpiOS
+              label="Needs revision"
+              value={String(stats.revision.count)}
+              lines={[`senilai ${getShortRupiahCurrency(stats.revision.value)}`]}
+              info="Quotation yang dikembalikan manager dan perlu diperbaiki pembuatnya sebelum diajukan lagi."
+              isLoading={isLoading}
+            />
+            <RevenueKpiOS
+              label="Draft"
+              value={String(stats.draft.count)}
+              lines={[`senilai ${getShortRupiahCurrency(stats.draft.value)}`]}
+              info="Quotation yang masih disusun dan belum diajukan ke manager."
+              isLoading={isLoading}
+            />
+          </div>
 
-      {!isError && (
-        <div className="shrink-0 overflow-hidden rounded-xl border border-line bg-card-bg">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-190 text-sm">
-              <thead>
-                <tr className="border-b border-line-soft text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  <th className="px-5 py-3">ID</th>
-                  <th className="px-5 py-3">Company</th>
-                  <th className="px-5 py-3">Version</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Net Value</th>
-                  {canViewMargin && <th className="px-5 py-3">Margin</th>}
-                  <th className="px-5 py-3">Created By</th>
-                  <th className="px-5 py-3">Actions</th>
-                  {canReview && <th className="px-5 py-3">Manager Action</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {quotations.map((quotation) => (
-                  <tr
-                    key={quotation.id}
-                    className="border-b border-line-soft last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
-                  >
-                    <td className="px-5 py-3.5 text-xs tabular-nums text-gray-400 dark:text-zinc-500">
-                      #{quotation.id}
-                    </td>
-                    <td className="p-0">
-                      <Link
-                        href={`/quotations/${quotation.id}`}
-                        className="flex items-center px-5 py-3.5 text-gray-600 dark:text-zinc-300"
-                      >
-                        {quotation.company_name}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                      v{quotation.version}
-                      {!quotation.is_current && (
-                        <span className="ml-1 text-gray-300 dark:text-zinc-600">(old)</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <QuotationStatusLabel status={quotation.status} />
-                    </td>
-                    <td className="px-5 py-3.5 font-semibold tabular-nums text-gray-900 dark:text-zinc-100">
-                      {getRupiahCurrency(Number(quotation.net_value))}
-                    </td>
-                    {canViewMargin && (
-                      <td className="px-5 py-3.5">
-                        {quotation.margin_pct !== null ? (
-                          <span
-                            className={`font-semibold ${
-                              Number(quotation.margin_pct) < 0.45
-                                ? "text-merah"
-                                : "text-hijau"
-                            }`}
-                          >
-                            {(Number(quotation.margin_pct) * 100).toFixed(1)}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-zinc-600">—</span>
-                        )}
-                      </td>
-                    )}
-                    <td className="px-5 py-3.5 text-gray-500 dark:text-zinc-400">
-                      {quotation.created_by_name}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <AppButton
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          disabled={viewingId === quotation.id}
-                          onClick={() =>
-                            handleView(quotation.id, quotation.company_name)
-                          }
-                        >
-                          {viewingId === quotation.id ? (
-                            <Loader2 size={13} className="animate-spin" />
-                          ) : (
-                            <Eye size={13} />
-                          )}
-                          Lihat
-                        </AppButton>
-                        <AppButton
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          disabled={downloadingId === quotation.id}
-                          onClick={() =>
-                            handleDownload(quotation.id, quotation.company_name)
-                          }
-                        >
-                          {downloadingId === quotation.id ? (
-                            <Loader2 size={13} className="animate-spin" />
-                          ) : (
-                            <Download size={13} />
-                          )}
-                          Unduh
-                        </AppButton>
-                        <AppButton href={`/quotations/${quotation.id}`} variant="secondary" size="sm">
-                          <Pencil size={13} />
-                          Update
-                        </AppButton>
-                      </div>
-                    </td>
-                    {canReview && (
-                      <td className="px-5 py-3.5">
-                        {quotation.status === "manager_review" ? (
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <AppButton
-                              type="button"
-                              variant="success"
-                              size="sm"
-                              disabled={decideMutation.isPending}
-                              onClick={() => decide(quotation.id, "approved")}
-                            >
-                              <Check size={13} />
-                              Setuju
-                            </AppButton>
-                            <AppButton
-                              type="button"
-                              variant="warning"
-                              size="sm"
-                              disabled={decideMutation.isPending}
-                              onClick={() =>
-                                setPendingDecision({
-                                  id: quotation.id,
-                                  decision: "needs_revision",
-                                })
-                              }
-                            >
-                              <RotateCcw size={13} />
-                              Revisi
-                            </AppButton>
-                            <AppButton
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              disabled={decideMutation.isPending}
-                              onClick={() =>
-                                setPendingDecision({
-                                  id: quotation.id,
-                                  decision: "rejected",
-                                })
-                              }
-                            >
-                              <X size={13} />
-                              Tolak
-                            </AppButton>
-                          </div>
-                        ) : (
-                          <span className="text-gray-300 dark:text-zinc-600">—</span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!isLoading && quotations.length === 0 && (
-              <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-10">
-                No quotations found.
+          {isManager && !isLoading && <QuotationManagerFlowOS quotations={quotations} pdf={pdf} />}
+
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1" role="tablist" aria-label="Filter status quotation">
+                {quotationTabs.map((entry) => {
+                  const count = base.filter((row) => inQuotationTab(row.status, entry.key)).length;
+                  const selected = tab === entry.key;
+                  return (
+                    <button
+                      key={entry.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setTab(entry.key)}
+                      className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-claude ${
+                        selected
+                          ? "border-forest-deep bg-forest-deep text-white dark:border-lime-bright dark:bg-lime-bright dark:text-forest-deep"
+                          : "border-line text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+                      }`}
+                    >
+                      {entry.label}
+                      <span className={`tabular-nums ${selected ? "opacity-80" : "text-gray-400 dark:text-zinc-500"}`}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <AppInput
+                  inputId="quotation-search"
+                  type="search"
+                  aria-label="Cari quotation"
+                  placeholder="Cari nomor, company, pembuat"
+                  icon={<Search size={14} />}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  containerClassName="w-full sm:w-72"
+                />
+                {oldCount > 0 && <AppSwitch inputId="quotation-show-old" label={`Versi lama (${oldCount})`} checked={showOld} onChange={setShowOld} compact />}
+              </div>
+            </div>
+
+            <QuotationTableOS
+              rows={rows}
+              isLoading={isLoading}
+              canViewMargin={isManager}
+              pdf={pdf}
+              empty={
+                keyword || tab !== "all" ? (
+                  <p className="text-sm text-gray-500 dark:text-zinc-400">Tidak ada quotation yang cocok dengan filter ini.</p>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-gray-700 dark:text-zinc-200">Belum ada quotation</p>
+                    <p className="max-w-sm text-sm text-gray-500 dark:text-zinc-400">Buat penawaran pertama dari Pricing Calculator, lalu ajukan ke manager.</p>
+                    <AppButton href="/pricing" size="sm" className="mt-2">
+                      <Plus size={14} />
+                      Quotation baru
+                    </AppButton>
+                  </>
+                )
+              }
+            />
+            {!isLoading && rows.length > 0 && (
+              <p className="text-xs text-gray-500 dark:text-zinc-400">
+                {rows.length} quotation · total nilai {getRupiahCurrency(rows.reduce((sum, row) => sum + Number(row.net_value), 0))}
               </p>
             )}
           </div>
-        </div>
+        </>
       )}
 
-      <PdfPreviewModalOS
-        isOpen={isPreviewOpen}
-        url={previewUrl}
-        title={previewTitle}
-        onClose={closePreview}
-      />
-
-      <QuotationReasonModalOS
-        isOpen={pendingDecision !== null}
-        title={
-          pendingDecision?.decision === "rejected"
-            ? "Reject quotation?"
-            : "Kembalikan untuk revisi?"
-        }
-        confirmLabel={
-          pendingDecision?.decision === "rejected" ? "Reject" : "Kembalikan"
-        }
-        destructive={pendingDecision?.decision === "rejected"}
-        isPending={decideMutation.isPending}
-        onClose={() => setPendingDecision(null)}
-        onConfirm={(reason) => {
-          if (!pendingDecision) return;
-          decide(pendingDecision.id, pendingDecision.decision, reason);
-        }}
-      />
+      <PdfPreviewModalOS {...pdf.previewProps} />
     </div>
   );
 }

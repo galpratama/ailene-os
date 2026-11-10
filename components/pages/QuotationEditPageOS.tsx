@@ -4,22 +4,20 @@ import AppButton from "@/components/buttons/AppButton";
 import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PdfPreviewModalOS from "@/components/modals/PdfPreviewModalOS";
 import QuotationReasonModalOS from "@/components/modals/QuotationReasonModalOS";
-import { getQuotationPDFBlobUrl } from "@/components/pdf/QuotationPDF";
-import type {
-  QuotationApprovalDecision,
-  QuotationOutcomeStatus,
-} from "@/apis/quotations";
+import CompanyLogoOS from "@/components/elements/CompanyLogoOS";
+import TaskAssigneeAvatarOS from "@/components/elements/TaskAssigneeAvatarOS";
+import type { QuotationApprovalDecision } from "@/apis/quotations";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
+import { useQuotationPdf } from "@/hooks/useQuotationPdf";
 import { useSession } from "@/contexts/SessionContext";
 import {
   decideQuotation,
   getQuotationDetails,
   submitQuotation,
   updateQuotation,
-  updateQuotationOutcome,
 } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
-import { buildQuotationPDFPropsFromQuotation } from "@/lib/quotation-pdf";
+import { formatQuotationNumber } from "@/lib/quotation-number";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
@@ -28,6 +26,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Download,
   Eye,
   ListChecks,
   Loader2,
@@ -35,17 +34,14 @@ import {
   Package,
   Percent,
   RotateCcw,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 import { showErrorToast } from "@/lib/toast";
 
-type PendingDecision = { decision: "needs_revision" | "rejected" };
 
 const decisionLabel: Record<QuotationApprovalDecision, string> = {
   approved: "Approved",
-  rejected: "Rejected",
   needs_revision: "Needs Revision",
 };
 
@@ -140,13 +136,6 @@ export default function QuotationEditPageOS({
     );
   }
 
-  const outcomeQuotationMutation = useMutation({
-    mutationFn: async (status: QuotationOutcomeStatus) =>
-      requireApiData(await updateQuotationOutcome({ id: quotationId, status })),
-    onSuccess: invalidateQuotationQueries,
-    onError: (err) => showErrorToast(err.message),
-  });
-
   async function handleSaveDraft() {
     setIsSavingDraft(true);
     try {
@@ -174,19 +163,14 @@ export default function QuotationEditPageOS({
     }
   }
 
-  function handleOutcome(status: QuotationOutcomeStatus) {
-    outcomeQuotationMutation.mutate(status);
-  }
-
-  const [pendingDecision, setPendingDecision] =
-    useState<PendingDecision | null>(null);
+  const [isRevising, setIsRevising] = useState(false);
   const decideMutation = useMutation({
     mutationFn: async (payload: {
       decision: QuotationApprovalDecision;
       reason?: string;
     }) => requireApiData(await decideQuotation({ id: quotationId, ...payload })),
     onSuccess: async () => {
-      setPendingDecision(null);
+      setIsRevising(false);
       await invalidateQuotationQueries();
     },
     onError: (err) => showErrorToast(err.message),
@@ -195,28 +179,7 @@ export default function QuotationEditPageOS({
     decideMutation.mutate({ decision, reason });
   }
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  async function handlePreviewClientView() {
-    if (!quotation) return;
-    setIsPreviewLoading(true);
-    try {
-      const props = buildQuotationPDFPropsFromQuotation(quotation);
-      const url = await getQuotationPDFBlobUrl(props);
-      setPreviewUrl(url);
-      setIsPreviewOpen(true);
-    } catch (err) {
-      showErrorToast(err instanceof Error ? err.message : "Gagal membuka preview.");
-    } finally {
-      setIsPreviewLoading(false);
-    }
-  }
-  function closePreview() {
-    setIsPreviewOpen(false);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-  }
+  const pdf = useQuotationPdf();
 
   if (isLoading) {
     return (
@@ -232,6 +195,8 @@ export default function QuotationEditPageOS({
       </p>
     );
   }
+
+  const quotationNumber = formatQuotationNumber(quotation);
 
   const draftSubmitButtons = isEditable && (
     <div className="flex gap-2">
@@ -254,52 +219,6 @@ export default function QuotationEditPageOS({
       >
         {isSubmittingQuotation && <Loader2 size={14} className="animate-spin" />}
         Buat Quotation
-      </AppButton>
-    </div>
-  );
-
-  const outcomeSentButton = canDecide && quotation.status === "approved" && (
-    <AppButton
-      type="button"
-      variant="primary"
-      disabled={outcomeQuotationMutation.isPending}
-      onClick={() => handleOutcome("sent")}
-    >
-      Mark as Sent
-    </AppButton>
-  );
-
-  const outcomeFinalButtons = canDecide && quotation.status === "sent" && (
-    <div className="flex gap-2">
-      <AppButton
-        type="button"
-        variant="primary"
-        size="sm"
-        className="flex-1 justify-center"
-        disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("accepted")}
-      >
-        Accepted
-      </AppButton>
-      <AppButton
-        type="button"
-        variant="outline"
-        size="sm"
-        className="flex-1 justify-center"
-        disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("rejected")}
-      >
-        Rejected
-      </AppButton>
-      <AppButton
-        type="button"
-        variant="outline"
-        size="sm"
-        className="flex-1 justify-center"
-        disabled={outcomeQuotationMutation.isPending}
-        onClick={() => handleOutcome("expired")}
-      >
-        Expired
       </AppButton>
     </div>
   );
@@ -350,20 +269,10 @@ export default function QuotationEditPageOS({
         variant="warning"
         size="sm"
         disabled={decideMutation.isPending}
-        onClick={() => setPendingDecision({ decision: "needs_revision" })}
+        onClick={() => setIsRevising(true)}
       >
         <RotateCcw size={13} />
         Revisi
-      </AppButton>
-      <AppButton
-        type="button"
-        variant="destructive"
-        size="sm"
-        disabled={decideMutation.isPending}
-        onClick={() => setPendingDecision({ decision: "rejected" })}
-      >
-        <X size={13} />
-        Tolak
       </AppButton>
     </div>
   );
@@ -404,39 +313,73 @@ export default function QuotationEditPageOS({
             Quotations
           </Link>
           <ChevronRight size={12} />
-          <span>Q-{quotation.id}</span>
+          <span>{quotationNumber}</span>
           <ChevronRight size={12} />
           <span className="text-gray-600 dark:text-zinc-300">Edit</span>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">
-              Quotation Q-{quotation.id}
-            </h2>
-            <QuotationStatusLabel status={quotation.status} />
+          <div className="flex min-w-0 items-center gap-3">
+            <CompanyLogoOS name={quotation.company_name} imageUrl={quotation.company_image_url} size="lg" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h2 className="text-lg font-bold tabular-nums text-gray-900 dark:text-zinc-100">
+                  {quotationNumber}
+                </h2>
+                <QuotationStatusLabel status={quotation.status} />
+              </div>
+              <p className="truncate text-sm text-gray-600 dark:text-zinc-300">
+                {quotation.company_name}
+              </p>
+            </div>
           </div>
-          <AppButton
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={isPreviewLoading}
-            onClick={handlePreviewClientView}
-          >
-            {isPreviewLoading ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Eye size={14} />
-            )}
-            Preview (Client view)
-          </AppButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <AppButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pdf.isBusy(quotation.id, "download")}
+              onClick={() => pdf.download(quotation.id, quotation)}
+            >
+              {pdf.isBusy(quotation.id, "download") ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Download size={14} />
+              )}
+              Unduh PDF
+            </AppButton>
+            <AppButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pdf.isBusy(quotation.id, "view")}
+              onClick={() => pdf.view(quotation.id, quotation)}
+            >
+              {pdf.isBusy(quotation.id, "view") ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Eye size={14} />
+              )}
+              Preview (Client view)
+            </AppButton>
+          </div>
         </div>
-        <p className="text-xs text-gray-400 dark:text-zinc-500">
-          {quotation.company_name} · v
-          {quotation.version} · Terakhir disimpan{" "}
-          {dayjs(quotation.updated_at).format("D MMM YYYY, HH:mm")} oleh{" "}
-          {quotation.created_by_name}
-          {!isEditable && " · Sudah tidak bisa diubah, versi ini terkunci."}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400">
+          <TaskAssigneeAvatarOS
+            name={quotation.created_by_name}
+            avatar={quotation.created_by_avatar ?? null}
+            colorKey={quotation.created_by_id}
+            size="md"
+          />
+          <span>
+            Dibuat oleh{" "}
+            <span className="font-medium text-gray-700 dark:text-zinc-200">
+              {quotation.created_by_name}
+            </span>{" "}
+            · Terakhir disimpan{" "}
+            {dayjs(quotation.updated_at).format("D MMM YYYY, HH:mm")}
+            {!isEditable && " · Versi ini sudah terkunci."}
+          </span>
+        </div>
       </div>
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,1fr)] xl:items-start">
@@ -482,8 +425,6 @@ export default function QuotationEditPageOS({
           {builder.flagsBlock}
           {builder.copyButtonBlock}
           {draftSubmitButtons}
-          {outcomeSentButton}
-          {outcomeFinalButtons}
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-6">
@@ -533,30 +474,15 @@ export default function QuotationEditPageOS({
         </div>
       </div>
 
-      <PdfPreviewModalOS
-        isOpen={isPreviewOpen}
-        url={previewUrl}
-        title={`Quotation #${quotation.id} · ${quotation.company_name}`}
-        onClose={closePreview}
-      />
+      <PdfPreviewModalOS {...pdf.previewProps} />
 
       <QuotationReasonModalOS
-        isOpen={pendingDecision !== null}
-        title={
-          pendingDecision?.decision === "rejected"
-            ? "Reject quotation?"
-            : "Kembalikan untuk revisi?"
-        }
-        confirmLabel={
-          pendingDecision?.decision === "rejected" ? "Reject" : "Kembalikan"
-        }
-        destructive={pendingDecision?.decision === "rejected"}
+        isOpen={isRevising}
+        title="Kembalikan untuk revisi?"
+        confirmLabel="Kembalikan"
         isPending={decideMutation.isPending}
-        onClose={() => setPendingDecision(null)}
-        onConfirm={(reason) => {
-          if (!pendingDecision) return;
-          decide(pendingDecision.decision, reason);
-        }}
+        onClose={() => setIsRevising(false)}
+        onConfirm={(reason) => decide("needs_revision", reason)}
       />
     </div>
   );

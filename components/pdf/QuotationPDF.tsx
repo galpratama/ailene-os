@@ -1,13 +1,4 @@
-import {
-  Document,
-  Page,
-  Path,
-  StyleSheet,
-  Svg,
-  Text,
-  View,
-  pdf,
-} from "@react-pdf/renderer";
+import { Document, Page, Path, StyleSheet, Svg, Text, View, pdf } from "@react-pdf/renderer";
 import {
   ADDON_PRICE,
   MN,
@@ -17,8 +8,9 @@ import {
   TRN,
   dayPrice,
   sesiFullLabel,
+  uniquePax,
 } from "@/lib/pricing-b2b";
-import { getRupiahCurrency } from "@/lib/currency";
+import { getRupiahCurrency, getRupiahWords } from "@/lib/currency";
 
 // Current Ailene mark (wordmark + symbol), ported from components/svg/LogoAilene.tsx — react-pdf's Path accepts the same `d`.
 const AILENE_WORDMARK_PATHS = [
@@ -43,143 +35,87 @@ function AileneLogo({ color, width }: { color: string; width: number }) {
   );
 }
 
+// react-pdf cannot read CSS variables, so the document carries its own print palette.
 const INK = "#17171a";
-const CLAUDE = "#1a7a52";
+const BRAND = "#1a7a52";
+const BRAND_SOFT = "#ecf5f0";
 const GRAY = "#6b7280";
+const MUTED = "#9ca3af";
 const LINE = "#e5e7eb";
+const PANEL = "#f7f8f7";
+const ZEBRA = "#fbfbfb";
+const WHITE = "#ffffff";
+
+const COMPANY = "PT Pengusaha Muda Indonesia";
+const COMPANY_ADDRESS = ["Soho Capital Floor 19, Podomoro City", "Jl. Letjend S. Parman Kav 28, Jakarta Barat", "DKI Jakarta, Indonesia"];
 
 const styles = StyleSheet.create({
-  page: {
-    paddingTop: 40,
-    paddingBottom: 64,
-    paddingHorizontal: 40,
-    fontSize: 9.5,
-    color: INK,
-    fontFamily: "Helvetica",
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 24,
-  },
-  docLabel: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: INK,
-    textAlign: "right",
-  },
-  docMeta: {
-    marginTop: 4,
-    fontSize: 9,
-    color: GRAY,
-    textAlign: "right",
-  },
-  billTo: {
-    marginBottom: 20,
-  },
-  billToLabel: {
-    fontSize: 8,
-    color: GRAY,
-    marginBottom: 3,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  billToName: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    color: INK,
-  },
-  table: {
-    marginTop: 8,
-  },
-  tableHeadRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: INK,
-    paddingBottom: 6,
-    marginBottom: 4,
-  },
-  tableHeadCell: {
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    color: GRAY,
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 0.75,
-    borderBottomColor: LINE,
-    paddingVertical: 7,
-  },
-  colItem: { width: "56%" },
-  colQty: { width: "14%", textAlign: "center" },
-  colPrice: { width: "30%", textAlign: "right" },
-  itemName: { fontSize: 9.5, color: INK },
-  itemSub: { fontSize: 8, color: GRAY, marginTop: 1.5 },
-  totals: {
-    marginTop: 16,
-    alignSelf: "flex-end",
-    width: "55%",
-  },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  totalLabel: { fontSize: 9.5, color: GRAY },
-  totalValue: { fontSize: 9.5, color: INK, fontFamily: "Helvetica-Bold" },
-  grandRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderTopWidth: 1.5,
-    borderTopColor: INK,
-    marginTop: 4,
-    paddingTop: 8,
-  },
-  grandLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK },
-  grandValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: CLAUDE },
-  note: {
-    marginTop: 20,
-    fontSize: 8.5,
-    color: GRAY,
-    lineHeight: 1.5,
-  },
-  validity: {
-    marginTop: 6,
-    fontSize: 8.5,
-    color: GRAY,
-    lineHeight: 1.5,
-  },
-  footer: {
-    position: "absolute",
-    bottom: 28,
-    left: 40,
-    right: 40,
-    borderTopWidth: 0.75,
-    borderTopColor: LINE,
-    paddingTop: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  footerCompany: {
-    fontSize: 8.5,
-    fontFamily: "Helvetica-Bold",
-    color: INK,
-  },
-  footerAddress: {
-    fontSize: 7.5,
-    color: GRAY,
-    marginTop: 2,
-    lineHeight: 1.4,
-  },
+  page: { paddingTop: 44, paddingBottom: 72, paddingHorizontal: 44, fontSize: 9, color: INK, fontFamily: "Helvetica", lineHeight: 1.35 },
+  accent: { position: "absolute", top: 0, left: 0, right: 0, height: 5, backgroundColor: BRAND },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  senderName: { marginTop: 10, fontSize: 8.5, fontFamily: "Helvetica-Bold" },
+  senderLine: { fontSize: 7.5, color: GRAY },
+  headerRight: { alignItems: "flex-end" },
+  docTitle: { fontSize: 22, lineHeight: 1.2, fontFamily: "Helvetica-Bold", letterSpacing: 2, textAlign: "right" },
+  docSubtitle: { fontSize: 8.5, color: GRAY, textAlign: "right", marginTop: 4 },
+  metaBox: { marginTop: 10, width: 200, borderWidth: 0.75, borderColor: LINE, borderRadius: 4 },
+  metaRow: { flexDirection: "row", paddingVertical: 4, paddingHorizontal: 8 },
+  metaRowDivider: { borderTopWidth: 0.75, borderTopColor: LINE },
+  metaLabel: { width: 76, fontSize: 7.5, color: GRAY },
+  metaValue: { flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", textAlign: "right" },
+  parties: { flexDirection: "row", marginTop: 22, gap: 10 },
+  party: { flex: 1, backgroundColor: PANEL, borderRadius: 4, paddingVertical: 10, paddingHorizontal: 12 },
+  eyebrow: { fontSize: 6.5, color: GRAY, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 },
+  partyName: { fontSize: 12, fontFamily: "Helvetica-Bold" },
+  partySub: { fontSize: 8, color: GRAY, marginTop: 2 },
+  summary: { flexDirection: "row", marginTop: 12, borderWidth: 0.75, borderColor: LINE, borderRadius: 4 },
+  summaryCell: { flex: 1, paddingVertical: 8, paddingHorizontal: 10 },
+  summaryDivider: { borderLeftWidth: 0.75, borderLeftColor: LINE },
+  summaryValue: { fontSize: 10.5, fontFamily: "Helvetica-Bold" },
+  sectionTitle: { marginTop: 22, marginBottom: 6, fontSize: 9.5, fontFamily: "Helvetica-Bold" },
+  thead: { flexDirection: "row", backgroundColor: INK, borderRadius: 3, paddingVertical: 6, paddingHorizontal: 8 },
+  th: { fontSize: 7, fontFamily: "Helvetica-Bold", color: WHITE, textTransform: "uppercase", letterSpacing: 0.6 },
+  tr: { flexDirection: "row", paddingVertical: 7, paddingHorizontal: 8, borderBottomWidth: 0.75, borderBottomColor: LINE },
+  trAlt: { backgroundColor: ZEBRA },
+  colNo: { width: "6%" },
+  colDesc: { width: "48%", paddingRight: 8 },
+  colQty: { width: "10%", textAlign: "center" },
+  colUnit: { width: "18%", textAlign: "right" },
+  colAmount: { width: "18%", textAlign: "right", fontFamily: "Helvetica-Bold" },
+  cell: { fontSize: 8.5 },
+  cellMuted: { fontSize: 8.5, color: GRAY },
+  itemTitle: { fontSize: 9, fontFamily: "Helvetica-Bold" },
+  itemSub: { fontSize: 7.5, color: GRAY, marginTop: 2 },
+  bottom: { flexDirection: "row", marginTop: 14, gap: 16, alignItems: "flex-start" },
+  words: { flex: 1, backgroundColor: PANEL, borderRadius: 4, padding: 10 },
+  wordsText: { fontSize: 8.5, fontFamily: "Helvetica-Oblique", lineHeight: 1.45 },
+  totals: { width: 220 },
+  totalRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3.5, paddingHorizontal: 2 },
+  totalLabel: { fontSize: 8.5, color: GRAY },
+  totalValue: { fontSize: 8.5, fontFamily: "Helvetica-Bold" },
+  discount: { color: BRAND },
+  grand: { marginTop: 6, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: BRAND_SOFT, borderLeftWidth: 3, borderLeftColor: BRAND, borderRadius: 3, paddingVertical: 9, paddingHorizontal: 10 },
+  grandLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", letterSpacing: 0.8, color: BRAND },
+  grandValue: { fontSize: 14, fontFamily: "Helvetica-Bold" },
+  termRow: { flexDirection: "row", marginTop: 3 },
+  termNo: { width: 12, fontSize: 8, color: GRAY },
+  termText: { flex: 1, fontSize: 8, color: GRAY, lineHeight: 1.45 },
+  signs: { flexDirection: "row", marginTop: 28, gap: 40 },
+  sign: { flex: 1 },
+  signSpace: { height: 54 },
+  signLine: { borderTopWidth: 0.75, borderTopColor: INK, paddingTop: 4 },
+  signName: { fontSize: 9, fontFamily: "Helvetica-Bold" },
+  signSub: { fontSize: 7.5, color: GRAY, marginTop: 1 },
+  footer: { position: "absolute", bottom: 26, left: 44, right: 44, borderTopWidth: 0.75, borderTopColor: LINE, paddingTop: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  footerText: { fontSize: 7, color: MUTED },
 });
 
 export interface QuotationPDFProps {
   clientName: string;
   quotationNumber: string;
   quotationDate: string;
+  validUntil: string;
+  preparedBy: string | null;
   days: PricingDay[];
   materi: keyof typeof MN;
   addons: PricingAddons;
@@ -187,146 +123,185 @@ export interface QuotationPDFProps {
   result: PricingResult;
 }
 
-export function QuotationPDF({
-  clientName,
-  quotationNumber,
-  quotationDate,
-  days,
-  materi,
-  addons,
-  dcPct,
-  result,
-}: QuotationPDFProps) {
+type LineItem = { title: string; detail?: string; qty: number; unit: number };
+
+function lineItems(days: PricingDay[], materi: keyof typeof MN, addons: PricingAddons): LineItem[] {
+  const items: LineItem[] = days.map((d, i) => ({
+    title: `Hari ${i + 1}: Pelatihan ${d.format === "offline" ? "offline" : "online"}`,
+    detail: `${sesiFullLabel(d.sesi)} · ${d.peserta} peserta · Trainer ${TRN[d.trainer]} · Materi ${MN[materi]}`,
+    qty: 1,
+    unit: dayPrice(d, materi),
+  }));
+  if (addons.assessment) items.push({ title: "AI Readiness Assessment", detail: "Pemetaan kesiapan AI tim sebelum pelatihan", qty: 1, unit: ADDON_PRICE.assessment });
+  if (addons.klinik) items.push({ title: "Klinik lanjutan", detail: "Sesi pendampingan setelah pelatihan", qty: addons.klinikSesi, unit: ADDON_PRICE.klinikPerSesi });
+  if (addons.rekaman) items.push({ title: "Rekaman + akses LMS", detail: "Akses rekaman selama 6 bulan", qty: 1, unit: ADDON_PRICE.rekaman });
+  if (addons.sertifikat) items.push({ title: "Sertifikat peserta", qty: addons.sertifikatQty, unit: ADDON_PRICE.sertifikatPerOrang });
+  if (addons.perjalanan) items.push({ title: "Perjalanan luar kota", detail: "Transportasi dan akomodasi tim", qty: 1, unit: addons.perjalananRp });
+  return items;
+}
+
+function programSummary(days: PricingDay[], materi: keyof typeof MN) {
+  const hours = days.reduce((total, d) => total + d.sesi * 3, 0);
+  const formats = new Set(days.map((d) => d.format));
+  return [
+    { label: "Durasi", value: `${days.length} hari` },
+    { label: "Total waktu", value: `${hours.toLocaleString("id-ID")} jam` },
+    { label: "Peserta", value: `${uniquePax(days)} orang` },
+    { label: "Format", value: formats.size > 1 ? "Hybrid" : formats.has("online") ? "Online" : "Offline" },
+    { label: "Materi", value: MN[materi] },
+  ];
+}
+
+export function QuotationPDF({ clientName, quotationNumber, quotationDate, validUntil, preparedBy, days, materi, addons, dcPct, result }: QuotationPDFProps) {
+  const items = lineItems(days, materi, addons);
+  const sender = preparedBy || "Tim Ailene";
+  const terms = [
+    `Penawaran ini berlaku hingga ${validUntil}, kecuali dinyatakan lain secara tertulis.`,
+    "Total penawaran sudah termasuk gross-up PPh Final 0,5%, sehingga nilai yang kami terima sama dengan nilai program.",
+    ...(days.some((d) => d.format === "offline") ? ["Ruang dan konsumsi untuk sesi offline disediakan oleh klien."] : []),
+    "Penawaran dianggap disetujui setelah ditandatangani oleh perwakilan klien yang berwenang.",
+  ];
+
   return (
-    <Document title={`Quotation ${quotationNumber}`}>
+    <Document title={`Quotation ${quotationNumber}`} author={COMPANY} subject={`Penawaran untuk ${clientName}`}>
       <Page size="A4" style={styles.page}>
-        <View style={styles.headerRow}>
-          <AileneLogo color={INK} width={110} />
+        <View style={styles.accent} fixed />
+
+        <View style={styles.header}>
           <View>
-            <Text style={styles.docLabel}>QUOTATION</Text>
-            <Text style={styles.docMeta}>{quotationNumber}</Text>
-            <Text style={styles.docMeta}>{quotationDate}</Text>
-          </View>
-        </View>
-
-        <View style={styles.billTo}>
-          <Text style={styles.billToLabel}>Ditujukan kepada</Text>
-          <Text style={styles.billToName}>{clientName || "-"}</Text>
-        </View>
-
-        <View style={styles.table}>
-          <View style={styles.tableHeadRow}>
-            <Text style={[styles.tableHeadCell, styles.colItem]}>Item</Text>
-            <Text style={[styles.tableHeadCell, styles.colQty]}>Qty</Text>
-            <Text style={[styles.tableHeadCell, styles.colPrice]}>Harga</Text>
-          </View>
-
-          {days.map((d, i) => (
-            <View style={styles.tableRow} key={i}>
-              <View style={styles.colItem}>
-                <Text style={styles.itemName}>
-                  Hari {i + 1} · {d.format === "offline" ? "Offline" : "Online"} · {TRN[d.trainer]}
-                </Text>
-                <Text style={styles.itemSub}>
-                  {sesiFullLabel(d.sesi)}, {d.peserta} peserta, materi {MN[materi]}
-                </Text>
-              </View>
-              <Text style={[styles.itemName, styles.colQty]}>1</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(dayPrice(d, materi))}
+            <AileneLogo color={INK} width={104} />
+            <Text style={styles.senderName}>{COMPANY}</Text>
+            {COMPANY_ADDRESS.map((line) => (
+              <Text key={line} style={styles.senderLine}>
+                {line}
               </Text>
+            ))}
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={styles.docTitle}>QUOTATION</Text>
+            <Text style={styles.docSubtitle}>Penawaran harga program pelatihan</Text>
+            <View style={styles.metaBox}>
+              {[
+                ["Nomor", quotationNumber],
+                ["Tanggal", quotationDate],
+                ["Berlaku hingga", validUntil],
+              ].map(([label, value], i) => (
+                <View key={label} style={i > 0 ? [styles.metaRow, styles.metaRowDivider] : styles.metaRow}>
+                  <Text style={styles.metaLabel}>{label}</Text>
+                  <Text style={styles.metaValue}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.parties}>
+          <View style={styles.party}>
+            <Text style={styles.eyebrow}>Ditujukan kepada</Text>
+            <Text style={styles.partyName}>{clientName || "-"}</Text>
+          </View>
+          <View style={styles.party}>
+            <Text style={styles.eyebrow}>Disiapkan oleh</Text>
+            <Text style={styles.partyName}>{sender}</Text>
+            <Text style={styles.partySub}>Ailene · {COMPANY}</Text>
+          </View>
+        </View>
+
+        <View style={styles.summary}>
+          {programSummary(days, materi).map((entry, i) => (
+            <View key={entry.label} style={i > 0 ? [styles.summaryCell, styles.summaryDivider] : styles.summaryCell}>
+              <Text style={styles.eyebrow}>{entry.label}</Text>
+              <Text style={styles.summaryValue}>{entry.value}</Text>
             </View>
           ))}
-
-          {addons.assessment && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>AI Readiness Assessment</Text>
-              <Text style={[styles.itemName, styles.colQty]}>1</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(ADDON_PRICE.assessment)}
-              </Text>
-            </View>
-          )}
-          {addons.klinik && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>Klinik lanjutan</Text>
-              <Text style={[styles.itemName, styles.colQty]}>{addons.klinikSesi}</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(ADDON_PRICE.klinikPerSesi * addons.klinikSesi)}
-              </Text>
-            </View>
-          )}
-          {addons.rekaman && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>Rekaman + akses LMS (6 bulan)</Text>
-              <Text style={[styles.itemName, styles.colQty]}>1</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(ADDON_PRICE.rekaman)}
-              </Text>
-            </View>
-          )}
-          {addons.sertifikat && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>Sertifikat per peserta</Text>
-              <Text style={[styles.itemName, styles.colQty]}>{addons.sertifikatQty}</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(ADDON_PRICE.sertifikatPerOrang * addons.sertifikatQty)}
-              </Text>
-            </View>
-          )}
-          {addons.perjalanan && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>Perjalanan luar kota</Text>
-              <Text style={[styles.itemName, styles.colQty]}>1</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                {getRupiahCurrency(addons.perjalananRp)}
-              </Text>
-            </View>
-          )}
-          {dcPct > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={[styles.itemName, styles.colItem]}>Diskon {dcPct}%</Text>
-              <Text style={[styles.itemName, styles.colQty]}>-</Text>
-              <Text style={[styles.itemName, styles.colPrice]}>
-                -{getRupiahCurrency(result.discount)}
-              </Text>
-            </View>
-          )}
         </View>
 
-        <View style={styles.totals}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Nilai program</Text>
-            <Text style={styles.totalValue}>{getRupiahCurrency(result.netValue)}</Text>
+        <Text style={styles.sectionTitle}>Rincian penawaran</Text>
+        <View style={styles.thead}>
+          <Text style={[styles.th, styles.colNo]}>No</Text>
+          <Text style={[styles.th, styles.colDesc]}>Deskripsi</Text>
+          <Text style={[styles.th, styles.colQty]}>Qty</Text>
+          <Text style={[styles.th, styles.colUnit]}>Harga satuan</Text>
+          <Text style={[styles.th, styles.colAmount]}>Jumlah</Text>
+        </View>
+        {items.map((item, i) => (
+          <View key={i} style={i % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr} wrap={false}>
+            <Text style={[styles.cellMuted, styles.colNo]}>{i + 1}</Text>
+            <View style={styles.colDesc}>
+              <Text style={styles.itemTitle}>{item.title}</Text>
+              {item.detail && <Text style={styles.itemSub}>{item.detail}</Text>}
+            </View>
+            <Text style={[styles.cell, styles.colQty]}>{item.qty}</Text>
+            <Text style={[styles.cell, styles.colUnit]}>{getRupiahCurrency(item.unit)}</Text>
+            <Text style={[styles.cell, styles.colAmount]}>{getRupiahCurrency(item.unit * item.qty)}</Text>
           </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>PPh Final 0,5% (gross up)</Text>
-            <Text style={styles.totalValue}>{getRupiahCurrency(result.pphTax)}</Text>
+        ))}
+
+        <View style={styles.bottom} wrap={false}>
+          <View style={styles.words}>
+            <Text style={styles.eyebrow}>Terbilang</Text>
+            <Text style={styles.wordsText}>{getRupiahWords(result.invoice)}</Text>
           </View>
-          <View style={styles.grandRow}>
-            <Text style={styles.grandLabel}>Total Quotation</Text>
-            <Text style={styles.grandValue}>{getRupiahCurrency(result.invoice)}</Text>
+          <View style={styles.totals}>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Subtotal</Text>
+              <Text style={styles.totalValue}>{getRupiahCurrency(result.subtotal)}</Text>
+            </View>
+            {dcPct > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Diskon {dcPct}%</Text>
+                <Text style={[styles.totalValue, styles.discount]}>-{getRupiahCurrency(result.discount)}</Text>
+              </View>
+            )}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Nilai program</Text>
+              <Text style={styles.totalValue}>{getRupiahCurrency(result.netValue)}</Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>PPh Final 0,5% (gross-up)</Text>
+              <Text style={styles.totalValue}>{getRupiahCurrency(result.pphTax)}</Text>
+            </View>
+            <View style={styles.grand}>
+              <Text style={styles.grandLabel}>TOTAL</Text>
+              <Text style={styles.grandValue}>{getRupiahCurrency(result.invoice)}</Text>
+            </View>
           </View>
         </View>
 
-        {days.some((d) => d.format === "offline") && (
-          <Text style={styles.note}>
-            Catatan: ruang dan konsumsi untuk sesi offline disediakan klien.
-          </Text>
-        )}
-        <Text style={styles.validity}>
-          Penawaran ini berlaku 14 hari sejak tanggal di atas, kecuali dinyatakan lain secara tertulis.
-        </Text>
+        <View wrap={false}>
+          <Text style={styles.sectionTitle}>Syarat dan ketentuan</Text>
+          {terms.map((term, i) => (
+            <View key={i} style={styles.termRow}>
+              <Text style={styles.termNo}>{i + 1}.</Text>
+              <Text style={styles.termText}>{term}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.signs} wrap={false}>
+          <View style={styles.sign}>
+            <Text style={styles.eyebrow}>Hormat kami</Text>
+            <View style={styles.signSpace} />
+            <View style={styles.signLine}>
+              <Text style={styles.signName}>{sender}</Text>
+              <Text style={styles.signSub}>{COMPANY}</Text>
+            </View>
+          </View>
+          <View style={styles.sign}>
+            <Text style={styles.eyebrow}>Disetujui oleh</Text>
+            <View style={styles.signSpace} />
+            <View style={styles.signLine}>
+              <Text style={styles.signName}>Nama dan jabatan</Text>
+              <Text style={styles.signSub}>{clientName || "-"} · Tanggal: ____________</Text>
+            </View>
+          </View>
+        </View>
 
         <View style={styles.footer} fixed>
-          <View>
-            <Text style={styles.footerCompany}>PT Pengusaha Muda Indonesia</Text>
-            <Text style={styles.footerAddress}>
-              Soho Capital Floor 19, Podomoro City, Jl. Letjend S. Parman Kav 28,{"\n"}
-              Jakarta Barat, DKI Jakarta, Indonesia
-            </Text>
-          </View>
-          <AileneLogo color={GRAY} width={60} />
+          <Text style={styles.footerText}>
+            {COMPANY} · {quotationNumber}
+          </Text>
+          <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Halaman ${pageNumber} dari ${totalPages}`} />
         </View>
       </Page>
     </Document>
