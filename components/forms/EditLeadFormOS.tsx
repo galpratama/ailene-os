@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  EmployeeBand,
   LeadChannel,
   LeadSource,
   PipelineData,
@@ -20,6 +21,8 @@ import { useSession } from "@/contexts/SessionContext";
 import { useIndustryList } from "@/hooks/useIndustryList";
 import { useUserList } from "@/hooks/useUserList";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
+import { useOutcomeReasons } from "@/hooks/useOutcomeReasons";
+import { employeeBandOptions } from "@/lib/employee-bands";
 import { requireApiData, requireApiSuccess } from "@/lib/api-result";
 import {
   COMPANY_NAME_PLACEHOLDER,
@@ -68,7 +71,12 @@ export default function EditLeadFormOS({
   const sessionUser = useSession();
   const isOwnScoped = sessionUser?.data_scope === "own";
   const catalog = usePipelineStages(!!sessionToken && isOpen);
+  const outcomeReasons = useOutcomeReasons(!!sessionToken && isOpen);
   const [companyName, setCompanyName] = useState("");
+  const [employeeBand, setEmployeeBand] = useState<EmployeeBand | "">("");
+  const [outcomeReason, setOutcomeReason] = useState("");
+  const [nextStep, setNextStep] = useState("");
+  const [nextStepDue, setNextStepDue] = useState("");
   const [industryId, setIndustryId] = useState<number | null>(null);
   const [legalIdentifier, setLegalIdentifier] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -118,6 +126,10 @@ export default function EditLeadFormOS({
     setLegalIdentifier(company.legal_identifier ?? "");
     setWebsiteUrl(company.website_url ?? "");
     setImageUrl(company.image_url ?? "");
+    setEmployeeBand(company.employee_band ?? "");
+    setOutcomeReason(pipeline.outcome_reason_code ?? "");
+    setNextStep(pipeline.next_step ?? "");
+    setNextStepDue(pipeline.next_step_due ?? "");
     setContactName(primaryContact?.full_name ?? "");
     setContactJobTitle(primaryContact?.job_title ?? "");
     setContactPhone(primaryContact?.phone ?? "");
@@ -145,6 +157,15 @@ export default function EditLeadFormOS({
     label: industry.name,
   }));
   const ownerOptions: AppSelectOption[] = userList.map(userSelectOption);
+  const kindOf = (code: PipelineStage) => catalog.stages.find((entry) => entry.code === code)?.outcome_kind ?? null;
+  // Disqualify and lost stages need a reason; entering one makes it required, and a reason of the other kind is dropped.
+  const outcomeKind = kindOf(stage);
+  const entersOutcomeStage = !!outcomeKind && stage !== pipeline?.stage;
+
+  function changeStage(next: PipelineStage) {
+    if (kindOf(next) !== outcomeKind) setOutcomeReason(next === pipeline?.stage ? (pipeline?.outcome_reason_code ?? "") : "");
+    setStage(next);
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -160,6 +181,7 @@ export default function EditLeadFormOS({
           legal_identifier: legalIdentifier.trim() || null,
           website_url: websiteUrl.trim() || null,
           image_url: imageUrl.trim() || null,
+          employee_band: employeeBand || null,
         },
       };
       const pipelinePayload = {
@@ -170,6 +192,9 @@ export default function EditLeadFormOS({
         estimated_value: estimatedValue ? Number(estimatedValue) : 0,
         expected_close_date: expectedCloseDate || null,
         stage_note: stage !== pipeline.stage ? stageNote.trim() || null : null,
+        outcome_reason_code: outcomeKind ? outcomeReason || null : null,
+        next_step: nextStep.trim() || null,
+        next_step_due: nextStepDue || null,
       };
       const sourceChanged = company.lead_source !== leadSource;
       const companyCanUpdateFirst = isStageCompatibleWithLeadSource(
@@ -269,6 +294,8 @@ export default function EditLeadFormOS({
       return showErrorToast("Triaging requires an inbound lead source.");
     if (stage === "attempting" && leadSource !== "outbound")
       return showErrorToast("Attempting requires an outbound lead source.");
+    if (entersOutcomeStage && !outcomeReason)
+      return showErrorToast(outcomeKind === "disqualified" ? "Pilih alasan lead ini di-disqualify." : "Pilih alasan deal ini kalah.");
     saveMutation.mutate();
   }
 
@@ -359,14 +386,24 @@ export default function EditLeadFormOS({
                   onChange={(event) => setLegalIdentifier(event.target.value)}
                 />
               </div>
-              <AppInput
-                inputId="edit-lead-website-url"
-                label="Website URL"
-                type="url"
-                placeholder={COMPANY_WEBSITE_PLACEHOLDER}
-                value={websiteUrl}
-                onChange={(event) => setWebsiteUrl(event.target.value)}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <AppInput
+                  inputId="edit-lead-website-url"
+                  label="Website URL"
+                  type="url"
+                  placeholder={COMPANY_WEBSITE_PLACEHOLDER}
+                  value={websiteUrl}
+                  onChange={(event) => setWebsiteUrl(event.target.value)}
+                />
+                <AppSelect
+                  selectId="edit-lead-employee-band"
+                  label="Company Size"
+                  placeholder="Pick a size"
+                  value={employeeBand || null}
+                  onChange={(value) => setEmployeeBand((value as EmployeeBand | null) ?? "")}
+                  options={employeeBandOptions}
+                />
+              </div>
               <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Primary contact
               </p>
@@ -413,7 +450,7 @@ export default function EditLeadFormOS({
                 required
                 placeholder="Pick a stage"
                 value={stage}
-                onChange={(value) => setStage(value as PipelineStage)}
+                onChange={(value) => changeStage(value as PipelineStage)}
                 options={pipelineStageOptions(catalog.stages)}
               />
               <AppNumberInput
@@ -424,6 +461,17 @@ export default function EditLeadFormOS({
                 onValueChange={setEstimatedValue}
               />
             </div>
+            {outcomeKind && (
+              <AppSelect
+                selectId="edit-lead-outcome-reason"
+                label={outcomeKind === "disqualified" ? "Disqualify Reason" : "Lost Reason"}
+                required={entersOutcomeStage}
+                placeholder={outcomeKind === "disqualified" ? "Why was this lead disqualified?" : "Why was this deal lost?"}
+                value={outcomeReason || null}
+                onChange={(value) => setOutcomeReason((value as string | null) ?? "")}
+                options={outcomeReasons.optionsFor(outcomeKind, pipeline?.outcome_reason_code)}
+              />
+            )}
             <div className="grid grid-cols-2 gap-3">
               <AppInput
                 inputId="edit-lead-expected-close-date"
@@ -432,7 +480,22 @@ export default function EditLeadFormOS({
                 value={expectedCloseDate}
                 onChange={(event) => setExpectedCloseDate(event.target.value)}
               />
+              <AppInput
+                inputId="edit-lead-next-step-due"
+                label="Next Step Due"
+                type="date"
+                value={nextStepDue}
+                onChange={(event) => setNextStepDue(event.target.value)}
+              />
             </div>
+            <AppInput
+              inputId="edit-lead-next-step"
+              label="Next Step"
+              placeholder="e.g. Kirim proposal revisi"
+              maxLength={500}
+              value={nextStep}
+              onChange={(event) => setNextStep(event.target.value)}
+            />
             {stage !== pipeline.stage && (
               <AppTextArea
                 textAreaId="edit-lead-stage-note"

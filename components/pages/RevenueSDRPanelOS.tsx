@@ -5,6 +5,7 @@ import AnalyticsDataTableOS, { type AnalyticsColumn } from "@/components/element
 import RevenueCardOS from "@/components/elements/RevenueCardOS";
 import RevenueErrorOS from "@/components/elements/RevenueErrorOS";
 import RevenueKpiOS from "@/components/elements/RevenueKpiOS";
+import RevenueOutcomeReasonsCardOS from "@/components/static-sections/RevenueOutcomeReasonsCardOS";
 import type { RevenueTabProps } from "@/components/pages/RevenueEngineOS";
 import { useRevenue } from "@/hooks/useRevenue";
 import { getRevenueCampaigns, getRevenueSDR } from "@/lib/actions";
@@ -83,10 +84,12 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
           pending="Needs the first reply time on each lead from WhatsApp (under 5 min, 5–60 min, 1–24 h, over 24 h)."
           pendingBlocker="whatsapp"
         />
-        <RevenueCardOS
+        <RevenueOutcomeReasonsCardOS
+          kind="disqualified"
           title="Why leads were disqualified"
-          description="Menampilkan jumlah lead yang tidak lolos kualifikasi per alasan. Tujuannya mengetahui jenis lead yang paling sering gugur, supaya targeting dan penyaringan awal bisa diperbaiki."
-          pending="Needs a reason code when a lead is disqualified."
+          description="Menampilkan jumlah lead yang di-disqualify di periode ini per alasan yang dipilih saat menutupnya. Tujuannya mengetahui jenis lead yang paling sering gugur, supaya targeting dan penyaringan awal bisa diperbaiki."
+          period={period}
+          enabled={enabled}
         />
       </div>
 

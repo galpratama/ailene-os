@@ -1,10 +1,13 @@
 "use client";
 
-import type { PipelinePhase, PipelineStageEntry } from "@/apis/sales";
+import type { OutcomeKind, OutcomeReason, PipelinePhase, PipelineStageEntry } from "@/apis/sales";
 import DeletePipelineStageFormOS from "@/components/forms/DeletePipelineStageFormOS";
+import OutcomeReasonFormOS from "@/components/forms/OutcomeReasonFormOS";
 import PipelineStageFormOS from "@/components/forms/PipelineStageFormOS";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
+import OutcomeReasonListOS from "@/components/static-sections/OutcomeReasonListOS";
 import PipelineStageListOS from "@/components/static-sections/PipelineStageListOS";
+import { useOutcomeReasons } from "@/hooks/useOutcomeReasons";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { reorderPipelineStages } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
@@ -16,6 +19,8 @@ import { useState } from "react";
 type FormTarget =
   | { mode: "create"; phase: PipelinePhase }
   | { mode: "edit"; stage: PipelineStageEntry };
+
+type ReasonTarget = { kind: OutcomeKind; reason?: OutcomeReason };
 
 const CATALOG_KEY = ["sales", "pipeline-stages"];
 
@@ -30,6 +35,8 @@ export default function PipelineStagesPageOS({
   const [deleteTarget, setDeleteTarget] = useState<PipelineStageEntry | null>(
     null
   );
+  const outcomeReasons = useOutcomeReasons(!!sessionToken);
+  const [reasonTarget, setReasonTarget] = useState<ReasonTarget | null>(null);
 
   async function refreshStages() {
     await queryClient.invalidateQueries({ queryKey: ["sales"] });
@@ -121,6 +128,38 @@ export default function PipelineStagesPageOS({
         </div>
       )}
 
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Outcome reasons</h2>
+        <p className="text-sm text-gray-500 dark:text-zinc-400">
+          Pilihan alasan saat lead di-disqualify atau deal kalah. Dipakai di form lead, kanban, dan laporan revenue.
+        </p>
+      </div>
+      {outcomeReasons.isError && (
+        <div className="rounded-xl border border-line bg-card-bg p-5 text-sm text-merah">{outcomeReasons.error.message}</div>
+      )}
+      {outcomeReasons.isSuccess && (
+        <div className="grid items-start gap-5 xl:grid-cols-2">
+          {(["disqualified", "lost"] as const).map((kind) => (
+            <OutcomeReasonListOS
+              key={kind}
+              kind={kind}
+              reasons={outcomeReasons.reasons.filter((reason) => reason.kind === kind)}
+              onAdd={(next) => setReasonTarget({ kind: next })}
+              onEdit={(reason) => setReasonTarget({ kind: reason.kind, reason })}
+            />
+          ))}
+        </div>
+      )}
+
+      {reasonTarget && (
+        <OutcomeReasonFormOS
+          key={reasonTarget.reason?.code ?? `new-${reasonTarget.kind}`}
+          kind={reasonTarget.kind}
+          reason={reasonTarget.reason}
+          onClose={() => setReasonTarget(null)}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ["sales", "outcome-reasons"] })}
+        />
+      )}
       {formTarget && (
         <PipelineStageFormOS
           key={

@@ -8,6 +8,7 @@ import {
   getRevenueFunnel as getRevenueFunnelApi,
   getRevenueLeadFlow as getRevenueLeadFlowApi,
   getRevenueOpenPipeline as getRevenueOpenPipelineApi,
+  getRevenueOutcomeReasons as getRevenueOutcomeReasonsApi,
   getRevenueOverview as getRevenueOverviewApi,
   getRevenueSDR as getRevenueSDRApi,
   getRevenueSources as getRevenueSourcesApi,
@@ -196,6 +197,9 @@ import {
 import {
   createCompany as createCompanyApi,
   createPipelineStage as createPipelineStageApi,
+  createOutcomeReason as createOutcomeReasonApi,
+  listOutcomeReasons as listOutcomeReasonsApi,
+  updateOutcomeReason as updateOutcomeReasonApi,
   updatePipelineStage as updatePipelineStageApi,
   reorderPipelineStages as reorderPipelineStagesApi,
   deletePipelineStage as deletePipelineStageApi,
@@ -216,6 +220,7 @@ import {
   updatePipeline as updatePipelineApi,
   type CompanyForm,
   type CreatePipelineStagePayload,
+  type OutcomeKind,
   type UpdatePipelineStagePayload,
   type PipelinePhase,
   type PipelineStage,
@@ -329,6 +334,18 @@ export async function listCompanies(options: ListCompaniesOptions = {}) {
 
 export async function listPipelineStages(options: { phase?: PipelinePhase } = {}) {
   return listPipelineStagesApi(options);
+}
+
+export async function listOutcomeReasons(options: { kind?: OutcomeKind; include_inactive?: boolean } = {}) {
+  return listOutcomeReasonsApi(options);
+}
+
+export async function createOutcomeReason(payload: { code: string; kind: OutcomeKind; label: string }) {
+  return createOutcomeReasonApi(payload);
+}
+
+export async function updateOutcomeReason(payload: { code: string; label: string; active: boolean }) {
+  return updateOutcomeReasonApi(payload);
 }
 
 export async function createPipelineStage(payload: CreatePipelineStagePayload) {
@@ -750,6 +767,10 @@ export async function getRevenueSDR(payload: RevenuePeriodPayload) {
 
 export async function getRevenueBDR(payload: RevenuePeriodPayload) {
   return getRevenueBDRApi(payload);
+}
+
+export async function getRevenueOutcomeReasons(payload: RevenuePeriodPayload & { kind: "disqualified" | "lost" }) {
+  return getRevenueOutcomeReasonsApi(payload);
 }
 
 export async function getRevenueOpenPipeline(payload: RevenueOpenPipelinePayload) {

@@ -3,7 +3,8 @@
 import type { PipelineData } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import { getRupiahCurrency } from "@/lib/currency";
-import { Banknote, Mail, MoreHorizontal, Phone, UserRound, type LucideIcon } from "lucide-react";
+import { Banknote, ListTodo, Mail, MoreHorizontal, Phone, UserRound, type LucideIcon } from "lucide-react";
+import dayjs from "dayjs";
 import Image from "next/image";
 import type { DragEvent, MouseEvent, ReactNode } from "react";
 
@@ -80,6 +81,17 @@ export default function LeadKanbanCardOS({
         <InfoRow icon={Banknote}>
           <span className="font-semibold text-gray-900 dark:text-zinc-100">{getRupiahCurrency(Number(lead.estimated_value))}</span>
         </InfoRow>
+        {lead.next_step && (
+          <InfoRow icon={ListTodo}>
+            {lead.next_step}
+            {lead.next_step_due && (
+              <span className={lead.next_step_due < new Date().toISOString().slice(0, 10) ? " font-semibold text-merah" : " text-gray-500 dark:text-zinc-400"}>
+                {" · "}
+                {dayjs(lead.next_step_due).format("D MMM")}
+              </span>
+            )}
+          </InfoRow>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2 border-t border-line-soft p-2.5">

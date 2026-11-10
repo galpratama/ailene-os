@@ -1,6 +1,6 @@
 "use client";
 
-import type { LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
+import type { EmployeeBand, LeadChannel, LeadSource, PipelinePhase, PipelineStage } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
 import CompanyLogoUploadOS from "@/components/fields/CompanyLogoUploadOS";
@@ -12,6 +12,8 @@ import { useSession } from "@/contexts/SessionContext";
 import { useIndustryList } from "@/hooks/useIndustryList";
 import { useUserList } from "@/hooks/useUserList";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
+import { useOutcomeReasons } from "@/hooks/useOutcomeReasons";
+import { employeeBandOptions } from "@/lib/employee-bands";
 import { requireApiData } from "@/lib/api-result";
 import { COMPANY_NAME_PLACEHOLDER, COMPANY_WEBSITE_PLACEHOLDER, LEAD_FORM_PLACEHOLDERS } from "@/lib/constants";
 import { createPipeline, listCompanies } from "@/lib/actions";
@@ -79,6 +81,13 @@ export default function CreateLeadFormOS({
   const [estimatedValue, setEstimatedValue] = useState("");
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [ownerId, setOwnerId] = useState("");
+  const [employeeBand, setEmployeeBand] = useState<EmployeeBand | "">("");
+  const [outcomeReason, setOutcomeReason] = useState("");
+  const [nextStep, setNextStep] = useState("");
+  const [nextStepDue, setNextStepDue] = useState("");
+  const outcomeReasons = useOutcomeReasons(!!sessionToken && isOpen);
+  // A lead created straight into a disqualify or lost stage needs its reason, like a move there.
+  const outcomeKind = catalog.stages.find((entry) => entry.code === stage)?.outcome_kind ?? null;
 
   const industryList = useIndustryList(!!sessionToken && isOpen);
   const userList = useUserList(isOpen && !isOwnScoped);
@@ -108,6 +117,9 @@ export default function CreateLeadFormOS({
         stage,
         estimated_value: estimatedValue ? Number(estimatedValue) : 0,
         expected_close_date: expectedCloseDate || null,
+        outcome_reason_code: outcomeKind ? outcomeReason || null : null,
+        next_step: nextStep.trim() || null,
+        next_step_due: nextStepDue || null,
       };
       return requireApiData(
         await createPipeline(
@@ -123,6 +135,7 @@ export default function CreateLeadFormOS({
                   legal_identifier: legalIdentifier.trim() || null,
                   website_url: websiteUrl.trim() || null,
                   image_url: imageUrl.trim() || null,
+                  employee_band: employeeBand || null,
                 },
                 new_contact: {
                   full_name: contactName.trim(),
@@ -176,6 +189,10 @@ export default function CreateLeadFormOS({
     setEstimatedValue("");
     setExpectedCloseDate("");
     setOwnerId("");
+    setEmployeeBand("");
+    setOutcomeReason("");
+    setNextStep("");
+    setNextStepDue("");
   }
 
   function handleClose() {
@@ -201,6 +218,8 @@ export default function CreateLeadFormOS({
           : "Attempting requires an outbound lead source."
       );
     }
+    if (outcomeKind && !outcomeReason)
+      return showErrorToast(outcomeKind === "disqualified" ? "Pilih alasan lead ini di-disqualify." : "Pilih alasan deal ini kalah.");
     mutation.mutate();
   }
 
@@ -231,7 +250,10 @@ export default function CreateLeadFormOS({
                   <AppSelect selectId="lead-industry" label="Industry" placeholder="Pick an industry" value={industryId} onChange={(value) => setIndustryId(value as number | null)} options={industryOptions} />
                   <AppInput inputId="lead-legal-identifier" label="Legal Identifier" placeholder={LEAD_FORM_PLACEHOLDERS.legalIdentifier} value={legalIdentifier} onChange={(event) => setLegalIdentifier(event.target.value)} />
                 </div>
-                <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder={COMPANY_WEBSITE_PLACEHOLDER} />
+                <div className="grid grid-cols-2 gap-3">
+                  <AppInput inputId="lead-website-url" label="Website URL" type="url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder={COMPANY_WEBSITE_PLACEHOLDER} />
+                  <AppSelect selectId="lead-employee-band" label="Company Size" placeholder="Pick a size" value={employeeBand || null} onChange={(value) => setEmployeeBand((value as EmployeeBand | null) ?? "")} options={employeeBandOptions} />
+                </div>
                 <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Primary contact</p>
                 <div className="grid grid-cols-2 gap-3">
                   <AppInput inputId="lead-contact-name" label="Full Name" placeholder={LEAD_FORM_PLACEHOLDERS.fullName} required value={contactName} onChange={(event) => setContactName(event.target.value)} />
@@ -246,12 +268,36 @@ export default function CreateLeadFormOS({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <AppSelect selectId="lead-stage" label="Stage" required placeholder="Pick a stage" value={stage} onChange={(value) => setStage(value as PipelineStage)} options={availableStages} />
+            <AppSelect
+              selectId="lead-stage"
+              label="Stage"
+              required
+              placeholder="Pick a stage"
+              value={stage}
+              onChange={(value) => {
+                setStage(value as PipelineStage);
+                setOutcomeReason("");
+              }}
+              options={availableStages}
+            />
             <AppNumberInput inputId="lead-estimated-value" label="Estimated Value (Rp)" mode="numeric" value={estimatedValue} onValueChange={setEstimatedValue} placeholder="0" />
           </div>
+          {outcomeKind && (
+            <AppSelect
+              selectId="lead-outcome-reason"
+              label={outcomeKind === "disqualified" ? "Disqualify Reason" : "Lost Reason"}
+              required
+              placeholder={outcomeKind === "disqualified" ? "Why is this lead disqualified?" : "Why was this deal lost?"}
+              value={outcomeReason || null}
+              onChange={(value) => setOutcomeReason((value as string | null) ?? "")}
+              options={outcomeReasons.optionsFor(outcomeKind)}
+            />
+          )}
           <div className="grid grid-cols-2 gap-3">
             <AppInput inputId="lead-expected-close-date" label="Expected Close Date" type="date" value={expectedCloseDate} onChange={(event) => setExpectedCloseDate(event.target.value)} />
+            <AppInput inputId="lead-next-step-due" label="Next Step Due" type="date" value={nextStepDue} onChange={(event) => setNextStepDue(event.target.value)} />
           </div>
+          <AppInput inputId="lead-next-step" label="Next Step" placeholder="e.g. Telepon ulang hari Kamis" maxLength={500} value={nextStep} onChange={(event) => setNextStep(event.target.value)} />
           {!isOwnScoped && <AppSelect selectId="lead-owner" label="Sales Owner" required placeholder="Assign an owner" value={ownerId} onChange={(value) => setOwnerId((value as string) ?? "")} options={ownerOptions} />}
         </div>
 

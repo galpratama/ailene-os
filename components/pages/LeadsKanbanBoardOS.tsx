@@ -12,6 +12,8 @@ import AppButton from "@/components/buttons/AppButton";
 import LeadKanbanCardOS from "@/components/items/LeadKanbanCardOS";
 import StageLabel from "@/components/labels/StageLabel";
 import { requireApiData } from "@/lib/api-result";
+import OutcomeReasonModalOS from "@/components/modals/OutcomeReasonModalOS";
+import { usePipelineStages } from "@/hooks/usePipelineStages";
 import { getPipelineBoard, updatePipeline } from "@/lib/actions";
 import { isStageCompatibleWithLeadSource } from "@/lib/sales";
 import { showErrorToast } from "@/lib/toast";
@@ -211,6 +213,8 @@ export default function LeadsKanbanBoardOS({
     },
     refetchOnWindowFocus: false,
   });
+  const catalog = usePipelineStages();
+  const [pendingMove, setPendingMove] = useState<{ lead: PipelineData; stage: PipelineStage } | null>(null);
   const [draggedLead, setDraggedLead] = useState<PipelineData | null>(null);
   const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [moved, setMoved] = useState<MovedLeads>({});
@@ -224,7 +228,7 @@ export default function LeadsKanbanBoardOS({
   }
 
   const updateStage = useMutation({
-    mutationFn: async ({ lead, stage }: { lead: PipelineData; stage: PipelineStage }) =>
+    mutationFn: async ({ lead, stage, reason, note }: { lead: PipelineData; stage: PipelineStage; reason?: string; note?: string | null }) =>
       requireApiData(
         await updatePipeline({
           id: lead.id,
@@ -233,6 +237,11 @@ export default function LeadsKanbanBoardOS({
           stage,
           estimated_value: Number(lead.estimated_value),
           expected_close_date: lead.expected_close_date,
+          stage_note: note ?? null,
+          // The update is a full replace, so the card's next step travels with every move.
+          outcome_reason_code: reason ?? null,
+          next_step: lead.next_step,
+          next_step_due: lead.next_step_due,
         })
       ),
     onSuccess: async (_data, { lead, stage }) => {
@@ -264,9 +273,23 @@ export default function LeadsKanbanBoardOS({
       );
       return;
     }
+    if (catalog.stages.find((entry) => entry.code === stage)?.outcome_kind) {
+      setPendingMove({ lead, stage });
+      return;
+    }
     setMoved((current) => ({ ...current, [lead.id]: { lead, stage } }));
     updateStage.mutate({ lead, stage });
   }
+
+  function confirmPendingMove(reason: string, note: string | null) {
+    if (!pendingMove) return;
+    const { lead, stage } = pendingMove;
+    setPendingMove(null);
+    setMoved((current) => ({ ...current, [lead.id]: { lead, stage } }));
+    updateStage.mutate({ lead, stage, reason, note });
+  }
+
+  const pendingStage = pendingMove ? catalog.stages.find((entry) => entry.code === pendingMove.stage) : undefined;
 
   if (boardQuery.isError) {
     return <p className="py-8 text-center text-sm text-red-500">{boardQuery.error.message}</p>;
@@ -274,6 +297,14 @@ export default function LeadsKanbanBoardOS({
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
+      <OutcomeReasonModalOS
+        isOpen={pendingMove !== null}
+        kind={pendingStage?.outcome_kind ?? null}
+        companyName={pendingMove?.lead.company_name ?? ""}
+        stageName={pendingStage?.name ?? pendingMove?.stage ?? ""}
+        onClose={() => setPendingMove(null)}
+        onConfirm={confirmPendingMove}
+      />
       {stages.map((stage) => (
         <LeadsKanbanColumn
           key={stage}

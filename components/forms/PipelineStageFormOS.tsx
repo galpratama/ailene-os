@@ -1,33 +1,32 @@
 "use client";
 
-import type { PipelinePhase, PipelineStageEntry } from "@/apis/sales";
+import type { FunnelStep, PipelinePhase, PipelineStageEntry } from "@/apis/sales";
 import AppButton from "@/components/buttons/AppButton";
 import AppInput from "@/components/fields/AppInput";
+import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect from "@/components/fields/AppSelect";
 import SheetOS from "@/components/modals/SheetOS";
 import { createPipelineStage, updatePipelineStage } from "@/lib/actions";
+import { CATALOG_CODE_PATTERN, codeFromName } from "@/lib/catalog-code";
 import { requireApiData } from "@/lib/api-result";
 import { showErrorToast } from "@/lib/toast";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
-const CODE_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
 const PHASE_OPTIONS = [
   { value: "sdr", label: "SDR · Lead qualification" },
   { value: "bdr", label: "BDR · Deal progression" },
 ];
-
-function codeFromName(name: string) {
-  return name
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 40)
-    .replace(/_+$/g, "");
-}
+const FUNNEL_STEP_OPTIONS: { value: FunnelStep | null; label: string }[] = [
+  { value: null, label: "None" },
+  { value: "lead", label: "Lead" },
+  { value: "mql", label: "MQL" },
+  { value: "sql", label: "SQL" },
+  { value: "meeting", label: "Meeting" },
+  { value: "quotation", label: "Quotation" },
+  { value: "won", label: "Won" },
+];
 
 export default function PipelineStageFormOS({
   stage,
@@ -45,15 +44,19 @@ export default function PipelineStageFormOS({
   const [codeEdited, setCodeEdited] = useState(false);
   const [phase, setPhase] = useState<PipelinePhase>(stage?.phase ?? initialPhase);
   const [terminal, setTerminal] = useState(stage?.terminal ?? false);
+  const [probability, setProbability] = useState(stage?.win_probability == null ? "" : String(Math.round(Number(stage.win_probability) * 1000) / 10));
+  const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(stage?.funnel_step ?? null);
+  const [probabilityError, setProbabilityError] = useState("");
   const [nameError, setNameError] = useState("");
   const [codeError, setCodeError] = useState("");
 
+  const winProbability = probability === "" ? null : Number(probability) / 100;
   const save = useMutation({
     mutationFn: async () =>
       requireApiData(
         stage
-          ? await updatePipelineStage({ code: stage.code, name: name.trim(), terminal })
-          : await createPipelineStage({ code, phase, name: name.trim(), terminal }),
+          ? await updatePipelineStage({ code: stage.code, name: name.trim(), terminal, win_probability: winProbability, funnel_step: funnelStep })
+          : await createPipelineStage({ code, phase, name: name.trim(), terminal, win_probability: winProbability, funnel_step: funnelStep }),
       ),
     onSuccess: async () => {
       await onSaved();
@@ -69,12 +72,14 @@ export default function PipelineStageFormOS({
       : name.trim().length > 100
         ? "Use 100 characters or fewer."
         : "";
-    const nextCodeError = !stage && !CODE_PATTERN.test(code)
+    const nextCodeError = !stage && !CATALOG_CODE_PATTERN.test(code)
       ? "Start with a letter; use lowercase letters, numbers, or underscores (max 40)."
       : "";
+    const nextProbabilityError = probability !== "" && !(Number(probability) >= 0 && Number(probability) <= 100) ? "Use a number from 0 to 100." : "";
     setNameError(nextNameError);
     setCodeError(nextCodeError);
-    if (nextNameError || nextCodeError) return;
+    setProbabilityError(nextProbabilityError);
+    if (nextNameError || nextCodeError || nextProbabilityError) return;
     save.mutate();
   }
 
@@ -83,7 +88,7 @@ export default function PipelineStageFormOS({
       title={stage ? "Edit pipeline stage" : "Add pipeline stage"}
       description={
         stage
-          ? "Rename the stage or change whether it ends a pipeline."
+          ? "Rename the stage, set its win probability and funnel step, or change whether it ends a pipeline."
           : "New stages are added at the end of their phase. Drag them into place afterward."
       }
       isOpen
@@ -144,6 +149,35 @@ export default function PipelineStageFormOS({
             {stage && <p className="text-xs text-gray-500 dark:text-zinc-400">The phase cannot change after creation.</p>}
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <AppNumberInput
+                inputId="pipeline-stage-probability"
+                label="Win probability (%)"
+                mode="decimal"
+                placeholder="e.g. 25"
+                value={probability}
+                onValueChange={(value) => {
+                  setProbability(value);
+                  setProbabilityError("");
+                }}
+                errorMessage={probabilityError}
+              />
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Weights open deals for the BDR pipeline value. Leave empty to skip.</p>
+            </div>
+            <div className="space-y-1.5">
+              <AppSelect
+                selectId="pipeline-stage-funnel-step"
+                label="Funnel step"
+                placeholder="None"
+                value={funnelStep}
+                options={FUNNEL_STEP_OPTIONS}
+                onChange={(value) => setFunnelStep((value as FunnelStep | null) ?? null)}
+              />
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Which revenue funnel step this stage stands for.</p>
+            </div>
+          </div>
+
           <label className="flex items-start gap-3 rounded-xl border border-line bg-card-bg p-4">
             <input
               type="checkbox"
@@ -155,7 +189,7 @@ export default function PipelineStageFormOS({
             <span>
               <span className="block text-sm font-semibold text-gray-900 dark:text-zinc-100">Terminal stage</span>
               <span className="mt-0.5 block text-xs text-gray-500 dark:text-zinc-400">
-                A pipeline ends when it reaches this stage. This setting is fixed for built-in stages.
+                A pipeline ends when it reaches this stage. Except for Closed won, moving a lead here asks for a disqualify (SDR) or lost (BDR) reason. This setting is fixed for built-in stages.
               </span>
             </span>
           </label>

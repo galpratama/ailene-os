@@ -118,10 +118,12 @@ export default function PipelineStageListOS({
               <div className="flex flex-wrap items-center gap-1.5">
                 <p className="truncate text-sm font-semibold text-gray-900 dark:text-zinc-100">{stage.name}</p>
                 {stage.terminal && <Label variant="oranye">Terminal</Label>}
+                {stage.outcome_kind && <Label variant="merah">Butuh alasan</Label>}
                 {stage.system && <Label variant="gray">Built-in</Label>}
               </div>
               <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
                 {stage.code} · {stage.pipeline_count} {stage.pipeline_count === 1 ? "pipeline" : "pipelines"}
+                {stage.win_probability != null && ` · ${Math.round(Number(stage.win_probability) * 100)}% win`}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-0.5">

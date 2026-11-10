@@ -17,6 +17,11 @@ export type PipelinePhase = "sdr" | "bdr";
 
 export type PipelineStage = string;
 
+export type EmployeeBand = "1_49" | "50_99" | "100_499" | "500_999" | "1000_plus";
+export type FunnelStep = "lead" | "mql" | "sql" | "meeting" | "quotation" | "won";
+// Why an SDR lead was disqualified or a BDR deal was lost; the stage's outcome_kind says which one it needs.
+export type OutcomeKind = "disqualified" | "lost";
+
 export type PipelineStageDefinition = {
   code: PipelineStage;
   phase: PipelinePhase;
@@ -24,11 +29,30 @@ export type PipelineStageDefinition = {
   sort_order: number;
   terminal: boolean;
   system: boolean;
+  win_probability: number | null;
+  funnel_step: FunnelStep | null;
+  outcome_kind: OutcomeKind | null;
 };
 
 export type PipelineStageEntry = PipelineStageDefinition & { pipeline_count: number };
-export type CreatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "phase" | "name"> & { terminal?: boolean };
-export type UpdatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "name" | "terminal">;
+export type CreatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "phase" | "name"> & {
+  terminal?: boolean;
+  win_probability?: number | null;
+  funnel_step?: FunnelStep | null;
+};
+// Omitting win_probability or funnel_step keeps the stored value; null clears it.
+export type UpdatePipelineStagePayload = Pick<PipelineStageDefinition, "code" | "name" | "terminal"> & {
+  win_probability?: number | null;
+  funnel_step?: FunnelStep | null;
+};
+
+export type OutcomeReason = {
+  code: string;
+  kind: OutcomeKind;
+  label: string;
+  sort_order: number;
+  active: boolean;
+};
 
 export async function listPipelineStages(
   options: { phase?: PipelinePhase } = {}
@@ -48,6 +72,20 @@ export async function reorderPipelineStages(payload: { phase: PipelinePhase; cod
   return callApi("/api/v2/pipeline-stages/reorder", { token: await getSessionToken(), body: payload });
 }
 
+export async function listOutcomeReasons(
+  options: { kind?: OutcomeKind; include_inactive?: boolean } = {}
+): Promise<ApiEnvelope<OutcomeReason[]>> {
+  return callApi("/api/v2/pipeline-outcome-reasons", { token: await getSessionToken(), body: options });
+}
+
+export async function createOutcomeReason(payload: { code: string; kind: OutcomeKind; label: string }): Promise<ApiEnvelope<OutcomeReason>> {
+  return callApi("/api/v2/pipeline-outcome-reasons/create", { token: await getSessionToken(), body: payload });
+}
+
+export async function updateOutcomeReason(payload: { code: string; label: string; active: boolean }): Promise<ApiEnvelope<OutcomeReason>> {
+  return callApi("/api/v2/pipeline-outcome-reasons/update", { token: await getSessionToken(), body: payload });
+}
+
 export async function deletePipelineStage(payload: { code: PipelineStage; transfer_to: PipelineStage }): Promise<ApiEnvelope<{ code: PipelineStage; transfer_to: PipelineStage; transferred: number }>> {
   return callApi("/api/v2/pipeline-stages/delete", { token: await getSessionToken(), body: payload });
 }
@@ -62,6 +100,7 @@ export type CompanyData = {
   lead_channel: LeadChannel | null;
   website_url: string | null;
   image_url: string | null;
+  employee_band: EmployeeBand | null;
   created_at: string;
   updated_at: string;
 };
@@ -92,6 +131,7 @@ export type PipelineData = {
   company_id: number;
   company_name: string;
   company_image_url: string | null;
+  employee_band: EmployeeBand | null;
   sales_owner_id: string;
   sales_owner_name: string;
   lead_source: LeadSource | null;
@@ -105,6 +145,10 @@ export type PipelineData = {
   qualified_at: string | null;
   meeting_booked_at: string | null;
   closed_at: string | null;
+  outcome_reason_code: string | null;
+  next_step: string | null;
+  next_step_due: string | null;
+  win_probability: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -128,6 +172,7 @@ export type CompanyForm = {
   legal_identifier?: string | null;
   website_url?: string | null;
   image_url?: string | null;
+  employee_band?: EmployeeBand | null;
 };
 
 export type ContactForm = {
@@ -198,6 +243,9 @@ export type CreatePipelinePayload = {
   stage?: PipelineStage;
   estimated_value?: number;
   expected_close_date?: string | null;
+  outcome_reason_code?: string | null;
+  next_step?: string | null;
+  next_step_due?: string | null;
 };
 
 export type InboundLeadPayload = {
@@ -252,6 +300,10 @@ export type UpdatePipelinePayload = {
   estimated_value: number;
   expected_close_date?: string | null;
   stage_note?: string | null;
+  // Full replace like expected_close_date: send the stored values back or they are cleared.
+  outcome_reason_code: string | null;
+  next_step: string | null;
+  next_step_due: string | null;
 };
 
 async function token() {

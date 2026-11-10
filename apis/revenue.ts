@@ -168,12 +168,27 @@ export type RevenueOpenPipelineRow = {
   days_in_stage: number;
   expected_close_date: string | null;
   sales_owner: { id: string; name: string };
+  // The stage's win probability (0-1) and value × probability; null while the stage has none.
+  probability: number | null;
+  weighted_value: number | null;
+  next_step: string | null;
+  next_step_due: string | null;
+};
+
+export type RevenueOutcomeReasons = {
+  period: ReportPeriod;
+  kind: "disqualified" | "lost";
+  total: number;
+  unrecorded: number;
+  reasons: { code: string | null; label: string; count: number; share: number | null }[];
+  data_gaps: RevenueGap[];
 };
 
 export type RevenueOpenPipeline = {
   list: RevenueOpenPipelineRow[];
   metapaging: Metapaging;
-  totals: { count: number; value: number };
+  totals: { count: number; value: number; weighted_value: number };
+  data_gaps: RevenueGap[];
 };
 
 export type RevenueOpenPipelinePayload = {
@@ -262,6 +277,10 @@ export async function getRevenueSDR(payload: RevenuePeriodPayload) {
 
 export async function getRevenueBDR(payload: RevenuePeriodPayload) {
   return post<RevenueBDR>("bdr", payload);
+}
+
+export async function getRevenueOutcomeReasons(payload: RevenuePeriodPayload & { kind: "disqualified" | "lost" }) {
+  return post<RevenueOutcomeReasons>("outcome-reasons", payload);
 }
 
 export async function getRevenueOpenPipeline(payload: RevenueOpenPipelinePayload) {
