@@ -11,6 +11,7 @@ import { IconBrandWhatsapp } from "@tabler/icons-react";
 const navLinks = [
   { label: "How We Work", fragment: "#how-we-work" },
   { label: "Framework", fragment: "/framework" },
+  { label: "Specialist", fragment: "/specialist" },
   { label: "Programs", fragment: "#programs" },
   { label: "FAQ", fragment: "#faq" },
 ];
@@ -57,7 +58,7 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
             <NavLink
               key={link.label}
               href={hrefFor(link.fragment)}
-              className="text-[15px] font-medium opacity-75 transition-opacity hover:opacity-100"
+              className="text-[15px] font-medium whitespace-nowrap opacity-75 transition-opacity hover:opacity-100"
             >
               {link.label}
             </NavLink>

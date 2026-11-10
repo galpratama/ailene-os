@@ -1,6 +1,7 @@
 "use client";
 
 import { LogoAilene } from "@/components/svg/LogoAilene";
+import { CASE_STUDY_PUBLISHED, HUTAMA_KARYA_CASE_PATH } from "@/lib/biz-case-studies";
 import { trackCTAClick } from "@/lib/conversion";
 import PageMargin from "@/components/layouts/PageMargin";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
@@ -12,6 +13,8 @@ const columns = [
       ["Program formats", "#programs"],
       ["How We Work", "#how-we-work"],
       ["Framework", "/framework"],
+      ["Specialist per divisi", "/specialist"],
+      ...(CASE_STUDY_PUBLISHED ? [["Studi kasus Hutama Karya", HUTAMA_KARYA_CASE_PATH]] : []),
       ["FAQ", "#faq"],
     ],
   },
