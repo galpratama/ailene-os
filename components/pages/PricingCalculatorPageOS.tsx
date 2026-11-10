@@ -4,17 +4,21 @@ import AppSearchableSelect, {
   AppSearchableOption,
 } from "@/components/fields/AppSearchableSelect";
 import AppButton from "@/components/buttons/AppButton";
+import QuotationFlowStepperOS from "@/components/elements/QuotationFlowStepperOS";
+import QuotationStatusLabel from "@/components/labels/QuotationStatusLabel";
 import PageHeaderOS from "@/components/navigations/PageHeaderOS";
 import { usePricingBuilder } from "@/hooks/usePricingBuilder";
+import { useQuotationList } from "@/hooks/useQuotationList";
 import { useSession } from "@/contexts/SessionContext";
 import { createQuotation, getPipelineDetails, listPipelines, submitQuotation } from "@/lib/actions";
 import { requireApiData } from "@/lib/api-result";
 import { getRupiahCurrency } from "@/lib/currency";
+import { formatQuotationNumber } from "@/lib/quotation-number";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { ArrowUpRight, Check, CopyPlus, Info, Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
-import { showErrorToast } from "@/lib/toast";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 import type { PipelinePhase } from "@/apis/sales";
 
 const PICKER_PHASES: PipelinePhase[] = ["sdr", "bdr"];
@@ -102,6 +106,16 @@ export default function PricingCalculatorPageOS({
     seed: null,
   });
 
+  // A pipeline gets a new version only once its current quotation is approved.
+  const pipelineQuotations = useQuotationList(
+    { pipeline_id: selectedPipelineId ?? undefined },
+    !!sessionToken && selectedPipelineId !== null
+  );
+  const currentQuotation =
+    selectedPipelineId === null ? null : pipelineQuotations.data?.find((row) => row.is_current) ?? null;
+  const blockingQuotation = currentQuotation && currentQuotation.status !== "approved" ? currentQuotation : null;
+  const isCheckingPipeline = selectedPipelineId !== null && (!selectedPipeline.isSuccess || pipelineQuotations.isLoading);
+
   // Both buttons draft first; "Buat Quotation" then submits the new draft straight away.
   async function draftQuotation(pipelineId: number) {
     const created = requireApiData(
@@ -129,6 +143,7 @@ export default function PricingCalculatorPageOS({
     setIsSavingDraft(true);
     try {
       const created = await draftQuotation(selectedPipelineId);
+      showSuccessToast(`Draft ${formatQuotationNumber(created)} tersimpan.`);
       router.push(`/quotations/${created.id}`);
     } catch (err) {
       showErrorToast(err instanceof Error ? err.message : "Gagal menyimpan draft.");
@@ -149,8 +164,13 @@ export default function PricingCalculatorPageOS({
     setIsSubmittingQuotation(true);
     try {
       const created = await draftQuotation(selectedPipelineId);
-      requireApiData(await submitQuotation(created.id));
+      const submitted = requireApiData(await submitQuotation(created.id));
       await queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      showSuccessToast(
+        submitted.status === "approved"
+          ? `${formatQuotationNumber(created)} disetujui otomatis dan siap dikirim ke klien.`
+          : `${formatQuotationNumber(created)} diajukan ke manager untuk direview.`
+      );
       router.push(`/quotations/${created.id}`);
     } catch (err) {
       showErrorToast(
@@ -210,6 +230,29 @@ export default function PricingCalculatorPageOS({
         {selectedPipeline.isError && (
           <p className="mt-2 text-xs text-merah">{selectedPipeline.error.message}</p>
         )}
+        {blockingQuotation && (
+          <div role="alert" className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-kuning/40 bg-kuning-t px-3.5 py-3">
+            <div className="min-w-0 text-sm text-gray-800">
+              <p className="flex flex-wrap items-center gap-2 font-semibold">
+                Lead ini masih punya quotation aktif
+                <QuotationStatusLabel status={blockingQuotation.status} />
+              </p>
+              <p className="mt-0.5 text-gray-700">
+                Lanjutkan {formatQuotationNumber(blockingQuotation)}. Versi baru baru bisa dibuat setelah quotation itu approved.
+              </p>
+            </div>
+            <AppButton href={`/quotations/${blockingQuotation.id}`} variant="black" size="sm">
+              Buka quotation
+              <ArrowUpRight size={13} />
+            </AppButton>
+          </div>
+        )}
+        {currentQuotation?.status === "approved" && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-zinc-400">
+            <CopyPlus size={13} aria-hidden="true" />
+            Ini akan jadi versi {currentQuotation.version + 1}. {formatQuotationNumber(currentQuotation)} tetap tersimpan sebagai versi lama.
+          </p>
+        )}
         {selectedPipelineId === null && (
           <p className="mt-2 text-xs text-gray-400 dark:text-zinc-500">
             Kosongkan kalau cuma mau hitung-hitungan cepat — ringkasan tetap
@@ -230,31 +273,48 @@ export default function PricingCalculatorPageOS({
           {builder.flagsBlock}
           {builder.copyButtonBlock}
 
+          {selectedPipelineId !== null && (
+            <div className="rounded-xl border border-line bg-card-bg p-4">
+              <QuotationFlowStepperOS status={null} requiresReview={builder.requiresReview} />
+            </div>
+          )}
 
           <div className="flex gap-2">
             <AppButton
               type="button"
               variant="outline"
               className="flex-1 justify-center"
-              disabled={isSavingDraft || isSubmittingQuotation || (selectedPipelineId !== null && !selectedPipeline.isSuccess)}
+              disabled={isSavingDraft || isSubmittingQuotation || isCheckingPipeline || !!blockingQuotation}
               onClick={handleSaveDraft}
             >
               {isSavingDraft && <Loader2 size={14} className="animate-spin" />}
-              Simpan Draft
+              Simpan draft
             </AppButton>
             <AppButton
               type="button"
               variant="primary"
               className="flex-1 justify-center"
-              disabled={isSavingDraft || isSubmittingQuotation || (selectedPipelineId !== null && !selectedPipeline.isSuccess)}
+              disabled={isSavingDraft || isSubmittingQuotation || isCheckingPipeline || !!blockingQuotation}
               onClick={handleSubmit}
             >
-              {isSubmittingQuotation && (
+              {isSubmittingQuotation ? (
                 <Loader2 size={14} className="animate-spin" />
+              ) : builder.requiresReview ? (
+                <Send size={14} />
+              ) : (
+                <Check size={14} />
               )}
-              Buat Quotation
+              {builder.requiresReview ? "Buat & ajukan ke manager" : "Buat & approve"}
             </AppButton>
           </div>
+          {selectedPipelineId !== null && !blockingQuotation && (
+            <p className="flex items-start gap-1.5 text-xs text-gray-500 dark:text-zinc-400">
+              <Info size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {builder.requiresReview
+                ? "Custom scope atau margin di bawah 45% perlu persetujuan manager sebelum dikirim ke klien."
+                : "Package dengan margin 45% ke atas disetujui otomatis dan langsung bisa dikirim ke klien."}
+            </p>
+          )}
         </div>
       </div>
     </div>

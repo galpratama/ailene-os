@@ -384,6 +384,8 @@ export function usePricingBuilder({
   }
 
   const margin = result.margin;
+  // Mirrors the API's RequiresReview: custom scope or a margin under the floor goes to the manager.
+  const requiresReview = activePreset === "blank" || margin < MARGIN_FLOOR;
   const marginPct = Math.max(0, Math.min(100, margin * 100));
   const marginColor =
     margin < MARGIN_FLOOR
@@ -399,6 +401,12 @@ export function usePricingBuilder({
         : "Sehat. Boleh langsung dikirim.";
 
   const flags: { type: FlagType; message: string }[] = [];
+  if (activePreset === "blank") {
+    flags.push({
+      type: "warn",
+      message: "Custom scope selalu direview manager sebelum dikirim ke klien.",
+    });
+  }
   if (margin < MARGIN_FLOOR) {
     flags.push({
       type: "stop",
@@ -438,7 +446,7 @@ export function usePricingBuilder({
   if (flags.length === 0) {
     flags.push({
       type: "ok",
-      message: "Semua aman. Penawaran bisa langsung dikirim.",
+      message: "Semua aman. Quotation ini disetujui otomatis dan langsung bisa dikirim.",
     });
   }
 
@@ -1020,6 +1028,7 @@ export function usePricingBuilder({
 
   return {
     result,
+    requiresReview,
     days,
     totalSesi,
     materiPricePerSesi: MP[materi],

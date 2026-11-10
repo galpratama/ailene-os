@@ -6,7 +6,7 @@ import { useQuotationList } from "@/hooks/useQuotationList";
 import { getRupiahCurrency } from "@/lib/currency";
 import { pricingUrlForPipeline } from "@/lib/quotation-navigation";
 import { formatQuotationNumber } from "@/lib/quotation-number";
-import { Loader2, Plus } from "lucide-react";
+import { ArrowUpRight, CopyPlus, Loader2, Plus } from "lucide-react";
 import type { MouseEvent } from "react";
 
 export default function LeadQuotationsOS({
@@ -23,6 +23,10 @@ export default function LeadQuotationsOS({
     !!sessionToken
   );
 
+  // Only an approved current quotation can take a new version; anything else is continued in place.
+  const current = quotations.data?.find((quotation) => quotation.is_current) ?? null;
+  const active = current && current.status !== "approved" ? current : null;
+
   function handleNavigation(event: MouseEvent<HTMLAnchorElement>) {
     if (disabled) event.preventDefault();
   }
@@ -34,7 +38,7 @@ export default function LeadQuotationsOS({
           Quotations
         </h3>
         <AppButton
-          href={pricingUrlForPipeline(pipelineId)}
+          href={active ? `/quotations/${active.id}` : pricingUrlForPipeline(pipelineId)}
           variant="outline"
           size="sm"
           aria-disabled={disabled || undefined}
@@ -42,8 +46,8 @@ export default function LeadQuotationsOS({
           onClick={handleNavigation}
           className={disabled ? "pointer-events-none opacity-50" : undefined}
         >
-          <Plus size={14} />
-          Add Quotation
+          {active ? <ArrowUpRight size={14} /> : current ? <CopyPlus size={14} /> : <Plus size={14} />}
+          {active ? `Lanjutkan ${formatQuotationNumber(active)}` : current ? "Versi baru" : "Add Quotation"}
         </AppButton>
       </div>
 
