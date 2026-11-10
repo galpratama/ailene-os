@@ -48,10 +48,15 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
           label="Lead to SQL"
           value={percent(data?.lead_to_sql_rate)}
           lines={[`${count(data?.sqls.current)} of ${count(data?.leads.current)} leads`, `${percent(data?.previous_lead_to_sql_rate)} in ${previous}`]}
-          info="SQLs in the period divided by leads created in the period."
+          info="Jumlah SQL di periode ini dibagi jumlah lead yang dibuat di periode yang sama. Tujuannya mengukur seberapa efektif SDR mengubah lead menjadi SQL."
           isLoading={sdr.isLoading}
         />
-        <RevenueKpiOS label="Inbound answered in under 5 min" pending="Needs the first response time on each lead." />
+        <RevenueKpiOS
+          label="Inbound answered in under 5 min"
+          info="Persentase lead inbound yang mendapat balasan pertama dalam 5 menit. Tujuannya memastikan SDR merespons lead selagi masih hangat."
+          pending="Needs the first reply time on each lead, which comes from WhatsApp."
+          pendingBlocker="whatsapp"
+        />
         <RevenueKpiOS
           label="Disqualified"
           value={count(data?.disqualified.current)}
@@ -59,14 +64,14 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
           change={data?.disqualified.change}
           changeLabel={previous}
           invertChange
-          info="Pipelines that moved into a terminal SDR stage in the period, from stage history."
+          info="Jumlah pipeline yang masuk ke stage akhir SDR (tidak lolos kualifikasi) di periode ini, diambil dari riwayat stage. Tujuannya memantau apakah lead yang masuk makin banyak yang tidak cocok."
           isLoading={sdr.isLoading}
         />
         <RevenueKpiOS
           label="Leads with no source"
           value={percent(data?.untraceable.rate)}
           lines={[`${count(data?.untraceable.count)} leads can't be credited to a campaign`]}
-          info="Leads with no channel (or Direct) and no attribution record."
+          info="Lead tanpa channel (atau Direct) dan tanpa data atribusi campaign. Tujuannya menekan jumlah lead yang tidak bisa dikreditkan ke campaign, supaya penilaian campaign akurat."
           isLoading={sdr.isLoading}
         />
       </div>
@@ -74,19 +79,20 @@ export default function RevenueSDRPanelOS({ period, periodLabel, enabled }: Reve
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Speed to lead: SQL rate by first-reply time"
-          description="Membuktikan seberapa besar kecepatan balasan pertama memengaruhi peluang lead menjadi SQL, sebagai dasar target waktu respons SDR."
-          pending="Needs the first response time on each lead (under 5 min, 5–60 min, 1–24 h, over 24 h)."
+          description="Menampilkan persentase lead inbound yang menjadi SQL, dikelompokkan menurut cepatnya balasan pertama. Tujuannya membuktikan seberapa besar kecepatan respons memengaruhi peluang lead menjadi SQL, sebagai dasar target waktu respons SDR."
+          pending="Needs the first reply time on each lead from WhatsApp (under 5 min, 5–60 min, 1–24 h, over 24 h)."
+          pendingBlocker="whatsapp"
         />
         <RevenueCardOS
           title="Why leads were disqualified"
-          description="Mengetahui jenis lead yang paling sering tidak lolos kualifikasi, supaya targeting dan penyaringan awal bisa diperbaiki."
+          description="Menampilkan jumlah lead yang tidak lolos kualifikasi per alasan. Tujuannya mengetahui jenis lead yang paling sering gugur, supaya targeting dan penyaringan awal bisa diperbaiki."
           pending="Needs a reason code when a lead is disqualified."
         />
       </div>
 
       <RevenueCardOS
         title={`SQLs by campaign, ${periodLabel}`}
-        description="Melihat campaign mana yang menghasilkan SQL dan meeting paling banyak dengan biaya paling efisien, serta lead mana yang belum terlacak campaign-nya."
+        description="Menampilkan lead, SQL, meeting, spend, dan biaya per SQL untuk tiap campaign (Meta atau UTM), termasuk lead yang belum terlacak campaign-nya. Tujuannya melihat campaign mana yang menghasilkan SQL dan meeting paling banyak dengan biaya paling efisien."
         source="both"
         partialNote="UTM and referral campaigns have no spend matched yet."
         isLoading={campaigns.isLoading}

@@ -3,6 +3,9 @@ import { getShortRupiahCurrency } from "@/lib/currency";
 
 export const PENDING_LABEL = "(Backend belum siap)";
 
+// What a pending widget waits for: backend work, or an integration parked for later.
+export type PendingBlocker = "backend" | "whatsapp";
+
 export const leadGroups: LeadGroup[] = ["inbound_organic", "inbound_paid", "inbound_unknown", "outbound_referral", "outbound_outreach"];
 
 export const leadGroupLabels: Record<LeadGroup, string> = {

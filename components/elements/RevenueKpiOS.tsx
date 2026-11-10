@@ -1,6 +1,7 @@
 import WarehouseSparklineOS from "@/components/charts/WarehouseSparklineOS";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import PendingLabelOS from "@/components/labels/PendingLabelOS";
+import type { PendingBlocker } from "@/lib/revenue";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -15,6 +16,7 @@ export default function RevenueKpiOS({
   trend,
   info,
   pending,
+  pendingBlocker,
   isLoading,
 }: {
   label: string;
@@ -26,6 +28,7 @@ export default function RevenueKpiOS({
   trend?: number[];
   info?: string;
   pending?: string;
+  pendingBlocker?: PendingBlocker;
   isLoading?: boolean;
 }) {
   const up = (change ?? 0) >= 0;
@@ -39,7 +42,7 @@ export default function RevenueKpiOS({
       {pending ? (
         <>
           <p className="mt-1 font-heading text-2xl font-semibold text-gray-300 dark:text-zinc-600" aria-hidden="true">—</p>
-          <PendingLabelOS className="mt-1" />
+          <PendingLabelOS className="mt-1" blocker={pendingBlocker} />
           <p className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{pending}</p>
         </>
       ) : isLoading ? (

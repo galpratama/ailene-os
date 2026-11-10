@@ -45,27 +45,30 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <RevenueKpiOS label="Show rate" pending="Needs meeting outcomes (held, no-show)." />
+        <RevenueKpiOS
+          label="Show rate"
+          info="Persentase meeting yang benar-benar terjadi (bukan no-show). Tujuannya memastikan meeting yang dijadwalkan tidak terbuang."
+          pending="Needs meeting outcomes (held, no-show)." />
         <RevenueKpiOS
           label="Meetings booked"
           value={count(data?.meetings.current)}
           change={data?.meetings.change}
           changeLabel={previous}
-          info="Pipelines whose meeting was booked in the period."
+          info="Jumlah pipeline yang meeting-nya dijadwalkan di periode ini. Tujuannya memastikan BDR punya cukup meeting untuk dikonversi menjadi deal."
           isLoading={bdr.isLoading}
         />
         <RevenueKpiOS
           label="Meeting → quotation"
           value={percent(data?.meeting_to_quotation_rate)}
           lines={[`of ${periodLabel}'s meetings, so far`]}
-          info="Of the pipelines whose meeting was booked in the period, the share that has sent a quotation since."
+          info="Dari pipeline yang meeting-nya dijadwalkan di periode ini, persentase yang sudah dikirimi quotation sampai sekarang. Tujuannya mengukur seberapa sering meeting berlanjut ke penawaran."
           isLoading={bdr.isLoading}
         />
         <RevenueKpiOS
           label="Meeting → won"
           value={percent(data?.meeting_to_won_rate)}
           lines={[`of ${periodLabel}'s meetings, so far`]}
-          info="Of the pipelines whose meeting was booked in the period, the share closed won since."
+          info="Dari pipeline yang meeting-nya dijadwalkan di periode ini, persentase yang sudah closed won sampai sekarang. Tujuannya mengukur seberapa efektif meeting berujung menjadi deal."
           isLoading={bdr.isLoading}
         />
       </div>
@@ -73,7 +76,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
           title="Meeting-to-close funnel"
-          description={`Menemukan stage BDR tempat deal paling banyak berhenti antara meeting dan closed won selama ${periodLabel}, dibandingkan dengan ${previous}.`}
+          description={`Menampilkan jumlah deal di tiap stage BDR, dari meeting sampai closed won, selama ${periodLabel} dibandingkan dengan ${previous}. Tujuannya menemukan stage tempat deal paling banyak berhenti.`}
           source="os"
           isLoading={bdr.isLoading}
           isEmpty={!data?.funnel.length}
@@ -85,7 +88,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         </RevenueCardOS>
         <RevenueCardOS
           title="Meetings per week"
-          description="Memantau apakah jumlah meeting per minggu cukup dan stabil untuk mengejar target closing."
+          description="Menampilkan jumlah meeting yang dijadwalkan per minggu. Tujuannya memantau apakah jumlah meeting cukup dan stabil untuk mengejar target closing."
           source="os"
           partialNote="Splitting each week into held, no-show, and upcoming needs meeting outcomes."
           isLoading={bdr.isLoading}
@@ -100,7 +103,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
 
       <RevenueCardOS
         title="Open BDR pipeline"
-        description={pipeline.data ? `Memprioritaskan follow-up deal yang sedang berjalan dan memperkirakan revenue yang akan datang: saat ini ${count(pipeline.data.totals.count)} deal terbuka senilai ${money(pipeline.data.totals.value)}.` : "Memprioritaskan follow-up deal yang sedang berjalan dan memperkirakan revenue yang akan datang."}
+        description={`Menampilkan semua deal yang masih terbuka di stage BDR beserta nilai, owner, perkiraan closing, dan lama di stage${pipeline.data ? ` (saat ini ${count(pipeline.data.totals.count)} deal senilai ${money(pipeline.data.totals.value)})` : ""}. Tujuannya memprioritaskan follow-up dan memperkirakan revenue yang akan datang.`}
         source="os"
         partialNote="Probability, weighted value, and next step need new pipeline fields."
         isLoading={pipeline.isLoading}
@@ -112,7 +115,7 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         <AnalyticsDataTableOS columns={pipelineColumns} rows={pipeline.data?.list ?? []} rowKey={(row) => String(row.pipeline_id)} />
       </RevenueCardOS>
 
-      <RevenueCardOS title="Why deals were lost after a meeting" description="Mengetahui alasan utama deal kalah setelah meeting, supaya pitch, harga, atau penawaran bisa diperbaiki." pending="Needs a reason code when a deal is lost." />
+      <RevenueCardOS title="Why deals were lost after a meeting" description="Menampilkan jumlah deal yang kalah setelah meeting per alasan. Tujuannya mengetahui alasan utama deal kalah, supaya pitch, harga, atau penawaran bisa diperbaiki." pending="Needs a reason code when a deal is lost." />
     </>
   );
 }

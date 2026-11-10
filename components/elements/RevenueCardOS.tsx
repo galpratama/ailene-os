@@ -2,6 +2,7 @@ import AppButton from "@/components/buttons/AppButton";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
 import RevenuePendingOS, { type PendingShape } from "@/components/elements/RevenuePendingOS";
 import PendingLabelOS from "@/components/labels/PendingLabelOS";
+import type { PendingBlocker } from "@/lib/revenue";
 import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -15,6 +16,7 @@ export default function RevenueCardOS({
   description,
   source,
   pending,
+  pendingBlocker,
   pendingShape,
   pendingColumns,
   partialNote,
@@ -31,6 +33,7 @@ export default function RevenueCardOS({
   description?: string;
   source?: RevenueSource;
   pending?: string;
+  pendingBlocker?: PendingBlocker;
   pendingShape?: PendingShape;
   pendingColumns?: string[];
   partialNote?: string;
@@ -49,7 +52,7 @@ export default function RevenueCardOS({
         <div className="min-w-0 flex-1 basis-56">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{title}</h3>
-            {pending && <PendingLabelOS />}
+            {pending && <PendingLabelOS blocker={pendingBlocker} />}
             {description && <InfoTooltipOS label={title} explanation={description} />}
           </div>
         </div>
@@ -57,7 +60,7 @@ export default function RevenueCardOS({
       </header>
       <div className="min-w-0 flex-1 px-5 py-4">
         {pending ? (
-          <RevenuePendingOS shape={pendingShape} reason={pending} columns={pendingColumns} />
+          <RevenuePendingOS shape={pendingShape} reason={pending} columns={pendingColumns} blocker={pendingBlocker} />
         ) : error && !isLoading ? (
           <div role="alert" className="flex min-h-32 flex-col items-center justify-center gap-2 text-center">
             <TriangleAlert size={18} className="text-merah" aria-hidden="true" />

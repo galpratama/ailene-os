@@ -1,4 +1,5 @@
 import PendingLabelOS from "@/components/labels/PendingLabelOS";
+import type { PendingBlocker } from "@/lib/revenue";
 
 export type PendingShape = "bars" | "columns" | "table" | "steps";
 
@@ -6,7 +7,17 @@ const barWidths = [92, 78, 64, 51, 38];
 const columnHeights = [42, 58, 50, 72, 64, 86];
 
 // A ghost of the finished widget, so the layout stays complete while the backend catches up.
-export default function RevenuePendingOS({ shape = "bars", reason, columns = [] }: { shape?: PendingShape; reason: string; columns?: string[] }) {
+export default function RevenuePendingOS({
+  shape = "bars",
+  reason,
+  columns = [],
+  blocker,
+}: {
+  shape?: PendingShape;
+  reason: string;
+  columns?: string[];
+  blocker?: PendingBlocker;
+}) {
   return (
     <div className="relative">
       <div aria-hidden="true" className="pointer-events-none select-none opacity-60">
@@ -52,7 +63,7 @@ export default function RevenuePendingOS({ shape = "bars", reason, columns = [] 
         )}
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 text-center">
-        <PendingLabelOS />
+        <PendingLabelOS blocker={blocker} />
         <p className="max-w-sm rounded-md bg-card-bg/90 px-2 py-0.5 text-xs text-gray-600 dark:text-zinc-300">{reason}</p>
       </div>
     </div>
