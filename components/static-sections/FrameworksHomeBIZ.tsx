@@ -5,21 +5,21 @@ import Image from "next/image";
 
 export default function FrameworksHomeBIZ() {
   return (
-    <section id="framework" className="overflow-hidden bg-biz-forest py-18 text-white sm:py-26">
+    <section id="framework" className="overflow-hidden border-y border-biz-line bg-biz-sage py-18 text-biz-ink sm:py-26">
       <PageMargin className="grid items-center gap-9 lg:grid-cols-[0.75fr_1.25fr] lg:gap-14">
         <div>
-          <p className="text-xs font-semibold tracking-[0.17em] text-biz-lime uppercase">Framework di balik training</p>
-          <h2 className="mt-4 max-w-110 text-[36px] leading-[0.98] font-medium tracking-[-0.065em] lg:text-[44px]">
+          <p className="text-xs font-semibold tracking-[0.17em] text-biz-forest-light uppercase">Framework di balik training</p>
+          <h2 className="mt-4 max-w-110 text-[36px] leading-[0.98] font-medium tracking-[-0.065em] text-biz-forest lg:text-[44px]">
             Hasil training punya jejak bukti.
           </h2>
-          <p className="mt-5 max-w-100 text-[15px] leading-[1.65] text-white/65">CFTE memetakan kemampuan. Kirkpatrick menelusuri dampaknya.</p>
+          <p className="mt-5 max-w-100 text-[15px] leading-[1.65] text-biz-copy">CFTE memetakan kemampuan. Kirkpatrick menelusuri dampaknya.</p>
           <AppButton href="/framework" variant="lime" size="cta" className="mt-7">
             Lihat framework <ArrowUpRight size={17} aria-hidden="true" />
           </AppButton>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="relative overflow-hidden rounded-2xl bg-white p-5 text-biz-forest sm:p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-biz-line bg-white p-5 text-biz-forest shadow-[0_18px_40px_-28px_rgba(1,30,22,0.35)] sm:p-6">
             <div className="flex items-center gap-2.5">
               <Image src="/biz/logo-cfte.webp" alt="Logo CFTE" width={40} height={40} className="size-10 rounded-lg object-cover" />
               <div><p className="font-mono text-[10px] tracking-wide text-biz-muted">CFTE</p><p className="text-[15px] font-medium">Peta kemampuan</p></div>
@@ -34,12 +34,12 @@ export default function FrameworksHomeBIZ() {
               ))}
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-2xl bg-biz-lime p-5 text-biz-forest sm:p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-biz-forest/10 bg-biz-lime p-5 text-biz-forest shadow-[0_18px_40px_-28px_rgba(1,30,22,0.35)] sm:p-6">
             <div><p className="font-mono text-[10px] tracking-wide">KIRKPATRICK</p><p className="mt-1 text-[15px] font-medium">Piramida dampak</p></div>
             <div className="mt-6 flex flex-col items-center gap-1">
               {[
-                ["04", "Hasil", "w-[46%] bg-biz-forest text-biz-lime"],
-                ["03", "Perilaku", "w-[62%] bg-biz-forest-light text-white"],
+                ["04", "Hasil", "w-[46%] bg-biz-forest-light text-white"],
+                ["03", "Perilaku", "w-[62%] bg-biz-forest-light/70 text-white"],
                 ["02", "Belajar", "w-[80%] bg-biz-mint text-biz-forest"],
                 ["01", "Reaksi", "w-full bg-white text-biz-forest"],
               ].map(([number, label, tone], index) => (
