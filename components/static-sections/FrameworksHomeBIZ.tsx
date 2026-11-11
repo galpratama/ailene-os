@@ -34,14 +34,14 @@ export default function FrameworksHomeBIZ() {
               ))}
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-2xl border border-biz-forest/10 bg-biz-lime p-5 text-biz-forest shadow-[0_18px_40px_-28px_rgba(1,30,22,0.35)] sm:p-6">
-            <div><p className="font-mono text-[10px] tracking-wide">KIRKPATRICK</p><p className="mt-1 text-[15px] font-medium">Piramida dampak</p></div>
+          <div className="relative overflow-hidden rounded-2xl border border-biz-line bg-white p-5 text-biz-forest shadow-[0_18px_40px_-28px_rgba(1,30,22,0.35)] sm:p-6">
+            <div><p className="font-mono text-[10px] tracking-wide text-biz-muted">KIRKPATRICK</p><p className="mt-1 text-[15px] font-medium">Piramida dampak</p></div>
             <div className="mt-6 flex flex-col items-center gap-1">
               {[
                 ["04", "Hasil", "w-[46%] bg-biz-forest-light text-white"],
                 ["03", "Perilaku", "w-[62%] bg-biz-forest-light/70 text-white"],
-                ["02", "Belajar", "w-[80%] bg-biz-mint text-biz-forest"],
-                ["01", "Reaksi", "w-full bg-white text-biz-forest"],
+                ["02", "Belajar", "w-[80%] bg-biz-lime text-biz-forest"],
+                ["01", "Reaksi", "w-full bg-biz-mint/60 text-biz-forest"],
               ].map(([number, label, tone], index) => (
                 <div key={number} className={`biz-proof-pyramid-layer flex h-10 items-center justify-center gap-1.5 text-[12px] font-semibold ${tone}`} style={{ animationDelay: `${index * 0.6}s` }}><span className="font-mono text-[9px] opacity-65">{number}</span>{label}</div>
               ))}
