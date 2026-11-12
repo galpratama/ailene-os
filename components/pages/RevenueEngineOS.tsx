@@ -8,12 +8,14 @@ import RevenueBDRPanelOS from "@/components/pages/RevenueBDRPanelOS";
 import RevenueDataHealthPanelOS from "@/components/pages/RevenueDataHealthPanelOS";
 import RevenueLeadGenPanelOS from "@/components/pages/RevenueLeadGenPanelOS";
 import RevenueOverviewPanelOS from "@/components/pages/RevenueOverviewPanelOS";
+import RevenuePivotPanelOS from "@/components/pages/RevenuePivotPanelOS";
 import RevenueSDRPanelOS from "@/components/pages/RevenueSDRPanelOS";
 import RevenueTargetsPanelOS from "@/components/pages/RevenueTargetsPanelOS";
 import RevenueTeamTasksPanelOS from "@/components/pages/RevenueTeamTasksPanelOS";
+import RevenueWeeklyTrendPanelOS from "@/components/pages/RevenueWeeklyTrendPanelOS";
 import { revenuePeriodLabel, revenuePresetRange, revenueRangeError } from "@/lib/revenue";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
-import { Banknote, Database, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarRange, Database, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, Table2, type LucideIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
@@ -26,6 +28,8 @@ const tabs: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "bdr", label: "BDR", icon: Handshake },
   { key: "targets", label: "Targets & cash", icon: Banknote },
   { key: "after", label: "After the sale", icon: Sparkles },
+  { key: "weekly", label: "Weekly trend", icon: CalendarRange },
+  { key: "pivot", label: "Pivot", icon: Table2 },
   { key: "tasks", label: "Team tasks", icon: ListChecks },
   { key: "health", label: "Data health", icon: Database },
 ];
@@ -133,6 +137,8 @@ export default function RevenueEngineOS({ sessionToken, today }: { sessionToken:
         {tab === "bdr" && <RevenueBDRPanelOS {...props} />}
         {tab === "targets" && <RevenueTargetsPanelOS {...props} />}
         {tab === "after" && <RevenueAfterSalePanelOS />}
+        {tab === "weekly" && <RevenueWeeklyTrendPanelOS {...props} />}
+        {tab === "pivot" && <RevenuePivotPanelOS {...props} />}
         {tab === "tasks" && <RevenueTeamTasksPanelOS {...props} />}
         {tab === "health" && <RevenueDataHealthPanelOS {...props} />}
       </div>

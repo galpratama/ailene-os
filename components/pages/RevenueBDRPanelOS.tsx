@@ -55,18 +55,27 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         The BDR&apos;s job: turn meetings into signed quotations.{" "}
         {data && (
           <>
-            During {periodLabel}: <strong className="font-semibold">{count(data.meetings.current)}</strong> meetings booked.
+            During {periodLabel}: <strong className="font-semibold">{count(data.meetings.current)}</strong> meetings booked,{" "}
+            <strong className="font-semibold">{count(data.meetings_held.current)}</strong> held.
           </>
         )}
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <RevenueKpiOS
           label="Meetings booked"
           value={count(data?.meetings.current)}
           change={data?.meetings.change}
           changeLabel={previous}
-          info="Jumlah pipeline yang masuk stage Meeting booked di periode ini; meeting dianggap sudah terjadi begitu dibooking. Tujuannya memastikan BDR punya cukup meeting untuk dikonversi menjadi deal."
+          info="Jumlah pipeline yang masuk stage Meeting booked di periode ini. Tujuannya memastikan BDR punya cukup meeting terjadwal untuk dikonversi menjadi deal."
+          isLoading={bdr.isLoading}
+        />
+        <RevenueKpiOS
+          label="Meetings held"
+          value={count(data?.meetings_held.current)}
+          change={data?.meetings_held.change}
+          changeLabel={previous}
+          info="Jumlah pipeline yang pertama kali masuk stage Discovery done (stage yang ditandai 'Meeting held' di katalog) di periode ini, artinya meeting-nya benar-benar terjadi. Tujuannya melihat berapa meeting yang betul-betul jalan, bukan sekadar dijadwalkan."
           isLoading={bdr.isLoading}
         />
         <RevenueKpiOS
@@ -100,14 +109,19 @@ export default function RevenueBDRPanelOS({ period, periodLabel, enabled }: Reve
         </RevenueCardOS>
         <RevenueCardOS
           title="Meetings per week"
-          description="Menampilkan jumlah meeting per minggu, dihitung dari tanggal pipeline masuk stage Meeting booked. Tujuannya memantau apakah jumlah meeting cukup dan stabil untuk mengejar target closing."
+          description="Menampilkan per minggu jumlah meeting yang dibooking (masuk stage Meeting booked) dan yang benar-benar terjadi (masuk stage Discovery done). Tujuannya memantau apakah jumlah meeting cukup, stabil, dan benar-benar berjalan untuk mengejar target closing."
           source="os"
           isLoading={bdr.isLoading}
+          partialNote={data?.data_gaps.some((gap) => gap.code === "meeting_held_step") ? "No pipeline stage is marked as Meeting held yet, so held meetings show 0." : undefined}
         >
           <WarehouseStackedTrendOS
             unit="meetings"
-            data={(data?.meetings_per_week ?? []).map((week) => ({ date: week.week_start, Meetings: week.booked }))}
-            series={[{ key: "Meetings", color: "var(--viz-1)" }]}
+            stacked={false}
+            data={(data?.meetings_per_week ?? []).map((week) => ({ date: week.week_start, Booked: week.booked, Held: week.held }))}
+            series={[
+              { key: "Booked", color: "var(--viz-1)" },
+              { key: "Held", color: "var(--viz-4)" },
+            ]}
           />
         </RevenueCardOS>
       </div>

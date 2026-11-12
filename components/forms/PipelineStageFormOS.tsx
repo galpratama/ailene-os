@@ -23,7 +23,8 @@ const FUNNEL_STEP_OPTIONS: { value: FunnelStep | null; label: string }[] = [
   { value: "lead", label: "Lead" },
   { value: "mql", label: "MQL" },
   { value: "sql", label: "SQL" },
-  { value: "meeting", label: "Meeting" },
+  { value: "meeting", label: "Meeting booked" },
+  { value: "meeting_held", label: "Meeting held" },
   { value: "quotation", label: "Quotation" },
   { value: "won", label: "Won" },
 ];

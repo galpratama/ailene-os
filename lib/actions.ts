@@ -10,10 +10,12 @@ import {
   getRevenueOpenPipeline as getRevenueOpenPipelineApi,
   getRevenueOutcomeReasons as getRevenueOutcomeReasonsApi,
   getRevenueOverview as getRevenueOverviewApi,
+  getRevenuePivot as getRevenuePivotApi,
   getRevenueSDR as getRevenueSDRApi,
   getRevenueSources as getRevenueSourcesApi,
   getRevenueTeamTasks as getRevenueTeamTasksApi,
   getRevenueWeeklySources as getRevenueWeeklySourcesApi,
+  getRevenueWeeklyTrend as getRevenueWeeklyTrendApi,
   type RevenueOpenPipelinePayload,
   type RevenuePeriodPayload,
 } from "@/apis/revenue";
@@ -747,6 +749,14 @@ export async function getRevenueSources(payload: RevenuePeriodPayload) {
 
 export async function getRevenueWeeklySources(payload: RevenuePeriodPayload) {
   return getRevenueWeeklySourcesApi(payload);
+}
+
+export async function getRevenueWeeklyTrend(payload: RevenuePeriodPayload) {
+  return getRevenueWeeklyTrendApi(payload);
+}
+
+export async function getRevenuePivot(payload: RevenuePeriodPayload) {
+  return getRevenuePivotApi(payload);
 }
 
 export async function getRevenueLeadFlow(payload: RevenuePeriodPayload) {

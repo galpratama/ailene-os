@@ -78,6 +78,58 @@ export type RevenueWeeklySources = {
   weeks: { week_start: string; partial: boolean; total: number; groups: Record<LeadGroup, number> }[];
 };
 
+export type RevenueWeeklyTrend = {
+  period: ReportPeriod;
+  timezone: string;
+  weeks: {
+    week_start: string;
+    partial: boolean;
+    leads: number;
+    sqls: { total: number; groups: Record<LeadGroup, number> };
+    meetings: number;
+    meetings_held: number;
+    quotations: number;
+    won: number;
+    won_value: number;
+  }[];
+  data_gaps: RevenueGap[];
+};
+
+// Daily facts the pivot tab rolls up by any row and column on the client.
+export type RevenuePivotActivityCell = {
+  date: string;
+  lead_group: LeadGroup;
+  lead_channel: string | null;
+  sales_owner_id: string | null;
+  leads: number;
+  sqls: number;
+  meetings: number;
+  meetings_held: number;
+  quotations: number;
+  won: number;
+  won_value: number;
+};
+
+export type RevenuePivotDealCell = {
+  date: string;
+  stage_code: string;
+  lead_group: LeadGroup;
+  sales_owner_id: string | null;
+  deals: number;
+  value: number;
+  weighted_value: number;
+};
+
+export type RevenuePivot = {
+  period: ReportPeriod;
+  timezone: string;
+  owners: RevenueNamedRef[];
+  stages: { code: string; name: string; phase: string; sort_order: number; is_terminal: boolean }[];
+  activity: RevenuePivotActivityCell[];
+  deals: RevenuePivotDealCell[];
+  data_gaps: RevenueGap[];
+};
+
 export type RevenueLeadFlow = {
   period: ReportPeriod;
   leads: number;
@@ -146,11 +198,12 @@ export type RevenueSDR = {
   data_gaps: RevenueGap[];
 };
 
-export type RevenueMeetingWeek = { week_start: string; partial: boolean; booked: number };
+export type RevenueMeetingWeek = { week_start: string; partial: boolean; booked: number; held: number };
 
 export type RevenueBDR = {
   period: ReportPeriod;
   meetings: CountChange;
+  meetings_held: CountChange;
   funnel: { stage_code: string; name: string; phase: string; count: number; previous: number; from_previous_rate: number | null }[];
   meeting_to_quotation_rate: number | null;
   meeting_to_won_rate: number | null;
@@ -257,6 +310,14 @@ export async function getRevenueSources(payload: RevenuePeriodPayload) {
 
 export async function getRevenueWeeklySources(payload: RevenuePeriodPayload) {
   return post<RevenueWeeklySources>("sources/weekly", payload);
+}
+
+export async function getRevenueWeeklyTrend(payload: RevenuePeriodPayload) {
+  return post<RevenueWeeklyTrend>("weekly-trend", payload);
+}
+
+export async function getRevenuePivot(payload: RevenuePeriodPayload) {
+  return post<RevenuePivot>("pivot", payload);
 }
 
 export async function getRevenueLeadFlow(payload: RevenuePeriodPayload) {

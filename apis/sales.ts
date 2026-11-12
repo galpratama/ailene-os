@@ -18,7 +18,7 @@ export type PipelinePhase = "sdr" | "bdr";
 export type PipelineStage = string;
 
 export type EmployeeBand = "1_49" | "50_99" | "100_499" | "500_999" | "1000_plus";
-export type FunnelStep = "lead" | "mql" | "sql" | "meeting" | "quotation" | "won";
+export type FunnelStep = "lead" | "mql" | "sql" | "meeting" | "meeting_held" | "quotation" | "won";
 // Why an SDR lead was disqualified or a BDR deal was lost; the stage's outcome_kind says which one it needs.
 export type OutcomeKind = "disqualified" | "lost";
 
