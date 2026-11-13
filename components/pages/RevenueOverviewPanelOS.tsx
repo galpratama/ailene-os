@@ -1,6 +1,6 @@
 "use client";
 
-import type { RevenueFunnel, RevenueOverview } from "@/apis/revenue";
+import type { RevenueFunnel, RevenueOverview, RevenuePlan } from "@/apis/revenue";
 import RevenueBowtieOS, { type BowtieStep } from "@/components/charts/RevenueBowtieOS";
 import RevenueMonthBarsOS from "@/components/charts/RevenueMonthBarsOS";
 import RevenueCardOS from "@/components/elements/RevenueCardOS";
@@ -9,7 +9,7 @@ import RevenueErrorOS from "@/components/elements/RevenueErrorOS";
 import PendingLabelOS from "@/components/labels/PendingLabelOS";
 import type { RevenueTabProps } from "@/components/pages/RevenueEngineOS";
 import { useRevenue } from "@/hooks/useRevenue";
-import { getRevenueFunnel, getRevenueOverview } from "@/lib/actions";
+import { getRevenueFunnel, getRevenueOverview, getRevenuePlan } from "@/lib/actions";
 import { count, money, percent, periodCaption } from "@/lib/revenue";
 import { TriangleAlert } from "lucide-react";
 
@@ -47,6 +47,9 @@ function insightText(code: string, value: number) {
 export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }: RevenueTabProps) {
   const overview = useRevenue<RevenueOverview>("overview", period, () => getRevenueOverview(period), enabled);
   const funnel = useRevenue<RevenueFunnel>("funnel", period, () => getRevenueFunnel(period), enabled);
+  // Same query as Targets & cash, so switching tabs reuses it.
+  const plan = useRevenue<RevenuePlan>("plan", period, () => getRevenuePlan(period), enabled);
+  const targetByMonth = new Map((plan.data?.months ?? []).map((month) => [month.month, month.target?.revenue ?? null]));
   const data = overview.data;
   const loading = overview.isLoading;
   const previous = data ? periodCaption(data.period.previous_start_date, data.period.previous_end_date) : "";
@@ -125,7 +128,14 @@ export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }:
           info="Meta Ads spend from the warehouse divided by SQLs whose channel is Meta Ads."
           isLoading={loading}
         />
-        <RevenueKpiOS label="Cash collected" pending="Needs invoices and payments in Ailene OS." />
+        <RevenueKpiOS
+          label="Cash collected"
+          value={money(data?.cash_collected.current)}
+          change={data?.cash_collected.change}
+          changeLabel={previous}
+          info="Invoice payments recorded with a payment date in the period. See Targets & cash for what is still unbilled or unpaid."
+          isLoading={loading}
+        />
       </div>
 
       <RevenueCardOS
@@ -156,11 +166,12 @@ export default function RevenueOverviewPanelOS({ period, periodLabel, enabled }:
         <RevenueCardOS
           title="Revenue by month"
           description="Memantau tren revenue yang sudah closed dari bulan ke bulan."
-          partialNote="The monthly target line needs revenue targets."
           source="os"
           isLoading={loading}
         >
-          <RevenueMonthBarsOS data={trend.map((month) => ({ month: month.month, partial: month.partial, revenue: month.revenue_closed, closings: month.closings }))} />
+          <RevenueMonthBarsOS
+            data={trend.map((month) => ({ month: month.month, partial: month.partial, revenue: month.revenue_closed, closings: month.closings, target: targetByMonth.get(month.month) ?? null }))}
+          />
         </RevenueCardOS>
       </div>
     </>

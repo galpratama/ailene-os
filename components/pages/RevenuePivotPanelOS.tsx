@@ -159,7 +159,6 @@ export default function RevenuePivotPanelOS({ period, periodLabel, enabled }: Re
         isLoading={pivot.isLoading}
         error={pivot.error}
         onRetry={() => pivot.refetch()}
-        partialNote="Invoices and cash collected are not recorded in OS yet, so they are not in this pivot."
       >
         <PivotControls
           id="pivot-deals"

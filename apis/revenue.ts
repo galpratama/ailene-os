@@ -22,6 +22,8 @@ export type RevenueOverview = {
   closings: CountChange;
   sqls: CountChange;
   leads: CountChange;
+  // Invoice payments whose paid_date falls in the period.
+  cash_collected: CountChange;
   paid_cost_per_sql: { spend_idr: number | null; sqls: number; value_idr: number | null; channels: string[] };
   monthly: { month: string; partial: boolean; leads: number; sqls: number; closings: number; revenue_closed: number }[];
   insights: { code: string; severity: string; value: number }[];
@@ -354,4 +356,98 @@ export async function getRevenueTeamTasks(payload: { team_id?: number; page?: nu
 
 export async function getRevenueDataHealth(payload: RevenuePeriodPayload) {
   return post<RevenueDataHealth>("data-health", payload);
+}
+
+export type RevenuePlanFigures = { leads: number; sqls: number; closings: number; revenue: number };
+
+// Actual ÷ target per figure; a figure is null when its target is 0.
+export type RevenuePlanAttainment = { leads: number | null; sqls: number | null; closings: number | null; revenue: number | null };
+
+export type RevenuePlanMonth = {
+  month: string;
+  partial: boolean;
+  actual: RevenuePlanFigures;
+  target: RevenuePlanFigures | null;
+  attainment: RevenuePlanAttainment | null;
+};
+
+export type RevenuePlan = {
+  period: ReportPeriod;
+  months: RevenuePlanMonth[];
+  // targeted_actual, target, and attainment cover only months that have a target.
+  totals: {
+    actual: RevenuePlanFigures;
+    targeted_actual: RevenuePlanFigures;
+    target: RevenuePlanFigures | null;
+    attainment: RevenuePlanAttainment | null;
+    months_with_target: number;
+  };
+  data_gaps: RevenueGap[];
+};
+
+export type RevenueCashFigure = { amount: number; count: number };
+
+export type RevenueOpenInvoice = {
+  id: number;
+  number: string;
+  term: number;
+  pipeline_id: number;
+  company_id: number;
+  company_name: string;
+  amount: number;
+  outstanding: number;
+  invoice_date: string;
+  due_date: string | null;
+  days_open: number;
+  overdue: boolean;
+};
+
+// The three receivable figures are snapshots as of `today`; invoiced, cash_collected, and monthly follow the period.
+export type RevenueCash = {
+  period: ReportPeriod;
+  today: string;
+  closed_not_invoiced: RevenueCashFigure;
+  invoiced_not_paid: RevenueCashFigure;
+  open_over_30_days: RevenueCashFigure;
+  invoiced: CountChange;
+  cash_collected: CountChange;
+  monthly: { month: string; partial: boolean; invoiced: number; collected: number }[];
+  open_invoices: RevenueOpenInvoice[];
+  data_gaps: RevenueGap[];
+};
+
+// month is YYYY-MM; updated_at is null right after a create.
+export type RevenueTarget = {
+  month: string;
+  leads: number;
+  sqls: number;
+  closings: number;
+  revenue: number;
+  updated_at: string | null;
+};
+
+export type RevenueTargetPayload = Omit<RevenueTarget, "updated_at">;
+
+export async function getRevenuePlan(payload: RevenuePeriodPayload) {
+  return post<RevenuePlan>("plan", payload);
+}
+
+export async function getRevenueCash(payload: RevenuePeriodPayload) {
+  return post<RevenueCash>("cash", payload);
+}
+
+export async function listRevenueTargets(payload: { start_month?: string; end_month?: string }) {
+  return post<{ list: RevenueTarget[] }>("revenue-targets", payload);
+}
+
+export async function createRevenueTarget(payload: RevenueTargetPayload) {
+  return post<RevenueTarget>("revenue-targets/create", payload);
+}
+
+export async function updateRevenueTarget(payload: RevenueTargetPayload) {
+  return post<RevenueTarget>("revenue-targets/update", payload);
+}
+
+export async function deleteRevenueTarget(month: string) {
+  return post<null>("revenue-targets/delete", { month });
 }

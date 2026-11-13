@@ -16,9 +16,27 @@ import {
   getRevenueTeamTasks as getRevenueTeamTasksApi,
   getRevenueWeeklySources as getRevenueWeeklySourcesApi,
   getRevenueWeeklyTrend as getRevenueWeeklyTrendApi,
+  getRevenuePlan as getRevenuePlanApi,
+  getRevenueCash as getRevenueCashApi,
+  listRevenueTargets as listRevenueTargetsApi,
+  createRevenueTarget as createRevenueTargetApi,
+  updateRevenueTarget as updateRevenueTargetApi,
+  deleteRevenueTarget as deleteRevenueTargetApi,
   type RevenueOpenPipelinePayload,
   type RevenuePeriodPayload,
+  type RevenueTargetPayload,
 } from "@/apis/revenue";
+import {
+  createInvoice as createInvoiceApi,
+  deleteInvoice as deleteInvoiceApi,
+  getInvoiceBilling as getInvoiceBillingApi,
+  getInvoiceDetails as getInvoiceDetailsApi,
+  listInvoices as listInvoicesApi,
+  updateInvoice as updateInvoiceApi,
+  type CreateInvoicePayload,
+  type ListInvoicesOptions,
+  type UpdateInvoicePayload,
+} from "@/apis/invoices";
 import {
   createTask as createTaskApi,
   deleteTask as deleteTaskApi,
@@ -793,6 +811,54 @@ export async function getRevenueTeamTasks(payload: { team_id?: number; page?: nu
 
 export async function getRevenueDataHealth(payload: RevenuePeriodPayload) {
   return getRevenueDataHealthApi(payload);
+}
+
+export async function getRevenuePlan(payload: RevenuePeriodPayload) {
+  return getRevenuePlanApi(payload);
+}
+
+export async function getRevenueCash(payload: RevenuePeriodPayload) {
+  return getRevenueCashApi(payload);
+}
+
+export async function listRevenueTargets(payload: { start_month?: string; end_month?: string }) {
+  return listRevenueTargetsApi(payload);
+}
+
+export async function createRevenueTarget(payload: RevenueTargetPayload) {
+  return createRevenueTargetApi(payload);
+}
+
+export async function updateRevenueTarget(payload: RevenueTargetPayload) {
+  return updateRevenueTargetApi(payload);
+}
+
+export async function deleteRevenueTarget(month: string) {
+  return deleteRevenueTargetApi(month);
+}
+
+export async function listInvoices(options: ListInvoicesOptions = {}) {
+  return listInvoicesApi(options);
+}
+
+export async function getInvoiceDetails(id: number) {
+  return getInvoiceDetailsApi(id);
+}
+
+export async function getInvoiceBilling(pipelineId: number) {
+  return getInvoiceBillingApi(pipelineId);
+}
+
+export async function createInvoice(payload: CreateInvoicePayload) {
+  return createInvoiceApi(payload);
+}
+
+export async function updateInvoice(payload: UpdateInvoicePayload) {
+  return updateInvoiceApi(payload);
+}
+
+export async function deleteInvoice(id: number) {
+  return deleteInvoiceApi(id);
 }
 
 export async function submitTrilogySurvey(payload: TrilogySurveyPayload) {
