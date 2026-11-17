@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  getRevenueAdDetail as getRevenueAdDetailApi,
   getRevenueAds as getRevenueAdsApi,
   getRevenueBDR as getRevenueBDRApi,
   getRevenueCampaigns as getRevenueCampaignsApi,
@@ -787,6 +788,10 @@ export async function getRevenueCampaigns(payload: RevenuePeriodPayload & { page
 
 export async function getRevenueAds(payload: RevenuePeriodPayload) {
   return getRevenueAdsApi(payload);
+}
+
+export async function getRevenueAdDetail(payload: RevenuePeriodPayload & { ad_id: string }) {
+  return getRevenueAdDetailApi(payload);
 }
 
 export async function getRevenueSDR(payload: RevenuePeriodPayload) {

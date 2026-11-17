@@ -189,6 +189,85 @@ export type RevenueAds = {
   data_gaps: RevenueGap[];
 };
 
+export type RevenueAdProfile = {
+  ad_id: string;
+  ad_name: string | null;
+  campaign_id: string | null;
+  campaign: string | null;
+  adset: string | null;
+  status: string | null;
+  creative_type: string | null;
+  thumbnail_url: string | null;
+  headline: string | null;
+  call_to_action: string | null;
+  destination_url: string | null;
+  destination_kind: RevenueAd["destination_kind"];
+  destination_path: string | null;
+  quality_ranking: string | null;
+  engagement_ranking: string | null;
+  conversion_ranking: string | null;
+  first_date: string | null;
+  last_date: string | null;
+};
+
+export type RevenueAdMetrics = {
+  spend_idr: number;
+  impressions: number;
+  frequency: number | null;
+  cpm_idr: number | null;
+  link_clicks: number;
+  link_ctr: number | null;
+  cpc_idr: number | null;
+  landing_page_views: number;
+  landing_rate: number | null;
+  video_views_3s: number;
+  thruplays: number;
+  hook_rate: number | null;
+  hold_rate: number | null;
+  web_sessions: number;
+  web_engaged_sessions: number;
+  web_engaged_rate: number | null;
+  meta_leads: number;
+  web_leads: number;
+  cost_per_platform_lead_idr: number | null;
+  leads: number;
+  sqls: number;
+  meetings: number;
+  won: number;
+  revenue: number;
+  lead_to_sql_rate: number | null;
+  cost_per_lead_idr: number | null;
+  cost_per_sql_idr: number | null;
+};
+
+export type RevenueAdDay = RevenueAdMetrics & { date: string };
+
+export type RevenueAdSummary = RevenueAdMetrics & { active_days: number };
+
+export type RevenueAdPipeline = {
+  pipeline_id: number;
+  company_id: number;
+  company_name: string;
+  stage_code: string;
+  stage_name: string;
+  is_terminal: boolean;
+  owner_name: string | null;
+  created_at: string;
+  qualified_at: string | null;
+  meeting_booked_at: string | null;
+  closed_at: string | null;
+};
+
+export type RevenueAdDetail = {
+  period: ReportPeriod;
+  ad: RevenueAdProfile;
+  current: RevenueAdSummary;
+  previous: RevenueAdSummary;
+  daily: RevenueAdDay[];
+  pipelines: RevenueAdPipeline[];
+  data_gaps: RevenueGap[];
+};
+
 export type RevenueSDR = {
   period: ReportPeriod;
   leads: CountChange;
@@ -332,6 +411,10 @@ export async function getRevenueCampaigns(payload: RevenuePeriodPayload & { page
 
 export async function getRevenueAds(payload: RevenuePeriodPayload) {
   return post<RevenueAds>("ads", payload);
+}
+
+export async function getRevenueAdDetail(payload: RevenuePeriodPayload & { ad_id: string }) {
+  return post<RevenueAdDetail>("ads/detail", payload);
 }
 
 export async function getRevenueSDR(payload: RevenuePeriodPayload) {

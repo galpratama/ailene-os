@@ -13,6 +13,8 @@ interface SheetOSProps {
   fullPageHref?: string;
   // Wide sheets fit long-form editors while staying within one third of a desktop viewport.
   wide?: boolean;
+  // Extra-wide sheets hold report detail: charts and day-by-day tables.
+  extraWide?: boolean;
   children: ReactNode;
 }
 
@@ -24,6 +26,7 @@ export default function SheetOS({
   onClose,
   fullPageHref,
   wide,
+  extraWide,
   children,
 }: SheetOSProps) {
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function SheetOS({
       onClick={onClose}
     >
       <div
-        className={`relative flex h-full w-full ${wide ? "max-w-md lg:max-w-[33.333vw]" : "max-w-md"} flex-col bg-white border-l border-line shadow-xl dark:bg-zinc-900`}
+        className={`relative flex h-full w-full ${extraWide ? "max-w-5xl" : wide ? "max-w-md lg:max-w-[33.333vw]" : "max-w-md"} flex-col bg-white border-l border-line shadow-xl dark:bg-zinc-900`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-line-soft px-6 py-4">

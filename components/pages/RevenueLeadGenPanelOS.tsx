@@ -1,6 +1,7 @@
 "use client";
 
-import type { RevenueAds, RevenueLeadFlow, RevenueSourceChannel, RevenueSources, RevenueWeeklySources } from "@/apis/revenue";
+import type { RevenueAd, RevenueAds, RevenueLeadFlow, RevenueSourceChannel, RevenueSources, RevenueWeeklySources } from "@/apis/revenue";
+import AppButton from "@/components/buttons/AppButton";
 import RevenueLeadFlowChartOS from "@/components/charts/RevenueLeadFlowChartOS";
 import WarehouseFunnelChartOS from "@/components/charts/WarehouseFunnelChartOS";
 import WarehouseRankedBarsOS from "@/components/charts/WarehouseRankedBarsOS";
@@ -9,11 +10,14 @@ import AnalyticsDataTableOS, { type AnalyticsColumn } from "@/components/element
 import RevenueCardOS from "@/components/elements/RevenueCardOS";
 import RevenueErrorOS from "@/components/elements/RevenueErrorOS";
 import AdVerdictLabelOS from "@/components/labels/AdVerdictLabelOS";
+import RevenueAdDetailSheetOS from "@/components/modals/RevenueAdDetailSheetOS";
 import type { RevenueTabProps } from "@/components/pages/RevenueEngineOS";
 import { useWarehouseAnalytics } from "@/hooks/useAnalyticsDashboard";
 import { useRevenue } from "@/hooks/useRevenue";
 import { getRevenueAds, getRevenueLeadFlow, getRevenueSources, getRevenueWeeklySources } from "@/lib/actions";
 import { channelLabel, count, leadGroupColors, leadGroupLabels, leadGroups, leadGroupShortLabels, money, percent } from "@/lib/revenue";
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 const kindLabels = { instant_form: "Instant Form", landing_page: "Landing page", unknown: "Unknown destination" };
 
@@ -36,6 +40,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
   const ads = useRevenue<RevenueAds>("ads", period, () => getRevenueAds(period), enabled);
   const weekly = useRevenue<RevenueWeeklySources>("sources/weekly", period, () => getRevenueWeeklySources(period), enabled);
   const warehouse = useWarehouseAnalytics(period, enabled, false);
+  const [selectedAd, setSelectedAd] = useState<RevenueAd | null>(null);
 
   const groups = sources.data?.groups ?? [];
   const totalLeads = groups.reduce((sum, group) => sum + group.leads, 0);
@@ -104,7 +109,7 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
 
       <RevenueCardOS
         title="Meta ad performance"
-        description="Menentukan iklan (ad) Meta mana yang layak ditambah budget, dipertahankan, atau dimatikan, berdasarkan biaya per SQL di OS, bukan sekadar jumlah form yang terisi."
+        description="Menentukan iklan (ad) Meta mana yang layak ditambah budget, dipertahankan, atau dimatikan, berdasarkan biaya per SQL di OS, bukan sekadar jumlah form yang terisi. Klik satu ad untuk melihat statistik lengkap dan performa hariannya."
         source="both"
         isLoading={ads.isLoading}
         error={ads.error}
@@ -114,7 +119,11 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
       >
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4">
           {(ads.data?.ads ?? []).map((ad) => (
-            <li key={ad.ad_id} className="flex flex-col gap-2 rounded-lg border border-line-soft p-3">
+            <li key={ad.ad_id} className="relative flex flex-col gap-2 rounded-lg border border-line-soft p-3 transition-colors hover:border-claude">
+              {/* The whole card opens the detail; the overlay keeps the card's markup out of the button. */}
+              <AppButton type="button" variant="bare" size="bare" className="absolute inset-0 rounded-lg" onClick={() => setSelectedAd(ad)}>
+                <span className="sr-only">Open detail for {ad.ad_name ?? ad.ad_id}</span>
+              </AppButton>
               <div>
                 <p className="line-clamp-2 text-sm font-medium text-gray-900 dark:text-zinc-100">{ad.ad_name ?? ad.ad_id}</p>
                 <p className="truncate text-xs text-gray-500 dark:text-zinc-400">
@@ -138,10 +147,21 @@ export default function RevenueLeadGenPanelOS({ period, periodLabel, enabled }: 
                   </div>
                 ))}
               </dl>
+              <p className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-claude" aria-hidden="true">
+                Lihat detail <ChevronRight size={12} />
+              </p>
             </li>
           ))}
         </ul>
       </RevenueCardOS>
+
+      <RevenueAdDetailSheetOS
+        ad={selectedAd}
+        benchmarkCostPerSQL={ads.data?.benchmark_cost_per_sql_idr ?? null}
+        period={period}
+        enabled={enabled}
+        onClose={() => setSelectedAd(null)}
+      />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RevenueCardOS
