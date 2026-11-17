@@ -82,7 +82,7 @@ export type UpdateLmsMemberPayload = {
   job_title?: string;
 };
 
-function lmsBaseUrl() {
+export function lmsBaseUrl() {
   const baseUrl = process.env.LMS_BASE_URL;
   if (!baseUrl) {
     throw new Error("LMS_BASE_URL is not configured");

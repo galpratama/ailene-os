@@ -9,6 +9,7 @@ import LmsProjectFormOS from "@/components/forms/LmsProjectFormOS";
 import AlertConfirmationOS from "@/components/modals/AlertConfirmationOS";
 import LmsChapterSessionsOS from "@/components/static-sections/LmsChapterSessionsOS";
 import LmsProjectContentOS from "@/components/static-sections/LmsProjectContentOS";
+import LmsWorkflowSubmissionsOS from "@/components/static-sections/LmsWorkflowSubmissionsOS";
 import { deleteLmsGroup } from "@/lib/actions";
 import { isSuccessStatus } from "@/lib/status_code";
 import { showErrorToast } from "@/lib/toast";
@@ -18,13 +19,14 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 type SheetState<T> = { open: false } | { open: true; entry: T | null };
-type ProjectTab = "session" | "materials" | "video" | "test" | "task";
+type ProjectTab = "session" | "materials" | "video" | "test" | "task" | "workflow";
 const projectTabs: { id: ProjectTab; label: string }[] = [
   { id: "session", label: "Session" },
   { id: "materials", label: "Materials" },
   { id: "video", label: "Video" },
   { id: "test", label: "Test" },
   { id: "task", label: "Task" },
+  { id: "workflow", label: "Workflow" },
 ];
 
 function formatDate(value: string | null) {
@@ -157,12 +159,16 @@ export default function LmsAdminProjectDetailOS({
         ))}
       </nav>
 
-      {activeTab !== "session" && (
+      {activeTab !== "session" && activeTab !== "workflow" && (
         <LmsProjectContentOS
           projectId={projectId}
           sessionToken={sessionToken}
           kind={activeTab === "materials" ? "material" : activeTab}
         />
+      )}
+
+      {activeTab === "workflow" && (
+        <LmsWorkflowSubmissionsOS projectId={projectId} sessionToken={sessionToken} />
       )}
 
       {activeTab === "session" && <div className={`grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_19rem] ${isPending ? "opacity-70" : ""}`}>

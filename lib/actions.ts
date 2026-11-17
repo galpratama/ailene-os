@@ -72,6 +72,11 @@ import {
 } from "@/apis/analytics";
 import { loginWithGoogle as loginWithGoogleApi } from "@/apis/auth";
 import {
+  getLmsWorkflowDetails as getLmsWorkflowDetailsApi,
+  listLmsWorkflowSubmissions as listLmsWorkflowSubmissionsApi,
+  type ListLmsWorkflowSubmissionsOptions,
+} from "@/apis/lms-workflows";
+import {
   createLmsProject as createLmsProjectApi,
   deleteLmsProject as deleteLmsProjectApi,
   getLmsProject as getLmsProjectApi,
@@ -644,6 +649,14 @@ export async function listLmsMemberMetrics(payload: { project_id: string; group_
 
 export async function listLmsProjects() {
   return listLmsProjectsApi();
+}
+
+export async function listLmsWorkflowSubmissions(options: ListLmsWorkflowSubmissionsOptions) {
+  return listLmsWorkflowSubmissionsApi(options);
+}
+
+export async function getLmsWorkflowDetails(payload: { project_id: string; workflow_id: number }) {
+  return getLmsWorkflowDetailsApi(payload);
 }
 
 export async function getLmsProject(projectId: string) {
