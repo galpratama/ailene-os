@@ -188,6 +188,14 @@ import {
   type UpdateSignalPayload,
 } from "@/apis/signals";
 import {
+  approveOutreachLeads as approveOutreachLeadsApi,
+  getOutreachLeadDetails as getOutreachLeadDetailsApi,
+  getOutreachStats as getOutreachStatsApi,
+  listOutreachLeads as listOutreachLeadsApi,
+  rejectOutreachLeads as rejectOutreachLeadsApi,
+  type ListOutreachLeadsOptions,
+} from "@/apis/outreach";
+import {
   getUserDetails as getUserDetailsApi,
   inviteUser as inviteUserApi,
   listUsers as listUsersApi,
@@ -732,6 +740,26 @@ export async function listSignals(options: ListSignalsOptions = {}) {
 
 export async function generateLinkedInSignals() {
   return generateLinkedInSignalsApi();
+}
+
+export async function listOutreachLeads(options: ListOutreachLeadsOptions = {}) {
+  return listOutreachLeadsApi(options);
+}
+
+export async function getOutreachLeadDetails(id: number) {
+  return getOutreachLeadDetailsApi(id);
+}
+
+export async function getOutreachStats() {
+  return getOutreachStatsApi();
+}
+
+export async function approveOutreachLeads(payload: { ids: number[]; with_note?: boolean | null }) {
+  return approveOutreachLeadsApi(payload);
+}
+
+export async function rejectOutreachLeads(payload: { ids: number[]; reason?: string }) {
+  return rejectOutreachLeadsApi(payload);
 }
 
 export async function updateSignal(payload: UpdateSignalPayload) {
