@@ -3,7 +3,7 @@ import SpecialistDivisionExplorerBIZ from "@/components/elements/SpecialistDivis
 import PageMargin from "@/components/layouts/PageMargin";
 import FooterHomeBIZ from "@/components/navigations/FooterHomeBIZ";
 import HeaderBIZ from "@/components/navigations/HeaderBIZ";
-import { specialistDivisions } from "@/lib/biz-specialists";
+import Image from "next/image";
 import Link from "next/link";
 
 const approach = [
@@ -24,76 +24,79 @@ const approach = [
   },
 ] as const;
 
-const heroOutputIds = new Set(["sales", "hr", "legal"]);
-
 export default function SpecialistPageBIZ() {
-  const heroOutputs = specialistDivisions.filter((division) => heroOutputIds.has(division.id));
-
   return (
     <div className="min-h-screen overflow-x-clip bg-biz-paper text-biz-ink">
       <HeaderBIZ />
       <main>
         <section className="bg-biz-paper-end">
           <PageMargin className="py-5 sm:py-8">
-            <div className="grid min-w-0 overflow-hidden rounded-2xl border border-biz-line bg-white lg:min-h-150 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:rounded-3xl">
+            <div className="grid min-w-0 overflow-hidden rounded-2xl border border-biz-line bg-white lg:min-h-155 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:rounded-3xl">
               <div className="flex min-w-0 flex-col justify-center px-6 py-12 sm:px-10 sm:py-16 lg:px-14 lg:py-20">
-                <p className="biz-topic-label self-start">Specialist training</p>
-                <h1 className="mt-5 max-w-165 text-[clamp(2.65rem,5.4vw,4.8rem)] leading-[0.94] font-medium tracking-[-0.065em] text-balance text-biz-forest">
-                  Training AI dalam bahasa kerja tiap divisi.
+                <p className="text-sm font-medium text-biz-forest-light">Program specialist per divisi</p>
+                <h1 className="mt-5 max-w-170 text-[clamp(2.8rem,5.8vw,5.25rem)] leading-[0.92] font-medium tracking-[-0.07em] text-balance text-biz-forest">
+                  Training AI yang dimulai dari pekerjaan tim Anda.
                 </h1>
-                <p className="mt-6 max-w-135 text-base leading-[1.7] text-biz-copy sm:text-lg">
+                <p className="mt-6 max-w-140 text-base leading-[1.7] text-biz-copy sm:text-lg">
                   Sales berlatih dengan akun yang sedang dikejar, HR dengan SOP, dan Legal dengan checklist klausul. Materi
-                  mengikuti tugas, tools, serta risiko kerja mereka.
+                  mengikuti tugas, tools, serta risiko kerja tiap divisi.
                 </p>
-                <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <div className="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
                   <AppButton href="/#contact" variant="lime" size="lg">
                     Susun program untuk tim
                   </AppButton>
-                  <a
-                    href="#divisi"
-                    className="inline-flex min-h-11 items-center text-[15px] font-medium text-biz-forest underline decoration-biz-forest/30 decoration-1 underline-offset-4 transition-colors hover:decoration-biz-forest focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-biz-forest"
-                  >
-                    Lihat jalur per divisi
-                  </a>
+                  <AppButton href="#divisi" variant="forest" size="lg">
+                    Pilih divisi
+                  </AppButton>
                 </div>
               </div>
 
-              <aside className="min-w-0 bg-biz-forest px-6 py-9 text-white sm:px-9 sm:py-12 lg:flex lg:flex-col lg:justify-center lg:px-11">
-                <p className="text-sm font-medium text-biz-lime">Contoh hasil yang dibawa pulang</p>
-                <p className="mt-3 max-w-100 text-[28px] leading-[1.05] font-medium tracking-[-0.05em] sm:text-[34px]">
-                  Kelas selesai dengan alat kerja, bukan catatan seminar.
-                </p>
-                <dl className="mt-8 border-t border-white/18">
-                  {heroOutputs.map((division, index) => (
-                    <div key={division.id} className="grid grid-cols-[2.25rem_1fr] gap-3 border-b border-white/18 py-4.5">
-                      <dt className="text-xs text-biz-lime tabular-nums">{String(index + 1).padStart(2, "0")}</dt>
-                      <dd>
-                        <p className="text-sm text-white/60">{division.short}</p>
-                        <p className="mt-1 text-base leading-snug font-medium text-white">{division.labOutput}</p>
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </aside>
+              <figure className="relative min-h-105 overflow-hidden bg-biz-sage lg:min-h-full">
+                <Image
+                  src="/biz/specialist-workshop.webp"
+                  alt="Tim profesional Asia berdiskusi bersama di depan laptop dalam ruang kerja"
+                  width={1600}
+                  height={1067}
+                  priority
+                  sizes="(min-width: 1024px) 49vw, 100vw"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <figcaption className="absolute right-4 bottom-4 left-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-biz-forest px-4 py-3 text-xs text-white sm:right-6 sm:bottom-6 sm:left-6">
+                  <span>Foto ilustrasi sesi kerja kolaboratif</span>
+                  <a
+                    href="https://www.pexels.com/photo/a-group-of-people-having-a-meeting-in-the-office-7652178/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-biz-lime underline decoration-biz-lime/50 underline-offset-3 hover:decoration-biz-lime focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-biz-lime"
+                  >
+                    RDNE / Pexels
+                  </a>
+                </figcaption>
+              </figure>
             </div>
           </PageMargin>
         </section>
 
-        <section id="divisi" aria-labelledby="divisi-title" className="scroll-mt-20 bg-white py-15 sm:py-20">
+        <section id="divisi" aria-labelledby="divisi-title" className="scroll-mt-17.5 bg-white py-16 sm:py-22">
           <PageMargin>
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)] lg:items-end lg:gap-14">
-              <h2 id="divisi-title" className="max-w-180 text-[38px] leading-[0.98] font-medium tracking-[-0.06em] text-biz-forest sm:text-[48px]">
-                Masuk lewat pekerjaan divisi Anda.
-              </h2>
-              <p className="max-w-120 text-base leading-[1.65] text-biz-copy">
-                Pilih satu divisi. Brief di bawah akan menunjukkan titik kerja, latihan, hasil lab, dan ukuran yang ditinjau.
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)] lg:items-end lg:gap-16">
+              <div>
+                <p className="text-sm font-medium text-biz-forest-light">Jalur specialist</p>
+                <h2 id="divisi-title" className="mt-4 max-w-180 text-[clamp(2.5rem,5.4vw,5rem)] leading-[0.93] font-medium tracking-[-0.065em] text-balance text-biz-forest">
+                  Satu divisi, satu konteks kerja.
+                </h2>
+              </div>
+              <p className="max-w-125 text-base leading-[1.7] text-biz-copy">
+                Pilih divisi untuk melihat titik kerja, latihan, hasil lab, dan ukuran yang ditinjau setelah kelas.
               </p>
             </div>
-            <div className="mt-9 sm:mt-12">
+
+            <div className="mt-10 sm:mt-13">
               <SpecialistDivisionExplorerBIZ />
             </div>
-            <div className="grid gap-3 border-b border-biz-line py-7 sm:grid-cols-[1fr_auto] sm:items-center">
-              <p className="max-w-170 text-base leading-[1.6] text-biz-copy">
+
+            <div className="grid gap-5 border-b border-biz-line py-8 sm:grid-cols-[1fr_auto] sm:items-center">
+              <p className="max-w-170 text-base leading-[1.65] text-biz-copy">
                 Divisi Anda belum ada di daftar? Jalur baru dapat disusun dari diagnostik awal dan pekerjaan yang ingin
                 diperbaiki.
               </p>
@@ -104,46 +107,52 @@ export default function SpecialistPageBIZ() {
           </PageMargin>
         </section>
 
-        <section className="bg-white py-16 sm:py-22">
+        <section className="bg-biz-paper-end py-5 sm:py-8">
           <PageMargin>
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-16">
-              <div>
-                <p className="biz-topic-label">Cara kami bekerja</p>
-                <h2 className="mt-5 max-w-130 text-[36px] leading-[1] font-medium tracking-[-0.06em] text-biz-forest sm:text-[44px]">
-                  Konteks berubah. Standar kerjanya tetap.
-                </h2>
-                <p className="mt-5 max-w-115 text-base leading-[1.65] text-biz-copy">
-                  Kemampuan dipetakan dengan CFTE, lalu dampak program ditinjau dengan Kirkpatrick.
-                </p>
-                <Link
-                  href="/framework"
-                  className="mt-6 inline-flex min-h-11 items-center text-sm font-medium text-biz-forest underline decoration-biz-lime decoration-2 underline-offset-4 hover:decoration-biz-forest focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-biz-forest"
-                >
-                  Baca kerangka evaluasi Ailene
-                </Link>
+            <div className="overflow-hidden rounded-2xl border border-biz-line bg-white px-6 py-12 sm:px-10 sm:py-16 lg:rounded-3xl lg:px-14 lg:py-20">
+              <div className="grid gap-9 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-18">
+                <div>
+                  <p className="text-sm font-medium text-biz-forest-light">Cara program disusun</p>
+                  <h2 className="mt-4 max-w-135 text-[clamp(2.35rem,4.7vw,4.6rem)] leading-[0.94] font-medium tracking-[-0.065em] text-balance text-biz-forest">
+                    Konteks berubah. Standar kerjanya tetap.
+                  </h2>
+                  <p className="mt-6 max-w-115 text-base leading-[1.7] text-biz-copy">
+                    Kemampuan dipetakan dengan CFTE, lalu dampak program ditinjau dengan Kirkpatrick.
+                  </p>
+                  <Link
+                    href="/framework"
+                    className="mt-7 inline-flex min-h-11 items-center text-sm font-medium text-biz-forest underline decoration-biz-lime decoration-2 underline-offset-4 transition-colors hover:decoration-biz-forest focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-biz-forest"
+                  >
+                    Baca kerangka evaluasi Ailene
+                  </Link>
+                </div>
+
+                <ol className="border-t border-biz-line">
+                  {approach.map((step) => (
+                    <li
+                      key={step.number}
+                      className="grid grid-cols-[2.5rem_1fr] gap-x-4 gap-y-3 border-b border-biz-line py-5 sm:grid-cols-[3rem_minmax(10rem,0.85fr)_minmax(0,1.15fr)] sm:items-start sm:gap-6 sm:py-7"
+                    >
+                      <span className="text-sm font-semibold text-biz-forest-light tabular-nums">{step.number}</span>
+                      <h3 className="text-xl leading-tight font-medium tracking-[-0.035em] text-biz-forest">{step.title}</h3>
+                      <p className="col-start-2 text-sm leading-[1.7] text-biz-muted sm:col-start-3">{step.copy}</p>
+                    </li>
+                  ))}
+                </ol>
               </div>
-              <ol className="border-t border-biz-line">
-                {approach.map((step) => (
-                  <li key={step.number} className="grid grid-cols-[2.5rem_1fr] gap-4 border-b border-biz-line py-5 sm:grid-cols-[3.5rem_0.75fr_1.25fr] sm:items-start sm:gap-6 sm:py-6">
-                    <span className="text-sm font-semibold text-biz-forest-light tabular-nums">{step.number}</span>
-                    <h3 className="text-xl leading-tight font-medium tracking-[-0.035em] text-biz-forest">{step.title}</h3>
-                    <p className="col-start-2 text-sm leading-[1.65] text-biz-muted sm:col-start-3">{step.copy}</p>
-                  </li>
-                ))}
-              </ol>
             </div>
           </PageMargin>
         </section>
 
-        <section className="bg-biz-forest py-14 text-white sm:py-18">
-          <PageMargin className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-10">
+        <section className="bg-biz-lime py-14 text-biz-forest sm:py-18">
+          <PageMargin className="grid gap-7 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-10">
             <div>
-              <p className="text-sm font-medium text-biz-lime">Program lintas divisi</p>
-              <h2 className="mt-2 max-w-170 text-[32px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-[42px]">
+              <p className="text-sm font-medium">Program lintas divisi</p>
+              <h2 className="mt-3 max-w-190 text-[clamp(2.25rem,4.8vw,4.8rem)] leading-[0.93] font-medium tracking-[-0.065em] text-balance">
                 Mulai dari pekerjaan yang ingin tim Anda perbaiki.
               </h2>
             </div>
-            <AppButton href="/#contact" variant="lime" size="lg" className="shrink-0">
+            <AppButton href="/#contact" variant="forest" size="lg" className="shrink-0">
               Ceritakan kebutuhan tim
             </AppButton>
           </PageMargin>

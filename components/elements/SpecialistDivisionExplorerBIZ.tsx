@@ -22,6 +22,7 @@ export default function SpecialistDivisionExplorerBIZ() {
       setActiveId(hash);
       window.requestAnimationFrame(() => {
         document.getElementById("divisi")?.scrollIntoView();
+        document.getElementById(`division-tab-${hash}`)?.scrollIntoView({ block: "nearest", inline: "center" });
       });
     };
 
@@ -38,8 +39,10 @@ export default function SpecialistDivisionExplorerBIZ() {
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let nextIndex: number | undefined;
 
-    if (event.key === "ArrowDown") nextIndex = (index + 1) % specialistDivisions.length;
-    if (event.key === "ArrowUp") nextIndex = (index - 1 + specialistDivisions.length) % specialistDivisions.length;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (index + 1) % specialistDivisions.length;
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (index - 1 + specialistDivisions.length) % specialistDivisions.length;
+    }
     if (event.key === "Home") nextIndex = 0;
     if (event.key === "End") nextIndex = specialistDivisions.length - 1;
 
@@ -48,121 +51,110 @@ export default function SpecialistDivisionExplorerBIZ() {
     event.preventDefault();
     const nextDivision = specialistDivisions[nextIndex];
     selectDivision(nextDivision.id);
-    document.getElementById(`division-tab-${nextDivision.id}`)?.focus();
+    const nextTab = document.getElementById(`division-tab-${nextDivision.id}`);
+    nextTab?.focus();
+    nextTab?.scrollIntoView({ block: "nearest", inline: "center" });
   };
 
   return (
-    <div className="border-y border-biz-line bg-white lg:grid lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.28fr)]">
-      <div className="border-b border-biz-line p-4 sm:p-5 lg:border-r lg:border-b-0 lg:p-0">
-        <label htmlFor="division-select" className="mb-2 block text-sm font-medium text-biz-forest lg:hidden">
-          Divisi yang ingin dilatih
-        </label>
-        <select
-          id="division-select"
-          value={activeId}
-          onChange={(event) => selectDivision(event.target.value)}
-          className="min-h-12 w-full cursor-pointer rounded-lg border border-biz-forest bg-white px-3.5 text-base font-medium text-biz-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biz-forest lg:hidden"
-        >
-          {specialistDivisions.map((division) => (
-            <option key={division.id} value={division.id}>
-              {division.name}
-            </option>
-          ))}
-        </select>
+    <div className="min-w-0">
+      <div
+        role="tablist"
+        aria-label="Jalur specialist per divisi"
+        className="flex min-w-0 gap-1.5 overflow-x-auto rounded-xl border border-biz-line bg-biz-paper p-1.5 [scrollbar-width:thin]"
+      >
+        {specialistDivisions.map((division, index) => {
+          const isActive = division.id === activeId;
 
-        <div role="tablist" aria-label="Jalur specialist per divisi" aria-orientation="vertical" className="hidden lg:block">
-          {specialistDivisions.map((division, index) => {
-            const isActive = division.id === activeId;
-
-            return (
-              <button
-                key={division.id}
-                id={`division-tab-${division.id}`}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={division.id}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => selectDivision(division.id)}
-                onKeyDown={(event) => handleTabKeyDown(event, index)}
-                className={`group grid min-h-15 w-full cursor-pointer grid-cols-[2.25rem_1fr] items-center border-b border-biz-line px-5 text-left transition-colors last:border-b-0 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-biz-forest ${
-                  isActive ? "bg-biz-forest text-white" : "bg-white text-biz-forest hover:bg-biz-paper-end active:bg-biz-lime/20"
-                }`}
-              >
-                <span className={`text-xs tabular-nums ${isActive ? "text-biz-lime" : "text-biz-muted"}`}>
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="text-[15px] leading-tight font-medium">{division.name}</span>
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={division.id}
+              id={`division-tab-${division.id}`}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`division-panel-${division.id}`}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => selectDivision(division.id)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
+              className={`min-h-11 shrink-0 cursor-pointer rounded-lg px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-biz-forest sm:px-5 ${
+                isActive
+                  ? "bg-biz-forest text-white"
+                  : "text-biz-copy hover:bg-biz-sage hover:text-biz-forest active:bg-biz-lime/30"
+              }`}
+            >
+              {division.short}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="min-w-0 bg-biz-paper-end">
+      <div className="mt-5 min-w-0">
         {specialistDivisions.map((division, index) => {
           const isActive = division.id === activeDivision.id;
 
           return (
             <section
               key={division.id}
-              id={division.id}
+              id={`division-panel-${division.id}`}
               role="tabpanel"
               aria-labelledby={`division-tab-${division.id}`}
               hidden={!isActive}
-              className="min-w-0 px-5 py-8 sm:px-8 sm:py-10 lg:px-11 lg:py-12"
+              tabIndex={0}
+              className="min-w-0 overflow-hidden rounded-2xl border border-biz-line bg-biz-panel focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-biz-forest lg:rounded-3xl"
             >
-              <header className="grid gap-5 border-b border-biz-line pb-7 sm:grid-cols-[minmax(0,1.1fr)_minmax(14rem,0.9fr)] sm:gap-8">
-                <div>
-                  <p className="text-sm font-medium text-biz-forest-light tabular-nums">
-                    {String(index + 1).padStart(2, "0")} / {String(specialistDivisions.length).padStart(2, "0")}
+              <header className="border-b border-biz-line bg-white px-5 py-7 sm:px-8 sm:py-9 lg:px-11 lg:py-10">
+                <div className="flex flex-col gap-3 text-xs text-biz-muted sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-medium text-biz-forest-light tabular-nums">
+                    {String(index + 1).padStart(2, "0")} / {division.name}
                   </p>
-                  <h3 className="mt-2 text-[34px] leading-[0.98] font-medium tracking-[-0.06em] text-biz-forest sm:text-[44px]">
-                    {division.name}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-biz-copy">{division.audience}</p>
+                  <p>{division.audience}</p>
                 </div>
-                <div className="sm:border-l sm:border-biz-line sm:pl-8">
-                  <p className="text-xs font-medium text-biz-forest-light">Titik kerja</p>
-                  <p className="mt-2 text-base leading-[1.65] text-biz-copy">{division.challenge}</p>
-                </div>
+                <p className="mt-8 text-xs text-biz-muted">Hasil lab</p>
+                <h3 className="mt-3 max-w-230 text-[clamp(2.25rem,5vw,4.85rem)] leading-[0.96] font-medium tracking-[-0.06em] text-balance text-biz-forest">
+                  {division.labOutput}
+                </h3>
               </header>
 
-              <div className="py-7">
-                <p className="text-sm font-medium text-biz-forest">Yang dikerjakan di kelas</p>
-                <ol className="mt-3 border-t border-biz-line sm:grid sm:grid-cols-2">
-                  {division.useCases.map((useCase, caseIndex) => (
-                    <li
-                      key={useCase}
-                      className="grid grid-cols-[2rem_1fr] gap-3 border-b border-biz-line py-4 sm:pr-6 sm:odd:border-r sm:even:pl-6"
-                    >
-                      <span className="text-xs text-biz-forest-light tabular-nums">
-                        {String(caseIndex + 1).padStart(2, "0")}
-                      </span>
-                      <span className="text-[15px] leading-[1.55] text-biz-ink">{useCase}</span>
-                    </li>
-                  ))}
-                </ol>
+              <div className="specialist-route" aria-hidden="true">
+                <span className="specialist-route-track">
+                  <span className="specialist-route-runner" />
+                </span>
               </div>
 
-              <dl className="grid border-t border-biz-line sm:grid-cols-2">
-                <div className="border-b border-biz-line py-5 sm:border-r sm:border-b-0 sm:pr-7">
-                  <dt className="text-xs text-biz-copy">Hasil lab</dt>
-                  <dd className="mt-1.5 text-lg leading-snug font-medium tracking-[-0.025em] text-biz-forest">
-                    {division.labOutput}
-                  </dd>
+              <div className="grid min-w-0 lg:grid-cols-[minmax(13rem,0.72fr)_minmax(0,1.48fr)_minmax(14rem,0.8fr)]">
+                <div className="border-b border-biz-line px-5 py-7 sm:px-8 lg:border-r lg:border-b-0 lg:px-8 lg:py-9">
+                  <p className="text-xs font-medium text-biz-forest-light">Titik kerja</p>
+                  <p className="mt-3 text-base leading-[1.7] text-biz-copy">{division.challenge}</p>
                 </div>
-                <div className="py-5 sm:pl-7">
-                  <dt className="text-xs text-biz-copy">Yang ditinjau setelah kelas</dt>
-                  <dd className="mt-1.5 text-lg leading-snug font-medium tracking-[-0.025em] text-biz-forest">
-                    {division.measure}
-                  </dd>
-                </div>
-              </dl>
 
-              <div className="border-t border-biz-line pt-4">
-                <p className="text-xs text-biz-copy">Tools latihan</p>
-                <p className="mt-1 text-sm font-medium text-biz-forest">{division.tools.join(", ")}</p>
+                <div className="border-b border-biz-line px-5 py-7 sm:px-8 lg:border-r lg:border-b-0 lg:px-9 lg:py-9">
+                  <p className="text-xs font-medium text-biz-forest-light">Yang dikerjakan di kelas</p>
+                  <ol className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {division.useCases.map((useCase, caseIndex) => (
+                      <li
+                        key={useCase}
+                        className="grid min-w-0 grid-cols-[2rem_1fr] gap-3 rounded-xl border border-biz-line bg-white p-4"
+                      >
+                        <span className="text-xs font-medium text-biz-forest-light tabular-nums">
+                          {String(caseIndex + 1).padStart(2, "0")}
+                        </span>
+                        <span className="text-sm leading-[1.55] text-biz-ink">{useCase}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <dl className="divide-y divide-biz-line px-5 sm:px-8 lg:px-8">
+                  <div className="py-7 lg:py-9">
+                    <dt className="text-xs text-biz-muted">Yang ditinjau setelah kelas</dt>
+                    <dd className="mt-2 text-xl leading-snug font-medium tracking-[-0.025em] text-biz-forest">{division.measure}</dd>
+                  </div>
+                  <div className="py-7">
+                    <dt className="text-xs text-biz-muted">Tools latihan</dt>
+                    <dd className="mt-2 text-sm leading-relaxed font-medium text-biz-forest">{division.tools.join(", ")}</dd>
+                  </div>
+                </dl>
               </div>
             </section>
           );
