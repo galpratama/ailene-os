@@ -1,29 +1,13 @@
-import { CASE_STUDY_PUBLISHED, HUTAMA_KARYA_CASE_PATH } from "@/lib/biz-case-studies";
-import {
-  Calculator,
-  CodeXml,
-  Crown,
-  Handshake,
-  Headset,
-  Megaphone,
-  Scale,
-  UsersRound,
-  Workflow,
-  type LucideIcon,
-} from "lucide-react";
-
 export interface SpecialistDivision {
   id: string;
   name: string;
   short: string;
-  icon: LucideIcon;
   audience: string;
   challenge: string;
   useCases: string[];
   labOutput: string;
   measure: string;
   tools: string[];
-  caseStudyHref?: string;
 }
 
 // One entry per division; `id` is the anchor used by /specialist#<id> deep links from ads.
@@ -32,7 +16,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "executive",
     name: "Executive & Leadership",
     short: "Executive",
-    icon: Crown,
     audience: "Direksi, VP, dan kepala unit",
     challenge: "AI sudah dipakai di banyak tim, tetapi arah, prioritas, dan batas risikonya belum diputuskan.",
     useCases: [
@@ -49,7 +32,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "sales",
     name: "Sales & Business Development",
     short: "Sales",
-    icon: Handshake,
     audience: "Account executive, BD, dan sales manager",
     challenge: "Waktu habis untuk riset akun dan administrasi, bukan untuk percakapan dengan calon klien.",
     useCases: [
@@ -66,7 +48,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "marketing",
     name: "Marketing & Communications",
     short: "Marketing",
-    icon: Megaphone,
     audience: "Brand, content, performance, dan corporate comms",
     challenge: "Permintaan konten terus naik, sementara suara brand mudah melenceng saat diproduksi cepat.",
     useCases: [
@@ -83,7 +64,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "hr",
     name: "Human Capital / HR",
     short: "HR",
-    icon: UsersRound,
     audience: "HR ops, talent, learning, dan HRBP",
     challenge: "Pertanyaan karyawan, administrasi, dan laporan berulang menyita waktu, padahal datanya sensitif.",
     useCases: [
@@ -95,13 +75,11 @@ export const specialistDivisions: SpecialistDivision[] = [
     labOutput: "Asisten HR berbasis SOP + dashboard kerja",
     measure: "Jam administrasi yang dihemat dan waktu respons",
     tools: ["Copilot", "ClickUp", "LMS Ailene"],
-    caseStudyHref: CASE_STUDY_PUBLISHED ? HUTAMA_KARYA_CASE_PATH : undefined,
   },
   {
     id: "finance",
     name: "Finance & Accounting",
     short: "Finance",
-    icon: Calculator,
     audience: "Controller, FP&A, accounting, dan tax",
     challenge: "Angka harus benar. Tim butuh kecepatan AI tanpa kehilangan jejak pemeriksaan.",
     useCases: [
@@ -118,7 +96,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "operations",
     name: "Operations & Procurement",
     short: "Operations",
-    icon: Workflow,
     audience: "Operasional, supply chain, dan pengadaan",
     challenge: "Proses berjalan lewat banyak dokumen, tabel, dan laporan manual yang sulit distandarkan.",
     useCases: [
@@ -135,7 +112,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "it",
     name: "IT & Engineering",
     short: "IT",
-    icon: CodeXml,
     audience: "Developer, infra, data, dan IT support",
     challenge: "Tim ingin agen dan koneksi data, tetapi akses dan keamanan harus tetap terkendali.",
     useCases: [
@@ -152,7 +128,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "legal",
     name: "Legal & Compliance",
     short: "Legal",
-    icon: Scale,
     audience: "Legal counsel, compliance, dan risk",
     challenge: "Dokumen bersifat rahasia dan satu kesalahan kutipan bisa mahal.",
     useCases: [
@@ -169,7 +144,6 @@ export const specialistDivisions: SpecialistDivision[] = [
     id: "customer-service",
     name: "Customer Service",
     short: "Customer Service",
-    icon: Headset,
     audience: "Agent, team lead, dan QA layanan",
     challenge: "Volume pertanyaan tinggi dan jawaban antaragen sering tidak seragam.",
     useCases: [

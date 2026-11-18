@@ -47,7 +47,7 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
           href={isHome ? "#top" : "/"}
           aria-label="Ailene for business home"
           onClick={closeMenu}
-          className="flex items-center gap-2"
+          className="flex min-h-11 items-center gap-2"
         >
           <LogoAilene className="h-7 w-auto" />
           <span className="pt-2 tracking-[-0.02em]">for Business</span>
@@ -80,7 +80,7 @@ export default function HeaderBIZ({ isHome = false }: { isHome?: boolean }) {
           aria-expanded={menuOpen}
           aria-controls="biz-mobile-nav"
           onClick={() => setMenuOpen((open) => !open)}
-          className="lg:hidden"
+          className="size-11 lg:hidden"
         >
           {menuOpen ? <X size={19} /> : <Menu size={19} />}
         </AppButton>
