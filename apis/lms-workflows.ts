@@ -46,6 +46,7 @@ export type LmsWorkflowDetails = LmsWorkflowSubmission & {
     pain_point: boolean;
   }[];
   attachments: {
+    node_id: string | null;
     url: string;
     name: string;
     mime_type: string;

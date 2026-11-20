@@ -39,6 +39,25 @@ const feedbackKinds = {
   question: { label: "Question", variant: "kuning" },
 } as const;
 
+function WorkflowAttachmentList({ attachments }: { attachments: LmsWorkflowDetails["attachments"] }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {attachments.map((attachment) => (
+        <div key={attachment.url} className="flex items-center gap-3 rounded-xl border border-line p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-300"><FileText size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-gray-800 dark:text-zinc-200">{attachment.name}</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400">{formatBytes(attachment.size_bytes)}</p>
+          </div>
+          <AppButton href={attachment.url} variant="outline" size="iconSm" aria-label={`Open ${attachment.name}`} title="Open attachment">
+            <Download size={14} />
+          </AppButton>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function LmsWorkflowDetailModalOS({
   workflow,
   isLoading,
@@ -162,6 +181,12 @@ export default function LmsWorkflowDetailModalOS({
                             {[node.source && `Source: ${node.source}`, node.tool && `Tool: ${node.tool}`].filter(Boolean).join(" · ")}
                           </p>
                         )}
+                        {workflow.attachments.some((attachment) => attachment.node_id === node.id) && (
+                          <div className="mt-3">
+                            <p className="mb-2 text-xs font-semibold text-gray-600 dark:text-zinc-300">Step documents</p>
+                            <WorkflowAttachmentList attachments={workflow.attachments.filter((attachment) => attachment.node_id === node.id)} />
+                          </div>
+                        )}
                       </div>
                       {node.minutes !== null && (
                         <span className="shrink-0 text-xs tabular-nums text-gray-500 dark:text-zinc-400">{node.minutes} min</span>
@@ -171,23 +196,10 @@ export default function LmsWorkflowDetailModalOS({
                 </ol>
               </section>
 
-              {workflow.attachments.length > 0 && (
+              {workflow.attachments.some((attachment) => !attachment.node_id) && (
                 <section>
-                  <h3 className="mb-3 text-sm font-bold text-gray-900 dark:text-zinc-100">Attachments</h3>
-                  <div className="flex flex-col gap-2">
-                    {workflow.attachments.map((attachment) => (
-                      <div key={attachment.url} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-300"><FileText size={16} /></span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-gray-800 dark:text-zinc-200">{attachment.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-zinc-400">{formatBytes(attachment.size_bytes)}</p>
-                        </div>
-                        <AppButton href={attachment.url} variant="outline" size="iconSm" aria-label={`Open ${attachment.name}`} title="Open attachment">
-                          <Download size={14} />
-                        </AppButton>
-                      </div>
-                    ))}
-                  </div>
+                  <h3 className="mb-3 text-sm font-bold text-gray-900 dark:text-zinc-100">Result attachments</h3>
+                  <WorkflowAttachmentList attachments={workflow.attachments.filter((attachment) => !attachment.node_id)} />
                 </section>
               )}
 
