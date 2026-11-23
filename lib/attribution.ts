@@ -4,11 +4,13 @@ const STORAGE_KEY = "ailene_first_touch";
 const TTL_MS = 90 * 24 * 60 * 60 * 1000;
 const CAMPAIGN_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 const CLICK_ID_PARAMS = ["gclid", "gbraid", "wbraid", "fbclid"] as const;
+// Google Ads auto-tagging context; the campaign ID covers ads that carry no utm_campaign.
+const GOOGLE_AD_PARAMS = ["gad_source", "gad_campaignid"] as const;
 
 type StoredTouch = LeadAttribution & { expires_at: number };
 
 function hasSignal(touch: LeadAttribution): boolean {
-  return [...CAMPAIGN_PARAMS, ...CLICK_ID_PARAMS, "referrer" as const].some((key) => Boolean(touch[key]));
+  return [...CAMPAIGN_PARAMS, ...CLICK_ID_PARAMS, ...GOOGLE_AD_PARAMS, "referrer" as const].some((key) => Boolean(touch[key]));
 }
 
 function readStored(): StoredTouch | null {
@@ -38,6 +40,10 @@ export function captureAttribution() {
     for (const key of CLICK_ID_PARAMS) {
       const value = url.searchParams.get(key)?.trim();
       if (value) touch[key] = value.slice(0, 512);
+    }
+    for (const key of GOOGLE_AD_PARAMS) {
+      const value = url.searchParams.get(key)?.trim();
+      if (value) touch[key] = value.slice(0, 64);
     }
     const referrer = externalReferrer();
     if (referrer) touch.referrer = referrer;

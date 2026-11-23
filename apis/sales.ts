@@ -274,6 +274,8 @@ export type LeadAttribution = {
   gbraid?: string;
   wbraid?: string;
   fbclid?: string;
+  gad_source?: string;
+  gad_campaignid?: string;
   landing_page?: string;
   referrer?: string;
   first_seen_at?: string;
