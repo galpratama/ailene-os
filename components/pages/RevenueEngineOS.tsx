@@ -6,6 +6,7 @@ import RevenueDateRangeOS from "@/components/fields/RevenueDateRangeOS";
 import RevenueAfterSalePanelOS from "@/components/pages/RevenueAfterSalePanelOS";
 import RevenueBDRPanelOS from "@/components/pages/RevenueBDRPanelOS";
 import RevenueDataHealthPanelOS from "@/components/pages/RevenueDataHealthPanelOS";
+import RevenueHomeExperimentPanelOS from "@/components/pages/RevenueHomeExperimentPanelOS";
 import RevenueLeadGenPanelOS from "@/components/pages/RevenueLeadGenPanelOS";
 import RevenueOverviewPanelOS from "@/components/pages/RevenueOverviewPanelOS";
 import RevenuePivotPanelOS from "@/components/pages/RevenuePivotPanelOS";
@@ -15,7 +16,7 @@ import RevenueTeamTasksPanelOS from "@/components/pages/RevenueTeamTasksPanelOS"
 import RevenueWeeklyTrendPanelOS from "@/components/pages/RevenueWeeklyTrendPanelOS";
 import { revenuePeriodLabel, revenuePresetRange, revenueRangeError } from "@/lib/revenue";
 import { useIsFetching, useQueryClient } from "@tanstack/react-query";
-import { Banknote, CalendarRange, Database, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, Table2, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarRange, Database, FlaskConical, Handshake, LayoutDashboard, ListChecks, Megaphone, PhoneCall, RefreshCw, Sparkles, Table2, type LucideIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
@@ -31,6 +32,7 @@ const tabs: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "weekly", label: "Weekly trend", icon: CalendarRange },
   { key: "pivot", label: "Pivot", icon: Table2 },
   { key: "tasks", label: "Team tasks", icon: ListChecks },
+  { key: "ab-home", label: "A/B home", icon: FlaskConical },
   { key: "health", label: "Data health", icon: Database },
 ];
 
@@ -140,6 +142,7 @@ export default function RevenueEngineOS({ sessionToken, today }: { sessionToken:
         {tab === "weekly" && <RevenueWeeklyTrendPanelOS {...props} />}
         {tab === "pivot" && <RevenuePivotPanelOS {...props} />}
         {tab === "tasks" && <RevenueTeamTasksPanelOS {...props} />}
+        {tab === "ab-home" && <RevenueHomeExperimentPanelOS {...props} />}
         {tab === "health" && <RevenueDataHealthPanelOS {...props} />}
       </div>
     </section>

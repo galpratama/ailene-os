@@ -304,3 +304,84 @@ export type WarehouseAnalytics = {
 export async function getWarehouseAnalytics(payload: WarehouseAnalyticsPayload) {
   return post<WarehouseAnalytics>("warehouse/dashboard", payload);
 }
+
+// --- Biz home A/B test (warehouse GA4 home_variant report) ---
+
+export type HomeVariantKey = "a" | "b";
+
+export type HomeExperimentPayload = AnalyticsPeriodPayload & {
+  channel?: string;
+  device?: string;
+};
+
+export type HomeExperimentVariant = {
+  variant: HomeVariantKey;
+  sessions: number;
+  users: number;
+  new_users: number;
+  page_views: number;
+  engaged_sessions: number;
+  engagement_seconds: number;
+  lead_events: number;
+  lead_sessions: number;
+  pages_per_session: number | null;
+  engagement_rate: number | null;
+  avg_engagement_seconds: number | null;
+  conversion_rate: number | null;
+};
+
+export type HomeExperimentTest = {
+  metric: "conversion_rate" | "engagement_rate";
+  z: number | null;
+  p_value: number | null;
+  confidence: number | null;
+  sample_reached: boolean;
+  significant: boolean;
+  leader: HomeVariantKey | null;
+};
+
+export type HomeExperimentDay = {
+  date: string;
+  variant: HomeVariantKey;
+  sessions: number;
+  page_views: number;
+  engaged_sessions: number;
+  engagement_seconds: number;
+  lead_sessions: number;
+};
+
+export type HomeExperimentSegment = {
+  dimension: "channel" | "device";
+  segment: string;
+  variant: HomeVariantKey;
+  sessions: number;
+  engaged_sessions: number;
+  lead_sessions: number;
+};
+
+export type HomeExperiment = {
+  experiment_id: string;
+  period: ReportPeriod;
+  timezone: string;
+  generated_at: string;
+  first_date: string | null;
+  last_date: string | null;
+  as_of: string | null;
+  filters: { channels: string[]; devices: string[] };
+  variants: [HomeExperimentVariant, HomeExperimentVariant];
+  lift: {
+    sessions: number | null;
+    page_views: number | null;
+    pages_per_session: number | null;
+    engagement_rate: number | null;
+    avg_engagement_seconds: number | null;
+    conversion_rate: number | null;
+  };
+  tests: HomeExperimentTest[];
+  daily: HomeExperimentDay[];
+  segments: HomeExperimentSegment[];
+};
+
+export async function getHomeExperiment(payload: HomeExperimentPayload) {
+  return post<HomeExperiment>("warehouse/home-experiment", payload);
+}

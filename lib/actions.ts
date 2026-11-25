@@ -67,6 +67,8 @@ import {
   getTrackingOverview as getTrackingOverviewApi,
   getTrackingSources as getTrackingSourcesApi,
   getWarehouseAnalytics as getWarehouseAnalyticsApi,
+  getHomeExperiment as getHomeExperimentApi,
+  type HomeExperimentPayload,
   type TrackingPeriodPayload,
   type WarehouseAnalyticsPayload,
 } from "@/apis/analytics";
@@ -499,6 +501,10 @@ export async function getTrackingAileneReferrals(payload: TrackingPeriodPayload)
 
 export async function getWarehouseAnalytics(payload: WarehouseAnalyticsPayload) {
   return getWarehouseAnalyticsApi(payload);
+}
+
+export async function getHomeExperiment(payload: HomeExperimentPayload) {
+  return getHomeExperimentApi(payload);
 }
 
 export async function listTrainers(options: ListTrainersOptions = {}) {
