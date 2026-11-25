@@ -103,7 +103,7 @@ export default function HeroV2BIZ() {
             <Tape index={3} />
           </span>
         </h1>
-        <div className="mt-[clamp(28px,5vh,56px)] flex flex-wrap items-end justify-between gap-x-12 gap-y-7">
+        <div className="mt-[clamp(28px,5vh,56px)] flex flex-wrap items-end gap-x-12 gap-y-7">
           <p className="v2-rise max-w-[30ch] text-[clamp(1.12rem,1.7vw,1.5rem)] leading-[1.35] font-medium tracking-[-0.025em] text-v2-ink-2 [animation-delay:260ms]">
             <span className="relative inline-block">
               <b className="mb-[0.2em] block font-bold text-v2-forest">Pelatihan AI untuk perusahaan yang ingin hasil.</b>
