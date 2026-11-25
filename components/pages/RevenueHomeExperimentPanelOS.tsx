@@ -1,6 +1,7 @@
 "use client";
 
 import type { HomeExperiment, HomeExperimentTest, HomeExperimentVariant, HomeVariantKey } from "@/apis/analytics";
+import AppButton from "@/components/buttons/AppButton";
 import WarehouseStackedTrendOS from "@/components/charts/WarehouseStackedTrendOS";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import InfoTooltipOS from "@/components/elements/InfoTooltipOS";
@@ -11,7 +12,7 @@ import type { RevenueTabProps } from "@/components/pages/RevenueEngineOS";
 import { useRevenue } from "@/hooks/useRevenue";
 import { getHomeExperiment } from "@/lib/actions";
 import { count, percent, shortDate } from "@/lib/revenue";
-import { ArrowDown, ArrowUp, CircleCheck, Hourglass, Scale } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarX2, CircleCheck, FlaskConical, Hourglass, Scale } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 type Direction = "higher" | "neutral";
@@ -164,25 +165,72 @@ function Verdict({ data }: { data: HomeExperiment }) {
   );
 }
 
-function SetupState({ data }: { data: HomeExperiment | undefined }) {
+const setupSteps: { title: string; detail: ReactNode }[] = [
+  { title: "Home A/B switch is live", detail: "biz.ailene.id splits visitors 50/50 between Home A and Home B." },
+  { title: "GTM tags every GA4 event", detail: <>The Google tag sends <code className="rounded bg-line-soft px-1 text-xs">home_variant</code> as a shared event parameter.</> },
+  { title: "GA4 knows the dimension", detail: <>An event-scoped custom dimension is registered for <code className="rounded bg-line-soft px-1 text-xs">home_variant</code>.</> },
+  { title: "Warehouse picks it up", detail: "The nightly GA4 job (03:00 WIB) loads the previous day per variant." },
+];
+
+const previewMetrics = ["Sessions", "Engagement rate", "Avg. engagement time", "Conversion rate"];
+
+function EmptyState({ data, periodLabel, filtered, onClearFilters }: { data: HomeExperiment | undefined; periodLabel: string; filtered: boolean; onClearFilters: () => void }) {
+  const hasHistory = !!data?.first_date;
+  const title = hasHistory ? (filtered ? "No sessions match these filters" : "No sessions in this period") : "No A/B data yet";
+  const body = hasHistory
+    ? `The test has data from ${shortDate(data?.first_date)} to ${shortDate(data?.last_date)}, but none in ${periodLabel}${filtered ? " for this channel and device" : ""}.`
+    : "Nothing has been collected for Home A or Home B. This page fills in by itself the morning after the steps below are done.";
   return (
-    <RevenueCardOS title="Waiting for A/B data" source="warehouse">
-      <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-zinc-300">
-        <p>
-          {data?.first_date
-            ? `The warehouse holds A/B data from ${shortDate(data.first_date)}, but nothing in this period or filter.`
-            : "The warehouse has no A/B sessions yet. Figures appear the day after all of these are in place:"}
-        </p>
-        {!data?.first_date && (
-          <ol className="list-decimal space-y-1 pl-5 text-gray-600 dark:text-zinc-300">
-            <li>The home A/B switch is live on biz.ailene.id.</li>
-            <li>GTM sends <code className="rounded bg-gray-100 px-1 text-xs dark:bg-zinc-800">home_variant</code> on every GA4 event (Google tag shared parameter).</li>
-            <li>GA4 has an event-scoped custom dimension for <code className="rounded bg-gray-100 px-1 text-xs dark:bg-zinc-800">home_variant</code>.</li>
-            <li>The warehouse GA4 job has run once since then.</li>
-          </ol>
+    <section aria-labelledby="home-experiment-empty" className="flex flex-col rounded-xl border border-line bg-card-bg">
+      <div className="flex flex-col items-center px-6 pt-10 pb-6 text-center">
+        <span className="flex size-12 items-center justify-center rounded-full bg-line-soft text-gray-600 dark:text-zinc-300">
+          {hasHistory ? <CalendarX2 size={22} aria-hidden="true" /> : <FlaskConical size={22} aria-hidden="true" />}
+        </span>
+        <h3 id="home-experiment-empty" className="mt-4 text-base font-semibold text-gray-900 dark:text-zinc-100">{title}</h3>
+        <p className="mt-1 max-w-md text-sm text-gray-500 dark:text-zinc-400">{body}</p>
+        {hasHistory && filtered && (
+          <AppButton type="button" variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
+            Clear filters
+          </AppButton>
         )}
       </div>
-    </RevenueCardOS>
+
+      <div aria-hidden="true" className={`grid grid-cols-1 gap-3 px-5 sm:grid-cols-2 xl:grid-cols-4 ${hasHistory ? "pb-5" : ""}`}>
+        {previewMetrics.map((metric) => (
+          <div key={metric} className="rounded-xl border border-dashed border-line px-4 py-3.5">
+            <p className="text-xs font-medium text-gray-400 dark:text-zinc-500">{metric}</p>
+            <div className="mt-2 flex flex-col gap-1.5 opacity-60">
+              {(["a", "b"] as const).map((key) => (
+                <div key={key} className="flex items-center justify-between gap-3">
+                  <HomeVariantLabel variant={key} />
+                  <span className="font-heading text-xl font-semibold text-gray-300 dark:text-zinc-600">—</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {!hasHistory && (
+        <div className="px-5 pt-6 pb-5">
+          <p className="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-zinc-400">What it takes to start</p>
+          <ol className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {setupSteps.map((step, index) => (
+              <li key={step.title} className="flex gap-3">
+                <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-full border border-line text-xs font-semibold tabular-nums text-gray-600 dark:text-zinc-300">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-zinc-100">{step.title}</p>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">{step.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      <footer className="border-t border-line-soft px-5 py-2 text-xs text-gray-500 dark:text-zinc-400">Source: Warehouse DB</footer>
+    </section>
   );
 }
 
@@ -279,7 +327,15 @@ export default function RevenueHomeExperimentPanelOS({ period, periodLabel, enab
           ))}
         </div>
       ) : !hasData || !data ? (
-        <SetupState data={data} />
+        <EmptyState
+          data={data}
+          periodLabel={periodLabel}
+          filtered={!!channel || !!device}
+          onClearFilters={() => {
+            setChannel("");
+            setDevice("");
+          }}
+        />
       ) : (
         <>
           <Verdict data={data} />

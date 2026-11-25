@@ -11,6 +11,9 @@ export function GET() {
     { path: "/join-trainer", lastModified: CONTENT_UPDATED_AT },
     { path: "/framework", lastModified: new Date("2026-11-06") },
     { path: "/specialist", lastModified: new Date("2026-11-09") },
+    { path: "/sprint", lastModified: new Date("2026-11-25") },
+    { path: "/lms", lastModified: new Date("2026-11-25") },
+    { path: "/governance", lastModified: new Date("2026-11-25") },
     ...(CASE_STUDY_PUBLISHED ? [{ path: HUTAMA_KARYA_CASE_PATH, lastModified: new Date("2026-11-09") }] : []),
   ]);
 }

@@ -94,6 +94,34 @@
   --biz-stream-teal: #12d6a0;
   --biz-stream-cyan: #00b4f0;
 
+  /* Ailene BIZ home v2 ("Make AI stick."), the A/B challenger to the v8 home */
+  --v2-forest: #0f2b1f;
+  --v2-forest-mid: #1b4532;
+  --v2-green: #2e7a36;
+  --v2-green-soft: #e2efe4;
+  --v2-leaf: #71bb56;
+  --v2-lime: #d8f329;
+  --v2-lime-ink: #2f3b10;
+  --v2-paper: #ffffff;
+  --v2-paper-2: #f6f7f2;
+  --v2-paper-3: #eceee6;
+  --v2-hero-top: #edf0e7;
+  --v2-rule: #dde1d6;
+  --v2-ink: #111e18;
+  --v2-ink-2: #3b4a42;
+  --v2-ink-3: #53625a;
+  --v2-faded: #b9bfb0;
+  --v2-on-forest: #f4f5ef;
+  --v2-amber: #8a4f00;
+  --v2-amber-soft: #f6ead6;
+  --v2-red: #9e3030;
+  --v2-red-soft: #f6e1e1;
+  --v2-gold: #e8a317;
+  --v2-lime-wash: #eef6d3;
+  /* v2 page container (max width incl. gutters) and desktop gutter; grown on wide screens below */
+  --v2-wrap: 1200px;
+  --v2-gutter: 48px;
+
   /* OS chrome uses neutral surfaces in both themes; green stays an accent. */
   --dashboard-bg: #eef3ea;
   --dashboard-border: #dde6d8;
@@ -141,6 +169,14 @@
   --label-toska: #0f766e;
   --label-toska-border: #80cbc4;
   --label-toska-bg: #e6fffb;
+}
+
+/* BIZ v2 container grows on wide desktops so the page doesn't sit small in the middle. */
+@media (min-width: 80rem) {
+  :root { --v2-wrap: 1360px; --v2-gutter: 64px; }
+}
+@media (min-width: 96rem) {
+  :root { --v2-wrap: 1520px; --v2-gutter: 80px; }
 }
 
 .dark {
@@ -308,6 +344,30 @@
   --color-biz-stream-violet: var(--biz-stream-violet);
   --color-biz-stream-teal: var(--biz-stream-teal);
   --color-biz-stream-cyan: var(--biz-stream-cyan);
+  --color-v2-forest: var(--v2-forest);
+  --color-v2-forest-mid: var(--v2-forest-mid);
+  --color-v2-green: var(--v2-green);
+  --color-v2-green-soft: var(--v2-green-soft);
+  --color-v2-leaf: var(--v2-leaf);
+  --color-v2-lime: var(--v2-lime);
+  --color-v2-lime-ink: var(--v2-lime-ink);
+  --color-v2-paper: var(--v2-paper);
+  --color-v2-paper-2: var(--v2-paper-2);
+  --color-v2-paper-3: var(--v2-paper-3);
+  --color-v2-hero-top: var(--v2-hero-top);
+  --color-v2-rule: var(--v2-rule);
+  --color-v2-ink: var(--v2-ink);
+  --color-v2-ink-2: var(--v2-ink-2);
+  --color-v2-ink-3: var(--v2-ink-3);
+  --color-v2-faded: var(--v2-faded);
+  --color-v2-on-forest: var(--v2-on-forest);
+  --color-v2-amber: var(--v2-amber);
+  --color-v2-amber-soft: var(--v2-amber-soft);
+  --color-v2-red: var(--v2-red);
+  --color-v2-red-soft: var(--v2-red-soft);
+  --color-v2-gold: var(--v2-gold);
+  --color-v2-lime-wash: var(--v2-lime-wash);
+  --font-jakarta: var(--font-plus-jakarta);
 
   --font-script: var(--font-caveat);
   --font-heading: var(--font-stack-headline);
@@ -611,6 +671,109 @@ body {
 .biz-reveal.is-visible {
   opacity: 1;
   transform: none;
+}
+
+/* BIZ home v2: ornaments and one move per section, transform/opacity only. */
+.v2-liquid {
+  position: absolute;
+  z-index: -2;
+  pointer-events: none;
+  mask-image: radial-gradient(closest-side, #000 55%, transparent);
+}
+.v2-liquid i {
+  position: absolute;
+  display: block;
+  border-radius: 46% 54% 58% 42% / 48% 42% 58% 52%;
+  filter: blur(38px);
+}
+.v2-liquid .b1 { inset: 8% 4% 18% 22%; background: radial-gradient(circle at 40% 40%, var(--v2-forest-mid), var(--v2-forest) 70%); }
+.v2-liquid .b2 { inset: 30% 30% 0 0; background: radial-gradient(circle at 50% 50%, var(--v2-leaf), color-mix(in srgb, var(--v2-leaf) 20%, transparent) 72%); }
+.v2-liquid .b3 { width: 34%; height: 34%; left: 20%; top: 16%; background: radial-gradient(circle, color-mix(in srgb, var(--v2-lime) 90%, transparent), transparent 70%); }
+.v2-liquid .b1 { animation: v2-morph 16s ease-in-out infinite alternate; }
+.v2-liquid .b2 { animation: v2-morph 19s ease-in-out -6s infinite alternate-reverse; }
+.v2-liquid .b3 { animation: v2-drift 13s ease-in-out infinite alternate; }
+.v2-hero-liquid { animation: v2-pool 1.6s cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes v2-morph {
+  0% { border-radius: 46% 54% 58% 42% / 48% 42% 58% 52%; transform: translate(0, 0) rotate(0); }
+  100% { border-radius: 58% 42% 40% 60% / 40% 60% 42% 58%; transform: translate(-3%, 4%) rotate(14deg); }
+}
+@keyframes v2-drift { to { transform: translate(18%, 22%) scale(1.15); } }
+@keyframes v2-pool { from { opacity: 0; transform: translate(8%, -8%) scale(0.72); } }
+
+/* Hero: each headline line slides up, then clear tape presses onto it in reading order. */
+.v2-line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.v2-line > span { display: block; animation: v2-line-up 1s cubic-bezier(0.23, 1, 0.32, 1) both; }
+.v2-line-2 > span { animation-delay: 90ms; }
+@keyframes v2-line-up { from { transform: translateY(106%); } }
+.v2-rise { animation: v2-rise 700ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes v2-rise { from { opacity: 0; transform: translateY(10px); } }
+.v2-tape {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: var(--tw);
+  height: calc(var(--tw) * 0.34);
+  pointer-events: none;
+  transform: rotate(var(--r, 0deg));
+  filter: drop-shadow(0 1px 0.6px rgb(15 43 31 / 0.22)) drop-shadow(0 4px 6px rgb(15 43 31 / 0.1));
+  animation: v2-tape-on 300ms cubic-bezier(0.23, 1, 0.32, 1) var(--d, 0ms) both;
+}
+.v2-tape::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: var(--cp, none);
+  background: linear-gradient(180deg, rgb(15 43 31 / 0.28) 0 1px, rgb(255 255 255 / 0.74) 1px, rgb(246 250 244 / 0.6) 50%, rgb(226 233 222 / 0.66) calc(100% - 1px), rgb(15 43 31 / 0.28) 0);
+  backdrop-filter: blur(1.6px) saturate(1.15);
+}
+.v2-tape::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 20%;
+  height: 20%;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  opacity: 0.9;
+  clip-path: var(--cp, none);
+}
+@keyframes v2-tape-on { from { opacity: 0; transform: rotate(var(--r, 0deg)) translateY(-6px) scale(1.28); } }
+.v2-glass {
+  background: rgb(255 255 255 / 0.62);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow: 0 40px 70px -36px rgb(10 32 22 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(255 255 255 / 0.25);
+}
+.v2-glass-in { animation: v2-glass-in 900ms cubic-bezier(0.23, 1, 0.32, 1) 600ms both; }
+@keyframes v2-glass-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+.v2-press { transform-origin: left center; animation: v2-press 380ms cubic-bezier(0.23, 1, 0.32, 1) 1900ms both; }
+@keyframes v2-press { 0% { transform: scale(1.06); } 60% { transform: scale(0.98); } 100% { transform: none; } }
+@supports not (backdrop-filter: blur(1px)) {
+  .v2-glass { background: rgb(255 255 255 / 0.94); }
+}
+
+/* Scroll-scrubbed pieces animate inline transforms; this keeps them on the compositor. */
+.v2-scrub { will-change: transform; }
+.v2-media {
+  opacity: 0;
+  transform: translateY(12px);
+  filter: blur(4px);
+  transition: opacity 420ms cubic-bezier(0.23, 1, 0.32, 1), transform 420ms cubic-bezier(0.23, 1, 0.32, 1), filter 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.v2-media.is-on { opacity: 1; transform: none; filter: none; }
+.v2-bar { transition: width 0.9s cubic-bezier(0.23, 1, 0.32, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-liquid i,
+  .v2-hero-liquid,
+  .v2-line > span,
+  .v2-rise,
+  .v2-tape,
+  .v2-glass-in,
+  .v2-press {
+    animation: none !important;
+  }
+  .v2-media { transform: none; filter: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

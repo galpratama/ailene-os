@@ -33,8 +33,10 @@ export type AppButtonVariant =
   | "outlineDark"
   | "discord"
   | "choiceBiz"
-  | "choiceBizActive";
-export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "lg" | "choice" | "rating";
+  | "choiceBizActive"
+  | "forestV2"
+  | "outlineV2";
+export type AppButtonSize = "sm" | "md" | "icon" | "iconSm" | "iconRound" | "iconRoundSm" | "pill" | "row" | "rowWide" | "rowSummary" | "textLink" | "sort" | "bare" | "dashed" | "floating" | "cta" | "header" | "lg" | "choice" | "rating";
 
 interface AppButtonBaseProps {
   children: ReactNode;
@@ -96,6 +98,9 @@ const variantClasses: Record<AppButtonVariant, string> = {
   // Answer options in a BIZ questionnaire (trilogy survey).
   choiceBiz: "border border-ink-line bg-white text-ink hover:border-ink/40",
   choiceBizActive: "border border-biz-forest bg-biz-lime/20 text-ink ring-1 ring-biz-forest",
+  // BIZ home v2 ("Make AI stick."): forest fill and a quiet outline.
+  forestV2: "border border-v2-forest bg-v2-forest text-v2-on-forest hover:bg-v2-forest-mid",
+  outlineV2: "border border-v2-rule bg-transparent text-v2-ink hover:border-v2-ink hover:bg-white",
 };
 
 const sizeClasses: Record<AppButtonSize, string> = {
@@ -115,6 +120,8 @@ const sizeClasses: Record<AppButtonSize, string> = {
   dashed: "w-full justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors",
   floating: "h-12 rounded-full px-3.5 py-0 text-[15px] tracking-[-0.02em] gap-1.5 font-medium transition-[background-color,box-shadow,transform]",
   cta: "justify-center px-6 py-3.5 gap-1.5 text-[15px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
+  // Compact CTA for a sticky site header.
+  header: "h-11 justify-center px-4.5 gap-2 text-[15px] rounded-lg font-semibold transition-colors",
   // Hero-only step above cta.
   lg: "h-15 justify-center px-9 gap-2 text-[17px] rounded-xl font-medium transition-transform hover:-translate-y-0.5",
   choice: "min-h-13 w-full justify-start gap-3 rounded-xl px-4 py-3.5 text-left text-[15px] leading-snug font-medium transition-colors",

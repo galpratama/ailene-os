@@ -1,5 +1,6 @@
 "use client";
 
+import { readHomeVariantCookie } from "@/lib/biz-experiment";
 import { runAfterLoadIdle } from "@/lib/idle";
 import { useEffect } from "react";
 
@@ -20,6 +21,9 @@ export default function PostHogBIZ() {
           capture_heatmaps: true,
           person_profiles: "identified_only",
         });
+        // Every event carries the home A/B bucket so funnels can be split by variant.
+        const homeVariant = readHomeVariantCookie();
+        if (homeVariant) posthog.register({ home_variant: homeVariant });
       });
     });
   }, [apiKey, apiHost]);

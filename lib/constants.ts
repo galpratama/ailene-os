@@ -1,5 +1,8 @@
 export const SESSION_COOKIE_NAME = "session_token_ailene";
 
+// Sticky A/B bucket of the BIZ home: written by HomeExperimentBIZ, read by the page and PostHogBIZ.
+export const BIZ_HOME_VARIANT_COOKIE = "ailene_biz_home_variant";
+
 // Neon Realtime database name of the ailene-os-apis database.
 export const NEON_REALTIME_DB = "neondb";
 

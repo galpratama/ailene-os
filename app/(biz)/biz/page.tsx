@@ -1,8 +1,13 @@
+import HomeExperimentBIZ from "@/components/analytics/HomeExperimentBIZ";
 import HomePageBIZ from "@/components/pages/HomePageBIZ";
+import HomePageV2BIZ from "@/components/pages/HomePageV2BIZ";
 import JsonLd from "@/components/seo/JsonLd";
+import { resolveHomeVariant } from "@/lib/biz-experiment";
 import { resolveHeroAudience, resolveHeroDisplay } from "@/lib/biz-content";
+import { BIZ_HOME_VARIANT_COOKIE } from "@/lib/constants";
 import { homePageGraph } from "@/lib/structured-data";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   title: {
@@ -30,18 +35,31 @@ export const metadata: Metadata = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ audience?: string | string[]; display?: string | string[] }>;
+  searchParams: Promise<{
+    audience?: string | string[];
+    display?: string | string[];
+    home?: string | string[];
+  }>;
 }) {
   // Resolved on the server so the audience headline and hero visual are in the first HTML, not swapped in after load.
-  const { audience, display } = await searchParams;
+  const { audience, display, home } = await searchParams;
+  const { variant, persist } = resolveHomeVariant(
+    home,
+    (await cookies()).get(BIZ_HOME_VARIANT_COOKIE)?.value
+  );
 
   return (
     <>
       <JsonLd graph={homePageGraph()} />
-      <HomePageBIZ
-        audience={resolveHeroAudience(audience)}
-        display={resolveHeroDisplay(display)}
-      />
+      <HomeExperimentBIZ variant={variant} persist={persist} />
+      {variant === "b" ? (
+        <HomePageV2BIZ />
+      ) : (
+        <HomePageBIZ
+          audience={resolveHeroAudience(audience)}
+          display={resolveHeroDisplay(display)}
+        />
+      )}
     </>
   );
 }
