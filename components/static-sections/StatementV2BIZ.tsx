@@ -9,19 +9,20 @@ const STATEMENT =
   "95 dari 100 pilot AI tidak berdampak pada laba rugi. Bukan karena AI-nya kurang canggih. Karena cara kerja timnya tidak pernah berubah.";
 const words = STATEMENT.split(" ");
 
-// Photos drift at their own speed around the statement; hidden below 1000px.
-const photos = [
-  { src: "/biz/v2/demoday-winners.webp", w: 760, h: 570, speed: -0.18, className: "left-[3%] top-[9%] w-[min(15vw,220px)] aspect-4/3" },
-  { src: "/biz/v2/team-galih.webp", w: 640, h: 560, speed: 0.12, className: "right-[5%] top-[7%] w-[min(10vw,150px)] aspect-square" },
-  { src: "/biz/v2/session-group.webp", w: 771, h: 717, speed: -0.08, className: "left-[7%] bottom-[9%] w-[min(11vw,170px)] aspect-square" },
-  { src: "/biz/v2/demoday-present.webp", w: 760, h: 570, speed: 0.2, className: "right-[3%] bottom-[13%] w-[min(16vw,230px)] aspect-4/3" },
-  { src: "/biz/v2/session-speaker.webp", w: 767, h: 717, speed: -0.14, className: "left-1/2 bottom-[2.5%] -ml-13.75 w-[min(8vw,110px)] aspect-square" },
-];
+// Small tool marks and two people sit near the statement on wide screens.
+const decorations = [
+  { kind: "tool", name: "Gemini", src: "/biz/v2/icons/gemini.png", speed: -0.18, className: "left-[4%] top-[8%] size-24" },
+  { kind: "person", name: "Galih Pratama", src: "/biz/v2/team-galih.webp", speed: 0.12, className: "right-[4%] top-[7%] size-25" },
+  { kind: "tool", name: "ChatGPT", src: "/biz/v2/icons/chatgpt.png", speed: -0.08, className: "left-[1%] top-[43%] size-23" },
+  { kind: "tool", name: "Copilot", src: "/biz/v2/icons/copilot.png", speed: 0.2, className: "right-[1%] top-[46%] size-23" },
+  { kind: "person", name: "Raymond Chin", src: "/biz/photos/trainer-raymond.webp", speed: -0.14, className: "left-[6%] bottom-[6%] size-25" },
+  { kind: "tool", name: "Claude", src: "/biz/v2/icons/claude.png", speed: 0.15, className: "right-[6%] bottom-[6%] size-24" },
+] as const;
 
 export default function StatementV2BIZ() {
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const photoRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const decorationRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Words fill from 16% to full ink as the heading passes the reading line.
   useScrollFrame(sectionRef, (rect, vh) => {
@@ -33,8 +34,8 @@ export default function StatementV2BIZ() {
       word.style.opacity = (0.16 + 0.84 * Math.min(1, Math.max(0, filled - index))).toFixed(3);
     });
     const drift = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height))) - 0.5;
-    photoRefs.current.forEach((photo, index) => {
-      if (photo) photo.style.transform = `translate3d(0,${(drift * photos[index].speed * 900).toFixed(1)}px,0)`;
+    decorationRefs.current.forEach((decoration, index) => {
+      if (decoration) decoration.style.transform = `translate3d(0,${(drift * decorations[index].speed * 900).toFixed(1)}px,0)`;
     });
   });
 
@@ -42,18 +43,27 @@ export default function StatementV2BIZ() {
     <section
       ref={sectionRef}
       aria-labelledby="v2-statement"
-      className="relative overflow-hidden bg-v2-paper py-[clamp(80px,14vw,120px)] min-[1000px]:py-[clamp(120px,17vw,240px)]"
+      className="relative overflow-hidden bg-v2-paper py-[clamp(80px,14vw,120px)] min-[1000px]:py-[clamp(96px,8vw,124px)] 2xl:py-28"
     >
-      <div aria-hidden="true" className="hidden min-[1000px]:block">
-        {photos.map((photo, index) => (
+      <div aria-hidden="true" className="absolute inset-0 mx-auto hidden max-w-265 min-[1000px]:block">
+        {decorations.map((decoration, index) => (
           <div
-            key={photo.src}
+            key={decoration.name}
             ref={(element) => {
-              photoRefs.current[index] = element;
+              decorationRefs.current[index] = element;
             }}
-            className={`v2-scrub absolute overflow-hidden rounded-xl shadow-[0_30px_60px_-30px_rgb(10_32_22/0.45)] ${photo.className}`}
+            className={`v2-scrub absolute overflow-hidden rounded-2xl shadow-[0_24px_48px_-26px_rgb(10_32_22/0.35)] ${decoration.className}`}
           >
-            <Image src={photo.src} width={photo.w} height={photo.h} alt="" loading="lazy" className="size-full object-cover" />
+            {decoration.kind === "person" ? (
+              <div className="relative size-full bg-linear-to-br from-v2-lime to-v2-leaf">
+                <Image src={decoration.src} fill sizes="100px" alt="" loading="lazy" className="object-cover object-top" />
+              </div>
+            ) : (
+              <div className="flex size-full flex-col items-center justify-center gap-1 border border-v2-rule bg-white/90">
+                <Image src={decoration.src} width={48} height={48} alt="" loading="lazy" className={`size-11 object-contain ${decoration.name === "Copilot" ? "scale-125" : ""}`} />
+                <span className="text-[11px] leading-none font-bold text-v2-ink-2">{decoration.name}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>

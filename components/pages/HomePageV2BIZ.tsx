@@ -3,6 +3,7 @@ import HeroV2BIZ from "../heroes/HeroV2BIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
 import AcademyV2BIZ from "../static-sections/AcademyV2BIZ";
 import CloseV2BIZ from "../static-sections/CloseV2BIZ";
+import CompaniesHomeBIZ from "../static-sections/CompaniesHomeBIZ";
 import DifferenceV2BIZ from "../static-sections/DifferenceV2BIZ";
 import FactsV2BIZ from "../static-sections/FactsV2BIZ";
 import LeadFormV2BIZ from "../static-sections/LeadFormV2BIZ";
@@ -22,6 +23,7 @@ export default function HomePageV2BIZ() {
     <ShellV2BIZ page="home">
         <HeroV2BIZ />
         <StatementV2BIZ />
+        <CompaniesHomeBIZ />
         <RaporBoardV2BIZ />
         <ProblemV2BIZ />
         <FactsV2BIZ />
