@@ -34,14 +34,14 @@ const tapes: { tw: string; r: number; d: number; place: CSSProperties }[] = [
 ];
 
 const mobileTapes: Partial<Record<number, (typeof tapes)[number]>> = {
-  0: { tw: "2rem", r: -12, d: 980, place: { right: 8, top: -8 } },
-  2: { tw: "2rem", r: 10, d: 1260, place: { right: 4, bottom: -8 } },
+  0: { tw: "2.5rem", r: -12, d: 980, place: { right: 12, top: "22%" } },
+  2: { tw: "2.5rem", r: 10, d: 1260, place: { right: 8, top: "28%" } },
 };
 
 function Tape({ index, mobile = false }: { index: number; mobile?: boolean }) {
   const { tw, r, d, place } = mobile ? mobileTapes[index] ?? tapes[index] : tapes[index];
   const style = { ...place, "--tw": tw, "--r": `${r}deg`, "--d": `${d}ms`, "--cp": clips[index] } as CSSProperties;
-  return <i className={`v2-tape ${mobile ? "block md:hidden" : "hidden md:block"}`} style={style} aria-hidden="true" />;
+  return <i className={`v2-tape ${mobile ? "v2-tape-mobile" : "v2-tape-desktop"}`} style={style} aria-hidden="true" />;
 }
 
 export default function HeroV2BIZ() {
