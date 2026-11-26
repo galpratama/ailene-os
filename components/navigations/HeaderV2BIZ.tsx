@@ -1,10 +1,10 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { LogoAilene } from "@/components/svg/LogoAilene";
 import { plusJakarta } from "@/lib/biz-fonts";
 import { V2_FORM_ANCHOR, V2_WRAP, v2NavLinks, v2Resources, v2Services, type V2Page } from "@/lib/biz-home-v2";
 import { IconBrandWhatsapp, IconChevronDown, IconMenu2, IconX } from "@tabler/icons-react";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const navItemClass =
@@ -98,15 +98,11 @@ export default function HeaderV2BIZ({ page }: { page: V2Page }) {
   return (
     <header className={`${plusJakarta.variable} sticky top-0 z-50 border-b border-v2-forest/8 bg-white/78 font-jakarta text-v2-ink backdrop-blur-md backdrop-saturate-160`}>
       <div className={`${V2_WRAP} flex h-18 items-center gap-4`}>
-        <a href={page === "home" ? "#top" : "/"} aria-label="Ailene for Business, beranda" className="flex-none">
-          <Image
-            src="/biz/v2/ailene-business-horizontal.svg"
-            width={200}
-            height={42}
-            alt="Ailene for Business"
-            priority
-            className="h-auto w-40 sm:w-44"
-          />
+        <a href={page === "home" ? "#top" : "/"} aria-label="Ailene for Business, beranda" className="flex flex-none items-end gap-1.5">
+          <LogoAilene className="h-8 w-auto text-v2-forest" />
+          <span className="pb-0.5 text-[15px] leading-none font-semibold tracking-[-0.025em] whitespace-nowrap sm:text-base">
+            for Business
+          </span>
         </a>
         <nav aria-label="Utama" className="ml-auto hidden items-center gap-0.5 xl:flex">
           <NavMenu {...menuProps(servicesMenu)} align="left" />
