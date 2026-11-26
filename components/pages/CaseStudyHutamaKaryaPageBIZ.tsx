@@ -4,7 +4,7 @@ import CaseStudyScoreChartBIZ from "@/components/elements/CaseStudyScoreChartBIZ
 import CaseStudyTimelineBIZ from "@/components/elements/CaseStudyTimelineBIZ";
 import PageMargin from "@/components/layouts/PageMargin";
 import FooterHomeBIZ from "@/components/navigations/FooterHomeBIZ";
-import HeaderBIZ from "@/components/navigations/HeaderBIZ";
+import HeaderV2BIZ from "@/components/navigations/HeaderV2BIZ";
 import SectionHeaderHomeBIZ from "@/components/static-sections/SectionHeaderHomeBIZ";
 import { hutamaKaryaCase as hk } from "@/lib/biz-case-studies";
 import { ArrowUpRight, ChevronRight, Info } from "lucide-react";
@@ -14,7 +14,7 @@ import Link from "next/link";
 export default function CaseStudyHutamaKaryaPageBIZ() {
   return (
     <div className="min-h-screen bg-biz-paper text-biz-ink [&_[id]]:scroll-mt-20">
-      <HeaderBIZ />
+      <HeaderV2BIZ page="case-study" />
       <main>
         <section className="bg-biz-paper-end pt-8 pb-14 sm:pt-10 sm:pb-20">
           <PageMargin>

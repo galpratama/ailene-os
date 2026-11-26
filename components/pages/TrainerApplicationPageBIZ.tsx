@@ -6,7 +6,7 @@ import AppNumberInput from "@/components/fields/AppNumberInput";
 import AppSelect, { type AppSelectOption } from "@/components/fields/AppSelect";
 import AppTextArea from "@/components/fields/AppTextArea";
 import FooterBIZ from "@/components/navigations/FooterBIZ";
-import HeaderBIZ from "@/components/navigations/HeaderBIZ";
+import HeaderV2BIZ from "@/components/navigations/HeaderV2BIZ";
 import { trackFormSubmit } from "@/lib/conversion";
 import type { TrainerSource } from "@/apis/trainers";
 import { applyAsTrainer, listSpecializationOptions } from "@/lib/actions";
@@ -132,7 +132,7 @@ export default function TrainerApplicationPageBIZ() {
 
   return (
     <div className="min-h-screen bg-off text-ink">
-      <HeaderBIZ />
+      <HeaderV2BIZ page="join-trainer" />
       <main>
         <section className="border-b border-ink-line bg-forest-deep text-white">
           <PageMargin className="grid gap-12 py-18 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">

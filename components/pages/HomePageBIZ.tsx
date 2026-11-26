@@ -1,4 +1,4 @@
-import HeaderHomeBIZ from "../navigations/HeaderHomeBIZ";
+import HeaderV2BIZ from "../navigations/HeaderV2BIZ";
 import FooterHomeBIZ from "../navigations/FooterHomeBIZ";
 import HeroHomeBIZ from "../heroes/HeroHomeBIZ";
 import CompaniesHomeBIZ from "../static-sections/CompaniesHomeBIZ";
@@ -26,21 +26,24 @@ export default function HomePageBIZ({
 }) {
   return (
     <div id="top" className="bg-biz-paper text-biz-ink [&_[id]]:scroll-mt-17.5">
-      <HeaderHomeBIZ />
+      <HeaderV2BIZ page="home" />
       <main>
         <HeroHomeBIZ audience={audience} display={display} />
         <RevealOnScroll viewBlock="companies">
           <CompaniesHomeBIZ />
         </RevealOnScroll>
+        <span id="layanan-automate" className="block" aria-hidden="true" />
         <RevealOnScroll viewBlock="program_overview">
           <ProgramOverviewHomeBIZ />
         </RevealOnScroll>
+        <span id="layanan-consult" className="block" aria-hidden="true" />
         <RevealOnScroll>
           <ProcessHomeBIZ />
         </RevealOnScroll>
         <RevealOnScroll>
           <FrameworksHomeBIZ />
         </RevealOnScroll>
+        <span id="rapor" className="block" aria-hidden="true" />
         <RevealOnScroll viewBlock="outcomes">
           <OutcomesHomeBIZ />
         </RevealOnScroll>
@@ -50,6 +53,7 @@ export default function HomePageBIZ({
         <RevealOnScroll viewBlock="trainers">
           <TrainersHomeBIZ />
         </RevealOnScroll>
+        <span id="layanan-train" className="block" aria-hidden="true" />
         <RevealOnScroll viewBlock="programs">
           <ProgramsHomeBIZ />
         </RevealOnScroll>

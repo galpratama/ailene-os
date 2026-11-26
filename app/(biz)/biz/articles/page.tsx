@@ -1,10 +1,9 @@
 import { listActiveArticleCategories, listPublishedArticles } from "@/apis/articles";
 import ArticlesPageBIZ from "@/components/pages/ArticlesPageBIZ";
 import JsonLd from "@/components/seo/JsonLd";
+import { BIZ_ARTICLE_PAGE_SIZE } from "@/lib/article";
 import { articlesIndexGraph } from "@/lib/structured-data";
 import type { Metadata } from "next";
-
-const PAGE_SIZE = 12;
 
 export const metadata: Metadata = {
   title: "Artikel — Insight AI untuk Tim Kerja",
@@ -30,7 +29,7 @@ export default async function Page({
   const [articles, categories] = await Promise.all([
     listPublishedArticles({
       page,
-      page_size: PAGE_SIZE,
+      page_size: BIZ_ARTICLE_PAGE_SIZE,
       category_id: categoryId ?? undefined,
     }),
     listActiveArticleCategories(),

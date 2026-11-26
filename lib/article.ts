@@ -6,6 +6,8 @@ import type {
 } from "@/apis/articles";
 import { SITE_URL } from "@/lib/site";
 
+export const BIZ_ARTICLE_PAGE_SIZE = 13;
+
 export const ARTICLE_STATUS_OPTIONS: { value: ArticleStatus; label: string }[] =
   [
     { value: "draft", label: "Draft" },

@@ -4,7 +4,7 @@ import FrameworkEvidenceBIZ from "@/components/elements/FrameworkEvidenceBIZ";
 import FrameworkImpactBIZ from "@/components/elements/FrameworkImpactBIZ";
 import PageMargin from "@/components/layouts/PageMargin";
 import FooterHomeBIZ from "@/components/navigations/FooterHomeBIZ";
-import HeaderBIZ from "@/components/navigations/HeaderBIZ";
+import HeaderV2BIZ from "@/components/navigations/HeaderV2BIZ";
 import SectionHeaderHomeBIZ from "@/components/static-sections/SectionHeaderHomeBIZ";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
@@ -12,7 +12,7 @@ import Image from "next/image";
 export default function FrameworkPageBIZ() {
   return (
     <div className="min-h-screen bg-biz-paper text-biz-ink [&_[id]]:scroll-mt-20">
-      <HeaderBIZ />
+      <HeaderV2BIZ page="framework" />
       <main>
         <section className="bg-biz-paper-end py-18 sm:py-24">
           <PageMargin className="grid items-center gap-9 lg:grid-cols-[0.8fr_1.2fr] lg:gap-13">

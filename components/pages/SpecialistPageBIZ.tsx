@@ -2,7 +2,7 @@ import AppButton from "@/components/buttons/AppButton";
 import SpecialistDivisionExplorerBIZ from "@/components/elements/SpecialistDivisionExplorerBIZ";
 import PageMargin from "@/components/layouts/PageMargin";
 import FooterHomeBIZ from "@/components/navigations/FooterHomeBIZ";
-import HeaderBIZ from "@/components/navigations/HeaderBIZ";
+import HeaderV2BIZ from "@/components/navigations/HeaderV2BIZ";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -27,7 +27,7 @@ const approach = [
 export default function SpecialistPageBIZ() {
   return (
     <div className="min-h-screen overflow-x-clip bg-biz-paper text-biz-ink">
-      <HeaderBIZ />
+      <HeaderV2BIZ page="specialist" />
       <main>
         <section className="bg-biz-paper-end">
           <PageMargin className="py-5 sm:py-8">

@@ -1,6 +1,7 @@
 "use client";
 
 import AppButton from "@/components/buttons/AppButton";
+import { plusJakarta } from "@/lib/biz-fonts";
 import { V2_FORM_ANCHOR, V2_WRAP, v2NavLinks, v2Resources, v2Services, type V2Page } from "@/lib/biz-home-v2";
 import { IconBrandWhatsapp, IconChevronDown, IconMenu2, IconX } from "@tabler/icons-react";
 import Image from "next/image";
@@ -14,7 +15,7 @@ const currentClass =
   "relative aria-[current=page]:text-v2-ink aria-[current=page]:after:absolute aria-[current=page]:after:inset-x-2.5 aria-[current=page]:after:bottom-0 aria-[current=page]:after:h-0.5 aria-[current=page]:after:bg-v2-ink";
 
 type MenuKey = "services" | "resources";
-type Menu = { key: MenuKey; label: string; items: readonly { name: string; hint: string; href: string }[] };
+type Menu = { key: MenuKey; label: string; items: readonly { name: string; hint: string; href: string; page?: V2Page }[] };
 
 const servicesMenu: Menu = { key: "services", label: "Layanan", items: v2Services };
 const resourcesMenu: Menu = { key: "resources", label: "Lainnya", items: v2Resources };
@@ -25,12 +26,14 @@ function NavMenu({
   onToggle,
   onClose,
   align,
+  page,
 }: {
   menu: Menu;
   open: boolean;
   onToggle: () => void;
   onClose: () => void;
   align: "left" | "right";
+  page: V2Page;
 }) {
   const id = `v2-${menu.key}-menu`;
   return (
@@ -47,7 +50,7 @@ function NavMenu({
           }`}
         >
           {menu.items.map((item) => (
-            <a key={item.href} href={item.href} onClick={onClose} className="block rounded-[10px] px-3.5 py-3 hover:bg-v2-paper-2">
+            <a key={item.href} href={item.href} aria-current={item.page === page ? "page" : undefined} onClick={onClose} className="block rounded-[10px] px-3.5 py-3 hover:bg-v2-paper-2 aria-[current=page]:bg-v2-paper-2">
               <b className="block text-[0.98rem] text-v2-ink">{item.name}</b>
               <span className="mt-0.5 block text-[0.84rem] leading-[1.4] text-v2-ink-2">{item.hint}</span>
             </a>
@@ -82,13 +85,18 @@ export default function HeaderV2BIZ({ page }: { page: V2Page }) {
 
   const menuProps = (menu: Menu) => ({
     menu,
+    page,
     open: openMenu === menu.key,
     onToggle: () => setOpenMenu((value) => (value === menu.key ? null : menu.key)),
     onClose: () => setOpenMenu(null),
   });
 
+  const contactHref = page === "home" || page === "sprint" || page === "lms" || page === "governance"
+    ? `#${V2_FORM_ANCHOR}`
+    : `/#${V2_FORM_ANCHOR}`;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-v2-forest/8 bg-white/78 text-v2-ink backdrop-blur-md backdrop-saturate-160">
+    <header className={`${plusJakarta.variable} sticky top-0 z-50 border-b border-v2-forest/8 bg-white/78 font-jakarta text-v2-ink backdrop-blur-md backdrop-saturate-160`}>
       <div className={`${V2_WRAP} flex h-18 items-center gap-4`}>
         <a href={page === "home" ? "#top" : "/"} aria-label="Ailene for Business, beranda" className="flex-none">
           <Image
@@ -115,7 +123,7 @@ export default function HeaderV2BIZ({ page }: { page: V2Page }) {
           <NavMenu {...menuProps(resourcesMenu)} align="right" />
         </nav>
         <div className="flex-none whitespace-nowrap max-xl:hidden">
-          <AppButton href={`#${V2_FORM_ANCHOR}`} variant="forestV2" size="header" trackPlacement="header">
+          <AppButton href={contactHref} variant="forestV2" size="header" trackPlacement="header">
             <IconBrandWhatsapp size={18} aria-hidden="true" />
             Jadwalkan konsultasi 20 menit
           </AppButton>
@@ -139,7 +147,7 @@ export default function HeaderV2BIZ({ page }: { page: V2Page }) {
             {[
               ...v2Services.map((service) => ({ label: service.name, hint: service.short, href: service.href, page: undefined })),
               ...v2NavLinks,
-              ...v2Resources.map((resource) => ({ label: resource.name, hint: undefined, href: resource.href, page: undefined })),
+              ...v2Resources.map((resource) => ({ label: resource.name, hint: undefined, href: resource.href, page: resource.page })),
             ].map((link) => (
               <a
                 key={link.href}
@@ -153,7 +161,7 @@ export default function HeaderV2BIZ({ page }: { page: V2Page }) {
               </a>
             ))}
             <div className="mt-5 grid">
-              <AppButton href={`#${V2_FORM_ANCHOR}`} variant="forestV2" size="cta" trackPlacement="header_mobile" onClick={() => setOpen(false)}>
+              <AppButton href={contactHref} variant="forestV2" size="cta" trackPlacement="header_mobile" onClick={() => setOpen(false)}>
                 <IconBrandWhatsapp size={18} aria-hidden="true" />
                 Jadwalkan konsultasi 20 menit
               </AppButton>

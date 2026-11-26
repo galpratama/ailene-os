@@ -18,8 +18,8 @@ export const V2_BODY = "max-w-[66ch] text-v2-ink-2";
 
 export const V2_FORM_ANCHOR = "konsultasi";
 
-// Pages that share the v2 header and footer; "home" is variant "b" of /.
-export type V2Page = "home" | "sprint" | "lms" | "governance";
+// BIZ page identifiers used for the shared header's active navigation state.
+export type V2Page = "home" | "sprint" | "lms" | "governance" | "articles" | "framework" | "specialist" | "case-study" | "join-trainer";
 
 // Links to "/" stay plain anchors (full load) so the home experiment script runs on arrival.
 export const v2Services = [
@@ -33,13 +33,13 @@ export const v2NavLinks: { label: string; hint?: string; href: string; page?: V2
   { label: "Transformation Sprint", hint: "10 minggu", href: "/sprint", page: "sprint" },
   { label: "LMS", hint: "AI Academy", href: "/lms", page: "lms" },
   { label: "Keamanan data", hint: "UU PDP", href: "/governance", page: "governance" },
-  { label: "Artikel", href: "/articles" },
+  { label: "Artikel", href: "/articles", page: "articles" },
 ];
 
-// Existing BIZ pages (still in the v1 design) reachable from the v2 header's "Lainnya" menu.
-export const v2Resources: { name: string; hint: string; href: string }[] = [
-  { name: "Framework", hint: "Peta kemampuan CFTE dan evaluasi Kirkpatrick", href: "/framework" },
-  { name: "Specialist per divisi", hint: "Use case dan hasil lab untuk setiap fungsi", href: "/specialist" },
+// Additional BIZ pages reachable from the shared header's "Lainnya" menu.
+export const v2Resources: { name: string; hint: string; href: string; page?: V2Page }[] = [
+  { name: "Framework", hint: "Peta kemampuan CFTE dan evaluasi Kirkpatrick", href: "/framework", page: "framework" },
+  { name: "Specialist per divisi", hint: "Use case dan hasil lab untuk setiap fungsi", href: "/specialist", page: "specialist" },
 ];
 
 export type RaporStatus = "ok" | "warn" | "risk";

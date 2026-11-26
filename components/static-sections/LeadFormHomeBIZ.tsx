@@ -9,6 +9,7 @@ import InboundLeadFieldsBIZ, {
 import { Check } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import PageMargin from "@/components/layouts/PageMargin";
+import { V2_FORM_ANCHOR } from "@/lib/biz-home-v2";
 
 type SubmitState = "idle" | "sending" | "sent" | "duplicate" | "error";
 
@@ -31,7 +32,8 @@ export default function LeadFormHomeBIZ() {
   };
 
   return (
-    <section id="contact" className="bg-biz-paper py-18 sm:py-28">
+    <section id="contact" className="relative bg-biz-paper py-18 sm:py-28">
+      <span id={V2_FORM_ANCHOR} aria-hidden="true" className="absolute top-0" />
       <PageMargin className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
         <div>
           <p className="biz-topic-label">Start a conversation</p>
