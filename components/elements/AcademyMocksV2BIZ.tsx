@@ -2,7 +2,7 @@ import { V2_SAMPLE } from "@/lib/biz-home-v2";
 import { IconCheck, IconStarFilled } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
-// Sample AI Academy screens, shown on the home's Academy tabs and on /lms.
+// Sample LMS screens, shown on the home's LMS tabs and on /lms.
 export function BrowserMock({ url, label, children }: { url: string; label: string; children: ReactNode }) {
   return (
     <div aria-label={label} className="overflow-hidden rounded-2xl bg-white text-[0.86rem] text-v2-ink shadow-[0_40px_80px_-40px_rgb(0_0_0/0.55)]">
@@ -45,7 +45,7 @@ const sideItems = ["Hari ini", "Pre-assessment", "Jalur belajar", "Latihan skill
 
 export function AcademyProgressMockV2BIZ() {
   return (
-    <BrowserMock url="academy.perusahaananda.co.id" label="Contoh tampilan progres karyawan di AI Academy">
+    <BrowserMock url="belajar.perusahaananda.co.id" label="Contoh tampilan progres karyawan di LMS perusahaan">
       <div className="grid min-h-80 sm:grid-cols-[150px_1fr]">
         <div className="bg-v2-forest px-2.5 py-3.5 text-[0.78rem] text-v2-on-forest/75 max-sm:hidden">
           <div className="mb-3.5 rounded-md border border-dashed border-v2-on-forest/50 px-1 py-2.25 text-center text-[0.76rem] font-bold">LOGO ANDA</div>

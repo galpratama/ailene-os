@@ -31,7 +31,7 @@ export default function LmsPageV2BIZ() {
       <PageHeroV2BIZ
         id="v2-academy-hero"
         tone="paper-2"
-        title="AI Academy. LMS untuk melacak adopsi AI, per karyawan dan per divisi."
+        title="LMS perusahaan Anda. Pantau adopsi AI per karyawan dan per divisi."
         lead="Perusahaan Anda, dengan akademi AI sendiri. Karyawan belajar dan naik level seperti di game. Direksi melihat siapa yang benar-benar memakai AI, dan berapa jam yang dihemat."
         actions={
           <AppButton href={`#${V2_FORM_ANCHOR}`} variant="forestV2" size="cta" trackPlacement="lms">
@@ -93,7 +93,7 @@ export default function LmsPageV2BIZ() {
               Bekerja dengan AI yang sudah Anda bayar.
             </h2>
             <p className={`${V2_BODY} mt-3`}>
-              Copilot, Gemini, ChatGPT, atau Claude. AI Academy mengukur pemakaian dan hasilnya, apa pun alat yang dipilih perusahaan Anda.
+              Copilot, Gemini, ChatGPT, atau Claude. LMS ini mengukur pemakaian dan hasilnya, apa pun alat yang dipilih perusahaan Anda.
             </p>
           </div>
           <div>

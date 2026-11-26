@@ -33,14 +33,35 @@ export default function TrustV2BIZ() {
           <p className={`${V2_LEAD} mt-5`}>Sesi kepemimpinan dan tenaga kerja untuk perusahaan multinasional, perusahaan terbuka, dan BUMN.</p>
         </div>
         <figure className="mt-[clamp(24px,3vw,36px)] rounded-2xl border border-v2-rule bg-white px-[clamp(16px,3vw,40px)] py-[clamp(16px,2.4vw,28px)]">
-          <Image
-            src="/biz/v2/clients-strip.webp"
-            width={1600}
-            height={140}
-            loading="lazy"
-            alt="Pertamina, Bank Indonesia, Hypernet (an XLSMART company), Prudential"
-            className="h-auto w-full"
-          />
+          <div className="overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_4%,#000_96%,transparent)]">
+            <div className="biz-marquee flex w-max [animation:biz-marquee_42s_linear_infinite] hover:[animation-play-state:paused] motion-reduce:hidden">
+              <Image
+                src="/biz/v2/clients-strip.webp"
+                width={1600}
+                height={140}
+                loading="lazy"
+                alt="Pertamina, Bank Indonesia, Hypernet (an XLSMART company), Prudential"
+                className="h-auto w-250 shrink-0 sm:w-300 lg:w-350"
+              />
+              <Image
+                src="/biz/v2/clients-strip.webp"
+                width={1600}
+                height={140}
+                loading="lazy"
+                alt=""
+                aria-hidden="true"
+                className="h-auto w-250 shrink-0 sm:w-300 lg:w-350"
+              />
+            </div>
+            <Image
+              src="/biz/v2/clients-strip.webp"
+              width={1600}
+              height={140}
+              loading="lazy"
+              alt="Pertamina, Bank Indonesia, Hypernet (an XLSMART company), Prudential"
+              className="hidden h-auto w-full motion-reduce:block"
+            />
+          </div>
           <figcaption className="mt-3 text-[0.82rem] text-v2-ink-3">Beberapa klien dianonimkan atas permintaan mereka.</figcaption>
         </figure>
         <div className="mt-[clamp(40px,5vw,64px)] grid gap-[clamp(24px,3vw,40px)] min-[860px]:grid-cols-3">

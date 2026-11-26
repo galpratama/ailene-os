@@ -17,7 +17,7 @@ const phases = [
   {
     weeks: "Minggu 3–9",
     title: "Praktik di pekerjaan nyata",
-    body: "Delapan lab, yaitu sesi praktik memakai AI pada pekerjaan nyata setiap divisi. Peserta mengirim use case ke AI Academy. Champion memverifikasi sebelum jamnya dihitung.",
+    body: "Delapan lab, yaitu sesi praktik memakai AI pada pekerjaan nyata setiap divisi. Peserta mengirim use case ke LMS perusahaan. Champion memverifikasi sebelum jamnya dihitung.",
   },
   {
     weeks: "Minggu 10",

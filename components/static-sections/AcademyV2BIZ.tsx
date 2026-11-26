@@ -14,7 +14,7 @@ const panels: { tab: string; hint: string; title: string; points: [string, strin
       ["Naik level", "dari Foundation ke Practitioner, dengan tugas praktik per chapter"],
       ["XP", "dari use case, prompt, dan latihan yang diselesaikan"],
       ["Leaderboard", "per departemen, kohort, dan tim"],
-      ["Domain sendiri", ", misalnya academy.perusahaananda.co.id"],
+      ["Domain sendiri", ", misalnya belajar.perusahaananda.co.id"],
     ],
     mock: <AcademyProgressMockV2BIZ />,
   },
@@ -135,7 +135,7 @@ export default function AcademyV2BIZ() {
       <div className={V2_WRAP}>
         <div className="max-w-190">
           <h2 id="v2-academy" className={V2_H2}>
-            AI Academy milik perusahaan Anda. LMS yang melacak adopsi AI.
+            LMS dengan identitas perusahaan Anda. Adopsi AI terukur sampai tingkat divisi.
           </h2>
           <p className={`${V2_LEAD} mt-5`}>
             Kami berani menjanjikan angka karena setiap hasil tercatat di sini. Setiap karyawan punya level, XP, dan band kompetensi. Direksi melihat adopsinya per divisi.
@@ -143,7 +143,7 @@ export default function AcademyV2BIZ() {
         </div>
         <div
           role="tablist"
-          aria-label="Fitur AI Academy"
+          aria-label="Fitur LMS perusahaan"
           className="mt-[clamp(36px,5vw,64px)] flex gap-1 overflow-x-auto border-b border-v2-rule [scrollbar-width:none]"
         >
           {panels.map((panel, index) => (

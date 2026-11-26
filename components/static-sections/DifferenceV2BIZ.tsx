@@ -41,7 +41,7 @@ export default function DifferenceV2BIZ() {
         <div className="mt-[clamp(24px,3vw,36px)] grid gap-[clamp(20px,3vw,40px)] min-[900px]:grid-cols-2">
           {[
             ["01 · Pelatihan berbasis dampak", "Bukan kelas AI umum. Pelatihan pada pekerjaan yang menggerakkan bisnis Anda."],
-            ["02 · Platform pelacak dampak", "AI Academy milik perusahaan Anda sendiri. Setiap orang, tim, dan use case terukur."],
+            ["02 · Platform pelacak dampak", "LMS dengan identitas perusahaan Anda. Setiap orang, tim, dan use case terukur."],
           ].map(([title, body]) => (
             <div key={title} className="border-t-2 border-v2-forest pt-3.5">
               <p className="mb-1.5 text-[0.86rem] font-extrabold text-v2-forest">{title}</p>
