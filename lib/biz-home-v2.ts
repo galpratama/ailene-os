@@ -31,7 +31,7 @@ export const v2Services = [
 
 export const v2NavLinks: { label: string; hint?: string; href: string; page?: V2Page }[] = [
   { label: "Transformation Sprint", hint: "10 minggu", href: "/sprint", page: "sprint" },
-  { label: "LMS", hint: "AI Academy", href: "/lms", page: "lms" },
+  { label: "LMS", hint: "Platform belajar", href: "/lms", page: "lms" },
   { label: "Keamanan data", hint: "UU PDP", href: "/governance", page: "governance" },
   { label: "Artikel", href: "/articles", page: "articles" },
 ];

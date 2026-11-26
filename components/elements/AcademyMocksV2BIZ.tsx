@@ -43,7 +43,7 @@ export function StatCard({ label, value }: { label: string; value: string }) {
 
 const sideItems = ["Hari ini", "Pre-assessment", "Jalur belajar", "Latihan skill", "Progres saya"];
 
-export function AcademyProgressMockV2BIZ() {
+export function AcademyProgressMockV2BIZ({ hero = false }: { hero?: boolean }) {
   return (
     <BrowserMock url="belajar.perusahaananda.co.id" label="Contoh tampilan progres karyawan di LMS perusahaan">
       <div className="grid min-h-80 sm:grid-cols-[150px_1fr]">
@@ -61,7 +61,7 @@ export function AcademyProgressMockV2BIZ() {
               <p className="font-jakarta text-base leading-tight font-extrabold">Progres belajar AI</p>
               <p className="text-[0.75rem] text-v2-ink-3">Sherly · Finance · Kohort 2 · Minggu 6 dari 10</p>
             </div>
-            <span className="inline-flex items-center gap-1.25 rounded-full border border-v2-rule px-2.75 py-1 text-[0.8rem] font-bold whitespace-nowrap">
+            <span className={`inline-flex items-center gap-1.25 rounded-full border border-v2-rule px-2.75 py-1 text-[0.8rem] font-bold whitespace-nowrap ${hero ? "lms-hero-xp" : ""}`}>
               <IconStarFilled size={15} aria-hidden="true" className="text-v2-gold" />
               <b className="tabular-nums">1.240</b> XP
             </span>
@@ -73,14 +73,14 @@ export function AcademyProgressMockV2BIZ() {
               { name: "Level 3", count: "0/8", state: "next" },
             ].map((level, index) => (
               <div key={level.name} className="contents">
-                {index > 0 && <div className={`h-0.5 flex-1 ${index === 1 ? "bg-v2-green" : "bg-v2-rule"}`} />}
+                {index > 0 && <div className={`h-0.5 flex-1 ${index === 1 ? `bg-v2-green ${hero ? "lms-hero-progress-line" : ""}` : "bg-v2-rule"}`} />}
                 <div className="flex-1 text-center text-[0.76rem] font-bold text-v2-ink-3">
                   <div
                     className={`mx-auto mb-1.5 grid size-6.5 place-items-center rounded-full border-2 text-[0.76rem] ${
                       level.state === "done"
                         ? "border-v2-green bg-v2-green text-white"
                         : level.state === "current"
-                          ? "border-v2-lime bg-v2-lime text-v2-forest shadow-[0_0_0_4px_color-mix(in_srgb,var(--v2-lime)_35%,transparent)]"
+                          ? `border-v2-lime bg-v2-lime text-v2-forest shadow-[0_0_0_4px_color-mix(in_srgb,var(--v2-lime)_35%,transparent)] ${hero ? "lms-hero-current-level" : ""}`
                           : "border-v2-rule bg-white"
                     }`}
                   >

@@ -61,7 +61,7 @@ export default function StatementV2BIZ() {
             ) : (
               <div className="size-full" style={{ transform: `rotate(${decoration.tilt}deg)` }}>
                 <div className="v2-tool-float flex size-full items-center justify-center" style={{ animationDelay: decoration.delay }}>
-                  <Image src={decoration.src} width={68} height={68} alt="" loading="lazy" className={`size-17 object-contain ${decoration.name === "Gemini" ? "" : "drop-shadow-[0_10px_12px_rgb(10_32_22/0.16)]"} ${decoration.name === "Copilot" ? "scale-125" : ""} ${decoration.name === "ChatGPT" ? "mix-blend-multiply" : ""} ${decoration.name === "Claude" ? "rounded-xl" : ""}`} />
+                  <Image src={decoration.src} width={68} height={68} alt="" loading="lazy" className={`size-17 object-contain ${decoration.name === "ChatGPT" ? "mix-blend-multiply" : "drop-shadow-[0_10px_12px_rgb(10_32_22/0.16)]"} ${decoration.name === "Copilot" ? "scale-125" : ""} ${decoration.name === "Claude" ? "rounded-xl" : ""}`} />
                 </div>
               </div>
             )}

@@ -1,6 +1,7 @@
 import AppButton from "@/components/buttons/AppButton";
-import { AcademyAssessmentMockV2BIZ, AcademyProgressMockV2BIZ } from "@/components/elements/AcademyMocksV2BIZ";
+import { AcademyAssessmentMockV2BIZ } from "@/components/elements/AcademyMocksV2BIZ";
 import ShellV2BIZ from "@/components/elements/ShellV2BIZ";
+import LmsHeroVisualV2BIZ from "@/components/heroes/LmsHeroVisualV2BIZ";
 import PageHeroV2BIZ from "@/components/heroes/PageHeroV2BIZ";
 import RevealOnScroll from "@/components/motion/RevealOnScroll";
 import LeadFormV2BIZ from "@/components/static-sections/LeadFormV2BIZ";
@@ -39,7 +40,7 @@ export default function LmsPageV2BIZ() {
             Minta demo di konsultasi 20 menit
           </AppButton>
         }
-        aside={<AcademyProgressMockV2BIZ />}
+        aside={<LmsHeroVisualV2BIZ />}
       />
       <section aria-labelledby="v2-academy-tracked" className={`${V2_SECTION} bg-v2-paper`}>
         <RevealOnScroll className={V2_WRAP}>
