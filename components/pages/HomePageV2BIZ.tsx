@@ -1,5 +1,6 @@
 import ShellV2BIZ from "../elements/ShellV2BIZ";
 import HeroV2BIZ from "../heroes/HeroV2BIZ";
+import ScrollLeadModalBIZ from "../modals/ScrollLeadModalBIZ";
 import RevealOnScroll from "../motion/RevealOnScroll";
 import AcademyV2BIZ from "../static-sections/AcademyV2BIZ";
 import CloseV2BIZ from "../static-sections/CloseV2BIZ";
@@ -55,6 +56,7 @@ export default function HomePageV2BIZ() {
         <RevealOnScroll viewBlock="lead_form">
           <LeadFormV2BIZ />
         </RevealOnScroll>
+        <ScrollLeadModalBIZ triggerId="academy" />
     </ShellV2BIZ>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import RaporStatusLabelBIZ from "@/components/labels/RaporStatusLabelBIZ";
-import { AcademyAssessmentMockV2BIZ, AcademyProgressMockV2BIZ, BrowserMock, Row, StatCard } from "@/components/elements/AcademyMocksV2BIZ";
+import { AcademyAssessmentMockV2BIZ, AcademyProgressMockV2BIZ, AcademyUseCaseMockV2BIZ, BrowserMock, Row, StatCard } from "@/components/elements/AcademyMocksV2BIZ";
 import { V2_H2, V2_LEAD, V2_SECTION, V2_TEXT_LINK, V2_WRAP } from "@/lib/biz-home-v2";
 import { useRef, useState, type ReactNode } from "react";
 
@@ -40,41 +40,7 @@ const panels: { tab: string; hint: string; title: string; points: [string, strin
       ["Bukti kerja", " dilampirkan"],
       ["Diperiksa champion", ", karyawan internal yang membimbing rekan di divisinya, sebelum masuk hitungan"],
     ],
-    mock: (
-      <BrowserMock url="Use case dikirim" label="Contoh use case terverifikasi">
-        <div className="p-4.5">
-          <p className="text-[0.75rem] text-v2-ink-3">Finance · dikirim minggu 7</p>
-          <p className="mt-1 font-jakarta text-[1.35rem] leading-tight font-extrabold">Rekonsiliasi vendor dalam 20 menit</p>
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <div className="rounded-[10px] bg-v2-paper-2 px-3.5 py-3">
-              <small className="block text-[0.76rem] font-semibold text-v2-ink-3">Sebelum</small>
-              <b className="font-jakarta text-[1.35rem] tracking-[-0.03em]">3 jam / minggu</b>
-            </div>
-            <div className="rounded-[10px] bg-v2-green-soft px-3.5 py-3">
-              <small className="block text-[0.76rem] font-semibold text-v2-ink-3">Sesudah</small>
-              <b className="font-jakarta text-[1.35rem] tracking-[-0.03em]">20 menit</b>
-            </div>
-          </div>
-          <Row className="mt-3">
-            <span>Alat</span>
-            <b>Microsoft Copilot</b>
-          </Row>
-          <Row>
-            <span>Bukti</span>
-            <b>2 file</b>
-          </Row>
-          <Row>
-            <span>Diperiksa oleh</span>
-            <b>Andi, champion Finance</b>
-          </Row>
-          <Row>
-            <span>XP</span>
-            <b>+120</b>
-          </Row>
-          <span className="mt-3.5 inline-flex items-center rounded-md bg-v2-lime px-2.75 py-1 text-[0.78rem] font-extrabold text-v2-forest">Terverifikasi</span>
-        </div>
-      </BrowserMock>
-    ),
+    mock: <AcademyUseCaseMockV2BIZ />,
   },
   {
     tab: "Tampilan Direksi",

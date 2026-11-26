@@ -6,24 +6,34 @@ import { trackFormLead } from "@/lib/conversion";
 import InboundLeadFieldsBIZ, {
   toInboundLeadPayload,
 } from "@/components/forms/InboundLeadFieldsBIZ";
-import { Check, X } from "lucide-react";
+import { Check, Clock, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 type SubmitState = "idle" | "sending" | "sent" | "error";
 
-export default function ScrollLeadModalBIZ() {
+function getCurrentJakartaMonth(): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
+}
+
+export default function ScrollLeadModalBIZ({
+  triggerId = "curriculum",
+}: {
+  triggerId?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
   useEffect(() => {
-    const curriculum = document.getElementById("curriculum");
-    if (!curriculum) return;
+    const target = document.getElementById(triggerId);
+    if (!target) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // The curriculum is the first high-intent section, so offer the
-          // consultation only once it is genuinely in view.
+          // Open once the visitor reaches the first high-intent proof section.
           setIsOpen(true);
           observer.disconnect();
         }
@@ -31,9 +41,9 @@ export default function ScrollLeadModalBIZ() {
       { threshold: 0.2 },
     );
 
-    observer.observe(curriculum);
+    observer.observe(target);
     return () => observer.disconnect();
-  }, []);
+  }, [triggerId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -70,6 +80,8 @@ export default function ScrollLeadModalBIZ() {
 
   if (!isOpen) return null;
 
+  const currentMonth = getCurrentJakartaMonth();
+
   return (
     <div
       className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-biz-forest/65 p-4 backdrop-blur-sm"
@@ -99,31 +111,47 @@ export default function ScrollLeadModalBIZ() {
             </span>
             <h2
               id="scroll-lead-modal-title"
-              className="max-w-120 text-3xl font-medium tracking-[-0.05em] text-biz-forest"
+              className="max-w-120 text-3xl font-bold tracking-[-0.035em] text-biz-forest"
             >
               Kebutuhan Anda sudah masuk.
             </h2>
             <p className="max-w-105 text-[15px] leading-[1.65] text-biz-muted">
               Tim kami akan menghubungi Anda melalui kontak yang ditinggalkan.
             </p>
-            <AppButton type="button" variant="forest" size="cta" onClick={closeModal}>
+            <AppButton
+              type="button"
+              variant="forest"
+              size="cta"
+              className="font-bold!"
+              onClick={closeModal}
+            >
               Tutup
             </AppButton>
           </div>
         ) : (
           <>
-            <p className="pr-10 text-[12px] font-medium tracking-[0.08em] text-biz-forest-light uppercase">
+            <div className="mr-10 inline-flex flex-wrap items-center gap-2 rounded-xl border border-biz-forest/15 bg-biz-check/70 px-3 py-2 text-xs text-biz-forest">
+              <span className="inline-flex items-center gap-1 rounded-full bg-biz-lime px-2 py-0.5 text-[11px] font-bold tracking-[0.04em] text-biz-forest uppercase">
+                <Clock size={12} aria-hidden="true" />
+                Kuota terbatas
+              </span>
+              <span className="font-semibold">
+                Special Free AI Readiness Assessment untuk 10 klien pertama di bulan {currentMonth}
+              </span>
+            </div>
+
+            <p className="mt-4 pr-10 text-[12px] font-semibold tracking-[0.08em] text-biz-forest-light uppercase">
               Mulai percakapan
             </p>
             <h2
               id="scroll-lead-modal-title"
-              className="mt-2 max-w-130 text-[clamp(2rem,4vw,3rem)] leading-[1] font-medium tracking-[-0.06em] text-biz-forest"
+              className="mt-1.5 max-w-130 text-[clamp(1.85rem,3.8vw,2.75rem)] leading-[1.04] font-bold tracking-[-0.035em] text-biz-forest"
             >
               Siap bikin kerja tim lebih cepat?
             </h2>
-            <p className="mt-3 max-w-125 text-sm leading-[1.6] text-biz-muted">
-              Ceritakan konteks singkatnya. Kami bantu pilih format yang paling
-              tepat untuk tim Anda.
+            <p className="mt-2.5 max-w-130 text-sm leading-[1.6] text-biz-muted">
+              Ceritakan konteks singkatnya. Kami bantu petakan skor kesiapan AI
+              tim Anda dan pilih format program yang paling tepat.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
@@ -133,6 +161,7 @@ export default function ScrollLeadModalBIZ() {
                   type="submit"
                   variant="lime"
                   size="cta"
+                  className="font-bold!"
                   disabled={submitState === "sending"}
                 >
                   {submitState === "sending" ? "Mengirim..." : "Kirim kebutuhan"}
