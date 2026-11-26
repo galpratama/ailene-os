@@ -761,6 +761,11 @@ body {
 
 /* Scroll-scrubbed pieces animate inline transforms; this keeps them on the compositor. */
 .v2-scrub { will-change: transform; }
+.v2-tool-float { animation: v2-tool-float 5.5s ease-in-out infinite; }
+@keyframes v2-tool-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
 .v2-media {
   opacity: 0;
   transform: translateY(12px);
@@ -776,6 +781,7 @@ body {
   .v2-line > span,
   .v2-rise,
   .v2-tape,
+  .v2-tool-float,
   .v2-glass-in,
   .v2-press {
     animation: none !important;
