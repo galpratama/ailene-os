@@ -710,7 +710,6 @@ body {
 .v2-tape {
   position: absolute;
   z-index: 2;
-  display: block;
   width: var(--tw);
   height: calc(var(--tw) * 0.34);
   pointer-events: none;

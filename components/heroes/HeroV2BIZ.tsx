@@ -33,10 +33,15 @@ const tapes: { tw: string; r: number; d: number; place: CSSProperties }[] = [
   { tw: SUB_TAPE, r: 24, d: 1640, place: { right: -18, top: -10 } },
 ];
 
-function Tape({ index }: { index: number }) {
-  const { tw, r, d, place } = tapes[index];
+const mobileTapes: Partial<Record<number, (typeof tapes)[number]>> = {
+  0: { tw: "2rem", r: -12, d: 980, place: { right: 8, top: -8 } },
+  2: { tw: "2rem", r: 10, d: 1260, place: { right: 4, bottom: -8 } },
+};
+
+function Tape({ index, mobile = false }: { index: number; mobile?: boolean }) {
+  const { tw, r, d, place } = mobile ? mobileTapes[index] ?? tapes[index] : tapes[index];
   const style = { ...place, "--tw": tw, "--r": `${r}deg`, "--d": `${d}ms`, "--cp": clips[index] } as CSSProperties;
-  return <i className="v2-tape" style={style} aria-hidden="true" />;
+  return <i className={`v2-tape ${mobile ? "block md:hidden" : "hidden md:block"}`} style={style} aria-hidden="true" />;
 }
 
 export default function HeroV2BIZ() {
@@ -94,6 +99,7 @@ export default function HeroV2BIZ() {
             </span>
             <Tape index={0} />
             <Tape index={1} />
+            <Tape index={0} mobile />
           </span>
           <span className="relative block w-max max-w-full">
             <span className="v2-line v2-line-2">
@@ -101,6 +107,7 @@ export default function HeroV2BIZ() {
             </span>
             <Tape index={2} />
             <Tape index={3} />
+            <Tape index={2} mobile />
           </span>
         </h1>
         <div className="mt-[clamp(28px,5vh,56px)] flex flex-wrap items-end gap-x-12 gap-y-7">
